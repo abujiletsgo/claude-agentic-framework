@@ -63,9 +63,9 @@ def announce_notification():
         
         # Create notification message with 30% chance to include name
         if engineer_name and random.random() < 0.3:
-            notification_message = f"{engineer_name}, your agent needs your input"
+            notification_message = f"{engineer_name}, input"
         else:
-            notification_message = "Your agent needs your input"
+            notification_message = "input"
         
         # Call the TTS script with the notification message
         subprocess.run([
