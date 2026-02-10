@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "allow": [
+      "*"
+    ],
     "deny": [
       "Bash(rm -rf /*:*)",
       "Bash(rm -rf ~/*:*)",
@@ -83,6 +86,11 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/edit-tool-damage-control.py",
             "timeout": 5
+          },
+          {
+            "type": "prompt",
+            "prompt": "You are a code quality reviewer. Analyze this edit: $ARGUMENTS\n\nBLOCK if the edit would:\n- Delete or overwrite critical configuration files (settings.json, .env, CLAUDE.md, package.json)\n- Introduce obvious security vulnerabilities (eval of user input, SQL injection, XSS)\n- Remove safety checks, error handling, or validation without replacement\n- Gut or empty a file that was previously populated\n\nALLOW if the edit:\n- Makes targeted, reasonable changes to application code\n- Adds or modifies features, tests, documentation\n- Refactors with equivalent functionality\n- Fixes bugs or improves code quality\n\nRespond with JSON: {\"decision\": \"approve\" or \"block\", \"reason\": \"brief explanation\"}",
+            "timeout": 10
           }
         ]
       }
@@ -94,6 +102,11 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/write-tool-damage-control.py",
             "timeout": 5
+          },
+          {
+            "type": "prompt",
+            "prompt": "You are a file safety reviewer. Analyze this write operation: $ARGUMENTS\n\nBLOCK if the write would:\n- Overwrite critical config files with empty or minimal content\n- Write credentials, API keys, or secrets to tracked files\n- Create files in system directories or outside the project\n- Replace a large file with a stub or placeholder\n\nALLOW if the write:\n- Creates or updates application code, tests, or documentation\n- Writes to appropriate project directories\n- Contains substantive, complete content\n- Follows the project's existing patterns\n\nRespond with JSON: {\"decision\": \"approve\" or \"block\", \"reason\": \"brief explanation\"}",
+            "timeout": 10
           }
         ]
       }
@@ -124,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/stop.py --chat",
+            "command": "uv run __REPO_DIR__/global-hooks/mastery/stop.py --chat --notify",
             "timeout": 10
           },
           {
