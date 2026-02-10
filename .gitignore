@@ -5,6 +5,10 @@
 .env.*.local
 *.log
 
+# Runtime data
+data/logs/
+data/tts_queue/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -34,15 +38,21 @@ htmlcov/
 # Bun / Node / TypeScript
 node_modules/
 bun.lockb
+bun.lock
 dist/
 out/
 *.tsbuildinfo
 .npm
 
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+
 # Astral UV
 .uv/
 .python-version
 
-# AI Docs
+# AI Docs (auto-generated)
 ai_docs/*.md
 !ai_docs/README.md

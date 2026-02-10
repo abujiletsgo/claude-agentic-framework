@@ -1,138 +1,188 @@
 #!/bin/bash
 set -e
 
-# Elite Agentic Engineering System Installer
-# Creates symlinks from ~/.claude/ to this repo for all global components
+# Claude Agentic Framework — Consolidated Installer
+# One repo, one install, one source of truth.
+#
+# What it does:
+#   1. Backs up existing ~/.claude/ files
+#   2. Symlinks commands, agents, skills, guides, output-styles, scripts, templates
+#   3. Generates settings.json from template (hooks + status line referenced by absolute path)
+#   4. Creates runtime dirs, sets permissions
+#   5. Validates the result
 
 REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CLAUDE_DIR="$HOME/.claude"
 BACKUP_DIR="$CLAUDE_DIR/backups/$(date +%Y%m%d_%H%M%S)"
 
-echo "🚀 Installing Elite Agentic Engineering System"
+echo "=== Claude Agentic Framework Installer ==="
 echo "Repo: $REPO_DIR"
 echo ""
 
-# Create backup directory if needed
-mkdir -p "$BACKUP_DIR"
+# ─── Helpers ──────────────────────────────────────────────
 
-# Function to create symlink with backup
 create_symlink() {
-    local target="$1"  # Path in repo
-    local link="$2"    # Path in ~/.claude/
+    local target="$1"   # Source path in repo
+    local link="$2"     # Destination path in ~/.claude/
 
-    # Create parent directory if needed
     mkdir -p "$(dirname "$link")"
 
-    # Check if already a symlink to our repo
+    # Already correct symlink?
     if [ -L "$link" ]; then
-        local current_target=$(readlink "$link")
-        if [[ "$current_target" == "$REPO_DIR"* ]]; then
-            echo "✓ Already linked: $link"
+        local current_target
+        current_target=$(readlink "$link")
+        if [ "$current_target" = "$target" ]; then
             return 0
         fi
     fi
 
-    # Backup existing regular file
-    if [ -f "$link" ] && [ ! -L "$link" ]; then
-        echo "📦 Backing up: $link"
-        cp "$link" "$BACKUP_DIR/$(basename "$link")"
-        rm "$link"
+    # Backup existing regular file/dir
+    if [ -e "$link" ] && [ ! -L "$link" ]; then
+        mkdir -p "$BACKUP_DIR"
+        echo "  Backing up: $link"
+        cp -a "$link" "$BACKUP_DIR/$(basename "$link").$(date +%s)"
+        rm -rf "$link"
     fi
 
-    # Remove broken symlink
-    if [ -L "$link" ] && [ ! -e "$link" ]; then
-        echo "🗑️  Removing broken symlink: $link"
-        rm "$link"
-    fi
+    # Remove existing symlink or broken link
+    [ -L "$link" ] && rm "$link"
 
-    # Create symlink
-    ln -sf "$target" "$link"
-    echo "✅ Linked: $link -> $target"
+    # -n prevents following existing dir targets, -f forces overwrite
+    ln -sfn "$target" "$link"
 }
 
-echo "📚 Installing guides..."
-create_symlink "$REPO_DIR/guides/MASTER_SUMMARY.md" "$CLAUDE_DIR/MASTER_SUMMARY.md"
-create_symlink "$REPO_DIR/guides/L_THREADS.md" "$CLAUDE_DIR/L_THREADS.md"
-create_symlink "$REPO_DIR/guides/F_THREADS.md" "$CLAUDE_DIR/F_THREADS.md"
-create_symlink "$REPO_DIR/guides/RLM_ARCHITECTURE.md" "$CLAUDE_DIR/RLM_ARCHITECTURE.md"
-create_symlink "$REPO_DIR/guides/RALPH_LOOPS.md" "$CLAUDE_DIR/RALPH_LOOPS.md"
-create_symlink "$REPO_DIR/guides/CONTEXT_ENGINEERING.md" "$CLAUDE_DIR/CONTEXT_ENGINEERING.md"
-create_symlink "$REPO_DIR/guides/GENERATIVE_UI.md" "$CLAUDE_DIR/GENERATIVE_UI.md"
-create_symlink "$REPO_DIR/guides/MISSION_CONTROL.md" "$CLAUDE_DIR/MISSION_CONTROL.md"
-create_symlink "$REPO_DIR/guides/AGENT_TEAMS.md" "$CLAUDE_DIR/AGENT_TEAMS.md"
-create_symlink "$REPO_DIR/guides/AGENT_TEAMS_SETUP.md" "$CLAUDE_DIR/AGENT_TEAMS_SETUP.md"
-create_symlink "$REPO_DIR/guides/MULTI_AGENT_ORCHESTRATION.md" "$CLAUDE_DIR/MULTI_AGENT_ORCHESTRATION.md"
-create_symlink "$REPO_DIR/guides/SELF_CORRECTING_AGENTS.md" "$CLAUDE_DIR/SELF_CORRECTING_AGENTS.md"
-create_symlink "$REPO_DIR/guides/Z_THREADS_AND_PLUGINS.md" "$CLAUDE_DIR/Z_THREADS_AND_PLUGINS.md"
-create_symlink "$REPO_DIR/guides/AGENTIC_DROP_ZONES.md" "$CLAUDE_DIR/AGENTIC_DROP_ZONES.md"
-create_symlink "$REPO_DIR/guides/AGENTIC_LAYER.md" "$CLAUDE_DIR/AGENTIC_LAYER.md"
+symlink_dir_contents() {
+    local src_dir="$1"
+    local dest_dir="$2"
+    local pattern="${3:-*.md}"
 
-echo ""
-echo "⚡ Installing commands..."
-create_symlink "$REPO_DIR/global-commands/analyze.md" "$CLAUDE_DIR/commands/analyze.md"
-create_symlink "$REPO_DIR/global-commands/fusion.md" "$CLAUDE_DIR/commands/fusion.md"
-create_symlink "$REPO_DIR/global-commands/loadbundle.md" "$CLAUDE_DIR/commands/loadbundle.md"
-create_symlink "$REPO_DIR/global-commands/orchestrate.md" "$CLAUDE_DIR/commands/orchestrate.md"
-create_symlink "$REPO_DIR/global-commands/prime.md" "$CLAUDE_DIR/commands/prime.md"
-create_symlink "$REPO_DIR/global-commands/research.md" "$CLAUDE_DIR/commands/research.md"
-create_symlink "$REPO_DIR/global-commands/rlm.md" "$CLAUDE_DIR/commands/rlm.md"
-create_symlink "$REPO_DIR/global-commands/search.md" "$CLAUDE_DIR/commands/search.md"
+    mkdir -p "$dest_dir"
+    for f in "$src_dir"/$pattern; do
+        [ -f "$f" ] || continue
+        create_symlink "$f" "$dest_dir/$(basename "$f")"
+    done
+}
 
-echo ""
-echo "🤖 Installing agents..."
-create_symlink "$REPO_DIR/global-agents/orchestrator.md" "$CLAUDE_DIR/agents/orchestrator.md"
-create_symlink "$REPO_DIR/global-agents/researcher.md" "$CLAUDE_DIR/agents/researcher.md"
-create_symlink "$REPO_DIR/global-agents/rlm-root.md" "$CLAUDE_DIR/agents/rlm-root.md"
+symlink_subdir() {
+    local src_dir="$1"
+    local dest_dir="$2"
 
-echo ""
-echo "🎯 Installing skills..."
-create_symlink "$REPO_DIR/global-skills/prime/SKILL.md" "$CLAUDE_DIR/skills/prime/SKILL.md"
-
-echo ""
-echo "🪝 Installing hooks..."
-create_symlink "$REPO_DIR/global-hooks/context-bundle-logger.py" "$CLAUDE_DIR/hooks/context-bundle-logger.py"
-create_symlink "$REPO_DIR/global-hooks/validators/check_lthread_progress.py" "$CLAUDE_DIR/hooks/validators/check_lthread_progress.py"
-create_symlink "$REPO_DIR/global-hooks/validators/run_tests.py" "$CLAUDE_DIR/hooks/validators/run_tests.py"
-
-echo ""
-echo "📜 Installing scripts..."
-create_symlink "$REPO_DIR/scripts/ralph-harness.sh" "$CLAUDE_DIR/scripts/ralph-harness.sh"
-chmod +x "$CLAUDE_DIR/scripts/ralph-harness.sh"
-
-echo ""
-echo "📋 Installing templates..."
-create_symlink "$REPO_DIR/templates/long-migration.md" "$CLAUDE_DIR/templates/long-migration.md"
-
-echo ""
-echo "⚙️  Updating settings.json hook paths..."
-SETTINGS_FILE="$CLAUDE_DIR/settings.json"
-if [ -f "$SETTINGS_FILE" ]; then
-    # Create backup of settings.json
-    cp "$SETTINGS_FILE" "$BACKUP_DIR/settings.json"
-
-    # Update hook paths using sed (macOS compatible)
-    sed -i '' "s|$HOME/.claude/hooks/context-bundle-logger.py|$REPO_DIR/global-hooks/context-bundle-logger.py|g" "$SETTINGS_FILE"
-    sed -i '' "s|$HOME/.claude/hooks/validators/run_tests.py|$REPO_DIR/global-hooks/validators/run_tests.py|g" "$SETTINGS_FILE"
-    sed -i '' "s|$HOME/.claude/hooks/validators/check_lthread_progress.py|$REPO_DIR/global-hooks/validators/check_lthread_progress.py|g" "$SETTINGS_FILE"
-
-    echo "✅ Updated settings.json hook paths"
-
-    # Validate JSON
-    if command -v python3 &> /dev/null; then
-        python3 -m json.tool "$SETTINGS_FILE" > /dev/null && echo "✅ settings.json is valid JSON" || echo "⚠️  settings.json may have JSON errors"
+    if [ -d "$src_dir" ]; then
+        # Symlink the entire subdir as one link
+        create_symlink "$src_dir" "$dest_dir"
     fi
+}
+
+# ─── Step 1: Commands ────────────────────────────────────
+
+echo "[1/8] Commands..."
+symlink_dir_contents "$REPO_DIR/global-commands" "$CLAUDE_DIR/commands" "*.md"
+# Subdirectories
+symlink_subdir "$REPO_DIR/global-commands/agent_prompts" "$CLAUDE_DIR/commands/agent_prompts"
+symlink_subdir "$REPO_DIR/global-commands/bench" "$CLAUDE_DIR/commands/bench"
+
+# ─── Step 2: Agents ──────────────────────────────────────
+
+echo "[2/8] Agents..."
+symlink_dir_contents "$REPO_DIR/global-agents" "$CLAUDE_DIR/agents" "*.md"
+# Subdirectories
+symlink_subdir "$REPO_DIR/global-agents/team" "$CLAUDE_DIR/agents/team"
+symlink_subdir "$REPO_DIR/global-agents/crypto" "$CLAUDE_DIR/agents/crypto"
+
+# ─── Step 3: Skills ──────────────────────────────────────
+
+echo "[3/8] Skills..."
+for skill_dir in "$REPO_DIR/global-skills"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_name=$(basename "$skill_dir")
+    create_symlink "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+done
+
+# ─── Step 4: Guides ──────────────────────────────────────
+
+echo "[4/8] Guides..."
+for f in "$REPO_DIR/guides"/*.md; do
+    [ -f "$f" ] || continue
+    create_symlink "$f" "$CLAUDE_DIR/$(basename "$f")"
+done
+
+# ─── Step 5: Output Styles ───────────────────────────────
+
+echo "[5/8] Output styles..."
+symlink_dir_contents "$REPO_DIR/global-output-styles" "$CLAUDE_DIR/output-styles" "*.md"
+
+# ─── Step 6: Scripts + Templates ─────────────────────────
+
+echo "[6/8] Scripts & templates..."
+mkdir -p "$CLAUDE_DIR/scripts" "$CLAUDE_DIR/templates"
+for f in "$REPO_DIR/scripts"/*.sh; do
+    [ -f "$f" ] || continue
+    create_symlink "$f" "$CLAUDE_DIR/scripts/$(basename "$f")"
+done
+for f in "$REPO_DIR/templates"/*.md; do
+    [ -f "$f" ] || continue
+    create_symlink "$f" "$CLAUDE_DIR/templates/$(basename "$f")"
+done
+
+# ─── Step 7: Generate settings.json ──────────────────────
+
+echo "[7/8] Generating settings.json..."
+TEMPLATE="$REPO_DIR/templates/settings.json.template"
+SETTINGS="$CLAUDE_DIR/settings.json"
+
+if [ -f "$SETTINGS" ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp "$SETTINGS" "$BACKUP_DIR/settings.json"
+    echo "  Backed up existing settings.json"
+fi
+
+sed "s|__REPO_DIR__|$REPO_DIR|g" "$TEMPLATE" > "$SETTINGS"
+
+# Validate JSON
+if python3 -m json.tool "$SETTINGS" > /dev/null 2>&1; then
+    echo "  settings.json is valid JSON"
 else
-    echo "⚠️  settings.json not found at $SETTINGS_FILE"
+    echo "  WARNING: settings.json has JSON errors!"
+    exit 1
+fi
+
+# ─── Step 8: Runtime dirs & permissions ───────────────────
+
+echo "[8/8] Runtime setup..."
+mkdir -p "$REPO_DIR/data/logs" "$REPO_DIR/data/tts_queue"
+
+# Make all hook scripts executable
+find "$REPO_DIR/global-hooks" -name "*.py" -exec chmod +x {} \;
+# Make all status line scripts executable
+find "$REPO_DIR/global-status-lines" -name "*.py" -exec chmod +x {} \;
+# Make shell scripts executable
+find "$REPO_DIR/scripts" -name "*.sh" -exec chmod +x {} \;
+
+# ─── Done ─────────────────────────────────────────────────
+
+echo ""
+echo "=== Installation Complete ==="
+echo ""
+
+# Summary
+CMD_COUNT=$(find "$CLAUDE_DIR/commands" -name "*.md" -not -path "*/agent_prompts/*" -not -path "*/bench/*" 2>/dev/null | wc -l | tr -d ' ')
+AGENT_COUNT=$(find "$CLAUDE_DIR/agents" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+SKILL_COUNT=$(find "$CLAUDE_DIR/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
+GUIDE_COUNT=$(ls "$CLAUDE_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+STYLE_COUNT=$(find "$CLAUDE_DIR/output-styles" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+
+echo "  Commands:      $CMD_COUNT"
+echo "  Agents:        $AGENT_COUNT"
+echo "  Skills:        $SKILL_COUNT"
+echo "  Guides:        $GUIDE_COUNT"
+echo "  Output styles: $STYLE_COUNT"
+echo "  Hooks:         4 namespaces (mastery, observability, damage-control, framework)"
+echo ""
+
+if [ -d "$BACKUP_DIR" ] && [ "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
+    echo "Backups saved to: $BACKUP_DIR"
 fi
 
 echo ""
-echo "✨ Installation complete!"
-echo ""
-if [ "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
-    echo "📦 Backups saved to: $BACKUP_DIR"
-fi
-echo ""
-echo "Next steps:"
-echo "  1. Verify symlinks: ls -la ~/.claude/commands/"
-echo "  2. Test system: cd apps/test_app && ./run_system_test.sh"
-echo "  3. Try commands: /fusion, /rlm, /analyze"
+echo "Verify: python3 -m json.tool ~/.claude/settings.json"
+echo "Test:   ls -la ~/.claude/commands/ ~/.claude/agents/"
