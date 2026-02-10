@@ -60,7 +60,7 @@ def announce_subagent_completion():
             return  # No TTS scripts available
 
         # Use fixed message for subagent completion
-        completion_message = "Subagent Complete"
+        completion_message = "sub done"
 
         # Call the TTS script with the completion message
         subprocess.run(

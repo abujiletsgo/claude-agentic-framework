@@ -98,7 +98,7 @@ def main():
             if message:
                 print(message)
             else:
-                print("Error generating completion message")
+                print("done")
         else:
             prompt_text = " ".join(sys.argv[1:])
             response = prompt_llm(prompt_text)

@@ -141,9 +141,9 @@ def main() -> None:
 
             # Create announcement message
             if agent_type and agent_type != "unknown":
-                announcement = f"{agent_type} agent started"
+                announcement = f"{agent_type} started"
             else:
-                announcement = "Subagent started"
+                announcement = "sub started"
 
             debug_log(f"Announcing: {announcement}")
             announce_subagent_start(announcement)

@@ -132,7 +132,7 @@ def main():
             if message:
                 print(message)
             else:
-                print("Error generating completion message")
+                print("done")
         elif sys.argv[1] == "--agent-name":
             agent_name = generate_agent_name()
             if agent_name:

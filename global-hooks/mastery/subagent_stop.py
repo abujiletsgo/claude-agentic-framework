@@ -54,7 +54,7 @@ try:
 except ImportError:
     # Fallback if imports fail
     def summarize_subagent_task(task_description: str, agent_name: Optional[str] = None) -> str:
-        return "Subagent Complete"
+        return "sub done"
 
 
 def get_tts_script_path() -> Optional[str]:
@@ -269,7 +269,7 @@ def main() -> None:
                 summary_message = summarize_subagent_task(task_context, agent_name=agent_id)
                 debug_log(f"Generated summary_message: {summary_message}")
             else:
-                summary_message = "Subagent Complete"
+                summary_message = "sub done"
                 debug_log("Summarize disabled, using default message")
 
             # Acquire lock before speaking (blocks until available or timeout)

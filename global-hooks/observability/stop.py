@@ -27,11 +27,9 @@ except ImportError:
 def get_completion_messages():
     """Return list of friendly completion messages."""
     return [
-        "Work complete!",
-        "All done!",
-        "Task finished!",
-        "Job complete!",
-        "Ready for next task!",
+        "done",
+        "complete",
+        "finished",
     ]
 
 
