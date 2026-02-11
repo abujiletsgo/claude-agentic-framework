@@ -488,6 +488,20 @@ The Caddy meta-orchestrator automatically audits skills before recommending them
 
 **Prime Integration**: When using `/prime` to load project context, local skills in `.claude/skills/` are automatically scanned for security issues. Skills with critical findings are blocked from loading.
 
+**Whitelist Workflow**: After `/prime`, review blocked skills interactively:
+
+```bash
+# Review blocked skills with detailed findings and code context
+just review-blocked-skills
+
+# Shows:
+# - Exact lines triggering warnings with surrounding code
+# - Distinction between documentation examples and actual code
+# - Interactive whitelist: mark trusted skills as safe
+# - Stores decisions in ~/.claude/skills-whitelist.json
+```
+
+**Audit Commands**:
 ```bash
 # Audit a specific skill
 just audit-skill <skill-name>
@@ -497,6 +511,9 @@ just audit-all-skills
 
 # Audit local project skills (.claude/skills/)
 just audit-local-skills
+
+# Review and whitelist blocked skills
+just review-blocked-skills
 ```
 
 ### Input Validation
@@ -524,6 +541,7 @@ Destructive operations (file overwrite, dirty worktree removal) default to safe 
 | `just audit-skill <name>` | Audit one skill for security issues |
 | `just audit-all-skills` | Audit every installed skill |
 | `just audit-local-skills` | Audit local project skills in `.claude/skills/` |
+| `just review-blocked-skills` | Interactive review and whitelist workflow |
 
 ## Skills Reference
 

@@ -15,12 +15,25 @@ Exit codes:
 
 import sys
 from pathlib import Path
+import json
 
 # Add framework directory to path
 framework_dir = Path.home() / "Documents" / "claude-agentic-framework" / "global-hooks" / "framework"
 sys.path.insert(0, str(framework_dir))
 
 from caddy.skill_auditor import SkillAuditor
+
+
+WHITELIST_FILE = Path.home() / ".claude" / "skills-whitelist.json"
+
+
+def load_whitelist():
+    """Load the whitelist file."""
+    if not WHITELIST_FILE.exists():
+        return {"whitelisted_skills": []}
+
+    with open(WHITELIST_FILE, 'r') as f:
+        return json.load(f)
 
 
 def main():
@@ -39,6 +52,15 @@ def main():
         return 2
 
     skill_name = skill_path.name
+
+    # Check whitelist
+    whitelist = load_whitelist()
+    whitelisted_skills = set(whitelist.get("whitelisted_skills", []))
+
+    if skill_name in whitelisted_skills:
+        print(f"✅ {skill_name}: WHITELISTED (user-approved, skipping audit)")
+        return 0
+
     auditor = SkillAuditor()
 
     # Run audit

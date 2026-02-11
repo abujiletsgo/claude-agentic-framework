@@ -101,6 +101,18 @@ This will scan all skills in `.claude/skills/` and report:
 - Focus on findings in executable files (.sh, .py, .js, etc.) as highest priority
 - When in doubt, read the file at the reported line number to verify if it's actual dangerous code
 
+**If Blocked Skills Detected**:
+After priming completes, offer to run detailed review:
+```bash
+just review-blocked-skills
+```
+
+This interactive tool will:
+1. Show detailed findings with code context for each blocked skill
+2. Display the exact lines triggering security warnings
+3. Allow user to whitelist skills they trust (stores in `~/.claude/skills-whitelist.yaml`)
+4. Whitelisted skills skip future audits automatically
+
 ### Step 5: Analyze Hook Configuration (if Claude Code project)
 
 ```bash

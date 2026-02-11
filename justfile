@@ -176,6 +176,10 @@ audit-local-skills:
         echo "No .claude/skills/ directory found in current project"; \
     fi
 
+# Review blocked skills interactively and whitelist safe ones
+review-blocked-skills:
+    python3 {{project_root}}/scripts/review_blocked_skills.py .
+
 # ─── Open ──────────────────────────────────────────────────
 
 # Open the observability dashboard in browser
