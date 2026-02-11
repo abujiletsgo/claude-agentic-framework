@@ -486,12 +486,17 @@ See [docs/SKILLS_INTEGRITY.md](docs/SKILLS_INTEGRITY.md) for detailed documentat
 
 The Caddy meta-orchestrator automatically audits skills before recommending them. The auditor scans for code injection patterns, dangerous commands, sensitive file access, insecure permissions, and secret handling issues. Critical findings block the skill from being recommended.
 
+**Prime Integration**: When using `/prime` to load project context, local skills in `.claude/skills/` are automatically scanned for security issues. Skills with critical findings are blocked from loading.
+
 ```bash
 # Audit a specific skill
 just audit-skill <skill-name>
 
 # Audit all installed skills
 just audit-all-skills
+
+# Audit local project skills (.claude/skills/)
+just audit-local-skills
 ```
 
 ### Input Validation
@@ -518,6 +523,7 @@ Destructive operations (file overwrite, dirty worktree removal) default to safe 
 | `just skills-verify` | Verify skills against lock file |
 | `just audit-skill <name>` | Audit one skill for security issues |
 | `just audit-all-skills` | Audit every installed skill |
+| `just audit-local-skills` | Audit local project skills in `.claude/skills/` |
 
 ## Skills Reference
 
@@ -1457,6 +1463,8 @@ Built on patterns from:
 - Anti-loop guardrails system for agent safety
 - Skills integrity verification via SHA-256 lock file (`just skills-lock`, `just skills-verify`)
 - Automatic skill auditing by Caddy meta-orchestrator (`just audit-skill`, `just audit-all-skills`)
+- `/prime` integration: automatic security scanning of local project skills before loading
+- Local skill auditing command (`just audit-local-skills`) for `.claude/skills/`
 - P0 vulnerability fixes: command injection (worktree-manager), file overwrite (video-processor), access control (knowledge-db)
 - Input validation enforcement in critical skills (character allowlists, path containment)
 - File permissions hardening (`0o600` on sensitive data files)

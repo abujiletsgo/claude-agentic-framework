@@ -51,6 +51,10 @@ class SkillAuditor:
         '.pyc', '.pyo', '.so', '.dylib', '.dll',
     }
 
+    # Note: .md files are scanned because they often contain executable code blocks.
+    # This may produce false positives when patterns appear in documentation prose.
+    # Review findings to distinguish between actual code and documentation examples.
+
     def audit_skill(self, skill_path: Path) -> Dict[str, List[Tuple[str, int, str]]]:
         """Audit a skill directory for security issues.
 

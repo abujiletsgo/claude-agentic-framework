@@ -73,7 +73,35 @@ grep -ri "postgres\|sqlite\|mongodb\|mysql" --include="*.py" --include="*.js" --
 grep -ri "jest\|pytest\|vitest\|mocha" package.json pyproject.toml 2>/dev/null
 ```
 
-### Step 4: Analyze Hook Configuration (if Claude Code project)
+### Step 4: Security Audit (Local Skills)
+
+**CRITICAL: Always run security audit before loading local skills**
+
+Scan all project-local skills for security issues using Caddy's auditor:
+
+```bash
+# Run security audit on local project skills
+cd ~/Documents/claude-agentic-framework && just audit-local-skills
+```
+
+This will scan all skills in `.claude/skills/` and report:
+- 🚫 **BLOCKED**: Critical security issues detected (eval, os.system, curl|bash, etc.)
+- ⚠️ **WARNINGS**: Potential security concerns (rm -rf, API keys, passwords, etc.)
+- ℹ️ **INFO**: Minor notes (HTTP requests, code debt markers)
+- ✅ **CLEAN**: No security issues detected
+
+**Security Action Rules**:
+- **CRITICAL findings**: Block skill loading, report to user immediately, require fixes before use
+- **WARNING findings**: Allow loading but surface warnings in report, recommend review
+- **INFO findings**: Note in report, no action needed
+- **CLEAN skills**: Safe to load and use
+
+**Important Notes**:
+- Review findings in .md files manually - they may contain documentation examples, not actual code
+- Focus on findings in executable files (.sh, .py, .js, etc.) as highest priority
+- When in doubt, read the file at the reported line number to verify if it's actual dangerous code
+
+### Step 5: Analyze Hook Configuration (if Claude Code project)
 
 ```bash
 # Check for hooks
@@ -89,7 +117,7 @@ ls -1 .claude/commands/ 2>/dev/null
 ls -1 .claude/skills/ 2>/dev/null
 ```
 
-### Step 5: Generate Structured Report
+### Step 6: Generate Structured Report
 
 Provide a **concise summary** using this template:
 
@@ -109,6 +137,20 @@ Provide a **concise summary** using this template:
 
 ⚠️ Missing:
 - [Note any expected but missing docs]
+
+### 🔒 Security Audit (Local Skills)
+**Status**: [CLEAN / WARNINGS / CRITICAL]
+
+[If local skills detected, show audit results here:]
+- ✅ **skill-name**: CLEAN (no issues)
+- ⚠️ **skill-name**: 2 warnings (API key handling, rm -rf)
+- 🚫 **skill-name**: BLOCKED (1 critical: eval() call)
+
+[For blocked skills:]
+**Blocked Skills** (not loaded due to critical security issues):
+- skill-name: [Brief description of critical issue]
+
+**Action Required**: Review and fix critical issues before loading blocked skills.
 
 ### Claude Code Integration
 - **Hooks Configured**: [List hook event types from settings.json]

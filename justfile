@@ -161,6 +161,21 @@ audit-all-skills:
         echo ""; \
     done
 
+# Audit local project skills in .claude/skills/ (used by /prime)
+audit-local-skills:
+    @if [ -d ".claude/skills" ]; then \
+        echo "Scanning local project skills..."; \
+        echo ""; \
+        for skill_dir in .claude/skills/*/; do \
+            if [ -d "$skill_dir" ]; then \
+                python3 {{project_root}}/scripts/audit_local_skill.py "$skill_dir" || true; \
+                echo ""; \
+            fi \
+        done; \
+    else \
+        echo "No .claude/skills/ directory found in current project"; \
+    fi
+
 # ─── Open ──────────────────────────────────────────────────
 
 # Open the observability dashboard in browser

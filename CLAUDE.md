@@ -124,7 +124,7 @@ For implementation tasks:
 
 ### 9. Skills -- Auto-Discoverable Capabilities
 23 skills in global-skills/ with SKILL.md frontmatter. Claude Code discovers and triggers them automatically based on user intent. Key skills:
-- `prime` -- load project context on-demand
+- `prime` -- load project context on-demand (includes automatic security audit of local skills)
 - `knowledge-db` -- persistent cross-session memory
 - `multi-model-tiers` -- configure agent model assignments
 - `code-review`, `test-generator`, `tdd-workflow` -- quality lifecycle
@@ -223,8 +223,17 @@ Defense-in-depth security across 7 layers: permissions > command hooks > prompt 
 just skills-lock          # Generate SHA-256 lock file
 just skills-verify        # Verify skill integrity
 just audit-skill <name>   # Audit one skill
-just audit-all-skills     # Audit all skills
+just audit-all-skills     # Audit all global skills
+just audit-local-skills   # Audit local project skills (.claude/skills/)
 ```
+
+### Prime Integration
+When `/prime` runs, it automatically scans all local project skills in `.claude/skills/` for security issues:
+- Detects critical patterns (eval, os.system, curl|bash)
+- Blocks skills with critical issues
+- Warns about potential concerns (rm -rf, API keys, passwords)
+- Reports findings in the priming report
+- Note: .md files may trigger false positives from documentation examples
 
 ### Security Documentation
 - Full guide: `docs/SECURITY_BEST_PRACTICES.md`
