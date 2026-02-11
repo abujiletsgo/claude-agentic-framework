@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["pyyaml>=6.0.0", "pydantic>=2.0.0"]
+# ///
 """
 claude-hooks - CLI tool for monitoring and managing the circuit breaker system.
 
