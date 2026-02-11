@@ -578,5 +578,20 @@
     "tool_use_id": "toolu_01AEJdT3PWoN1xCA4EjcBQmP",
     "error": "Exit code 1\nrm: /Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md: No such file or directory",
     "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la /Users/tomkwon/.claude/teams/ 2>/dev/null",
+      "description": "Check teams directory"
+    },
+    "tool_use_id": "toolu_015UYBhPomUtSSyUAm6mRBvn",
+    "error": "Exit code 1",
+    "is_interrupt": false
   }
 ]

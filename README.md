@@ -1,6 +1,6 @@
 # Claude Agentic Framework
 
-> Transform Claude Code into an elite autonomous engineering platform with 95% token savings, 23 skills, 33 agents across 3 model tiers, persistent memory, and hybrid security.
+> Transform Claude Code into an elite autonomous engineering platform with 95% token savings, 20 skills, 33 agents across 3 model tiers, persistent memory, and hybrid security.
 
 ## Overview
 
@@ -9,9 +9,9 @@ The **Claude Agentic Framework** is a comprehensive autonomous engineering platf
 ### What You Get
 
 - **15 Comprehensive Guides** covering everything from basic context engineering to advanced multi-agent patterns
-- **25+ Ready-to-Use Commands** for delegation, orchestration, planning, worktrees, and more
-- **34 Agents across 3 Tiers**: 4 Opus (planning/security), 17 Sonnet (implementation), 13 Haiku (validation)
-- **23 Skills** for the full engineering lifecycle (prime, review, test, security, refactor, scaffold, TDD, and more)
+- **21 Ready-to-Use Commands** for delegation, orchestration, planning, worktrees, and more
+- **33 Agents across 3 Tiers**: 4 Opus (planning/security), 17 Sonnet (implementation), 12 Haiku (validation)
+- **20 Skills** for the full engineering lifecycle (review, test, security, refactor, scaffold, TDD, and more)
 - **5 Hook Namespaces**: damage-control, mastery, observability, framework (knowledge/review/guardrails/testing), prompt-hooks
 - **Knowledge Pipeline**: SQLite FTS5 persistent memory for cross-session learning
 - **Continuous Review**: Automated post-commit analysis with findings database
@@ -130,21 +130,20 @@ Repo structure (source of truth):
 │   ├── team/                    # Builder, Validator, Project Skill Generator
 │   │   └── guardrails/          # 8 guardrail agents
 │   └── agbot/                   # 8 domain-specific agents
-├── global-commands/             # 25+ slash commands
+├── global-commands/             # 21 slash commands
 │   ├── prime.md, research.md    # Context & delegation
 │   ├── orchestrate.md, fusion.md # Multi-agent
-│   ├── plan.md, plan_w_team.md  # Planning
+│   ├── plan.md                  # Planning
 │   ├── create-worktree.md       # Git worktrees
 │   └── refine.md, build.md      # Development
-├── global-skills/               # 23 auto-discoverable skills
-│   ├── prime/                   # Context loading
+├── global-skills/               # 20 auto-discoverable skills
 │   ├── knowledge-db/            # Persistent memory (SQLite FTS5)
 │   ├── multi-model-tiers/       # Model tier configuration
 │   ├── code-review/             # Automated review
 │   ├── tdd-workflow/            # Test-driven development
 │   ├── security-scanner/        # Security scanning
-│   ├── worktree-manager-skill/  # Git worktree management
-│   └── ... (16 more skills)
+│   ├── video-processor/         # Video/audio processing
+│   └── ... (14 more skills)
 ├── global-hooks/                # 5 hook namespaces
 │   ├── damage-control/          # Pattern-matching security
 │   ├── mastery/                 # Lifecycle tracking
@@ -554,7 +553,6 @@ Skills are auto-discoverable in `global-skills/`. Invoke via slash command or tr
 
 | Skill | Trigger Phrases | Purpose |
 |-------|----------------|---------|
-| `prime` | "prime yourself", "get context" | Load project context on-demand |
 | `knowledge-db` | "remember this", "search knowledge" | Persistent cross-session memory |
 | `multi-model-tiers` | "configure tiers", "model assignment" | Manage agent model tiers |
 | `code-review` | "review this code" | Automated code review |
@@ -574,8 +572,6 @@ Skills are auto-discoverable in `global-skills/`. Invoke via slash command or tr
 | `downstream-correction` | "fix downstream" | Fix cascading breakage |
 | `verification-checklist` | "verify before shipping" | Pre-completion checks |
 | `video-processor` | "process video" | Video content processing |
-| `worktree-manager-skill` | "manage worktrees" | Git worktree lifecycle |
-| `create-worktree-skill` | "create worktree" | Quick worktree creation |
 | `meta-skill` | "create a skill" | Generate new skills |
 
 ## Commands Reference
@@ -604,31 +600,17 @@ Restore previous session from context bundle.
 ### Delegation Commands
 
 #### `/research "<topic>"`
-Delegate heavy research to specialist sub-agent.
+Delegate heavy research, search, and analysis to specialist sub-agent.
 
 ```bash
 /research "FastAPI authentication best practices"
+/research "database connection initialization patterns"
+/research "security vulnerabilities in auth module"
 ```
 
 **Output**: 2k token summary (sub-agent consumed 45k in isolation).
 
-#### `/search "<pattern>"`
-Delegate codebase search to specialist sub-agent.
-
-```bash
-/search "database connection initialization"
-```
-
-**Output**: List of relevant files + code snippets.
-
-#### `/analyze "<aspect>"`
-Delegate deep analysis to specialist sub-agent.
-
-```bash
-/analyze "security vulnerabilities in auth module"
-```
-
-**Output**: Analysis report + recommendations.
+**Use cases**: Deep research, codebase search, architectural analysis, pattern discovery.
 
 ### Orchestration Commands
 
@@ -664,25 +646,14 @@ Execute task using Recursive Language Model architecture for infinite scale.
 ### Planning Commands
 
 #### `/plan "<goal>"`
-Create a structured plan before implementing.
+Create a structured plan before implementing. Supports optional team coordination for complex tasks.
 
 ```bash
 /plan "add user authentication to the API"
+/plan "refactor the database layer"  # Automatically suggests team if complexity warrants
 ```
 
-#### `/plan_w_team "<goal>"`
-Plan with builder + validator team for implementation tasks.
-
-```bash
-/plan_w_team "refactor the database layer"
-```
-
-#### `/quick-plan "<goal>"`
-Fast lightweight planning for smaller tasks.
-
-```bash
-/quick-plan "add input validation to the form"
-```
+**Features**: Task decomposition, resource estimation, dependency mapping, team recommendations.
 
 ### Development Commands
 

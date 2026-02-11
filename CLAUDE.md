@@ -8,11 +8,11 @@ Consolidated agentic engineering system. One repo, one install, one source of tr
 
 ```
 global-hooks/        5 namespaces: mastery/ observability/ damage-control/ framework/ prompt-hooks/
-global-agents/       33 agents (15 root + 2 team + 8 guardrails + 8 agbot)
-global-commands/     25+ commands + bench/
-global-skills/       23 skills (prime, meta-skill, video-processor, worktree-manager, create-worktree,
-                     code-review, dependency-audit, documentation-writer, error-analyzer, git-workflow,
-                     knowledge-db, multi-model-tiers, performance-profiler, project-scaffolder,
+global-agents/       33 agents (13 root + 4 team + 8 guardrails + 8 agbot)
+global-commands/     21 commands + bench/
+global-skills/       20 skills (meta-skill, video-processor, code-review, dependency-audit,
+                     documentation-writer, error-analyzer, git-workflow, knowledge-db,
+                     multi-model-tiers, performance-profiler, project-scaffolder,
                      refactoring-assistant, security-scanner, test-generator, tdd-workflow,
                      brainstorm-before-code, feasibility-analysis, task-decomposition,
                      downstream-correction, verification-checklist)
@@ -123,15 +123,14 @@ For implementation tasks:
 - Priority: ElevenLabs > OpenAI > pyttsx3 (fallback)
 
 ### 9. Skills -- Auto-Discoverable Capabilities
-23 skills in global-skills/ with SKILL.md frontmatter. Claude Code discovers and triggers them automatically based on user intent. Key skills:
-- `prime` -- load project context on-demand (includes automatic security audit of local skills)
+20 skills in global-skills/ with SKILL.md frontmatter. Claude Code discovers and triggers them automatically based on user intent. Key skills:
 - `knowledge-db` -- persistent cross-session memory
 - `multi-model-tiers` -- configure agent model assignments
 - `code-review`, `test-generator`, `tdd-workflow` -- quality lifecycle
 - `security-scanner`, `dependency-audit` -- security
 - `brainstorm-before-code`, `feasibility-analysis`, `task-decomposition` -- planning
-- `worktree-manager-skill`, `create-worktree-skill` -- git worktrees
 - `meta-skill` -- create new skills from templates
+- `video-processor` -- video/audio processing and transcription
 
 ### 10. Orchestrator -- Primary Coordinator
 - **Orchestrator** (global-agents/orchestrator.md, Opus): Primary coordinator with strategy selection
@@ -143,13 +142,14 @@ For implementation tasks:
 - You give high-level goals -- Orchestrator handles everything
 
 ### 11. Caddy-Assistant -- Support Services
-- **Caddy-Assistant** (global-agents/team/caddy-assistant.md, Haiku): Support assistant for rapid triage
-- Provides skill auditing and security scanning before recommendations
-- Quick classification and context summarization
-- Maintains skill registry and performs preliminary matching
+- **Caddy-Assistant** (global-agents/caddy-assistant.md, Sonnet): Support assistant for infrastructure maintenance
+- Provides skill auditing and security scanning
+- Monitors framework health and detects issues
+- Maintains registry of components and validates configurations
+- Generates documentation and indexes
 - Auditor: `global-hooks/framework/caddy/skill_auditor.py`
 - Config: `data/caddy_config.yaml`
-- Advisory role only -- all recommendations reviewed by Orchestrator
+- Support role only -- no orchestration or coordination
 
 ### 12. Guardrails -- Anti-Loop Protection
 - Anti-loop guardrails in `global-hooks/framework/guardrails/`
@@ -159,10 +159,8 @@ For implementation tasks:
 ## Available Commands (Slash Commands)
 
 ### Core
-- `/prime` -- Load project context
-- `/research` -- Delegate deep research
-- `/analyze` -- Deep code analysis
-- `/search` -- Codebase search delegation
+- `/prime` -- Load project context (includes security audit and team assessment)
+- `/research` -- Delegate deep research, analysis, and search
 - `/loadbundle` -- Restore session from bundle
 
 ### Orchestration
@@ -171,9 +169,7 @@ For implementation tasks:
 - `/fusion` -- Best-of-N fusion execution
 
 ### Planning
-- `/plan` -- Structured planning
-- `/plan_w_team` -- Plan with builder + validator team
-- `/quick-plan` -- Fast lightweight planning
+- `/plan` -- Structured planning with optional team coordination
 
 ### Development
 - `/build` -- Build/compile project

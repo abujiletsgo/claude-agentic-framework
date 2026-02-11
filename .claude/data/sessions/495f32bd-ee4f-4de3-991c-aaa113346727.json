@@ -22,6 +22,15 @@
     "research agent teams from claude.ai docs",
     "work in parallel and let's get this whole system implemented. please check over our current system to make sure it doesn't do the work twice and make it all loopy. also let's create a new agent that updates logs / memory / like an assitant that keeps every teamembers context but summarizes after a sucessful work done by team member saving context windows for the main agent to understand how everything is running. and do a full review of the claude-agentc-framework and maeksure that nothing is overlapping, all systematic and dynamic tasks /  prompts and systems are all very specialized and delgated but connected and managed by different but specific agents. i need this team to have a clear R&R with clear hierchy with efficient communication systems with each others especially when calling out tools and skills as well. caddy can have an assitant of it's own to make caddy's work more effective and efficient. ",
     "yes fix it",
-    "yes change it to sonnet"
+    "yes change it to sonnet",
+    "test the orchestrator",
+    "yes run it let's test the effectiveness. so design a good test and let's get a full report on it. ",
+    "yes fix the P0 issues",
+    "test multi-agent coordination",
+    "yes commit it",
+    "yes commit it",
+    "/all_tools ",
+    "/all_tools ",
+    "continue, but i realized there are many duplicate commands and tools? please go over the whole thing and make an update and when any code update happens, update the docs ofccourse"
   ]
 }

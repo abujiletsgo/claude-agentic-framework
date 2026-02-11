@@ -1260,5 +1260,36 @@
       "is_interrupt": false,
       "logged_at": "2026-02-12T01:24:13.217717"
     }
+  },
+  {
+    "timestamp": "2026-02-12T01:58:47.970449",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_015UYBhPomUtSSyUAm6mRBvn",
+    "tool_input": {
+      "command": "ls -la /Users/tomkwon/.claude/teams/ 2>/dev/null",
+      "description": "Check teams directory"
+    },
+    "error": "Exit code 1",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls -la /Users/tomkwon/.claude/teams/ 2>/dev/null",
+        "description": "Check teams directory"
+      },
+      "tool_use_id": "toolu_015UYBhPomUtSSyUAm6mRBvn",
+      "error": "Exit code 1",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T01:58:47.970449"
+    }
   }
 ]
