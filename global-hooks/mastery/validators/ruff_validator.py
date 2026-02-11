@@ -9,8 +9,8 @@ Ruff Linter Validator for Claude Code PostToolUse Hook
 Runs `uvx ruff check` on individual Python files after Write operations.
 
 Outputs JSON decision for Claude Code PostToolUse hook:
-- {"decision": "block", "reason": "..."} to block and retry
-- {} to allow completion
+- {"ok": false, "reason": "..."} to block and retry
+- {"ok": true, "reason": "..."} to allow completion
 """
 import json
 import logging
@@ -53,7 +53,7 @@ def main():
     # Only run for Python files
     if not file_path.endswith(".py"):
         logger.info("Skipping non-Python file")
-        print(json.dumps({}))
+        print(json.dumps({"ok": True, "reason": "Skipping non-Python file"}))
         return
 
     # Run uvx ruff check on the single file
@@ -75,7 +75,7 @@ def main():
 
         if result.returncode == 0:
             logger.info("RESULT: PASS - Lint check successful")
-            print(json.dumps({}))
+            print(json.dumps({"ok": True, "reason": "Lint check passed"}))
         else:
             logger.info(f"RESULT: BLOCK (exit code {result.returncode})")
             if stderr:
@@ -83,19 +83,19 @@ def main():
                     logger.info(f"  stderr: {line}")
             error_output = stdout or stderr or "Lint check failed"
             print(json.dumps({
-                "decision": "block",
+                "ok": False,
                 "reason": f"Lint check failed:\n{error_output[:500]}"
             }))
 
     except subprocess.TimeoutExpired:
         logger.info("RESULT: BLOCK (timeout)")
         print(json.dumps({
-            "decision": "block",
+            "ok": False,
             "reason": "Lint check timed out after 120 seconds"
         }))
     except FileNotFoundError:
         logger.info("RESULT: PASS (uvx ruff not found, skipping)")
-        print(json.dumps({}))
+        print(json.dumps({"ok": True, "reason": "uvx ruff not found, skipping"}))
 
 
 if __name__ == "__main__":

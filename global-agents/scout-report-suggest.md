@@ -2,6 +2,7 @@
 name: scout-report-suggest
 description: Use proactively to scout codebase issues, identify problem locations, and suggest resolutions. Specialist for read-only analysis and reporting without making changes.
 tools: Read, Glob, Grep
+model: sonnet
 color: blue
 ---
 

@@ -9,8 +9,8 @@ Type Checker Validator for Claude Code PostToolUse Hook
 Runs `uvx ty check <file_path>` for type checking on single Python files.
 
 Outputs JSON decision for Claude Code PostToolUse hook:
-- {"decision": "block", "reason": "..."} to block and retry
-- {} to allow completion
+- {"ok": false, "reason": "..."} to block and retry
+- {"ok": true, "reason": "..."} to allow completion
 """
 import json
 import logging
@@ -53,7 +53,7 @@ def main():
     # Only run for Python files
     if not file_path.endswith(".py"):
         logger.info("Skipping non-Python file")
-        print(json.dumps({}))
+        print(json.dumps({"ok": True, "reason": "Skipping non-Python file"}))
         return
 
     # Run uvx ty check on the single file
@@ -75,7 +75,7 @@ def main():
 
         if result.returncode == 0:
             logger.info("RESULT: PASS - Type check successful")
-            print(json.dumps({}))
+            print(json.dumps({"ok": True, "reason": "Type check passed"}))
         else:
             logger.info(f"RESULT: BLOCK (exit code {result.returncode})")
             if stderr:
@@ -83,19 +83,19 @@ def main():
                     logger.info(f"  ERROR: {line}")
             error_output = stderr or stdout or "Type check failed"
             print(json.dumps({
-                "decision": "block",
+                "ok": False,
                 "reason": f"Type check failed:\n{error_output[:500]}"
             }))
 
     except subprocess.TimeoutExpired:
         logger.info("RESULT: BLOCK (timeout)")
         print(json.dumps({
-            "decision": "block",
+            "ok": False,
             "reason": "Type check timed out after 120 seconds"
         }))
     except FileNotFoundError:
         logger.info("RESULT: PASS (uvx ty not found, skipping)")
-        print(json.dumps({}))
+        print(json.dumps({"ok": True, "reason": "uvx ty not found, skipping"}))
 
 
 if __name__ == "__main__":

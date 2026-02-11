@@ -9,6 +9,35 @@ from pathlib import Path
 from utils.constants import ensure_session_log_dir
 
 
+# Agent-to-model-tier lookup (kept in sync with data/model_tiers.yaml)
+_AGENT_TIERS = {
+    "orchestrator": "opus", "project-architect": "opus",
+    "critical-analyst": "opus", "rlm-root": "opus", "caddy": "opus",
+    "builder": "sonnet", "researcher": "sonnet", "meta-agent": "sonnet",
+    "project-skill-generator": "sonnet", "scout-report-suggest": "sonnet",
+    "llm-ai-agents-and-eng-research": "sonnet", "fetch-docs-sonnet45": "sonnet",
+    "combo-optimizer": "sonnet", "strategy-advisor": "sonnet",
+    "market-researcher": "sonnet", "performance-analyzer": "sonnet",
+    "risk-assessor": "sonnet", "circuit-breaker-agent": "sonnet",
+    "cli-tool-agent": "sonnet", "integration-agent": "sonnet",
+    "state-manager-agent": "sonnet",
+    "validator": "haiku", "create-worktree-subagent": "haiku",
+    "scout-report-suggest-fast": "haiku", "docs-scraper": "haiku",
+    "fetch-docs-haiku45": "haiku", "hello-world-agent": "haiku",
+    "work-completion-summary": "haiku", "data-ingestion-helper": "haiku",
+    "trader-data-validator": "haiku", "config-agent": "haiku",
+    "docs-agent": "haiku", "qa-validator-agent": "haiku",
+    "test-agent": "haiku",
+}
+
+
+def _resolve_model_tier(agent_type: str) -> str:
+    """Look up model tier for an agent type. Returns 'sonnet' as default."""
+    # Normalize: strip path prefix, lowercase, strip .md
+    name = agent_type.rsplit("/", 1)[-1].replace(".md", "").lower()
+    return _AGENT_TIERS.get(name, "sonnet")
+
+
 def main():
     try:
         # Read JSON input from stdin
@@ -16,6 +45,10 @@ def main():
 
         # Extract session_id
         session_id = input_data.get('session_id', 'unknown')
+
+        # Enrich with model tier info
+        agent_type = input_data.get('agent_type', '')
+        input_data['model_tier'] = _resolve_model_tier(agent_type)
 
         # Ensure session log directory exists
         log_dir = ensure_session_log_dir(session_id)

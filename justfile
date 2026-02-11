@@ -110,6 +110,57 @@ hooks:
     @echo "=== damage-control ===" && ls -1 {{project_root}}/global-hooks/damage-control/*.py 2>/dev/null | xargs -I{} basename {} .py
     @echo "=== framework ===" && ls -1 {{project_root}}/global-hooks/framework/*.py 2>/dev/null | xargs -I{} basename {} .py
 
+# ─── Model Tiers ─────────────────────────────────────────
+
+# Show model tier assignments and distribution dashboard
+model-tiers:
+    bash {{project_root}}/scripts/model-tiers.sh
+
+# ─── Cost Tracking ────────────────────────────────────────────
+
+# Show model usage costs for the last week
+model-usage:
+    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --last-week --by-agent
+
+# Show today's costs
+model-usage-today:
+    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --today --by-agent
+
+# Show daily cost breakdown
+model-usage-daily days="7":
+    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --daily {{days}}
+
+# Show cost projection
+model-usage-projection days="7":
+    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --projection {{days}}
+
+# Generate sample cost data for testing
+model-usage-sample days="7":
+    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --generate-sample {{days}}
+
+# ─── Security ─────────────────────────────────────────────
+
+# Generate skills.lock with SHA-256 hashes of all skill files
+skills-lock:
+    python3 {{project_root}}/scripts/generate_skills_lock.py
+
+# Verify skills integrity against skills.lock
+skills-verify:
+    uv run {{project_root}}/global-hooks/framework/security/verify_skills.py
+
+# Audit a single skill for security issues (e.g. just audit-skill code-review)
+audit-skill skill:
+    python3 {{project_root}}/scripts/audit_skill.py {{skill}}
+
+# Audit all installed skills for security issues
+audit-all-skills:
+    @for skill in {{project_root}}/global-skills/*/; do \
+        name=$(basename "$skill"); \
+        echo "--- $name ---"; \
+        python3 {{project_root}}/scripts/audit_skill.py "$name" || true; \
+        echo ""; \
+    done
+
 # ─── Open ──────────────────────────────────────────────────
 
 # Open the observability dashboard in browser

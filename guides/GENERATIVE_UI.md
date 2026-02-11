@@ -1,5 +1,7 @@
 # Step 14: Generative UI - High-Bandwidth Communication
 
+> **2026 Update**: Generative UI works with the observability dashboard (apps/observability/) and 11 output styles. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Communication Bottleneck
 
 **You have**: Mission Control dashboard (Step 13), agent fleets (Step 11-12)

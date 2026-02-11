@@ -1,8 +1,12 @@
-# 🎯 Elite Agentic Engineering - Master Summary
+# Elite Agentic Engineering - Master Summary
+
+**Version**: 2.0.0 (February 2026)
 
 ## You've Mastered the Complete Progression
 
 From "beginner with bloated context" to "elite engineer with automated agent fleets".
+
+> **2026 Update**: The framework now includes 23 skills, 33 agents across 3 model tiers, persistent knowledge database, continuous review, prompt hooks, and worktree management. See [docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md) for full details.
 
 ---
 
@@ -192,109 +196,100 @@ From "beginner with bloated context" to "elite engineer with automated agent fle
 
 ## Your Arsenal
 
-### Commands
+### Commands (25+)
 ```bash
 # Context Management
 /prime                    # Load project context (2-4k tokens)
 /loadbundle <session-id>  # Restore session intelligence
+/start                    # Initialize a new session
 
 # Delegation
 /research "topic"         # Delegate heavy research (96% savings)
 /search "pattern"         # Delegate codebase searches
 /analyze "aspect"         # Delegate deep analysis
+/question "query"         # Ask focused question to sub-agent
+
+# Planning
+/plan "goal"              # Structured planning
+/plan_w_team "goal"       # Plan with builder + validator team
+/quick-plan "goal"        # Fast lightweight planning
+
+# Development
+/build                    # Build/compile project
+/refine "instructions"    # Iteratively refine output
+/sentient                 # Advanced reasoning mode
 
 # Agent Teams (Executive Level)
 /orchestrate "<goal>"     # Orchestrator coordinates multi-agent workflows
 
-# Z-Threads (Zero Touch)
-/z-thread implement-feature "<description>"    # Prompt → production (zero touch)
-/z-thread security-audit "path=<path>"        # Autonomous security audit
-/z-thread optimize-performance "target=<id>"  # Autonomous optimization
+# Worktrees (NEW in 2026)
+/create-worktree          # Create git worktree for parallel development
+/list-worktrees           # List all active worktrees
+/remove-worktree          # Remove a worktree
 
 # L-Threads (Long-Running, Loop-Safe)
 claude -p "long-migration.md" --max-turns 50 --auto-continue    # Headless L-Thread
 nohup claude -p "task.md" --max-turns 200 > task.log 2>&1 &    # Background L-Thread
-cat _migration_status.json | jq                                 # Check progress
 
 # F-Threads (Best of N Fusion)
 /fusion "Implement rate limiter for the API"                    # 3 agents, fuse best
-/fusion "Implement OAuth2 authentication"                       # Critical = use F-Thread
 
 # RLM (Recursive Language Model - Infinite Context)
 /rlm "Find the performance bottleneck in checkout"              # Programmatic exploration
-/rlm "Audit entire codebase for SQL injection"                  # Scales to millions of tokens
 
-# Ralph Loops (Stateless Resampling - retry until done)
-~/.claude/scripts/ralph-harness.sh "Fix all bugs" --test-cmd "npm test"  # Loop until tests pass
-~/.claude/scripts/ralph-harness.sh "Add OAuth2" --max-loops 10           # Max 10 attempts
-
-# Plugin Management
-/plugin install <org>/<name>                   # Install plugin (2 minutes)
-/plugin list                                   # List installed plugins
-/plugin update <name>                          # Update plugin
-
-# Orchestration (E2B Sandboxes)
-\sandbox <prompt>         # Simple isolated task
-\agent-sandboxes:plan-build-host-test "<prompt>" <id>  # Full-stack app
-
-# Drop Zones (File-System Automation)
-# Just drop files in configured folders!
+# Utility
+/git_status               # Quick git status
+/all_tools                # List available tools
+/load_ai_docs             # Load AI documentation
+/update_status_line       # Update status line display
+/convert_paths_absolute   # Convert relative to absolute paths
 ```
 
-### File Locations
-```
-~/.claude/
-├── settings.json                      # Hook configuration
-├── CONTEXT_ENGINEERING.md             # Context guide
-├── MULTI_AGENT_ORCHESTRATION.md       # Orchestration guide
-├── AGENTIC_DROP_ZONES.md              # Drop zones guide
-├── AGENTIC_LAYER.md                   # Singularity guide
-├── AGENT_TEAMS.md                     # Agent teams guide
-├── Z_THREADS_AND_PLUGINS.md           # Z-Threads + plugins guide
-├── MISSION_CONTROL.md                 # Mission Control guide
-├── GENERATIVE_UI.md                   # Generative UI guide
-├── SELF_CORRECTING_AGENTS.md          # Self-correcting patterns
-├── L_THREADS.md                       # L-Threads guide (loop-safe)
-├── F_THREADS.md                       # F-Threads guide (Best of N)
-├── RLM_ARCHITECTURE.md                # RLM guide (Infinite Context)
-├── RALPH_LOOPS.md                     # Ralph Loops guide (Stateless Resampling)
-├── MASTER_SUMMARY.md                  # This file
-│
-├── commands/
-│   ├── prime.md                       # Context priming
-│   ├── loadbundle.md                  # Session restoration
-│   ├── research.md                    # Research delegation
-│   ├── search.md                      # Search delegation
-│   ├── analyze.md                     # Analysis delegation
-│   ├── orchestrate.md                 # Agent team orchestration
-│   ├── fusion.md                      # F-Thread (Best of N)
-│   └── rlm.md                         # RLM (Infinite Context)
-│
-├── skills/
-│   ├── prime/SKILL.md                 # Priming skill
-│   └── agent-sandboxes/               # E2B orchestration
-│
-├── agents/
-│   ├── researcher.md                  # Research sub-agent
-│   ├── orchestrator.md                # Lead agent (Orchestrator)
-│   └── rlm-root.md                    # RLM Root Controller
-│
-├── hooks/
-│   ├── context-bundle-logger.py       # Bundle logging
-│   ├── damage-control/                # Security hooks
-│   └── validators/
-│       └── check_lthread_progress.py  # L-Thread progress (non-blocking)
-│
-├── templates/
-│   └── long-migration.md              # L-Thread example
-│
-└── bundles/                           # Session snapshots
-    └── <session-id>.json
+### File Locations (v2.0.0)
 
-~/agentic-drop-zones/                  # Drop zone system
-├── sfs_agentic_drop_zone.py           # Main watcher
-├── drops.yaml                         # Zone configuration
-└── agentic_drop_zone/                 # Drop folders
+Source of truth is the repo. The installer symlinks into `~/.claude/`.
+
+```
+Repo: ~/Documents/claude-agentic-framework/
+├── global-agents/                     # 33 agents (15 root + team + guardrails + agbot)
+│   ├── orchestrator.md                # Lead coordinator (Opus)
+│   ├── researcher.md                  # Research specialist (Sonnet)
+│   ├── rlm-root.md                    # Root controller (Opus)
+│   ├── project-architect.md           # Project analysis (Opus)
+│   ├── critical-analyst.md            # Critical thinking (Opus)
+│   ├── team/builder.md                # Implementation (Sonnet)
+│   ├── team/validator.md              # Verification (Haiku)
+│   └── team/guardrails/               # 8 guardrail agents
+│
+├── global-commands/                   # 25+ slash commands
+│   ├── prime.md, research.md, search.md, analyze.md
+│   ├── orchestrate.md, fusion.md, rlm.md
+│   ├── plan.md, plan_w_team.md, quick-plan.md
+│   ├── build.md, refine.md, question.md, sentient.md
+│   └── create-worktree.md, list-worktrees.md, remove-worktree.md
+│
+├── global-skills/                     # 23 auto-discoverable skills
+│   ├── prime/, knowledge-db/, multi-model-tiers/
+│   ├── code-review/, test-generator/, tdd-workflow/
+│   ├── security-scanner/, dependency-audit/
+│   ├── worktree-manager-skill/, create-worktree-skill/
+│   └── meta-skill/ (+ 13 more)
+│
+├── global-hooks/                      # 5 hook namespaces
+│   ├── damage-control/                # Pattern-matching security
+│   ├── mastery/                       # Lifecycle tracking
+│   ├── observability/                 # Monitoring & metrics
+│   ├── framework/                     # Knowledge, review, guardrails, testing
+│   └── prompt-hooks/                  # LLM semantic validation docs
+│
+├── data/                              # Runtime data
+│   ├── knowledge-db/                  # SQLite knowledge database
+│   └── model_tiers.yaml              # Centralized tier config
+│
+├── guides/                            # 15 engineering guides
+├── apps/observability/                # Vue 3 dashboard + Bun server
+├── templates/                         # settings.json template + L-thread
+└── docs/                              # 2026 upgrade guide
 ```
 
 ---
@@ -551,6 +546,14 @@ You are now an **Elite Agentic Engineer**:
 │  ✅ F-Threads (Best of N, ~95% optimal)         │
 │  ✅ RLM (infinite context, 99% attention)       │
 │  ✅ Ralph Loops (zero rot, stateless retry)     │
+│  ✅ 23 Skills (full engineering lifecycle)       │
+│  ✅ Knowledge DB (persistent cross-session)     │
+│  ✅ Continuous Review (post-commit analysis)    │
+│  ✅ Multi-Model Tiers (50-60% cost savings)     │
+│  ✅ Prompt Hooks (hybrid LLM security)          │
+│  ✅ Strategic Agents (architect + analyst)       │
+│  ✅ Git Worktrees (parallel development)        │
+│  ✅ Anti-Loop Guardrails (agent safety)         │
 └─────────────────────────────────────────────────┘
 ```
 

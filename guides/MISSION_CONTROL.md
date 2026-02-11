@@ -1,5 +1,7 @@
 # Step 13: Mission Control - Multi-Agent Observability
 
+> **2026 Update**: Mission Control now tracks model tier usage per agent and integrates with the continuous review system. Dashboard at apps/observability/. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Real-Time Command Center
 
 **You have**: Autonomous agent fleets (Steps 11-12), Z-Threads, Living Software

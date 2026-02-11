@@ -5,49 +5,65 @@ Technical details, command syntax, and configuration reference.
 ## Command Syntax
 
 ### Create Worktree
-```bash
-/create_worktree <branch-name> [port-offset]
+```
+/create-worktree <feature-name> [port-offset]
 ```
 
 **Parameters:**
-- `branch-name` (required) - Name of the git branch
-- `port-offset` (optional) - Port offset number (default: auto-calculated)
+- `feature-name` (required) - Name for the feature branch and worktree directory
+  - Allowed: `a-z A-Z 0-9 . _ -` only
+  - Length: 2-50 characters
+  - No leading dots, no `..`, no `/`, no shell metacharacters
+- `port-offset` (optional) - Port offset number, 0-99 (default: auto-calculated)
 
-**Example:**
-```bash
-/create_worktree feature-auth
-/create_worktree hotfix-bug 3
+**Examples:**
+```
+/create-worktree add-auth
+/create-worktree fix-bug 3
 ```
 
----
+**Rejected names** (validation will block these):
+```
+feature/auth     # contains /
+my feature       # contains space
+../escape        # path traversal
+.hidden          # leading dot
+a                # too short
+```
 
 ### List Worktrees
-```bash
-/list_worktrees
+```
+/list-worktrees
 ```
 
 **Parameters:** None
 
 **Output includes:**
-- Worktree paths
+- Worktree paths and branches
 - Port configurations
 - Service status with PIDs
+- Whether .claude/settings.json is isolated
 - Access URLs
-- Quick commands
-
----
+- Quick management commands
 
 ### Remove Worktree
-```bash
-/remove_worktree <branch-name>
+```
+/remove-worktree <feature-name> [--force]
 ```
 
 **Parameters:**
-- `branch-name` (required) - Name of the worktree to remove
+- `feature-name` (required) - Name of the worktree to remove (same naming rules as create)
+- `--force` (optional) - Force removal even with uncommitted changes
 
-**Example:**
-```bash
-/remove_worktree feature-auth
+**Behavior:**
+- Default (no `--force`): Checks for uncommitted changes and aborts if found
+- With `--force`: Warns about uncommitted changes but proceeds with removal
+- Process shutdown: Uses SIGTERM first, SIGKILL only as fallback, with ownership checks
+
+**Examples:**
+```
+/remove-worktree add-auth           # Graceful (aborts if dirty)
+/remove-worktree add-auth --force   # Force (removes even if dirty)
 ```
 
 ---
@@ -73,99 +89,94 @@ CLIENT_PORT = 5173 + (offset * 10)
 
 ### Auto-calculated Offsets
 When no port offset is specified, the system:
-1. Lists existing worktrees
-2. Finds highest used offset
-3. Increments by 1
-4. Uses that as the new offset
+1. Lists existing worktrees via `git worktree list`
+2. Counts non-main worktrees
+3. Uses (count + 1) as the new offset
 
 ---
 
 ## Directory Structure
 
-### Main Repository
+### Worktree Placement (sibling directories)
 ```
-project/
-├── .claude/
-│   ├── settings.json
-│   └── commands/
-├── .env
-├── server/
-└── client/
+~/projects/
+  my-project/                    # Main repo (offset 0)
+    .claude/settings.json        # Main config
+    .env
+    apps/server/
+    apps/client/
+  my-project-feature-auth/       # Worktree (offset 1)
+    .claude/settings.json        # Isolated config (ports adjusted)
+    .worktree-pids/              # PID files for safe process management
+      server.pid                 # Tracked server process
+      client.pid                 # Tracked client process
+    .env                         # Copied from main
+    apps/server/.env             # SERVER_PORT=4010
+    apps/client/.env             # VITE_PORT=5183
+  my-project-fix-bug/            # Worktree (offset 2)
+    .claude/settings.json        # Isolated config (ports adjusted)
+    .worktree-pids/              # PID files for safe process management
+    .env
+    apps/server/.env             # SERVER_PORT=4020
+    apps/client/.env             # VITE_PORT=5193
 ```
 
-### Worktree Structure
+### Legacy Placement (trees/ subdirectory)
+Some existing worktrees may use the older `trees/` convention:
 ```
-project/
-└── trees/
-    └── <branch-name>/
-        ├── .claude/
-        │   └── settings.json (isolated config)
-        ├── .env (unique ports)
-        ├── server/
-        └── client/
+my-project/
+  trees/
+    feature-auth/
+    fix-bug/
 ```
+
+The remove command checks both locations.
 
 ---
 
 ## Configuration Files
 
-### .env (Worktree-specific)
-```env
-VITE_SERVER_URL=http://localhost:[SERVER_PORT]
-VITE_CLIENT_PORT=[CLIENT_PORT]
-SERVER_PORT=[SERVER_PORT]
-```
-
 ### .claude/settings.json (Worktree-specific)
+
+Copied from the parent project with port adjustments applied:
+
 ```json
 {
+  "permissions": { "..." },
   "hooks": {
-    "userPromptSubmit": {
-      "script": "...",
-      "env": {
-        "AGENT_SERVER_URL": "http://localhost:[SERVER_PORT]"
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run /path/to/framework/global-hooks/observability/send_event.py ...",
+            "timeout": 5
+          }
+        ]
       }
-    }
+    ]
   }
 }
 ```
 
----
+Port references within the settings.json (e.g., `AGENT_SERVER_URL` environment variables in hook configs) are updated to use the worktree-specific ports.
 
-## Service Management
+### .env (Root - copied from parent)
+Contains API keys and shared configuration. Copied as-is from the main project.
 
-### What Runs in a Worktree
-1. **Server** - Backend API (Express/Node)
-2. **Client** - Frontend dev server (Vite)
+### apps/server/.env (Worktree-specific)
+```env
+SERVER_PORT=<calculated SERVER_PORT>
+DB_PATH=events.db
+```
 
-### Background Process Management
-- Services run in detached background processes
-- PIDs tracked for process management
-- Automatic cleanup on removal
-- Force-kill on stuck processes
-
-### Service States
-- **Running** - Process active with valid PID
-- **Stopped** - No process running
-- **Zombie** - PID exists but process unresponsive
-
----
-
-## Git Worktree Fundamentals
-
-### What is a Git Worktree?
-A git worktree is an additional working directory attached to the same repository. Multiple worktrees can exist simultaneously, each checked out to different branches.
-
-### Benefits
-- Work on multiple branches simultaneously
-- No need to stash/switch branches
-- Isolated development environments
-- Test multiple features in parallel
-
-### Limitations
-- Each branch can only be checked out in one worktree
-- Worktrees share git history/objects
-- Disk space required for each copy
+### apps/client/.env (Worktree-specific)
+```env
+VITE_PORT=<calculated CLIENT_PORT>
+VITE_API_URL=http://localhost:<calculated SERVER_PORT>
+VITE_WS_URL=ws://localhost:<calculated SERVER_PORT>/stream
+VITE_MAX_EVENTS_TO_DISPLAY=100
+```
 
 ---
 
@@ -176,95 +187,69 @@ Each worktree has:
 | Feature | Isolation Level | Notes |
 |---------|----------------|-------|
 | **File System** | Complete | Separate working directory |
-| **Ports** | Complete | Unique port allocation |
-| **Configuration** | Complete | Own .env and settings.json |
-| **Database** | Configurable | Can use separate DBs |
+| **Ports** | Complete | Unique port allocation per offset |
+| **.claude/settings.json** | Complete | Own config with adjusted ports |
+| **Environment** | Complete | Own .env files |
+| **Database** | Complete | Own events.db (relative path) |
+| **Process Tracking** | Complete | Own .worktree-pids/ directory |
 | **Dependencies** | Complete | Own node_modules |
 | **Git History** | Shared | Same repository |
 | **Git Config** | Shared | Same git settings |
+| **Framework Hooks** | Shared | Same hook scripts (absolute paths) |
 
 ---
 
-## Related Capabilities
+## Parallel Development Workflow
 
-### Main Repository
-- Default environment
-- Uses ports 4000 and 5173
-- No special setup needed
-- Can run alongside worktrees
+```bash
+# 1. Main development in primary workspace
+cd ~/projects/my-project
 
-### Parallel Development
-- Run main + multiple worktrees simultaneously
-- Each fully isolated
-- No conflicts between environments
-- Test features against different bases
+# 2. Create worktree for a feature
+/create-worktree add-auth
 
-### Branch Preservation
-- Removing a worktree doesn't delete the branch
-- Branch still exists in git
-- Can recreate worktree anytime
-- Safe to cleanup unused worktrees
+# 3. In a separate terminal, open Claude Code in the worktree
+cd ~/projects/my-project-add-auth
+claude
 
-### Service Lifecycle
-- Services start automatically on creation
-- Run in background until removal
-- Can be restarted manually if needed
-- Stopped automatically on removal
+# 4. Work on feature independently
+# Both instances can run simultaneously with different ports
+
+# 5. When done, merge back from main project
+cd ~/projects/my-project
+git merge add-auth
+
+# 6. Clean up worktree
+/remove-worktree add-auth
+```
 
 ---
 
 ## Best Practices
 
 ### When to Create Worktrees
-✓ Testing multiple features simultaneously
-✓ Reviewing PRs while working on features
-✓ Hot-fixing production while developing
-✓ Running integration tests in isolation
+- Testing multiple features simultaneously
+- Reviewing PRs while working on features
+- Hot-fixing production while developing
+- Running integration tests in isolation
+- Comparing behavior between branches
 
 ### When NOT to Create Worktrees
-✗ Simple branch switching (use git checkout)
-✗ Temporary file viewing (use git show)
-✗ Quick edits (stash and switch)
+- Simple branch switching (use `git checkout`)
+- Temporary file viewing (use `git show`)
+- Quick edits (stash and switch)
 
 ### Cleanup Recommendations
 - Remove worktrees when feature is merged
-- Don't let unused worktrees accumulate
-- Regular audit with `/list_worktrees`
+- Do not let unused worktrees accumulate
+- Regular audit with `/list-worktrees`
 - Free up ports for active development
 
 ### Naming Conventions
-- Use descriptive branch names
-- Avoid special characters
-- Keep names concise
-- Match branch naming scheme
-
----
-
-## Technical Implementation
-
-### Creation Process
-1. Validate branch exists
-2. Calculate/verify port offset
-3. Create git worktree
-4. Copy configuration templates
-5. Update ports in configs
-6. Install dependencies
-7. Start services
-8. Verify startup
-9. Report access info
-
-### Removal Process
-1. Find processes on worktree ports
-2. Kill server process
-3. Kill client process
-4. Remove git worktree
-5. Clean up directories
-6. Validate removal
-7. Report results
-
-### Status Checking
-1. List git worktrees
-2. Read configuration for each
-3. Check if processes running
-4. Verify port accessibility
-5. Generate comprehensive report
+- Use descriptive feature names: `add-auth`, `fix-login-bug`, `refactor-api`
+- **Allowed characters only**: `a-z A-Z 0-9 . _ -`
+- **Blocked**: `/`, spaces, shell metacharacters, `..`, leading dots
+- **Length**: 2-50 characters
+- Keep names concise but meaningful
+- Match your team's branch naming scheme
+- Validate with: `bash scripts/validate_name.sh "my-name"`

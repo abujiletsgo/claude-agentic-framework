@@ -18,6 +18,13 @@ This script provides utilities for:
 Requirements:
 - FFmpeg must be installed on the system
 - OpenAI Whisper must be installed (pip install openai-whisper)
+
+Security:
+- Output paths are restricted to the current working directory
+- Path traversal ('..') is blocked in both input and output paths
+- Special files (/dev/*, /proc/*, /sys/*) are blocked for input
+- System directories are blocked for output
+- Files are never silently overwritten (use --force to opt in)
 """
 
 import os
@@ -29,6 +36,15 @@ from typing import Optional
 
 import click
 import ffmpeg
+
+
+# System directories that must never be written to
+BLOCKED_SYSTEM_DIRS = [
+    "/bin", "/sbin", "/etc", "/usr", "/var", "/sys", "/proc", "/dev",
+    "/boot", "/lib", "/lib64", "/opt",
+    # macOS system directories
+    "/System", "/Library", "/private",
+]
 
 
 def check_ffmpeg() -> bool:
@@ -59,23 +75,104 @@ def check_whisper() -> bool:
         return False
 
 
-def validate_input_file(file_path: str) -> Path:
-    """Validate that the input file exists."""
-    path = Path(file_path)
+def validate_input_path(file_path: str) -> Path:
+    """Validate that the input file exists, is a regular file, and is safe to read.
+
+    Blocks special files (e.g., /dev/*, /proc/*) and verifies the file is
+    a regular, readable file.
+    """
+    path = Path(file_path).resolve()
+
+    # Block special/system file paths
+    blocked_input_dirs = ["/dev", "/proc", "/sys"]
+    for blocked in blocked_input_dirs:
+        if str(path).startswith(blocked):
+            raise click.ClickException(
+                f"Cannot read from special directory: {blocked}"
+            )
+
+    # Block path traversal in the raw input string
+    if ".." in file_path:
+        raise click.ClickException("Path traversal ('..') is not allowed in input paths")
+
     if not path.exists():
         raise click.ClickException(f"Input file does not exist: {file_path}")
     if not path.is_file():
-        raise click.ClickException(f"Input path is not a file: {file_path}")
+        raise click.ClickException(f"Input path is not a regular file: {file_path}")
+    if not os.access(path, os.R_OK):
+        raise click.ClickException(f"Input file is not readable: {file_path}")
+
+    # Reject symlinks pointing outside CWD as a safety measure
+    raw_path = Path(file_path)
+    if raw_path.is_symlink():
+        link_target = raw_path.resolve()
+        cwd = Path.cwd().resolve()
+        if not str(link_target).startswith(str(cwd)):
+            raise click.ClickException(
+                f"Symlinked input file points outside the working directory: {link_target}"
+            )
+
     return path
 
 
+def validate_output_path(output_path: str) -> Path:
+    """Validate that the output path is safe to write to.
+
+    Ensures:
+    - No path traversal ('..') in the path
+    - The resolved path stays within the current working directory
+    - The path does not target blocked system directories
+    """
+    # Block path traversal in the raw string
+    if ".." in output_path:
+        raise click.ClickException(
+            "Path traversal ('..') is not allowed in output paths"
+        )
+
+    abs_path = Path(output_path).resolve()
+    cwd = Path.cwd().resolve()
+
+    # Output must be within CWD
+    if not str(abs_path).startswith(str(cwd)):
+        raise click.ClickException(
+            f"Output path must be within the current working directory ({cwd}).\n"
+            f"Resolved path: {abs_path}"
+        )
+
+    # Block system directories
+    for blocked in BLOCKED_SYSTEM_DIRS:
+        if str(abs_path).startswith(blocked):
+            raise click.ClickException(
+                f"Cannot write to system directory: {blocked}"
+            )
+
+    return abs_path
+
+
+def check_overwrite(output_path: Path, force: bool) -> None:
+    """Check if the output file already exists and handle overwrite logic.
+
+    If force=True, silently overwrites. Otherwise, prompts the user for
+    confirmation and aborts if they decline.
+    """
+    if output_path.exists():
+        if not force:
+            click.echo(f"WARNING: Output file already exists: {output_path}")
+            if not click.confirm("Overwrite?", default=False):
+                raise click.Abort()
+            click.echo("Overwriting existing file...")
+
+
 @click.group()
-@click.version_option(version="1.0.0")
+@click.version_option(version="1.1.0")
 def cli():
     """
     Video Processor - Process videos with FFmpeg and Whisper.
 
     A unified tool for video format conversion, audio extraction, and transcription.
+
+    All output files are restricted to the current working directory for safety.
+    Use --force on any command to overwrite existing files without prompting.
     """
     pass
 
@@ -89,7 +186,13 @@ def cli():
     type=click.Choice(["wav", "mp3", "aac", "flac"], case_sensitive=False),
     help="Output audio format (default: wav)"
 )
-def extract_audio(input_file: str, output_file: str, format: str):
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite output file without prompting"
+)
+def extract_audio(input_file: str, output_file: str, format: str, force: bool):
     """
     Extract audio from a video file.
 
@@ -97,6 +200,7 @@ def extract_audio(input_file: str, output_file: str, format: str):
     Examples:
         video_processor.py extract-audio video.mp4 audio.wav
         video_processor.py extract-audio video.mp4 audio.mp3 --format mp3
+        video_processor.py extract-audio video.mp4 audio.wav --force
     """
     if not check_ffmpeg():
         raise click.ClickException(
@@ -105,12 +209,14 @@ def extract_audio(input_file: str, output_file: str, format: str):
             "  Ubuntu/Debian: apt-get install ffmpeg"
         )
 
-    input_path = validate_input_file(input_file)
-    output_path = Path(output_file)
+    input_path = validate_input_path(input_file)
+    output_path = validate_output_path(output_file)
 
     # Ensure output file has correct extension
     if not output_path.suffix:
         output_path = output_path.with_suffix(f".{format}")
+
+    check_overwrite(output_path, force)
 
     click.echo(f"Extracting audio from {input_path}...")
     click.echo(f"Output format: {format}")
@@ -119,9 +225,9 @@ def extract_audio(input_file: str, output_file: str, format: str):
         # Extract audio stream without video
         stream = ffmpeg.input(str(input_path))
         stream = ffmpeg.output(stream, str(output_path), acodec="pcm_s16le" if format == "wav" else format, vn=None)
-        ffmpeg.run(stream, overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        ffmpeg.run(stream, overwrite_output=force, capture_stdout=True, capture_stderr=True)
 
-        click.echo(f"✓ Audio extracted successfully to {output_path}")
+        click.echo(f"Audio extracted successfully to {output_path}")
         click.echo(f"File size: {output_path.stat().st_size / (1024*1024):.2f} MB")
     except ffmpeg.Error as e:
         error_msg = e.stderr.decode() if e.stderr else str(e)
@@ -148,7 +254,13 @@ def extract_audio(input_file: str, output_file: str, format: str):
     type=int,
     help="Constant Rate Factor for quality (default: 23, lower=better quality, range: 0-51)"
 )
-def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int):
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite output file without prompting"
+)
+def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int, force: bool):
     """
     Convert a video file to MP4 format.
 
@@ -156,6 +268,7 @@ def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int)
     Examples:
         video_processor.py to-mp4 input.avi output.mp4
         video_processor.py to-mp4 input.mov output.mp4 --preset fast --crf 20
+        video_processor.py to-mp4 input.avi output.mp4 --force
     """
     if not check_ffmpeg():
         raise click.ClickException(
@@ -164,12 +277,14 @@ def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int)
             "  Ubuntu/Debian: apt-get install ffmpeg"
         )
 
-    input_path = validate_input_file(input_file)
-    output_path = Path(output_file)
+    input_path = validate_input_path(input_file)
+    output_path = validate_output_path(output_file)
 
     # Ensure output has .mp4 extension
     if output_path.suffix.lower() != ".mp4":
         output_path = output_path.with_suffix(".mp4")
+
+    check_overwrite(output_path, force)
 
     click.echo(f"Converting {input_path} to MP4...")
     click.echo(f"Codec: {codec}, Preset: {preset}, CRF: {crf}")
@@ -185,9 +300,9 @@ def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int)
             acodec="aac",
             audio_bitrate="128k"
         )
-        ffmpeg.run(stream, overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        ffmpeg.run(stream, overwrite_output=force, capture_stdout=True, capture_stderr=True)
 
-        click.echo(f"✓ Video converted successfully to {output_path}")
+        click.echo(f"Video converted successfully to {output_path}")
         click.echo(f"File size: {output_path.stat().st_size / (1024*1024):.2f} MB")
     except ffmpeg.Error as e:
         error_msg = e.stderr.decode() if e.stderr else str(e)
@@ -214,7 +329,13 @@ def to_mp4(input_file: str, output_file: str, codec: str, preset: str, crf: int)
     default="1M",
     help="Target bitrate (default: 1M)"
 )
-def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: str):
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite output file without prompting"
+)
+def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: str, force: bool):
     """
     Convert a video file to WebM format (web-optimized).
 
@@ -222,6 +343,7 @@ def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: st
     Examples:
         video_processor.py to-webm input.mp4 output.webm
         video_processor.py to-webm input.avi output.webm --codec libvpx-vp9 --crf 25
+        video_processor.py to-webm input.mp4 output.webm --force
     """
     if not check_ffmpeg():
         raise click.ClickException(
@@ -230,12 +352,14 @@ def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: st
             "  Ubuntu/Debian: apt-get install ffmpeg"
         )
 
-    input_path = validate_input_file(input_file)
-    output_path = Path(output_file)
+    input_path = validate_input_path(input_file)
+    output_path = validate_output_path(output_file)
 
     # Ensure output has .webm extension
     if output_path.suffix.lower() != ".webm":
         output_path = output_path.with_suffix(".webm")
+
+    check_overwrite(output_path, force)
 
     click.echo(f"Converting {input_path} to WebM...")
     click.echo(f"Codec: {codec}, CRF: {crf}, Bitrate: {bitrate}")
@@ -251,9 +375,9 @@ def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: st
             audio_bitrate="128k",
             **{"b:v": bitrate}
         )
-        ffmpeg.run(stream, overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        ffmpeg.run(stream, overwrite_output=force, capture_stdout=True, capture_stderr=True)
 
-        click.echo(f"✓ Video converted successfully to {output_path}")
+        click.echo(f"Video converted successfully to {output_path}")
         click.echo(f"File size: {output_path.stat().st_size / (1024*1024):.2f} MB")
     except ffmpeg.Error as e:
         error_msg = e.stderr.decode() if e.stderr else str(e)
@@ -286,7 +410,13 @@ def to_webm(input_file: str, output_file: str, codec: str, crf: int, bitrate: st
     is_flag=True,
     help="Show Whisper processing details"
 )
-def transcribe(input_file: str, output_file: str, model: str, language: Optional[str], output_format: str, verbose: bool):
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite output file without prompting"
+)
+def transcribe(input_file: str, output_file: str, model: str, language: Optional[str], output_format: str, verbose: bool, force: bool):
     """
     Transcribe audio or video file using OpenAI's Whisper.
 
@@ -305,6 +435,7 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
         video_processor.py transcribe video.mp4 transcript.txt
         video_processor.py transcribe audio.wav transcript.srt --format srt --model small
         video_processor.py transcribe interview.mp4 transcript.txt --model medium --language es
+        video_processor.py transcribe video.mp4 transcript.txt --force
     """
     if not check_ffmpeg():
         raise click.ClickException(
@@ -319,8 +450,10 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
             "  pip install -U openai-whisper"
         )
 
-    input_path = validate_input_file(input_file)
-    output_path = Path(output_file)
+    input_path = validate_input_path(input_file)
+    output_path = validate_output_path(output_file)
+
+    check_overwrite(output_path, force)
 
     # Determine if we need to extract audio first
     video_extensions = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".flv", ".wmv"}
@@ -330,7 +463,7 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
     audio_file = input_path
 
     if input_path.suffix.lower() in video_extensions:
-        click.echo(f"Input is video file - extracting audio first...")
+        click.echo("Input is video file - extracting audio first...")
         # Create temporary WAV file for Whisper
         temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         temp_audio.close()
@@ -338,10 +471,11 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
 
         try:
             # Extract audio to temporary file optimized for Whisper (16kHz mono)
+            # overwrite_output=True is safe here: writing to a temp file we just created
             stream = ffmpeg.input(str(input_path))
             stream = ffmpeg.output(stream, str(audio_file), acodec="pcm_s16le", ac=1, ar="16000", vn=None)
             ffmpeg.run(stream, overwrite_output=True, capture_stdout=True, capture_stderr=True)
-            click.echo(f"✓ Audio extracted to temporary file")
+            click.echo("Audio extracted to temporary file")
         except ffmpeg.Error as e:
             if temp_audio:
                 os.unlink(audio_file)
@@ -350,8 +484,8 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
     elif input_path.suffix.lower() not in audio_extensions:
         raise click.ClickException(
             f"Unsupported file format: {input_path.suffix}\n"
-            f"Supported video: {', '.join(video_extensions)}\n"
-            f"Supported audio: {', '.join(audio_extensions)}"
+            f"Supported video: {', '.join(sorted(video_extensions))}\n"
+            f"Supported audio: {', '.join(sorted(audio_extensions))}"
         )
 
     # Run Whisper transcription
@@ -398,7 +532,7 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
         if whisper_output.exists() and whisper_output != output_path:
             whisper_output.rename(output_path)
 
-        click.echo(f"✓ Transcription completed successfully!")
+        click.echo("Transcription completed successfully!")
         click.echo(f"Output: {output_path}")
 
         if output_path.exists():
@@ -423,7 +557,7 @@ def transcribe(input_file: str, output_file: str, model: str, language: Optional
         if temp_audio and audio_file.exists():
             try:
                 os.unlink(audio_file)
-                click.echo("✓ Temporary audio file cleaned up")
+                click.echo("Temporary audio file cleaned up")
             except Exception:
                 pass  # Best effort cleanup
 

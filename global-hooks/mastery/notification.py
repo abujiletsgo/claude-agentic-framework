@@ -24,29 +24,30 @@ except ImportError:
 def get_tts_script_path():
     """
     Determine which TTS script to use based on available API keys.
-    Priority order: ElevenLabs > OpenAI > pyttsx3
+    Priority order: pyttsx3 (ElevenLabs and OpenAI temporarily disabled)
     """
     # Get current script directory and construct utils/tts path
     script_dir = Path(__file__).parent
     tts_dir = script_dir / "utils" / "tts"
-    
-    # Check for ElevenLabs API key (highest priority)
-    if os.getenv('ELEVENLABS_API_KEY'):
-        elevenlabs_script = tts_dir / "elevenlabs_tts.py"
-        if elevenlabs_script.exists():
-            return str(elevenlabs_script)
-    
-    # Check for OpenAI API key (second priority)
-    if os.getenv('OPENAI_API_KEY'):
-        openai_script = tts_dir / "openai_tts.py"
-        if openai_script.exists():
-            return str(openai_script)
-    
-    # Fall back to pyttsx3 (no API key required)
+
+    # TEMPORARY: Use pyttsx3 directly (ElevenLabs has import issue)
+    # To re-enable ElevenLabs/OpenAI, uncomment the sections below
     pyttsx3_script = tts_dir / "pyttsx3_tts.py"
     if pyttsx3_script.exists():
         return str(pyttsx3_script)
-    
+
+    # # Check for ElevenLabs API key (highest priority)
+    # if os.getenv('ELEVENLABS_API_KEY'):
+    #     elevenlabs_script = tts_dir / "elevenlabs_tts.py"
+    #     if elevenlabs_script.exists():
+    #         return str(elevenlabs_script)
+    #
+    # # Check for OpenAI API key (second priority)
+    # if os.getenv('OPENAI_API_KEY'):
+    #     openai_script = tts_dir / "openai_tts.py"
+    #     if openai_script.exists():
+    #         return str(openai_script)
+
     return None
 
 

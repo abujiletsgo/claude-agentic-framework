@@ -1,5 +1,7 @@
 # Elite Context Engineering Quick Reference
 
+> **2026 Update**: Context engineering now integrates with the knowledge pipeline (persistent memory across sessions) and 23 auto-discoverable skills. Multi-model tiers further optimize cost. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Three-Step System
 
 ### Step 1: Strip Global Context ✅

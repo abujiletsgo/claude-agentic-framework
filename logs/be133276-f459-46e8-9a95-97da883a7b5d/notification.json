@@ -1,0 +1,9 @@
+[
+  {
+    "session_id": "be133276-f459-46e8-9a95-97da883a7b5d",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Bash",
+    "title": ""
+  }
+]

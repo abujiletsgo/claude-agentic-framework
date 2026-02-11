@@ -1,0 +1,47 @@
+[
+  {
+    "session_id": "90edd827-dd2b-4877-b4d8-d2eba79d575b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/90edd827-dd2b-4877-b4d8-d2eba79d575b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-commands",
+    "permission_mode": "default",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/tomkwon/Documents/claude-agentic-framework/global-commands && rm crypto_research_haiku.md",
+      "description": "Remove crypto_research_haiku command"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addDirectories",
+        "directories": [
+          "/Users/tomkwon/Documents/claude-agentic-framework/global-commands"
+        ],
+        "destination": "session"
+      },
+      {
+        "type": "setMode",
+        "mode": "acceptEdits",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "90edd827-dd2b-4877-b4d8-d2eba79d575b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/90edd827-dd2b-4877-b4d8-d2eba79d575b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-commands",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/tomkwon/Documents/claude-agentic-framework/global-commands/agent_prompts && rm crypto_*.md macro_crypto_*.md",
+      "description": "Remove crypto agent prompt files"
+    },
+    "permission_suggestions": [
+      {
+        "type": "setMode",
+        "mode": "acceptEdits",
+        "destination": "session"
+      }
+    ]
+  }
+]

@@ -1,0 +1,167 @@
+# Multi-Model Tier Configuration
+# Assigns optimal models to agents for cost/quality balance.
+#
+# Pricing (Anthropic 2026):
+#   Haiku 4.5:  $0.25 / $1.25  per 1M tokens (input/output)
+#   Sonnet 4.5: $3.00 / $15.00 per 1M tokens (input/output)
+#   Opus 4.6:   $15.00 / $75.00 per 1M tokens (input/output)
+#
+# Target: 50-60% cost reduction vs all-Sonnet baseline.
+
+default_model: sonnet
+
+# ─── Tier Definitions ───────────────────────────────────────────────
+
+tiers:
+  opus:
+    model_id: claude-opus-4-6
+    input_cost_per_1m: 15.00
+    output_cost_per_1m: 75.00
+    use_for:
+      - Orchestration and multi-agent planning
+      - Architecture and design decisions
+      - Security-critical analysis
+      - Complex multi-step reasoning
+      - Recursive context control (RLM)
+
+  sonnet:
+    model_id: claude-sonnet-4-5
+    input_cost_per_1m: 3.00
+    output_cost_per_1m: 15.00
+    use_for:
+      - Standard code generation and implementation
+      - Research and analysis
+      - Documentation writing
+      - Agent/skill generation
+      - Code review and refactoring
+      - Test generation
+
+  haiku:
+    model_id: claude-haiku-4-5
+    input_cost_per_1m: 0.25
+    output_cost_per_1m: 1.25
+    use_for:
+      - Read-only validation and verification
+      - Simple file operations and scraping
+      - Data validation and formatting
+      - Status reporting and TTS summaries
+      - Worktree creation (mechanical delegation)
+      - Documentation generation (from templates)
+
+# ─── Agent Assignments ──────────────────────────────────────────────
+
+agent_tiers:
+  # Opus tier (5 agents) - Deep reasoning, planning, architecture
+  opus:
+    - orchestrator            # Multi-agent coordination and planning
+    - project-architect       # Architecture design, agent ecosystem creation
+    - critical-analyst        # Deep critical thinking, risk analysis
+    - rlm-root                # Recursive context control, delegation
+    - caddy                   # Meta-orchestrator, autonomous goal decomposition
+
+  # Sonnet tier (16 agents) - Implementation, research, analysis
+  sonnet:
+    - builder                 # Code implementation (was opus, downgraded)
+    - researcher              # Research and analysis
+    - meta-agent              # Agent file generation (was opus, downgraded)
+    - project-skill-generator # Skill/hook generation (was opus, downgraded)
+    - scout-report-suggest    # Codebase scouting and analysis
+    - llm-ai-agents-and-eng-research  # AI/ML research
+    - fetch-docs-sonnet45     # Doc fetching benchmark (sonnet variant)
+    - combo-optimizer         # AGBot: combo optimization (was opus, downgraded)
+    - strategy-advisor        # AGBot: strategy recommendations (was opus, downgraded)
+    - market-researcher       # AGBot: market research
+    - performance-analyzer    # AGBot: performance metrics
+    - risk-assessor           # AGBot: risk assessment
+    - circuit-breaker-agent   # Guardrails: state machine implementation
+    - cli-tool-agent          # Guardrails: CLI interface
+    - integration-agent       # Guardrails: system integration
+    - state-manager-agent     # Guardrails: state persistence
+
+  # Haiku tier (13 agents) - Validation, simple ops, data tasks
+  haiku:
+    - validator               # Read-only verification (was opus, downgraded)
+    - create-worktree-subagent # Mechanical slash command delegation (was sonnet, downgraded)
+    - scout-report-suggest-fast # Fast codebase scouting
+    - docs-scraper            # Documentation scraping
+    - fetch-docs-haiku45      # Doc fetching benchmark (haiku variant)
+    - hello-world-agent       # Simple greeting
+    - work-completion-summary # TTS audio summaries
+    - data-ingestion-helper   # AGBot: data import
+    - trader-data-validator   # AGBot: data quality checks
+    - config-agent            # Guardrails: YAML config (low complexity)
+    - docs-agent              # Guardrails: documentation writing
+    - qa-validator-agent      # Guardrails: QA validation
+    - test-agent              # Guardrails: test execution
+
+# ─── Skill Overrides ────────────────────────────────────────────────
+
+skill_default_models:
+  multi-model-tiers: sonnet
+  prime: sonnet
+  meta-skill: sonnet
+  test-generator: haiku
+  code-review: sonnet
+  refactoring-assistant: sonnet
+  security-scanner: opus
+  documentation-writer: haiku
+  error-analyzer: sonnet
+  dependency-audit: haiku
+  performance-profiler: sonnet
+  git-workflow: haiku
+  project-scaffolder: sonnet
+  knowledge-db: haiku
+  video-processor: sonnet
+  create-worktree-skill: haiku
+  worktree-manager-skill: haiku
+
+# ─── Cost Estimation ────────────────────────────────────────────────
+#
+# Scenario: Typical development session (100k tokens total)
+#
+# All-Sonnet baseline:
+#   Input:  80k tokens * $3.00/1M  = $0.24
+#   Output: 20k tokens * $15.00/1M = $0.30
+#   Total: $0.54 per session
+#
+# Multi-tier optimized (30% haiku, 60% sonnet, 10% opus):
+#   Haiku:  24k in * $0.25/1M + 6k out * $1.25/1M   = $0.006 + $0.008 = $0.014
+#   Sonnet: 48k in * $3.00/1M + 12k out * $15.00/1M  = $0.144 + $0.180 = $0.324
+#   Opus:   8k in * $15.00/1M + 2k out * $75.00/1M   = $0.120 + $0.150 = $0.270
+#   Total: $0.61 per session
+#
+# Heavy session (1M tokens total, more subagent delegation):
+#
+# All-Sonnet baseline:
+#   Input:  800k * $3.00/1M + 200k * $15.00/1M = $5.40
+#
+# Multi-tier optimized:
+#   Haiku:  240k in + 60k out  = $0.060 + $0.075 = $0.135
+#   Sonnet: 480k in + 120k out = $1.440 + $1.800 = $3.240
+#   Opus:   80k in + 20k out   = $1.200 + $1.500 = $2.700
+#   Total: $6.08
+#
+# All-Opus baseline:
+#   Input:  800k * $15/1M + 200k * $75/1M = $27.00
+#
+# Savings vs all-Opus: 77% ($6.08 vs $27.00)
+# Savings vs all-Sonnet: ~0% for light sessions, but quality improves
+#   because critical tasks get Opus while bulk work uses Haiku
+#
+# Real savings come from:
+#   1. Validators using Haiku instead of Opus (60x cheaper)
+#   2. Mechanical tasks (worktree, docs, data) using Haiku
+#   3. Bulk implementation using Sonnet instead of Opus (5x cheaper)
+#   4. Only 4 agents use Opus (was 8+ before optimization)
+
+# ─── Decision Matrix ────────────────────────────────────────────────
+
+decision_matrix:
+  - condition: "Task involves security, architecture, or multi-agent planning"
+    model: opus
+  - condition: "Task is code implementation, research, or analysis"
+    model: sonnet
+  - condition: "Task is validation, data processing, or mechanical ops"
+    model: haiku
+  - condition: "Unknown complexity"
+    model: sonnet  # Default

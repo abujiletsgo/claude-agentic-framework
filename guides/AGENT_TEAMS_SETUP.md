@@ -1,5 +1,7 @@
 # Agent Teams - Quick Setup Guide
 
+> **2026 Update**: The framework now includes 33 agents across 3 model tiers (Opus/Sonnet/Haiku). Builder + Validator team pattern is the recommended approach for implementation tasks. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 This guide will get you up and running with Agent Teams in 5 minutes.
 
 ---

@@ -1,5 +1,7 @@
 # Step 12: Z-Threads & Plugin Distribution
 
+> **2026 Update**: Z-Threads now leverage 23 skills for automated workflows and the knowledge pipeline for learning across runs. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Final Evolution: Maximum Trust + Maximum Scale
 
 **You have**: Powerful agent teams, orchestrator, drop zones, context engineering
@@ -695,7 +697,7 @@ def validate_z_thread(stage_result):
         coverage = stage_result["test_results"].get("coverage", 0)
         if coverage < 80:
             return {
-                "decision": "block",
+                "ok": False,
                 "reason": f"Test coverage {coverage}% < 80% minimum"
             }
 
@@ -704,7 +706,7 @@ def validate_z_thread(stage_result):
         critical = stage_result["security_scan"].get("critical_issues", 0)
         if critical > 0:
             return {
-                "decision": "block",
+                "ok": False,
                 "reason": f"Found {critical} critical security issues"
             }
 
@@ -713,12 +715,12 @@ def validate_z_thread(stage_result):
         error_rate = stage_result["monitoring"].get("error_rate", 0)
         if error_rate > 0.001:  # 0.1%
             return {
-                "decision": "rollback",
-                "reason": f"Error rate {error_rate:.2%} > 0.1% threshold"
+                "ok": False,
+                "reason": f"Error rate {error_rate:.2%} > 0.1% threshold (rollback recommended)"
             }
 
     return {
-        "decision": "approve",
+        "ok": True,
         "reason": "All validation checks passed"
     }
 

@@ -1,5 +1,7 @@
 # F-Threads: Fusion Threads (Best of N)
 
+> **2026 Update**: F-Thread agents now use multi-model tiers for cost optimization. Fusion results can be stored in the knowledge database for cross-session learning. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Principle
 
 Language models are non-deterministic. One agent gives you one roll of the dice. **N agents in parallel** makes the probability of finding the optimal solution approach 100%.

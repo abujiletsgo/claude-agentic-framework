@@ -1,5 +1,7 @@
 # L-Threads: Long-Running Threads with Anti-Loop Protection
 
+> **2026 Update**: L-Threads now benefit from anti-loop guardrails (global-hooks/framework/guardrails/) and the knowledge pipeline for storing progress patterns. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Problem
 
 **Agent Correction Loops**: When agents fail, they often retry the same approach repeatedly, burning tokens until timeout.

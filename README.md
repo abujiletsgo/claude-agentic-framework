@@ -1,28 +1,37 @@
 # Claude Agentic Framework
 
-> Transform Claude Code into an elite multi-agent system with 95% token savings, infinite scalability, and autonomous execution capabilities.
+> Transform Claude Code into an elite autonomous engineering platform with 95% token savings, 23 skills, 33 agents across 3 model tiers, persistent memory, and hybrid security.
 
 ## Overview
 
-The **Claude Agentic Framework** is a comprehensive collection of guides, commands, agents, and hooks that upgrade Claude Code from a single-agent assistant to a sophisticated multi-agent orchestration system. This framework implements proven patterns for context engineering, agent coordination, and autonomous execution.
+The **Claude Agentic Framework** is a comprehensive autonomous engineering platform that upgrades Claude Code from a single-agent assistant to a sophisticated multi-agent orchestration system. It provides skills, agents, hooks, commands, and persistent knowledge infrastructure for context engineering, agent coordination, continuous review, and autonomous execution.
 
 ### What You Get
 
 - **15 Comprehensive Guides** covering everything from basic context engineering to advanced multi-agent patterns
-- **8 Ready-to-Use Commands** for delegation, orchestration, and fusion execution
-- **3 Specialized Agents** (Orchestrator, Researcher, RLM Root Controller)
-- **2 Advanced Skills** (Prime, Damage Control)
-- **Multiple Hook Scripts** for observability, safety, and context management
+- **25+ Ready-to-Use Commands** for delegation, orchestration, planning, worktrees, and more
+- **33 Agents across 3 Tiers**: 4 Opus (planning/security), 16 Sonnet (implementation), 13 Haiku (validation)
+- **23 Skills** for the full engineering lifecycle (prime, review, test, security, refactor, scaffold, TDD, and more)
+- **5 Hook Namespaces**: damage-control, mastery, observability, framework (knowledge/review/guardrails/testing), prompt-hooks
+- **Knowledge Pipeline**: SQLite FTS5 persistent memory for cross-session learning
+- **Continuous Review**: Automated post-commit analysis with findings database
+- **Hybrid Security**: Pattern-matching + LLM semantic validation (prompt hooks)
+- **Multi-Model Tiers**: Right model for the right task (50-60% cost savings)
+- **Git Worktree Management**: Parallel development across branches
 - **Installation Scripts** for one-command setup and removal
 
 ### Key Benefits
 
 - **95% Token Reduction**: Strip permanent context, load only what's needed
+- **50-60% Cost Savings**: Multi-model tiers assign Opus/Sonnet/Haiku per agent
 - **Infinite Scalability**: Delegate heavy tasks to isolated sub-agents
+- **Persistent Memory**: Knowledge database survives across sessions
 - **Crash Recovery**: Context bundles restore sessions instantly
 - **Autonomous Execution**: Z-Threads run from prompt to production with zero human intervention
+- **Continuous Review**: Automated code review on every commit
+- **Hybrid Security**: Pattern + LLM semantic hooks prevent destructive operations
 - **Real-Time Monitoring**: Mission Control dashboard for multi-agent observability
-- **Safety-First**: Damage control hooks prevent destructive operations
+- **Anti-Loop Guardrails**: Prevent agents from entering infinite loops
 
 ## Table of Contents
 
@@ -30,7 +39,9 @@ The **Claude Agentic Framework** is a comprehensive collection of guides, comman
 - [Installation](#installation)
 - [Architecture Overview](#architecture-overview)
 - [Core Concepts](#core-concepts)
+- [New in 2026](#new-in-2026)
 - [Commands Reference](#commands-reference)
+- [Skills Reference](#skills-reference)
 - [Step-by-Step Guide](#step-by-step-guide)
 - [Performance Benefits](#performance-benefits)
 - [Configuration](#configuration)
@@ -38,6 +49,7 @@ The **Claude Agentic Framework** is a comprehensive collection of guides, comman
 - [Troubleshooting](#troubleshooting)
 - [Advanced Patterns](#advanced-patterns)
 - [Contributing](#contributing)
+- [Changelog](#changelog)
 
 ## Quick Start
 
@@ -55,10 +67,11 @@ cd claude-agentic-framework
 
 The installer will:
 1. Backup your existing `~/.claude/` configuration
-2. Copy all guides to `~/.claude/`
-3. Install commands, agents, skills, and hooks
-4. Set up context bundle storage
-5. Configure hook system in `~/.claude/settings.json`
+2. Symlink all commands, agents, skills, guides, output-styles, and hooks
+3. Generate `settings.json` from template (hooks, prompt hooks, permissions)
+4. Create runtime directories (`data/knowledge-db/`, `data/logs/`, `data/tts_queue/`)
+5. Set executable permissions on all hook scripts
+6. Validate the installation
 
 ### Your First Agentic Session
 
@@ -84,6 +97,7 @@ claude
 ### Prerequisites
 
 - **Claude Code CLI** (version 0.1.x or higher)
+- **Python 3.10+** and **uv** (for hook scripts)
 - **Node.js 18+** (for Mission Control dashboard)
 - **Bun** (optional, for Mission Control server)
 - **Git** (for installation)
@@ -101,46 +115,58 @@ cd claude-agentic-framework
 
 ### What Gets Installed
 
+The installer symlinks from the repo into `~/.claude/`. Source of truth stays in the repo.
+
 ```
-~/.claude/
-├── AGENT_TEAMS.md                    # Agent orchestration guide
-├── AGENTIC_DROP_ZONES.md            # Auto-trigger patterns
-├── AGENTIC_LAYER.md                 # Architecture overview
-├── CONTEXT_ENGINEERING.md           # Token optimization guide
-├── F_THREADS.md                     # Best-of-N fusion patterns
-├── GENERATIVE_UI.md                 # Visual output guide
-├── L_THREADS.md                     # Long-running threads
-├── MASTER_SUMMARY.md                # Quick reference
-├── MISSION_CONTROL.md               # Observability guide
-├── MULTI_AGENT_ORCHESTRATION.md     # Coordination patterns
-├── RALPH_LOOPS.md                   # Stateless resampling
-├── RLM_ARCHITECTURE.md              # Recursive LM patterns
-├── SELF_CORRECTING_AGENTS.md        # Error recovery patterns
-├── Z_THREADS_AND_PLUGINS.md         # Autonomous execution
-├── agents/
-│   ├── orchestrator.md              # Lead agent coordinator
-│   ├── researcher.md                # Research specialist
-│   └── rlm-root.md                  # Root controller agent
-├── commands/
-│   ├── analyze.md                   # Deep analysis delegation
-│   ├── fusion.md                    # Best-of-N execution
-│   ├── loadbundle.md                # Session restoration
-│   ├── orchestrate.md               # Multi-agent orchestration
-│   ├── prime.md                     # On-demand context loading
-│   ├── research.md                  # Research delegation
-│   ├── rlm.md                       # RLM task execution
-│   └── search.md                    # Codebase search delegation
-├── skills/
-│   ├── prime/SKILL.md               # Context loading skill
-│   └── damage-control/              # Safety validation
-├── hooks/
-│   ├── context-bundle-logger.py     # Auto-save sessions
-│   ├── damage-control/              # Security hooks
-│   └── validators/                  # Progress monitoring
-├── templates/
-│   └── long-migration.md            # L-Thread example
-├── bundles/                         # Auto-created session storage
-└── settings.json                    # Hook configuration
+Repo structure (source of truth):
+├── global-agents/               # 15 root agents + team/ + agbot/
+│   ├── orchestrator.md          # Lead coordinator (Opus)
+│   ├── researcher.md            # Research specialist (Sonnet)
+│   ├── rlm-root.md              # Root controller (Opus)
+│   ├── project-architect.md     # Project analysis (Opus)
+│   ├── critical-analyst.md      # Critical thinking (Opus)
+│   ├── meta-agent.md            # Agent file generation (Sonnet)
+│   ├── team/                    # Builder, Validator, Project Skill Generator
+│   │   └── guardrails/          # 8 guardrail agents
+│   └── agbot/                   # 8 domain-specific agents
+├── global-commands/             # 25+ slash commands
+│   ├── prime.md, research.md    # Context & delegation
+│   ├── orchestrate.md, fusion.md # Multi-agent
+│   ├── plan.md, plan_w_team.md  # Planning
+│   ├── create-worktree.md       # Git worktrees
+│   └── refine.md, build.md      # Development
+├── global-skills/               # 23 auto-discoverable skills
+│   ├── prime/                   # Context loading
+│   ├── knowledge-db/            # Persistent memory (SQLite FTS5)
+│   ├── multi-model-tiers/       # Model tier configuration
+│   ├── code-review/             # Automated review
+│   ├── tdd-workflow/            # Test-driven development
+│   ├── security-scanner/        # Security scanning
+│   ├── worktree-manager-skill/  # Git worktree management
+│   └── ... (16 more skills)
+├── global-hooks/                # 5 hook namespaces
+│   ├── damage-control/          # Pattern-matching security
+│   ├── mastery/                 # Lifecycle tracking
+│   ├── observability/           # Monitoring & metrics
+│   ├── framework/               # Knowledge, review, guardrails, testing
+│   │   ├── knowledge/           # Knowledge pipeline (8 modules)
+│   │   ├── review/              # Continuous review (analyzers + engine)
+│   │   ├── guardrails/          # Anti-loop protection
+│   │   ├── testing/             # Hook test framework
+│   │   └── validators/          # L-thread + test validators
+│   └── prompt-hooks/            # LLM semantic validation docs
+├── global-output-styles/        # 11 output format styles
+├── global-status-lines/         # Status line versions
+├── guides/                      # 15 engineering guides
+├── data/                        # Runtime data
+│   ├── knowledge-db/            # SQLite knowledge database
+│   ├── model_tiers.yaml         # Centralized tier config
+│   └── logs/                    # Runtime logs
+├── templates/                   # settings.json template + L-thread
+├── apps/observability/          # Vue 3 dashboard + Bun server
+├── docs/                        # Upgrade guides & migration docs
+├── install.sh                   # Symlink installer
+└── uninstall.sh                 # Clean removal
 ```
 
 ### Uninstallation
@@ -346,6 +372,127 @@ ralph-harness.sh "Fix all bugs" --test-cmd "npm test" --max-loops 20
 
 **Features**: Zero context rot, external verification, circuit breakers, crash-safe
 
+## New in 2026
+
+The February 2026 upgrade adds major new capabilities. For full migration details see [docs/2026_UPGRADE_GUIDE.md](docs/2026_UPGRADE_GUIDE.md).
+
+### Skills System (23 Skills)
+
+Self-describing, auto-triggerable capabilities. Each skill has a `SKILL.md` with frontmatter that Claude Code discovers and invokes automatically.
+
+| Category | Skills |
+|----------|--------|
+| Context | prime |
+| Knowledge | knowledge-db |
+| Config | multi-model-tiers |
+| Quality | code-review, verification-checklist, downstream-correction |
+| Testing | test-generator, tdd-workflow |
+| Security | security-scanner, dependency-audit |
+| Planning | brainstorm-before-code, feasibility-analysis, task-decomposition |
+| Development | refactoring-assistant, error-analyzer, performance-profiler |
+| Project | project-scaffolder, documentation-writer |
+| Version Control | git-workflow, worktree-manager-skill, create-worktree-skill |
+| Media | video-processor |
+| Meta | meta-skill |
+
+### Prompt Hooks (Hybrid Security)
+
+LLM-based semantic validation runs in parallel with pattern-matching hooks. Catches obfuscated threats that regex cannot detect.
+
+```
+PreToolUse Event --> Command Hook (~50ms) + Prompt Hook (~2-5s) --> Both must allow
+```
+
+Covers Bash, Edit, and Write tools. See `global-hooks/prompt-hooks/README.md`.
+
+### Knowledge Pipeline
+
+SQLite FTS5 persistent memory for cross-session learning:
+
+- **Store**: Decisions, learnings, patterns, errors, context, preferences
+- **Search**: Full-text search with BM25 ranking
+- **Inject**: Auto-inject relevant knowledge at session start
+- **Observe**: Pattern extraction from session activity
+- **Pipeline**: extract_learnings -> store_learnings -> inject_relevant -> observe_patterns
+
+Located in `global-hooks/framework/knowledge/`. CLI via `global-skills/knowledge-db/`.
+
+### Continuous Review System
+
+Automated post-commit code review:
+
+- Review engine with pluggable analyzers (complexity, security, style, performance)
+- Persistent findings database
+- Configurable via `global-hooks/framework/review/review_config.yaml`
+
+### Multi-Model Tiers
+
+Every agent assigned to the optimal tier:
+
+```
+Opus  (12%):  4 agents -- orchestrator, project-architect, critical-analyst, rlm-root
+Sonnet (48%): 16 agents -- builder, researcher, meta-agent, + 13 more
+Haiku  (39%): 13 agents -- validator, docs-scraper, hello-world, + 10 more
+```
+
+Saves 50-60% vs previous all-Opus or mixed configuration. Set in agent frontmatter `model:` field. Centralized config in `data/model_tiers.yaml`.
+
+### Strategic Agents
+
+Two new versatile agents replace removed crypto-specific agents:
+
+- **Project-Architect** (Opus): Analyze projects, design agent ecosystems, create project-specific automation
+- **Critical-Analyst** (Opus): Question every detail, identify risks, challenge assumptions
+
+### Agent Teams
+
+Builder + Validator pattern with guardrails:
+
+- **Builder** (Sonnet): Implements solutions
+- **Validator** (Haiku): Independently verifies
+- **Project Skill Generator** (Sonnet): Creates project-specific skills
+- **8 Guardrail Agents**: Circuit breaker, CLI, config, docs, integration, QA, state, test
+
+### Worktree Management
+
+Git worktree skills for parallel development:
+
+```bash
+/create-worktree    # Create a new worktree
+/list-worktrees     # List all worktrees
+/remove-worktree    # Remove a worktree
+```
+
+## Skills Reference
+
+Skills are auto-discoverable in `global-skills/`. Invoke via slash command or trigger phrases.
+
+| Skill | Trigger Phrases | Purpose |
+|-------|----------------|---------|
+| `prime` | "prime yourself", "get context" | Load project context on-demand |
+| `knowledge-db` | "remember this", "search knowledge" | Persistent cross-session memory |
+| `multi-model-tiers` | "configure tiers", "model assignment" | Manage agent model tiers |
+| `code-review` | "review this code" | Automated code review |
+| `test-generator` | "generate tests" | Create test suites |
+| `tdd-workflow` | "TDD", "test-driven" | Test-driven development cycle |
+| `security-scanner` | "scan for vulnerabilities" | Security vulnerability scanning |
+| `dependency-audit` | "audit dependencies" | Check dependency vulnerabilities |
+| `error-analyzer` | "analyze this error" | Diagnose and fix errors |
+| `performance-profiler` | "profile performance" | Performance optimization |
+| `refactoring-assistant` | "refactor this" | Safe systematic refactoring |
+| `documentation-writer` | "write docs" | Generate documentation |
+| `project-scaffolder` | "scaffold project" | Create new project structure |
+| `git-workflow` | "git workflow" | Git workflow management |
+| `brainstorm-before-code` | "brainstorm", "ideate" | Pre-implementation ideation |
+| `feasibility-analysis` | "is this feasible" | Viability assessment |
+| `task-decomposition` | "break this down" | Decompose complex tasks |
+| `downstream-correction` | "fix downstream" | Fix cascading breakage |
+| `verification-checklist` | "verify before shipping" | Pre-completion checks |
+| `video-processor` | "process video" | Video content processing |
+| `worktree-manager-skill` | "manage worktrees" | Git worktree lifecycle |
+| `create-worktree-skill` | "create worktree" | Quick worktree creation |
+| `meta-skill` | "create a skill" | Generate new skills |
+
 ## Commands Reference
 
 ### Context Management
@@ -428,6 +575,65 @@ Execute task using Recursive Language Model architecture for infinite scale.
 ```
 
 **Process**: Root controller uses search + read_slice + delegate (never loads full context).
+
+### Planning Commands
+
+#### `/plan "<goal>"`
+Create a structured plan before implementing.
+
+```bash
+/plan "add user authentication to the API"
+```
+
+#### `/plan_w_team "<goal>"`
+Plan with builder + validator team for implementation tasks.
+
+```bash
+/plan_w_team "refactor the database layer"
+```
+
+#### `/quick-plan "<goal>"`
+Fast lightweight planning for smaller tasks.
+
+```bash
+/quick-plan "add input validation to the form"
+```
+
+### Development Commands
+
+#### `/build`
+Build or compile the current project.
+
+#### `/refine "<instructions>"`
+Iteratively refine the previous output.
+
+```bash
+/refine "make the error messages more descriptive"
+```
+
+### Worktree Commands
+
+#### `/create-worktree`
+Create a new git worktree for parallel development.
+
+#### `/list-worktrees`
+List all active git worktrees.
+
+#### `/remove-worktree`
+Remove a git worktree.
+
+### Utility Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/start` | Initialize a new session |
+| `/question` | Ask a focused question to a sub-agent |
+| `/sentient` | Advanced reasoning mode |
+| `/git_status` | Quick git status overview |
+| `/all_tools` | List all available tools |
+| `/convert_paths_absolute` | Convert relative paths to absolute |
+| `/load_ai_docs` | Load AI documentation into context |
+| `/update_status_line` | Update the status line display |
 
 ## Step-by-Step Guide
 
@@ -691,25 +897,31 @@ Add to `~/.zshrc` or `~/.bashrc` for permanence.
 
 ### Hook Configuration
 
-Edit `~/.claude/settings.json`:
+The `settings.json` is generated from `templates/settings.json.template`. Always edit the template, not `settings.json` directly. The template uses `__REPO_DIR__` as a placeholder replaced by `install.sh`.
+
+The hook system uses 5 namespaces with both command and prompt hooks:
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "path": "hooks/damage-control/bash-tool-damage-control.py",
-        "matcher": "Bash"
-      }
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "uv run .../damage-control/bash-tool-damage-control.py"},
+          {"type": "prompt", "prompt": "Security review prompt with $ARGUMENTS..."}
+        ]
+      },
+      {"matcher": "Edit", "hooks": [...]},
+      {"matcher": "Write", "hooks": [...]}
     ],
-    "PostToolUse": [
-      {
-        "path": "hooks/context-bundle-logger.py"
-      }
-    ]
+    "PostToolUse": [...],
+    "Stop": [...]
   }
 }
 ```
+
+See `global-hooks/prompt-hooks/README.md` for prompt hook documentation.
 
 ### Command Customization
 
@@ -1176,7 +1388,49 @@ Built on patterns from:
 
 ## Changelog
 
-### v1.0.0 (Current)
+### v2.0.0 (February 2026) -- Current
+
+**Skills System**
+- 23 auto-discoverable skills covering the full engineering lifecycle
+- Meta-skill for generating new skills from templates
+- Project Skill Generator agent for project-specific automation
+
+**Security**
+- Hybrid security: prompt hooks (LLM semantic validation) alongside pattern-matching command hooks
+- Prompt hooks for Bash, Edit, and Write tools
+- Anti-loop guardrails system for agent safety
+
+**Knowledge & Review**
+- SQLite FTS5 knowledge database for persistent cross-session memory
+- Knowledge pipeline: extract, store, inject, observe
+- Continuous review system with pluggable analyzers
+- Post-commit review hook with findings database
+
+**Agents**
+- 33 agents across 3 model tiers (Opus/Sonnet/Haiku)
+- Strategic agents: Project-Architect and Critical-Analyst
+- Agent teams: Builder + Validator pattern
+- 8 guardrail agents for complex system implementation
+- Removed crypto-specific agents (see migration docs)
+
+**Commands**
+- 25+ slash commands (up from 8)
+- Planning commands: /plan, /plan_w_team, /quick-plan
+- Worktree commands: /create-worktree, /list-worktrees, /remove-worktree
+- Development commands: /build, /refine, /question, /sentient
+
+**Infrastructure**
+- Multi-model tier system with centralized configuration
+- Git worktree management skills
+- TTS notification hooks (ElevenLabs, OpenAI, pyttsx3)
+- Settings generated from template (edit template, not settings.json)
+
+**Documentation**
+- Migration guide: docs/2026_UPGRADE_GUIDE.md
+- Prompt hooks documentation: global-hooks/prompt-hooks/README.md
+- Worktree documentation: global-skills/worktree-manager-skill/
+
+### v1.0.0 (2025)
 - Complete framework with 15 guides
 - 8 commands for delegation and orchestration
 - 3 specialized agents
@@ -1188,6 +1442,6 @@ Built on patterns from:
 
 ---
 
-**Transform Claude Code into an elite multi-agent system.**
+**Transform Claude Code into an elite autonomous engineering platform.**
 
-Start with `/prime` and scale to infinity.
+Start with `/prime` and scale to infinity. See [docs/2026_UPGRADE_GUIDE.md](docs/2026_UPGRADE_GUIDE.md) for the full upgrade guide.

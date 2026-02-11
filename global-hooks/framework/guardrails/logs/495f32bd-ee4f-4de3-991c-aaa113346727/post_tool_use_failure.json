@@ -1,0 +1,150 @@
+[
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python -m pytest tests/test_state_manager.py::TestStateManager::test_half_open_failure_reopens_circuit -xvs 2>&1"
+    },
+    "tool_use_id": "toolu_01MDWbdJpcLvYcj5VQqG81CX",
+    "error": "Exit code 127\n(eval):1: command not found: python",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "which python && python --version"
+    },
+    "tool_use_id": "toolu_018s6YLYHEbijfSqddu99FZe",
+    "error": "Exit code 1\npython not found",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && source .venv/bin/activate && python -m pytest tests/test_config.py::TestConfigLoader::test_load_from_env -v",
+      "description": "Run single failing config test"
+    },
+    "tool_use_id": "toolu_013K1dp8D8vNi32Ntu5MJhjF",
+    "error": "Exit code 1\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails/.venv/bin/python\ncachedir: .pytest_cache\nrootdir: /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails\nplugins: cov-7.0.0\ncollecting ... collected 1 item\n\ntests/test_config.py::TestConfigLoader::test_load_from_env FAILED        [100%]\n\n=================================== FAILURES ===================================\n_____________________ TestConfigLoader.test_load_from_env ______________________\n\nself = <guardrails.tests.test_config.TestConfigLoader object at 0x10b0b28a0>\n\n    def test_load_from_env(self):\n        \"\"\"Test loading configuration from environment variables.\"\"\"\n        loader = ConfigLoader()\n    \n        with mock.patch.dict(os.environ, {\n            \"GUARDRAILS_CIRCUIT_BREAKER_ENABLED\": \"false\",\n            \"GUARDRAILS_CIRCUIT_BREAKER_FAILURE_THRESHOLD\": \"5\",\n            \"GUARDRAILS_LOGGING_LEVEL\": \"DEBUG\",\n            \"GUARDRAILS_STATE_FILE\": \"/tmp/state.json\",\n            \"OTHER_VAR\": \"ignored\"  # Should be ignored\n        }):\n            env_config = loader._load_from_env()\n    \n>           assert env_config[\"circuit_breaker\"][\"enabled\"] is False\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE           KeyError: 'circuit_breaker'\n\ntests/test_config.py:282: KeyError\n=========================== short test summary info ============================\nFAILED tests/test_config.py::TestConfigLoader::test_load_from_env - KeyError:...\n============================== 1 failed in 0.04s ===============================",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && source .venv/bin/activate && python -m pytest tests/test_config.py::TestConfigLoader::test_load_from_env -v -s",
+      "description": "Debug test_load_from_env"
+    },
+    "tool_use_id": "toolu_014FqrfnyJ1P3j4kPGc8fYSE",
+    "error": "Exit code 1\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails/.venv/bin/python\ncachedir: .pytest_cache\nrootdir: /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails\nplugins: cov-7.0.0\ncollecting ... collected 1 item\n\ntests/test_config.py::TestConfigLoader::test_load_from_env FAILED\n\n=================================== FAILURES ===================================\n_____________________ TestConfigLoader.test_load_from_env ______________________\n\nself = <guardrails.tests.test_config.TestConfigLoader object at 0x107a7dfa0>\n\n    def test_load_from_env(self):\n        \"\"\"Test loading configuration from environment variables.\"\"\"\n        loader = ConfigLoader()\n    \n        with mock.patch.dict(os.environ, {\n            \"GUARDRAILS_CIRCUIT_BREAKER_ENABLED\": \"false\",\n            \"GUARDRAILS_CIRCUIT_BREAKER_FAILURE_THRESHOLD\": \"5\",\n            \"GUARDRAILS_LOGGING_LEVEL\": \"DEBUG\",\n            \"GUARDRAILS_STATE_FILE\": \"/tmp/state.json\",\n            \"OTHER_VAR\": \"ignored\"  # Should be ignored\n        }):\n            env_config = loader._load_from_env()\n    \n            assert env_config[\"circuit_breaker\"][\"enabled\"] is False\n>           assert env_config[\"circuit_breaker\"][\"failure_threshold\"] == 5\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE           KeyError: 'failure_threshold'\n\ntests/test_config.py:283: KeyError\n=========================== short test summary info ============================\nFAILED tests/test_config.py::TestConfigLoader::test_load_from_env - KeyError:...\n============================== 1 failed in 0.03s ===============================",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && source .venv/bin/activate && python -m pytest tests/test_state_manager.py::TestCircuitTransitions::test_half_open_failure_reopens_circuit -v",
+      "description": "Run half-open test"
+    },
+    "tool_use_id": "toolu_01Cg8im3bKFpC7qCszHAreiU",
+    "error": "Exit code 1\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails/.venv/bin/python\ncachedir: .pytest_cache\nrootdir: /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails\nplugins: cov-7.0.0\ncollecting ... collected 1 item\n\ntests/test_state_manager.py::TestCircuitTransitions::test_half_open_failure_reopens_circuit FAILED [100%]\n\n=================================== FAILURES ===================================\n________ TestCircuitTransitions.test_half_open_failure_reopens_circuit _________\n\nself = <guardrails.tests.test_state_manager.TestCircuitTransitions object at 0x10bff9760>\nstate_manager = <hook_state_manager.HookStateManager object at 0x10bfc89e0>\n\n    def test_half_open_failure_reopens_circuit(self, state_manager):\n        \"\"\"Test that failure in HALF_OPEN state reopens circuit.\"\"\"\n        # Open circuit\n        for i in range(3):\n            state_manager.record_failure(\"test_hook\", f\"error{i}\")\n    \n        # Transition to half-open\n        state_manager.transition_to_half_open(\"test_hook\")\n    \n        # Record another failure\n        state, changed = state_manager.record_failure(\"test_hook\", \"error_again\")\n    \n        # Circuit should remain open but not trigger state_changed\n        # (it was already open before half-open)\n        assert state.state == CircuitState.OPEN.value\n>       assert not changed  # No state change since circuit was already open\n        ^^^^^^^^^^^^^^^^^^\nE       assert not True\n\ntests/test_state_manager.py:298: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_state_manager.py::TestCircuitTransitions::test_half_open_failure_reopens_circuit\n============================== 1 failed in 0.05s ===============================",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && bash install_cli.sh",
+      "description": "Install CLI tool"
+    },
+    "tool_use_id": "toolu_01QD9qtYHv44azrUvZA9Vf1v",
+    "error": "Exit code 1\nInstalling claude-hooks CLI tool...\n\n\u001b[1;33mMaking CLI script executable...\u001b[0m\n\u001b[1;33mCreating symlink to ~/.local/bin/claude-hooks...\u001b[0m\n\n\u001b[1;33mVerifying installation...\u001b[0m\n\u001b[0;32m\u2713 Symlink created successfully\u001b[0m\n\u001b[0;31m\u2717 CLI test failed\u001b[0m\nTry running: /Users/tomkwon/.local/bin/claude-hooks --help",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "~/.local/bin/claude-hooks --help",
+      "description": "Test CLI manually"
+    },
+    "tool_use_id": "toolu_01GeHkPrUzy7qa7qJZWSD1yi",
+    "error": "Exit code 1\nError: PyYAML is required. Install with: pip install pyyaml",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "~/.local/bin/claude-hooks --help",
+      "description": "Test CLI again"
+    },
+    "tool_use_id": "toolu_017RCftrWyK9UjZwDq3n9sZ3",
+    "error": "Exit code 1\nError: PyYAML is required. Install with: pip install pyyaml",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "which python3 && python3 -c \"import yaml; print('PyYAML OK')\"",
+      "description": "Check Python and yaml import"
+    },
+    "tool_use_id": "toolu_01VEMxBpEmR8dRytmZfqQn5Z",
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import yaml; print('PyYAML OK')\n    ^^^^^^^^^^^\nModuleNotFoundError: No module named 'yaml'\n\n/opt/homebrew/bin/python3",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python3 --version && /opt/homebrew/bin/python3 -m pip install pyyaml pydantic",
+      "description": "Install for homebrew python"
+    },
+    "tool_use_id": "toolu_01GQ8tUyT7BcR63XoikveG2q",
+    "error": "Exit code 1\nerror: externally-managed-environment\n\n\u00d7 This environment is externally managed\n\u2570\u2500> To install Python packages system-wide, try brew install\n    xyz, where xyz is the package you are trying to\n    install.\n    \n    If you wish to install a Python library that isn't in Homebrew,\n    use a virtual environment:\n    \n    python3 -m venv path/to/venv\n    source path/to/venv/bin/activate\n    python3 -m pip install xyz\n    \n    If you wish to install a Python application that isn't in Homebrew,\n    it may be easiest to use 'pipx install xyz', which will manage a\n    virtual environment for you. You can install pipx with\n    \n    brew install pipx\n    \n    You may restore the old behavior of pip by passing\n    the '--break-system-packages' flag to pip, or by adding\n    'break-system-packages = true' to your pip.conf file. The latter\n    will permanently disable this error.\n    \n    If you disable this error, we STRONGLY recommend that you additionally\n    pass the '--user' flag to pip, or set 'user = true' in your pip.conf\n    file. Failure to do this can result in a broken Homebrew installation.\n    \n    Read more about this behavior here: <https://peps.python.org/pep-0668/>\n\nnote: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.\nhint: See PEP 668 for the detailed specification.\n\nPython 3.14.3",
+    "is_interrupt": false
+  }
+]

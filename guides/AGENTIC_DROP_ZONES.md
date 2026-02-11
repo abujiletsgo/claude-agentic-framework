@@ -1,5 +1,7 @@
 # Agentic Drop Zones - Out-of-Loop Automation
 
+> **2026 Update**: Drop zones work alongside the new skills system (23 skills) and knowledge pipeline for persistent learning across automated runs. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Final Evolution
 
 You've mastered the progression:

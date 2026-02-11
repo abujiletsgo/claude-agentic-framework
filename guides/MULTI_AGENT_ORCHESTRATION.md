@@ -1,5 +1,7 @@
 # Multi-Agent Orchestration - The Endgame
 
+> **2026 Update**: Orchestration now uses multi-model tiers (Opus for orchestrator, Sonnet for builders, Haiku for validators). 33 agents available across 3 tiers. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## What You've Achieved So Far
 
 ✅ **Steps 1-5: Elite Context Engineering**

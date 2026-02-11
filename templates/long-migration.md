@@ -1,5 +1,10 @@
 # Database Migration L-Thread
 
+> Template for L-Thread pattern (long-running loop-safe execution).
+> See guides/L_THREADS.md for full documentation.
+> Anti-loop guardrails: global-hooks/framework/guardrails/
+> Knowledge pipeline stores learnings automatically after completion.
+
 ## Task
 Migrate 100 database tables from old schema to new schema.
 

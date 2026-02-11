@@ -1,0 +1,9 @@
+[
+  {
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01YGJztxV2gBjgXGxJkSJ6BK",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUse",
+    "is_mcp_tool": false
+  }
+]

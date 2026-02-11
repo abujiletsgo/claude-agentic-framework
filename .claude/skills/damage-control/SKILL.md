@@ -1,6 +1,7 @@
 ---
 name: Damage Control
-description: Install, configure, and manage the Claude Code Damage Control security hooks system. Use when user mentions damage control, security hooks, protected paths, blocked commands, install security, or modify protection settings.
+version: 0.1.0
+description: "This skill should be used when the user mentions damage control, security hooks, protected paths, blocked commands, install security, or modify protection settings. It installs, configures, and manages the Claude Code Damage Control security hooks system."
 ---
 
 # Damage Control Skill

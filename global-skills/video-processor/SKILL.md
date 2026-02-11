@@ -1,6 +1,7 @@
 ---
 name: Video Processor
-description: Process video files with audio extraction, format conversion (mp4, webm), and Whisper transcription. Use when user mentions video conversion, audio extraction, transcription, mp4, webm, ffmpeg, or whisper transcription.
+version: 0.2.0
+description: "This skill should be used when the user mentions video conversion, audio extraction, transcription, mp4, webm, ffmpeg, or whisper transcription. It processes video files with audio extraction, format conversion (mp4, webm), and Whisper transcription."
 ---
 
 # Video Processor
@@ -8,6 +9,15 @@ description: Process video files with audio extraction, format conversion (mp4, 
 ## Instructions
 
 This skill provides video processing utilities including audio extraction, format conversion, and audio transcription using FFmpeg and OpenAI's Whisper model.
+
+### Security
+
+All commands enforce the following safety measures:
+
+- **No silent overwrite**: Output files are never silently overwritten. If a file exists, the user is prompted for confirmation. Use `--force` to explicitly opt in to overwriting.
+- **Output path restriction**: All output paths must resolve within the current working directory. Absolute paths outside CWD and path traversal (`..`) are blocked.
+- **System directory protection**: Writing to system directories (`/bin`, `/sbin`, `/etc`, `/usr`, `/var`, `/sys`, `/proc`, `/dev`, `/boot`, `/lib`, `/opt`, `/System`, `/Library`, `/private`) is blocked.
+- **Input path validation**: Input files must exist, be regular files, and be readable. Special files (`/dev/*`, `/proc/*`, `/sys/*`) are blocked. Symlinks pointing outside the working directory are rejected.
 
 ### Prerequisites
 
@@ -51,6 +61,7 @@ uv run .claude/skills/video-processor/scripts/video_processor.py extract-audio i
 
 Options:
 - `--format`: Output audio format (default: wav). Supports: wav, mp3, aac, flac
+- `--force`: Overwrite output file without prompting if it already exists
 - Output is suitable for transcription or standalone audio use
 
 #### 2. **Convert Video to MP4**
@@ -64,6 +75,7 @@ uv run .claude/skills/video-processor/scripts/video_processor.py to-mp4 input.av
 Options:
 - `--codec`: Video codec (default: libx264). Common options: libx264, libx265, h264
 - `--preset`: Encoding speed/quality preset (default: medium). Options: ultrafast, fast, medium, slow, veryslow
+- `--force`: Overwrite output file without prompting if it already exists
 
 #### 3. **Convert Video to WebM**
 
@@ -75,6 +87,7 @@ uv run .claude/skills/video-processor/scripts/video_processor.py to-webm input.m
 
 Options:
 - `--codec`: Video codec (default: libvpx-vp9). Options: libvpx, libvpx-vp9
+- `--force`: Overwrite output file without prompting if it already exists
 - WebM is optimized for web playback and streaming
 
 #### 4. **Transcribe Audio with Whisper**
@@ -98,6 +111,7 @@ Options:
   - `large`: Best accuracy, slowest (~10GB RAM)
 - `--language`: Language code (default: auto-detect). Examples: en, es, fr, de, zh
 - `--format`: Output format (default: txt). Options: txt, srt, vtt, json
+- `--force`: Overwrite output file without prompting if it already exists
 
 **Transcription workflow:**
 1. If input is video, FFmpeg extracts audio to temporary WAV file
@@ -124,7 +138,7 @@ uv run .claude/skills/video-processor/scripts/video_processor.py to-webm lecture
 
 **FFmpeg and Whisper Integration:**
 - FFmpeg doesn't transcribe audio itself - it prepares audio for external transcription
-- The workflow is: Extract audio (FFmpeg) → Transcribe (Whisper) → Optional: Re-integrate with video
+- The workflow is: Extract audio (FFmpeg) -> Transcribe (Whisper) -> Optional: Re-integrate with video
 - FFmpeg can pipe audio directly to Whisper for real-time processing (advanced use case)
 
 **Audio Format for Transcription:**
@@ -141,7 +155,11 @@ uv run .claude/skills/video-processor/scripts/video_processor.py to-webm lecture
 ### Error Handling
 
 The script includes comprehensive error handling:
-- Validates input files exist
+- Validates input files exist, are regular files, and are readable
+- Blocks reading from special files (/dev/*, /proc/*, /sys/*)
+- Validates output paths stay within the current working directory
+- Blocks writing to system directories
+- Prompts before overwriting existing files (use --force to skip)
 - Checks FFmpeg and Whisper are installed
 - Provides clear error messages for missing dependencies
 - Handles temporary file cleanup on errors
@@ -250,6 +268,19 @@ You would:
 3. Confirm all conversions and transcriptions completed
 4. Provide summary of output files
 
+### Example 6: Force Overwrite Existing Output
+
+User request:
+```
+Re-convert this video to MP4, overwriting the previous output.
+```
+
+You would:
+1. Use the --force flag to skip the overwrite prompt:
+   ```bash
+   uv run .claude/skills/video-processor/scripts/video_processor.py to-mp4 input.avi output.mp4 --force
+   ```
+
 ## Summary
 
 The video-processor skill provides a unified interface for common video processing tasks:
@@ -257,5 +288,6 @@ The video-processor skill provides a unified interface for common video processi
 - **Format conversion**: Convert to MP4 (universal) or WebM (web-optimized)
 - **Transcription**: Speech-to-text with multiple output formats
 - **Flexible**: CLI arguments for model selection, language, and output formats
+- **Secure**: Path validation, overwrite protection, system directory blocking
 
-All operations are handled through a single, well-documented script with sensible defaults and comprehensive error handling.
+All operations are handled through a single, well-documented script with sensible defaults, comprehensive error handling, and security-hardened path validation.

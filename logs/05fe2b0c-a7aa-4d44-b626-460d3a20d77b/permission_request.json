@@ -1,0 +1,290 @@
+[
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add templates/settings.json.template && git commit -m \"$(cat <<'EOF'\nFix Edit/Write hooks: move to PreToolUse matchers (not top-level events)\n\nEdit and Write are not valid top-level hook event types in Claude Code.\nMoved damage-control + prompt reviewer hooks under PreToolUse with\nmatcher: \"Edit\" and matcher: \"Write\", matching the Bash pattern.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n)\" && git push",
+      "timeout": 30000,
+      "description": "Commit and push the fix"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "git commit:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/tomkwon/Documents/claude-agentic-framework log --oneline -10",
+      "description": "Show last 10 git commits"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "git -C /Users/tomkwon/Documents/claude-agentic-framework log --oneline -10"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/tomkwon/Documents/claude-agentic-framework status",
+      "description": "Show git working tree status"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "git -C /Users/tomkwon/Documents/claude-agentic-framework status"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python3 /Users/tomkwon/Documents/claude-agentic-framework/templates/settings.json.template < /dev/null 2>&1; echo \"exit: $?\"",
+      "description": "Quick test to see if template is readable"
+    }
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cp /dev/null /tmp/audit_diff.py",
+      "description": "Create empty audit script file"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addDirectories",
+        "directories": [
+          "/dev"
+        ],
+        "destination": "session"
+      },
+      {
+        "type": "setMode",
+        "mode": "acceptEdits",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /Users/tomkwon/.claude/ -type l -maxdepth 3 ! -exec test -e {} \\; -print 2>/dev/null | head -10",
+      "description": "Check for broken symlinks"
+    }
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -laO /Users/tomkwon/.claude/hooks/context-bundle-logger.py && xattr -l /Users/tomkwon/.claude/hooks/context-bundle-logger.py 2>/dev/null",
+      "description": "Check for extended attributes or flags on symlink"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "xattr:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "readlink /Users/tomkwon/.claude/hooks/context-bundle-logger.py && stat -f \"%Sm\" /Users/tomkwon/.claude/hooks/context-bundle-logger.py",
+      "description": "Check symlink target and modification time"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/claude-agentic-framework/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ln -sfn /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/context-bundle-logger.py /Users/tomkwon/.claude/hooks/context-bundle-logger.py",
+      "description": "Re-point broken symlink to correct framework path"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "ln:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ln -sfn /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/validators/run_tests.py /Users/tomkwon/.claude/hooks/validators/run_tests.py",
+      "description": "Re-point broken symlink for run_tests"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "ln:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ln -sfn /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/validators/check_lthread_progress.py /Users/tomkwon/.claude/hooks/validators/check_lthread_progress.py",
+      "description": "Re-point broken symlink for check_lthread_progress"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "ln:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add global-hooks/mastery/notification.py global-hooks/observability/notification.py && git commit -m \"$(cat <<'EOF'\nShorten TTS notification message from \"need your input\" to \"input\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\" && git status",
+      "description": "Stage and commit the notification changes"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "git commit:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/05fe2b0c-a7aa-4d44-b626-460d3a20d77b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add global-hooks/mastery/stop.py global-hooks/mastery/subagent_start.py global-hooks/mastery/subagent_stop.py global-hooks/mastery/utils/llm/anth.py global-hooks/mastery/utils/llm/oai.py global-hooks/mastery/utils/llm/ollama.py global-hooks/observability/stop.py global-hooks/observability/subagent_stop.py global-hooks/observability/utils/llm/anth.py global-hooks/observability/utils/llm/oai.py && git commit -m \"$(cat <<'EOF'\nCompact all TTS verbal messages to minimal form\n\n- Notification: \"input\" (was \"Your agent needs your input\")\n- Stop: \"done\"/\"complete\"/\"finished\" (was \"Work complete!\", etc.)\n- Subagent stop: \"sub done\" (was \"Subagent Complete\")\n- Subagent start: \"sub started\"/{type} started\" (was \"Subagent started\"/{type} agent started\")\n- LLM error fallback: \"done\" (was \"Error generating completion message\")\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\"",
+      "description": "Stage and commit verbal message compaction"
+    }
+  }
+]

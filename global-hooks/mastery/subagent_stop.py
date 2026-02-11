@@ -50,7 +50,7 @@ except ImportError:
         pass
 
 try:
-    from utils.llm.task_summarizer import summarize_subagent_task
+    from utils.llm.ollama_task_summarizer import summarize_subagent_task
 except ImportError:
     # Fallback if imports fail
     def summarize_subagent_task(task_description: str, agent_name: Optional[str] = None) -> str:

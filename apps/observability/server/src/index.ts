@@ -1,15 +1,21 @@
 import { initDatabase, insertEvent, getFilterOptions, getRecentEvents, updateEventHITLResponse } from './db';
 import type { HookEvent, HumanInTheLoopResponse } from './types';
-import { 
-  createTheme, 
-  updateThemeById, 
-  getThemeById, 
-  searchThemes, 
-  deleteThemeById, 
-  exportThemeById, 
+import {
+  createTheme,
+  updateThemeById,
+  getThemeById,
+  searchThemes,
+  deleteThemeById,
+  exportThemeById,
   importTheme,
-  getThemeStats 
+  getThemeStats
 } from './theme';
+import {
+  getCostSummary,
+  getDailyBreakdown,
+  getCostProjection,
+  recordCostEntry,
+} from './cost';
 
 // Initialize database
 initDatabase();
@@ -405,6 +411,77 @@ const server = Bun.serve({
       });
     }
     
+    // ─── Cost Tracking API ─────────────────────────────────────
+
+    // GET /api/costs/summary - Get cost summary for a period
+    if (url.pathname === '/api/costs/summary' && req.method === 'GET') {
+      const period = (url.searchParams.get('period') || 'week') as 'today' | 'yesterday' | 'week' | 'month' | 'all';
+      try {
+        const summary = await getCostSummary(period);
+        return new Response(JSON.stringify(summary), {
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error getting cost summary:', error);
+        return new Response(JSON.stringify({ error: 'Failed to get cost summary' }), {
+          status: 500,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // GET /api/costs/daily - Get daily breakdown
+    if (url.pathname === '/api/costs/daily' && req.method === 'GET') {
+      const days = parseInt(url.searchParams.get('days') || '7');
+      try {
+        const daily = await getDailyBreakdown(days);
+        return new Response(JSON.stringify(daily), {
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error getting daily breakdown:', error);
+        return new Response(JSON.stringify({ error: 'Failed to get daily breakdown' }), {
+          status: 500,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // GET /api/costs/projection - Get cost projection
+    if (url.pathname === '/api/costs/projection' && req.method === 'GET') {
+      const days = parseInt(url.searchParams.get('days') || '7');
+      try {
+        const projection = await getCostProjection(days);
+        return new Response(JSON.stringify(projection), {
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error getting cost projection:', error);
+        return new Response(JSON.stringify({ error: 'Failed to get cost projection' }), {
+          status: 500,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // POST /api/costs - Record a cost entry
+    if (url.pathname === '/api/costs' && req.method === 'POST') {
+      try {
+        const entry = await req.json();
+        const recorded = await recordCostEntry(entry);
+        return new Response(JSON.stringify(recorded), {
+          status: 201,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error recording cost entry:', error);
+        return new Response(JSON.stringify({ error: 'Failed to record cost entry' }), {
+          status: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // WebSocket upgrade
     if (url.pathname === '/stream') {
       const success = server.upgrade(req);

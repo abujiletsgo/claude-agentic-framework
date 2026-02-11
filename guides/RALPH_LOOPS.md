@@ -1,5 +1,7 @@
 # Ralph Loops: Stateless Resampling with Completion Promises
 
+> **2026 Update**: Ralph Loops now integrate with anti-loop guardrails and the knowledge pipeline. Learnings from failed iterations are stored automatically. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Problem: Context Rot in Long Tasks
 
 Standard agent threads accumulate context over time. After 20+ turns:

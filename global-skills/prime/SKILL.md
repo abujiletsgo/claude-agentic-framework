@@ -1,6 +1,7 @@
 ---
 name: prime
-description: "Intelligently prime agent with project context. Use when starting a new session or the user says 'prime yourself', 'load context', 'understand this project', or 'get oriented'. Use PROACTIVELY when entering a new codebase."
+version: 0.1.0
+description: "This skill should be used when starting a new session or when the user says 'prime yourself', 'load context', 'understand this project', or 'get oriented'. It intelligently primes the agent with project context and should be used proactively when entering a new codebase."
 ---
 
 # Prime Skill

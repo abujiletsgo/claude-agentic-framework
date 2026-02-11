@@ -1,0 +1,132 @@
+# Caddy Meta-Orchestrator Configuration
+# =======================================
+#
+# Controls the behavior of the Caddy agent and its associated hooks.
+# This file is read by the Caddy UserPromptSubmit hooks to determine
+# how aggressively to analyze and suggest execution strategies.
+#
+# Install: copy or symlink to ~/.claude/caddy_config.yaml
+#   ln -sf "$(pwd)/data/caddy_config.yaml" ~/.claude/caddy_config.yaml
+
+caddy:
+  # Master switch - set to false to disable all Caddy hooks
+  enabled: true
+
+  # Confidence threshold for auto-execution suggestions (0.0 - 1.0)
+  # At or above this threshold, Caddy will strongly recommend its strategy.
+  # Below this threshold, suggestions are softer / informational only.
+  # Set to 1.0 to effectively disable auto-suggestions.
+  auto_invoke_threshold: 0.8
+
+  # Always show skill suggestions, even for low-confidence analyses
+  # Set to false to only show suggestions when confidence >= threshold
+  always_suggest: true
+
+  # Enable background progress monitoring via PostToolUse hook
+  # Tracks sub-agent progress, errors, and resource usage
+  background_monitoring: true
+
+  # Maximum number of log entries to keep per session
+  max_log_entries: 500
+
+  # Delegation strategy mapping
+  # Maps task characteristics to preferred execution patterns
+  delegation_strategy:
+    # Simple tasks (< 3 steps, clear outcome) -> execute directly
+    simple_tasks: direct
+
+    # Research and exploration tasks -> use Explore agents
+    research: explore_agent
+
+    # Multi-step coordinated work -> use orchestrator pattern
+    multi_step: orchestrate
+
+    # Iterative refinement over large codebases -> Ralph Loop
+    iterative: rlm
+
+    # Critical quality decisions (security, production) -> Best-of-N
+    critical: fusion
+
+    # Planning and design -> brainstorm skill
+    planning: brainstorm
+
+  # Model selection for the Caddy system
+  model_selection:
+    # Caddy itself uses Opus for deep reasoning about meta-coordination
+    caddy: opus
+
+    # Sub-agent model selection: "auto" lets Caddy choose per-agent
+    # Alternatively, set a fixed model: "sonnet", "haiku", "opus"
+    delegation: auto
+
+    # Default models by role when delegation is "auto"
+    role_defaults:
+      builder: sonnet
+      researcher: sonnet
+      tester: sonnet
+      reviewer: opus
+      security: opus
+      documenter: sonnet
+      quick_task: haiku
+
+  # Skills that Caddy can recommend or invoke
+  # Set any to false to prevent Caddy from suggesting it
+  skills:
+    brainstorm-before-code: true
+    feasibility-analysis: true
+    tdd-workflow: true
+    code-review: true
+    security-scanner: true
+    performance-profiler: true
+    test-generator: true
+    documentation-writer: true
+    refactoring-assistant: true
+    dependency-audit: true
+    task-decomposition: true
+    project-scaffolder: true
+    git-workflow: true
+    verification-checklist: true
+
+  # Skill security audit configuration
+  # Caddy audits skills for dangerous patterns before recommending them
+  skill_audit:
+    # Enable skill auditing (set false to skip security checks)
+    enabled: true
+
+    # Block skills with critical security issues from being recommended
+    block_critical: true
+
+    # Show warnings for warning-level issues in suggestions
+    warn_on_warnings: true
+
+    # Cache audit results (invalidate when skill files change)
+    cache_results: true
+
+    # Additional critical patterns (regex) beyond built-in defaults
+    # extra_critical_patterns:
+    #   - "curl.*\\|.*bash"
+    #   - "eval\\s*\\("
+
+    # Additional warning patterns (regex) beyond built-in defaults
+    # extra_warning_patterns:
+    #   - "rm\\s+-rf"
+    #   - "\\.ssh/"
+
+  # Logging configuration
+  logging:
+    # Directory for Caddy-specific logs
+    directory: "~/.claude/logs/caddy"
+
+    # Log level: DEBUG, INFO, WARNING, ERROR
+    level: INFO
+
+    # Retain analyses log (jsonl) - max file size before rotation
+    max_log_size_mb: 10
+
+# Environment Variable Overrides
+# ===============================
+# Override any setting via environment variables:
+#   CADDY_ENABLED=false
+#   CADDY_AUTO_INVOKE_THRESHOLD=0.9
+#   CADDY_ALWAYS_SUGGEST=false
+#   CADDY_BACKGROUND_MONITORING=false

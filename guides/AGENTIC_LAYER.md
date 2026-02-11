@@ -1,5 +1,7 @@
 # The Agentic Layer - Codebase Singularity
 
+> **2026 Update**: The agentic layer now includes continuous review, knowledge pipeline, anti-loop guardrails, and prompt hooks for hybrid security. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## What is the Agentic Layer?
 
 **A permanent, always-running system that maintains, improves, and evolves your codebase 24/7.**

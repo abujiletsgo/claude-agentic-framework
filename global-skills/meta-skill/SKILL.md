@@ -1,6 +1,7 @@
 ---
 name: Create New Skills
-description: Creates new Agent Skills for Claude Code following best practices and documentation. Use when the user wants to create a new skill, extend Claude's capabilities, or package domain expertise into a reusable skill.
+version: 0.1.0
+description: "This skill should be used when the user wants to create a new skill, extend Claude's capabilities, or package domain expertise into a reusable skill. It creates new Agent Skills for Claude Code following best practices and documentation."
 ---
 
 # Create New Skills

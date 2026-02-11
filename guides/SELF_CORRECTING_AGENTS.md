@@ -1,5 +1,7 @@
 # Self-Correcting Agents - The Z-Thread Trust Model
 
+> **2026 Update**: Self-correcting agents now benefit from the continuous review system, anti-loop guardrails, and the verification-checklist skill. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+
 ## The Trust Problem
 
 **You have**: Z-Threads (Step 12) that can deploy autonomously

@@ -24,12 +24,14 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/bash-tool-damage-control.py",
-            "timeout": 5
+            "timeout": 5,
+            "statusMessage": "Pattern-matching bash security check..."
           },
           {
             "type": "prompt",
-            "prompt": "You are a security reviewer evaluating a bash command for destructive potential. Analyze this command: $ARGUMENTS\n\nBLOCK if the command would:\n- Delete, remove, or destroy files/directories recursively or in bulk\n- Overwrite or corrupt critical system files, configs, or data\n- Cause irreversible data loss\n- Execute destructive operations via find, xargs, or loops\n- Wipe, format, or damage filesystems\n\nALLOW if the command is:\n- Read-only (cat, ls, grep, find without -delete/-exec rm)\n- Safe write operations to non-critical paths\n- Standard development commands (git status, npm install, etc.)\n- Precise SQL DELETE with a specific ID in WHERE clause\n\nRespond with JSON: {\"decision\": \"approve\" or \"block\", \"reason\": \"brief explanation\"}",
-            "timeout": 10
+            "prompt": "You are a security reviewer for shell commands. Analyze this bash command: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the command would:\n- Delete or destroy files/directories recursively or in bulk (rm -rf, find -delete, xargs rm)\n- Overwrite or corrupt critical system files, configs, or databases\n- Expose secrets by piping credentials to stdout, logs, or network\n- Execute obfuscated/encoded payloads (base64 decode | bash, eval, curl | sh)\n- Modify system-level configs (/etc/*, crontab, systemctl, launchctl)\n- Perform network exfiltration (curl/wget posting file contents to external URLs)\n- Chain destructive operations via pipes or subshells to bypass simple pattern checks\n- Use variable expansion or command substitution to hide destructive intent\n\nAllow (ok: true) if the command is:\n- Read-only operations (cat, ls, grep, find without -delete/-exec rm, head, tail)\n- Standard dev commands (git status/log/diff, npm install/test/build, pytest, cargo build)\n- Safe file writes to project directories\n- Package management (brew, apt, pip install)\n- Process inspection (ps, top, htop)\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
+            "timeout": 10,
+            "statusMessage": "LLM semantic bash validation..."
           }
         ]
       },
@@ -39,12 +41,14 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/edit-tool-damage-control.py",
-            "timeout": 5
+            "timeout": 5,
+            "statusMessage": "Pattern-matching edit security check..."
           },
           {
             "type": "prompt",
-            "prompt": "You are a code quality reviewer. Analyze this edit: $ARGUMENTS\n\nBLOCK if the edit would:\n- Delete or overwrite critical configuration files (settings.json, .env, CLAUDE.md, package.json)\n- Introduce obvious security vulnerabilities (eval of user input, SQL injection, XSS)\n- Remove safety checks, error handling, or validation without replacement\n- Gut or empty a file that was previously populated\n\nALLOW if the edit:\n- Makes targeted, reasonable changes to application code\n- Adds or modifies features, tests, documentation\n- Refactors with equivalent functionality\n- Fixes bugs or improves code quality\n\nRespond with JSON: {\"decision\": \"approve\" or \"block\", \"reason\": \"brief explanation\"}",
-            "timeout": 10
+            "prompt": "You are a code safety reviewer for file edits. Analyze this edit operation: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the edit would:\n- Remove or gut security checks, input validation, authentication, or authorization logic\n- Inject code that executes external commands with unsanitized user input (eval, exec, os.system)\n- Replace working code with empty stubs, TODOs, or 'pass' statements without explanation\n- Modify credential files, environment configs, or security-sensitive settings\n- Introduce SQL injection, XSS, path traversal, or command injection vulnerabilities\n- Disable logging, error handling, or audit trails\n- Change file permissions or access control configurations\n\nAllow (ok: true) if the edit:\n- Makes targeted, scoped changes to application code\n- Adds or modifies features, tests, or documentation\n- Refactors code while maintaining equivalent functionality\n- Fixes bugs, improves error handling, or adds validation\n- Updates imports, types, or formatting\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
+            "timeout": 10,
+            "statusMessage": "LLM semantic edit validation..."
           }
         ]
       },
@@ -54,12 +58,14 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/write-tool-damage-control.py",
-            "timeout": 5
+            "timeout": 5,
+            "statusMessage": "Pattern-matching write security check..."
           },
           {
             "type": "prompt",
-            "prompt": "You are a file safety reviewer. Analyze this write operation: $ARGUMENTS\n\nBLOCK if the write would:\n- Overwrite critical config files with empty or minimal content\n- Write credentials, API keys, or secrets to tracked files\n- Create files in system directories or outside the project\n- Replace a large file with a stub or placeholder\n\nALLOW if the write:\n- Creates or updates application code, tests, or documentation\n- Writes to appropriate project directories\n- Contains substantive, complete content\n- Follows the project's existing patterns\n\nRespond with JSON: {\"decision\": \"approve\" or \"block\", \"reason\": \"brief explanation\"}",
-            "timeout": 10
+            "prompt": "You are a file safety reviewer for write operations. Analyze this file write: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the write would:\n- Overwrite critical config files with empty or minimal placeholder content\n- Write credentials, API keys, tokens, or secrets to version-controlled files\n- Create files in system directories or outside the project scope\n- Replace a large, functioning file with a stub, skeleton, or drastically reduced version\n- Write executable scripts with dangerous permissions or destructive operations\n- Create files that could be used for privilege escalation (cron jobs, sudoers, systemd units)\n- Overwrite lock files, build artifacts, or generated files that should not be manually edited\n\nAllow (ok: true) if the write:\n- Creates or updates application code, tests, or documentation\n- Writes to appropriate project directories\n- Contains substantive, complete, well-structured content\n- Follows the project's existing patterns and conventions\n- Creates configuration files with safe defaults\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
+            "timeout": 10,
+            "statusMessage": "LLM semantic write validation..."
           }
         ]
       },
@@ -241,6 +247,12 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionStart",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/security/verify_skills.py",
+            "timeout": 5,
+            "statusMessage": "Verifying skills integrity..."
           }
         ]
       }
