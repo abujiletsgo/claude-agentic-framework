@@ -399,5 +399,184 @@
     "tool_use_id": "toolu_01BaGWg6yMsfunVueCBgq9dQ",
     "error": "Exit code 1\n=== Worktree Manager Test Suite ===\nTest directory: /tmp/worktree-test-31967\n\n--- Phase 1: Set up test repository ---\nInitialized empty Git repository in /private/tmp/worktree-test-31967/test-project/.git/\nSwitched to a new branch 'main'\n[main (root-commit) f277427] Initial commit\n 6 files changed, 28 insertions(+)\n create mode 100644 .claude/settings.json\n create mode 100644 .env\n create mode 100644 apps/client/index.html\n create mode 100644 apps/client/package.json\n create mode 100644 apps/server/index.js\n create mode 100644 apps/server/package.json\n  PASS: Git repo initialized\n  PASS: Main branch exists\n  PASS: File exists: /tmp/worktree-test-31967/test-project/.claude/settings.json\n  PASS: File exists: /tmp/worktree-test-31967/test-project/.env\n\n--- Phase 1b: Input validation tests ---\n  PASS: Validation script exists\n  PASS: Accept: my-feature\n  PASS: Accept: fix-bug\n  PASS: Accept: add_auth\n  PASS: Accept: v1.2.3\n  PASS: Accept: feature.test_name-123\n  PASS: Accept: AB\n  PASS: Reject: empty string\n  PASS: Reject: single char 'a'\n  PASS: Reject: space in name\n  PASS: Reject: slash in name\n  PASS: Reject: semicolon\n  PASS: Reject: ampersand\n  PASS: Reject: pipe\n  PASS: Reject: dollar sign\n  PASS: Reject: backtick\n  PASS: Reject: parentheses\n  PASS: Reject: leading dot\n  PASS: Reject: path traversal (..)\n  PASS: Reject: name over 50 chars\n  PASS: Accept: port offset 0\n  PASS: Accept: port offset 5\n  PASS: Accept: port offset 99\n  PASS: Reject: port offset negative\n  PASS: Reject: port offset non-numeric\n  PASS: Reject: port offset too large\n  FAIL: Accept: path within parent (should have been accepted but was rejected)\n  PASS: Reject: path outside parent\n\n--- Phase 2: Create worktree with isolated config ---\n  Port offset: 1\n  Server port: 4010\n  Client port: 5183\n  Worktree dir: /tmp/worktree-test-31967/test-project-test-feature\nPreparing worktree (new branch 'test-feature')\nHEAD is now at f277427 Initial commit\n  PASS: Worktree created\n  PASS: Worktree in git list\n  PASS: Worktree appears in git worktree list\n\n--- Phase 3: Set up isolated .claude/settings.json ---\n  PASS: File exists: /tmp/worktree-test-31967/test-project-test-feature/.claude/settings.json\n  PASS: settings.json has worktree server port (4010)\n  PASS: settings.json does NOT have main server port (4000)\n  PASS: Main settings.json still has original port (4000)\n\n--- Phase 4: Set up environment files ---\n  PASS: File exists: /tmp/worktree-test-31967/test-project-test-feature/.env\n  PASS: Root .env has API keys\n  PASS: File exists: /tmp/worktree-test-31967/test-project-test-feature/apps/server/.env\n  PASS: Server .env has correct port (4010)\n  PASS: File exists: /tmp/worktree-test-31967/test-project-test-feature/apps/client/.env\n  PASS: Client .env has correct port (5183)\n  PASS: PID tracking directory created\n\n--- Phase 5: Verify complete isolation ---\n  PASS: settings.json files are different (ports isolated)\n  PASS: Worktree has .git file (not directory) - correct worktree setup\n  PASS: Worktree has its own toplevel path\n  PASS: Git objects are shared (worktree links to main .git)\n\n--- Phase 6: Make changes in worktree and commit ---\n[test-feature 7850c7f] Add authentication middleware\n 1 file changed, 4 insertions(+)\n create mode 100644 apps/server/auth.js\n  PASS: Commit created in worktree branch\n  PASS: Main branch does not have worktree changes (isolated)\n\n--- Phase 7: Merge worktree branch back to main ---\nUpdating f277427..7850c7f\nFast-forward\n apps/server/auth.js | 4 ++++\n 1 file changed, 4 insertions(+)\n create mode 100644 apps/server/auth.js\n  PASS: Merge completed successfully\n  PASS: Merged file exists in main branch\n\n--- Phase 8: Remove worktree and clean up ---\n  PASS: Worktree removed via git\n  PASS: Worktree no longer in git worktree list\nDeleted branch test-feature (was 7850c7f).\n  PASS: Branch deleted successfully\n\n=== Test Results ===\n\n  Total:  57\n  Passed: 56\n  Failed: 1\n\n  SOME TESTS FAILED\n\n--- Cleanup ---\nCleaned up test directory: /tmp/worktree-test-31967",
     "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/prime/",
+      "description": "Test the audit script on the prime skill"
+    },
+    "tool_use_id": "toolu_01V3Fu5pzUp8LvadRCkUrV2J",
+    "error": "Exit code 2\n\ud83d\udeab prime: BLOCKED\n   Critical: 3, Warnings: 3, Info: 0\n   Critical Issues:\n   - SKILL.md:88 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:88 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:142 - eval() call (code injection risk)",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && just audit-local-skills",
+      "description": "Test the audit-local-skills justfile command"
+    },
+    "tool_use_id": "toolu_018R61ZArYD8G9ZL3Phy1W3H",
+    "error": "Exit code 127\n(eval):1: command not found: just",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && if [ -d \".claude/skills\" ]; then echo \"Scanning local project skills...\"; for skill_dir in .claude/skills/*/; do if [ -d \"$skill_dir\" ]; then python3 scripts/audit_local_skill.py \"$skill_dir\"; fi; done; else echo \"No .claude/skills/ directory found in current project\"; fi",
+      "description": "Test audit-local-skills command manually"
+    },
+    "tool_use_id": "toolu_016uNbSKDR3KCbN6cEDg8qvS",
+    "error": "Exit code 2\nScanning local project skills...\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py .claude/skills/damage-control/",
+      "description": "Test audit on existing damage-control skill"
+    },
+    "tool_use_id": "toolu_01L64xQ7bNYfCn1hji49EYsf",
+    "error": "Exit code 2\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/worktree-manager-skill/",
+      "description": "Test audit on worktree-manager skill"
+    },
+    "tool_use_id": "toolu_01X8FBEQmwz9E9exDTwf1R8T",
+    "error": "Exit code 1\n\u26a0\ufe0f  worktree-manager-skill: WARNINGS\n   Warnings: 62, Info: 4\n   Warning Issues:\n   - EXAMPLES.md:110 - Environment file access\n   - REFERENCE.md:105 - Environment file access\n   - REFERENCE.md:113 - Environment file access",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/hello-world-agent/",
+      "description": "Test audit on hello-world (should be clean)"
+    },
+    "tool_use_id": "toolu_01CXGNrYqXPRoJXYDuD9gBEh",
+    "error": "Exit code 2\nError: Skill directory does not exist: /Users/tomkwon/Documents/claude-agentic-framework/global-skills/hello-world-agent",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+      "description": "Test the review tool with automatic whitelist"
+    },
+    "tool_use_id": "toolu_01XptkT8KouNDSbXPxJc38Xk",
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+      "description": "Test the review tool again"
+    },
+    "tool_use_id": "toolu_012WfeS6vQnMAmmQ7pMkvvQ1",
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-agents/team"
+    },
+    "tool_use_id": "toolu_011jKthiwN8ha6YdVPwSyHN7",
+    "error": "EISDIR: illegal operation on a directory, read",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python3 scripts/load_team_template.py --list",
+      "description": "Test the team template script"
+    },
+    "tool_use_id": "toolu_018YV7etKek6hVrDLcfMKci9",
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 22, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "uv run scripts/load_team_template.py --list",
+      "description": "Test the team template loader script"
+    },
+    "tool_use_id": "toolu_01Etbuo4nBVhYxxZasuLQaQH",
+    "error": "Exit code 1\nInstalled 1 package in 15ms\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 361, in <module>\n    main()\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 311, in main\n    template = loader.load_template(template_name)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 48, in load_template\n    template = yaml.safe_load(f)\n               ^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 125, in safe_load\n    return load(stream, SafeLoader)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 81, in load\n    return loader.get_single_data()\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/constructor.py\", line 49, in get_single_data\n    node = self.get_single_node()\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 36, in get_single_node\n    document = self.compose_document()\n               ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 55, in compose_document\n    node = self.compose_node(None, None)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 82, in compose_node\n    node = self.compose_sequence_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 111, in compose_sequence_node\n    node.value.append(self.compose_node(node, index))\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 127, in compose_mapping_node\n    while not self.check_event(MappingEndEvent):\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 98, in check_event\n    self.current_event = self.state()\n                         ^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 438, in parse_block_mapping_key\n    raise ParserError(\"while parsing a block mapping\", self.marks[-1],\nyaml.parser.ParserError: while parsing a block mapping\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 7\nexpected <block end>, but found '<scalar>'\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 47\n\nAvailable team templates:",
+    "is_interrupt": false
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "rm \"/Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md\"",
+      "description": "Delete old caddy.md file"
+    },
+    "tool_use_id": "toolu_01AEJdT3PWoN1xCA4EjcBQmP",
+    "error": "Exit code 1\nrm: /Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md: No such file or directory",
+    "is_interrupt": false
   }
 ]

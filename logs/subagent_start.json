@@ -376,5 +376,122 @@
     "agent_id": "abd5b2c",
     "agent_type": "builder",
     "logged_at": "2026-02-11T23:39:33.997969"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae336e9",
+    "agent_type": "claude-code-guide",
+    "logged_at": "2026-02-12T00:47:47.737371"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a01b294",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:02:28.059260"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae9735f",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:02:35.036913"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a210b38",
+    "agent_type": "researcher",
+    "logged_at": "2026-02-12T01:02:42.380260"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a2a7a6c",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:02:49.378665"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a2fbbab",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:02:58.881531"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a7ad59d",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:03:07.910017"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a46e615",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:03:14.986851"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a96f816",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:03:21.579574"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a5b216d",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:20:53.605316"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ab80393",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:21:03.736373"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a2557a2",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:21:08.145121"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a6f9771",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:21:16.430169"
   }
 ]

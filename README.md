@@ -10,7 +10,7 @@ The **Claude Agentic Framework** is a comprehensive autonomous engineering platf
 
 - **15 Comprehensive Guides** covering everything from basic context engineering to advanced multi-agent patterns
 - **25+ Ready-to-Use Commands** for delegation, orchestration, planning, worktrees, and more
-- **33 Agents across 3 Tiers**: 4 Opus (planning/security), 16 Sonnet (implementation), 13 Haiku (validation)
+- **34 Agents across 3 Tiers**: 4 Opus (planning/security), 17 Sonnet (implementation), 13 Haiku (validation)
 - **23 Skills** for the full engineering lifecycle (prime, review, test, security, refactor, scaffold, TDD, and more)
 - **5 Hook Namespaces**: damage-control, mastery, observability, framework (knowledge/review/guardrails/testing), prompt-hooks
 - **Knowledge Pipeline**: SQLite FTS5 persistent memory for cross-session learning
@@ -198,7 +198,7 @@ The framework implements a layered architecture:
         │                  │                  │
 ┌───────▼──────┐  ┌────────▼─────┐  ┌────────▼─────┐
 │  RESEARCHER  │  │ ORCHESTRATOR │  │  RLM ROOT    │
-│   Sub-Agent  │  │  Lead Agent  │  │  Controller  │
+│   Sub-Agent  │  │ Coordinator  │  │  Controller  │
 └──────────────┘  └──────────────┘  └──────────────┘
                            │
         ┌──────────────────┼──────────────────┐
@@ -279,13 +279,13 @@ The framework implements a layered architecture:
 
 **Problem**: Coordinating multiple agents manually is complex and error-prone.
 
-**Solution**: Orchestrator agent coordinates agent fleets, you give high-level goals.
+**Solution**: Orchestrator (primary coordinator) manages agent fleets with strategy selection, you give high-level goals.
 
 ```bash
 # Enable experimental feature
 export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
-# Let orchestrator coordinate the fleet
+# Let Orchestrator coordinate the fleet
 /orchestrate "Build a Vue+FastAPI app with auth"
 ```
 
@@ -433,17 +433,22 @@ Every agent assigned to the optimal tier:
 ```
 Opus  (12%):  4 agents -- orchestrator, project-architect, critical-analyst, rlm-root
 Sonnet (48%): 16 agents -- builder, researcher, meta-agent, + 13 more
-Haiku  (39%): 13 agents -- validator, docs-scraper, hello-world, + 10 more
+Haiku  (39%): 13 agents -- validator, caddy-assistant, docs-scraper, hello-world, + 9 more
 ```
 
 Saves 50-60% vs previous all-Opus or mixed configuration. Set in agent frontmatter `model:` field. Centralized config in `data/model_tiers.yaml`.
 
 ### Strategic Agents
 
-Two new versatile agents replace removed crypto-specific agents:
+Versatile high-level reasoning agents for complex decision-making:
 
+- **Orchestrator** (Opus): Primary coordinator with strategy selection, agent team planning, and execution management
 - **Project-Architect** (Opus): Analyze projects, design agent ecosystems, create project-specific automation
 - **Critical-Analyst** (Opus): Question every detail, identify risks, challenge assumptions
+
+### Support Services
+
+- **Caddy-Assistant** (Haiku): Skill auditing, registry maintenance, and rapid triage for coordination support
 
 ### Agent Teams
 
@@ -484,7 +489,7 @@ See [docs/SKILLS_INTEGRITY.md](docs/SKILLS_INTEGRITY.md) for detailed documentat
 
 ### Automatic Skill Auditing
 
-The Caddy meta-orchestrator automatically audits skills before recommending them. The auditor scans for code injection patterns, dangerous commands, sensitive file access, insecure permissions, and secret handling issues. Critical findings block the skill from being recommended.
+The framework provides automatic skill auditing via the Caddy-Assistant support agent. The auditor scans for code injection patterns, dangerous commands, sensitive file access, insecure permissions, and secret handling issues. Critical findings block the skill from being recommended.
 
 **Prime Integration**: When using `/prime` to load project context, local skills in `.claude/skills/` are automatically scanned for security issues. Skills with critical findings are blocked from loading.
 
@@ -628,7 +633,7 @@ Delegate deep analysis to specialist sub-agent.
 ### Orchestration Commands
 
 #### `/orchestrate "<goal>"`
-Delegate high-level goal to orchestrator agent who coordinates sub-agent fleet.
+Delegate high-level goal to Orchestrator agent (primary coordinator with strategy selection).
 
 ```bash
 /orchestrate "Build REST API with CRUD operations and tests"

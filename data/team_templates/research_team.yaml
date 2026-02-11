@@ -1,0 +1,214 @@
+# Research Team Template
+# 2-3 researchers exploring technology options and best practices
+
+name: Technology Research Team
+purpose: Deep research into technologies, frameworks, and implementation patterns
+team_type: research
+
+# ─── Team Configuration ──────────────────────────────────────────
+
+teammates:
+  - name: primary-researcher
+    model: sonnet
+    focus_area: Primary technology research, documentation analysis, API exploration
+    domain:
+      files:
+        - "**/*.md"
+        - "**/docs/**"
+        - "**/README*"
+      exclude: []
+    responsibilities:
+      - Research target technology documentation
+      - Analyze official guides and best practices
+      - Explore API references and code examples
+      - Identify common pitfalls and gotchas
+      - Compile implementation patterns
+      - Assess learning curve and onboarding difficulty
+    output_format: |
+      ## Primary Research Report
+
+      ### Technology Overview
+      - [Capabilities, use cases, ecosystem]
+
+      ### Documentation Quality
+      - [Completeness, clarity, examples]
+
+      ### Implementation Patterns
+      - [Common approaches, best practices]
+
+      ### Gotchas & Pitfalls
+      - [Known issues, edge cases]
+
+  - name: comparative-researcher
+    model: sonnet
+    focus_area: Alternative technologies, trade-off analysis, ecosystem comparison
+    domain:
+      files:
+        - "**/*.md"
+        - "**/benchmarks/**"
+        - "**/comparisons/**"
+      exclude: []
+    responsibilities:
+      - Research alternative technologies
+      - Compare features, performance, and maturity
+      - Analyze community size and activity
+      - Evaluate long-term viability and support
+      - Assess migration paths and vendor lock-in
+      - Compare licensing and cost models
+    output_format: |
+      ## Comparative Analysis
+
+      ### Alternatives Considered
+      - [Technology A vs B vs C]
+
+      ### Trade-offs Matrix
+      - [Feature comparison, pros/cons]
+
+      ### Recommendation
+      - [Best fit for requirements with justification]
+
+  - name: integration-researcher
+    model: haiku
+    focus_area: Integration patterns, tooling compatibility, existing codebase fit
+    domain:
+      files:
+        - "**/*"
+      exclude:
+        - "**/node_modules/**"
+        - "**/__pycache__/**"
+        - "**/dist/**"
+    responsibilities:
+      - Analyze integration with existing codebase
+      - Research tooling and IDE support
+      - Identify dependency conflicts
+      - Evaluate build and deployment impact
+      - Assess testing and debugging experience
+      - Recommend migration or adoption strategy
+    output_format: |
+      ## Integration Analysis
+
+      ### Codebase Compatibility
+      - [Conflicts, dependencies, breaking changes]
+
+      ### Tooling Support
+      - [IDE, linters, formatters, debuggers]
+
+      ### Adoption Strategy
+      - [Incremental migration plan, rollback options]
+    optional: true  # Can be omitted for greenfield projects
+
+# ─── Coordination Strategy ───────────────────────────────────────
+
+coordination:
+  strategy: parallel_research_then_debate
+  description: Researchers work independently, then debate findings to reach consensus
+
+  phases:
+    - phase: independent_research
+      agents: [primary-researcher, comparative-researcher, integration-researcher]
+      execution: parallel
+      timeout: 900  # 15 minutes per researcher
+
+    - phase: findings_debate
+      agents: [primary-researcher, comparative-researcher, integration-researcher]
+      execution: round_robin  # Each presents, others challenge
+      timeout: 600  # 10 minutes
+
+    - phase: consensus
+      agent: primary-researcher  # Synthesizes final recommendation
+      execution: sequential
+      inputs: [all_findings, debate_transcript]
+      timeout: 300  # 5 minutes
+
+  conflict_resolution:
+    - Primary-researcher has final say on technical accuracy
+    - Comparative-researcher arbitrates feature comparison disputes
+    - Integration-researcher decides on codebase compatibility questions
+
+# ─── Communication Patterns ──────────────────────────────────────
+
+communication:
+  shared_context:
+    research_question: Specific question or technology to investigate
+    requirements: Must-have features and constraints
+    current_stack: Existing technologies for compatibility check
+    budget: Licensing costs, training time, migration effort
+
+  handoff_protocol:
+    - "primary-researcher writes: primary_research.md"
+    - "comparative-researcher writes: comparative_analysis.md"
+    - "integration-researcher writes: integration_analysis.md"
+    - "consensus phase creates: research_recommendation.md"
+
+  output_location: .claude/research/
+
+  debate_format:
+    - Each researcher presents key findings (3 minutes)
+    - Others challenge assumptions and ask clarifying questions
+    - Identify areas of agreement and disagreement
+    - Vote on final recommendation (majority wins)
+
+# ─── Exit Criteria ───────────────────────────────────────────────
+
+exit_criteria:
+  success:
+    - All researchers complete their analysis
+    - Consensus reached on recommendation
+    - Action plan defined (adopt, investigate further, reject)
+
+  failure:
+    - Timeout exceeded (30 minutes total)
+    - Irreconcilable disagreement among researchers
+    - Insufficient information available (documentation gap)
+
+  partial_success:
+    - Research complete but no clear winner
+    - More investigation needed (deferred decision)
+
+# ─── Usage Examples ──────────────────────────────────────────────
+
+usage:
+  command: just team-research <topic>
+
+  examples:
+    - description: Research state management library
+      command: just team-research "React state management (Redux vs Zustand vs Jotai)"
+
+    - description: Research database options
+      command: just team-research "PostgreSQL vs MongoDB for user analytics"
+
+    - description: Research authentication solution
+      command: just team-research "Auth0 vs Clerk vs custom JWT implementation"
+
+    - description: Research with specific requirements
+      command: just team-research "GraphQL server" --requirements docs/api_requirements.md
+
+# ─── Research Scope Presets ──────────────────────────────────────
+
+scope_presets:
+  quick:
+    description: High-level overview, 10 minute time limit
+    depth: surface_level
+    outputs: [summary, recommendation]
+
+  standard:
+    description: Thorough analysis, 30 minute time limit
+    depth: detailed
+    outputs: [summary, comparison, recommendation, migration_plan]
+
+  deep:
+    description: Exhaustive research, 60 minute time limit
+    depth: comprehensive
+    outputs: [summary, comparison, recommendation, migration_plan, proof_of_concept]
+
+# ─── Metrics & Observability ─────────────────────────────────────
+
+metrics:
+  track:
+    - research_duration_seconds
+    - technologies_compared_count
+    - sources_consulted_count
+    - confidence_score  # 1-10, researcher consensus
+    - recommendation_type  # adopt, investigate, reject
+
+  emit_to: observability_dashboard

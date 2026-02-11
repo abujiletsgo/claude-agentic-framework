@@ -890,5 +890,375 @@
       "is_interrupt": false,
       "logged_at": "2026-02-11T23:32:34.093178"
     }
+  },
+  {
+    "timestamp": "2026-02-12T00:01:10.860664",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01V3Fu5pzUp8LvadRCkUrV2J",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/prime/",
+      "description": "Test the audit script on the prime skill"
+    },
+    "error": "Exit code 2\n\ud83d\udeab prime: BLOCKED\n   Critical: 3, Warnings: 3, Info: 0\n   Critical Issues:\n   - SKILL.md:88 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:88 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:142 - eval() call (code injection risk)",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/prime/",
+        "description": "Test the audit script on the prime skill"
+      },
+      "tool_use_id": "toolu_01V3Fu5pzUp8LvadRCkUrV2J",
+      "error": "Exit code 2\n\ud83d\udeab prime: BLOCKED\n   Critical: 3, Warnings: 3, Info: 0\n   Critical Issues:\n   - SKILL.md:88 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:88 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:142 - eval() call (code injection risk)",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:01:10.860664"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:02:42.716648",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_018R61ZArYD8G9ZL3Phy1W3H",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && just audit-local-skills",
+      "description": "Test the audit-local-skills justfile command"
+    },
+    "error": "Exit code 127\n(eval):1: command not found: just",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && just audit-local-skills",
+        "description": "Test the audit-local-skills justfile command"
+      },
+      "tool_use_id": "toolu_018R61ZArYD8G9ZL3Phy1W3H",
+      "error": "Exit code 127\n(eval):1: command not found: just",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:02:42.716648"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:25:25.928768",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_016uNbSKDR3KCbN6cEDg8qvS",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && if [ -d \".claude/skills\" ]; then echo \"Scanning local project skills...\"; for skill_dir in .claude/skills/*/; do if [ -d \"$skill_dir\" ]; then python3 scripts/audit_local_skill.py \"$skill_dir\"; fi; done; else echo \"No .claude/skills/ directory found in current project\"; fi",
+      "description": "Test audit-local-skills command manually"
+    },
+    "error": "Exit code 2\nScanning local project skills...\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && if [ -d \".claude/skills\" ]; then echo \"Scanning local project skills...\"; for skill_dir in .claude/skills/*/; do if [ -d \"$skill_dir\" ]; then python3 scripts/audit_local_skill.py \"$skill_dir\"; fi; done; else echo \"No .claude/skills/ directory found in current project\"; fi",
+        "description": "Test audit-local-skills command manually"
+      },
+      "tool_use_id": "toolu_016uNbSKDR3KCbN6cEDg8qvS",
+      "error": "Exit code 2\nScanning local project skills...\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:25:25.928768"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:35:30.419152",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01L64xQ7bNYfCn1hji49EYsf",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py .claude/skills/damage-control/",
+      "description": "Test audit on existing damage-control skill"
+    },
+    "error": "Exit code 2\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py .claude/skills/damage-control/",
+        "description": "Test audit on existing damage-control skill"
+      },
+      "tool_use_id": "toolu_01L64xQ7bNYfCn1hji49EYsf",
+      "error": "Exit code 2\n\ud83d\udeab damage-control: BLOCKED\n   Critical: 6, Warnings: 82, Info: 0\n   Critical Issues:\n   - SKILL.md:189 - Curl pipe bash (arbitrary code execution)\n   - SKILL.md:188 - Curl pipe sh (arbitrary code execution)\n   - SKILL.md:189 - Curl pipe sh (arbitrary code execution)\n   ... and 3 more\n   Note: .md files may show false positives from documentation examples",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:35:30.419152"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:35:37.178272",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01X8FBEQmwz9E9exDTwf1R8T",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/worktree-manager-skill/",
+      "description": "Test audit on worktree-manager skill"
+    },
+    "error": "Exit code 1\n\u26a0\ufe0f  worktree-manager-skill: WARNINGS\n   Warnings: 62, Info: 4\n   Warning Issues:\n   - EXAMPLES.md:110 - Environment file access\n   - REFERENCE.md:105 - Environment file access\n   - REFERENCE.md:113 - Environment file access",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/worktree-manager-skill/",
+        "description": "Test audit on worktree-manager skill"
+      },
+      "tool_use_id": "toolu_01X8FBEQmwz9E9exDTwf1R8T",
+      "error": "Exit code 1\n\u26a0\ufe0f  worktree-manager-skill: WARNINGS\n   Warnings: 62, Info: 4\n   Warning Issues:\n   - EXAMPLES.md:110 - Environment file access\n   - REFERENCE.md:105 - Environment file access\n   - REFERENCE.md:113 - Environment file access",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:35:37.178272"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:35:41.679787",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01CXGNrYqXPRoJXYDuD9gBEh",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/hello-world-agent/",
+      "description": "Test audit on hello-world (should be clean)"
+    },
+    "error": "Exit code 2\nError: Skill directory does not exist: /Users/tomkwon/Documents/claude-agentic-framework/global-skills/hello-world-agent",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/audit_local_skill.py global-skills/hello-world-agent/",
+        "description": "Test audit on hello-world (should be clean)"
+      },
+      "tool_use_id": "toolu_01CXGNrYqXPRoJXYDuD9gBEh",
+      "error": "Exit code 2\nError: Skill directory does not exist: /Users/tomkwon/Documents/claude-agentic-framework/global-skills/hello-world-agent",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:35:41.679787"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:42:58.459890",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01XptkT8KouNDSbXPxJc38Xk",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+      "description": "Test the review tool with automatic whitelist"
+    },
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+        "description": "Test the review tool with automatic whitelist"
+      },
+      "tool_use_id": "toolu_01XptkT8KouNDSbXPxJc38Xk",
+      "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:42:58.459890"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T00:43:10.670996",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_012WfeS6vQnMAmmQ7pMkvvQ1",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+      "description": "Test the review tool again"
+    },
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "cd ~/Documents/claude-agentic-framework && python3 scripts/review_blocked_skills.py . << 'EOF'\nw\nEOF\n",
+        "description": "Test the review tool again"
+      },
+      "tool_use_id": "toolu_012WfeS6vQnMAmmQ7pMkvvQ1",
+      "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/review_blocked_skills.py\", line 9, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T00:43:10.670996"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T01:02:31.277469",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Read",
+    "tool_use_id": "toolu_011jKthiwN8ha6YdVPwSyHN7",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-agents/team"
+    },
+    "error": "EISDIR: illegal operation on a directory, read",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-agents/team"
+      },
+      "tool_use_id": "toolu_011jKthiwN8ha6YdVPwSyHN7",
+      "error": "EISDIR: illegal operation on a directory, read",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T01:02:31.277469"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T01:08:05.877428",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_018YV7etKek6hVrDLcfMKci9",
+    "tool_input": {
+      "command": "python3 scripts/load_team_template.py --list",
+      "description": "Test the team template script"
+    },
+    "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 22, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "python3 scripts/load_team_template.py --list",
+        "description": "Test the team template script"
+      },
+      "tool_use_id": "toolu_018YV7etKek6hVrDLcfMKci9",
+      "error": "Exit code 1\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 22, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T01:08:05.877428"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T01:08:22.000967",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01Etbuo4nBVhYxxZasuLQaQH",
+    "tool_input": {
+      "command": "uv run scripts/load_team_template.py --list",
+      "description": "Test the team template loader script"
+    },
+    "error": "Exit code 1\nInstalled 1 package in 15ms\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 361, in <module>\n    main()\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 311, in main\n    template = loader.load_template(template_name)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 48, in load_template\n    template = yaml.safe_load(f)\n               ^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 125, in safe_load\n    return load(stream, SafeLoader)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 81, in load\n    return loader.get_single_data()\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/constructor.py\", line 49, in get_single_data\n    node = self.get_single_node()\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 36, in get_single_node\n    document = self.compose_document()\n               ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 55, in compose_document\n    node = self.compose_node(None, None)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 82, in compose_node\n    node = self.compose_sequence_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 111, in compose_sequence_node\n    node.value.append(self.compose_node(node, index))\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 127, in compose_mapping_node\n    while not self.check_event(MappingEndEvent):\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 98, in check_event\n    self.current_event = self.state()\n                         ^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 438, in parse_block_mapping_key\n    raise ParserError(\"while parsing a block mapping\", self.marks[-1],\nyaml.parser.ParserError: while parsing a block mapping\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 7\nexpected <block end>, but found '<scalar>'\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 47\n\nAvailable team templates:",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "uv run scripts/load_team_template.py --list",
+        "description": "Test the team template loader script"
+      },
+      "tool_use_id": "toolu_01Etbuo4nBVhYxxZasuLQaQH",
+      "error": "Exit code 1\nInstalled 1 package in 15ms\nTraceback (most recent call last):\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 361, in <module>\n    main()\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 311, in main\n    template = loader.load_template(template_name)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/Documents/claude-agentic-framework/scripts/load_team_template.py\", line 48, in load_template\n    template = yaml.safe_load(f)\n               ^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 125, in safe_load\n    return load(stream, SafeLoader)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/__init__.py\", line 81, in load\n    return loader.get_single_data()\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/constructor.py\", line 49, in get_single_data\n    node = self.get_single_node()\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 36, in get_single_node\n    document = self.compose_document()\n               ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 55, in compose_document\n    node = self.compose_node(None, None)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 133, in compose_mapping_node\n    item_value = self.compose_node(node, item_key)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 82, in compose_node\n    node = self.compose_sequence_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 111, in compose_sequence_node\n    node.value.append(self.compose_node(node, index))\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 84, in compose_node\n    node = self.compose_mapping_node(anchor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/composer.py\", line 127, in compose_mapping_node\n    while not self.check_event(MappingEndEvent):\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 98, in check_event\n    self.current_event = self.state()\n                         ^^^^^^^^^^^^\n  File \"/Users/tomkwon/.cache/uv/environments-v2/load-team-template-3decf5273bb2a943/lib/python3.12/site-packages/yaml/parser.py\", line 438, in parse_block_mapping_key\n    raise ParserError(\"while parsing a block mapping\", self.marks[-1],\nyaml.parser.ParserError: while parsing a block mapping\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 7\nexpected <block end>, but found '<scalar>'\n  in \"/Users/tomkwon/Documents/claude-agentic-framework/data/team_templates/architecture_team.yaml\", line 194, column 47\n\nAvailable team templates:",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T01:08:22.000967"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T01:24:13.217717",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01AEJdT3PWoN1xCA4EjcBQmP",
+    "tool_input": {
+      "command": "rm \"/Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md\"",
+      "description": "Delete old caddy.md file"
+    },
+    "error": "Exit code 1\nrm: /Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md: No such file or directory",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "raw_input": {
+      "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "rm \"/Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md\"",
+        "description": "Delete old caddy.md file"
+      },
+      "tool_use_id": "toolu_01AEJdT3PWoN1xCA4EjcBQmP",
+      "error": "Exit code 1\nrm: /Users/tomkwon/Documents/claude-agentic-framework/global-agents/caddy.md: No such file or directory",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T01:24:13.217717"
+    }
   }
 ]

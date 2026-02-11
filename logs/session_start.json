@@ -20,5 +20,17 @@
     "source": "compact",
     "model": "claude-sonnet-4-5-20250929",
     "agent_type": ""
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-sonnet-4-5-20250929",
+    "agent_type": ""
+  }
+]s/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-sonnet-4-5-20250929"
   }
 ]

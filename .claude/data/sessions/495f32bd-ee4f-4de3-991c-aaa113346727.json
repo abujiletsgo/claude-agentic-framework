@@ -13,6 +13,15 @@
     "using multiple agents and work this in parallel, there are a lot of tasks so let's get it orchestrate it once more. divide workloads into pieces that doesn't intertwine and get different agents to work on it at the same time. let'sd do everything in parallel right now from above. at the same time for now i want to use more opus because i'm using max upgraded version. so let's start off with immediate actions -> integration -> validations. pleasre review all the docs and update them to suit the update. also i would love to have an agent that runs in the background that is literally like a caddy in golf where it tells the agents what skills, tools, prompts to use automatically (should be opus) and run it on it's own. i know i'm running yolomode but it seems like it's not yolo enough. i want full autonomy. also the \"Caddy\" should use ralphLoop at necessary times as well and all the other necessary tools. i just want to tell you what to d",
     "/research on risks of \"skills\" in claude cdoe how easily it can spread issues and have secruity risks. look for details and official documents and trustworty articles / youtube videos",
     "yes fix them now",
-    "yes and update all the documentations "
+    "yes and update all the documentations ",
+    "okay this looks greate. also i want to update the /prime by when /prime is run, cadddy scans for all the \"local\" skills in that project, runs a security check",
+    "push it",
+    "test it",
+    "try /prime",
+    "what happens to all the blocked stuff? because hooks from damage control i made them, what if they are useful? what made you block them? is there a way to unlbock them? we should have process of going through this after prime. for examplle you go indepth with blocked stuff and why and let the user read it and maybe manually enable whatever they want to enable. i like the reporting that you've done",
+    "research agent teams from claude.ai docs",
+    "work in parallel and let's get this whole system implemented. please check over our current system to make sure it doesn't do the work twice and make it all loopy. also let's create a new agent that updates logs / memory / like an assitant that keeps every teamembers context but summarizes after a sucessful work done by team member saving context windows for the main agent to understand how everything is running. and do a full review of the claude-agentc-framework and maeksure that nothing is overlapping, all systematic and dynamic tasks /  prompts and systems are all very specialized and delgated but connected and managed by different but specific agents. i need this team to have a clear R&R with clear hierchy with efficient communication systems with each others especially when calling out tools and skills as well. caddy can have an assitant of it's own to make caddy's work more effective and efficient. ",
+    "yes fix it",
+    "yes change it to sonnet"
   ]
 }

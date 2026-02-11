@@ -1,0 +1,187 @@
+# Code Review Team Template
+# 3 specialists performing comprehensive code review from different perspectives
+
+name: Code Review Team
+purpose: Multi-perspective code review with security, performance, and architecture analysis
+team_type: review
+
+# ─── Team Configuration ──────────────────────────────────────────
+
+teammates:
+  - name: security-reviewer
+    model: opus
+    focus_area: Security vulnerabilities, input validation, authentication, authorization
+    domain:
+      files:
+        - "**/*.py"
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/auth/**"
+        - "**/api/**"
+      exclude:
+        - "**/node_modules/**"
+        - "**/__pycache__/**"
+        - "**/dist/**"
+    responsibilities:
+      - Identify security vulnerabilities (injection, XSS, CSRF, etc.)
+      - Review authentication and authorization logic
+      - Check input validation and sanitization
+      - Verify secure credential handling
+      - Assess cryptographic implementations
+      - Review API security (rate limiting, auth tokens)
+    output_format: |
+      ## Security Review Findings
+
+      ### Critical Issues
+      - [Issue description with file:line reference]
+
+      ### Warnings
+      - [Potential concerns]
+
+      ### Recommendations
+      - [Security best practices]
+
+  - name: performance-reviewer
+    model: sonnet
+    focus_area: Performance bottlenecks, algorithmic complexity, resource usage
+    domain:
+      files:
+        - "**/*.py"
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/*.sql"
+      exclude:
+        - "**/test/**"
+        - "**/tests/**"
+        - "**/__tests__/**"
+    responsibilities:
+      - Identify performance bottlenecks
+      - Analyze algorithmic complexity (O(n) analysis)
+      - Review database query efficiency
+      - Check memory usage patterns
+      - Identify unnecessary computations or allocations
+      - Review caching strategies
+    output_format: |
+      ## Performance Review Findings
+
+      ### Bottlenecks
+      - [Description with profiling suggestions]
+
+      ### Complexity Issues
+      - [O(n) analysis and optimization opportunities]
+
+      ### Optimization Suggestions
+      - [Actionable improvements]
+
+  - name: architecture-reviewer
+    model: opus
+    focus_area: Code structure, maintainability, design patterns, technical debt
+    domain:
+      files:
+        - "**/*"
+      exclude:
+        - "**/node_modules/**"
+        - "**/__pycache__/**"
+        - "**/dist/**"
+        - "**/build/**"
+    responsibilities:
+      - Assess overall architecture and design patterns
+      - Review code organization and modularity
+      - Identify tight coupling and suggest decoupling
+      - Check adherence to SOLID principles
+      - Evaluate error handling patterns
+      - Identify technical debt and refactoring opportunities
+      - Review documentation quality
+    output_format: |
+      ## Architecture Review Findings
+
+      ### Design Issues
+      - [Pattern violations, coupling problems]
+
+      ### Maintainability Concerns
+      - [Code smells, complexity, duplication]
+
+      ### Refactoring Recommendations
+      - [Architectural improvements]
+
+# ─── Coordination Strategy ───────────────────────────────────────
+
+coordination:
+  strategy: parallel_then_synthesize
+  description: All reviewers analyze code in parallel, then results are synthesized
+
+  phases:
+    - phase: parallel_review
+      agents: [security-reviewer, performance-reviewer, architecture-reviewer]
+      execution: parallel
+      timeout: 300  # 5 minutes per reviewer
+
+    - phase: synthesis
+      agent: architecture-reviewer  # Leads synthesis
+      execution: sequential
+      inputs: [security-reviewer.output, performance-reviewer.output]
+      timeout: 180  # 3 minutes
+
+  conflict_resolution:
+    - If reviewers identify overlapping issues, architecture-reviewer deduplicates
+    - Critical security issues override performance/architecture concerns
+    - Final report includes all findings with priority ranking
+
+# ─── Communication Patterns ──────────────────────────────────────
+
+communication:
+  shared_context:
+    target_files: List of files under review
+    review_scope: Full review vs. diff-only
+    coding_standards: Project-specific standards document
+
+  handoff_protocol:
+    - "security-reviewer writes findings to security_review.md"
+    - "performance-reviewer writes findings to performance_review.md"
+    - "architecture-reviewer reads both, writes synthesized_review.md"
+
+  output_location: .claude/reviews/
+
+# ─── Exit Criteria ───────────────────────────────────────────────
+
+exit_criteria:
+  success:
+    - All reviewers complete their analysis
+    - Synthesis report generated
+    - No critical security issues unaddressed
+
+  failure:
+    - Timeout exceeded (8 minutes total)
+    - Critical security issues found (auto-block merge)
+    - Unable to parse code (syntax errors)
+
+  partial_success:
+    - Some reviewers complete but not all
+    - Warnings present but no critical issues
+
+# ─── Usage Examples ──────────────────────────────────────────────
+
+usage:
+  command: just team-review <file-pattern>
+
+  examples:
+    - description: Review entire API module
+      command: just team-review "src/api/**/*.py"
+
+    - description: Review recent changes (git diff)
+      command: just team-review --diff HEAD~1
+
+    - description: Review specific files
+      command: just team-review src/auth/login.py src/auth/session.py
+
+# ─── Metrics & Observability ─────────────────────────────────────
+
+metrics:
+  track:
+    - review_duration_seconds
+    - critical_issues_found
+    - warnings_found
+    - files_reviewed_count
+    - lines_reviewed_count
+
+  emit_to: observability_dashboard

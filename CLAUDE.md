@@ -35,9 +35,9 @@ Permissions: `"allow": ["*"]` with deny rules for destructive ops and ask for fo
 Every agent assigned to the right model for cost-quality balance:
 
 ```
-Opus  (12%):  orchestrator, project-architect, critical-analyst, rlm-root, caddy
-Sonnet (48%): builder, researcher, meta-agent, project-skill-generator, + 12 more
-Haiku  (39%): validator, docs-scraper, hello-world, create-worktree-subagent, + 9 more
+Opus  (12%):  orchestrator, project-architect, critical-analyst, rlm-root
+Sonnet (50%): builder, researcher, meta-agent, project-skill-generator, caddy-assistant, + 12 more
+Haiku  (38%): validator, docs-scraper, hello-world, create-worktree-subagent, context-manager, + 8 more
 ```
 
 Set in agent frontmatter `model:` field. Centralized config: `data/model_tiers.yaml`.
@@ -73,9 +73,9 @@ For any non-trivial task (3+ steps), immediately create a TaskList:
 - Agent types available: Bash, Explore, Plan, researcher, orchestrator, rlm-root, general-purpose
 
 ### 3. Orchestrator Pattern -- Delegate Complex Tasks
-For multi-faceted tasks, use the orchestrator agent or /orchestrate command:
-- Orchestrator plans, delegates to specialized agents (researcher, builder, validator), and synthesizes
-- You give high-level goals, orchestrator handles coordination
+For multi-faceted tasks, use the Orchestrator agent (primary coordinator) or /orchestrate command:
+- Orchestrator analyzes strategy, plans, delegates to specialized agents (researcher, builder, validator), and synthesizes
+- You give high-level goals, Orchestrator handles coordination and strategy selection
 - Each subagent gets isolated context (no cross-contamination)
 
 ### 4. Ralph Loops -- Context-Efficient Iteration
@@ -133,14 +133,23 @@ For implementation tasks:
 - `worktree-manager-skill`, `create-worktree-skill` -- git worktrees
 - `meta-skill` -- create new skills from templates
 
-### 10. Caddy -- Meta-Orchestrator (Full Autonomy)
-- **Caddy** (global-agents/caddy.md, Opus): Meta-orchestrator that provides full autonomy
+### 10. Orchestrator -- Primary Coordinator
+- **Orchestrator** (global-agents/orchestrator.md, Opus): Primary coordinator with strategy selection
 - Analyzes user intent, classifies complexity/type/quality/scope
-- Auto-selects optimal strategy: direct, orchestrate, rlm, fusion, research, brainstorm
-- Matches relevant skills and recommends execution plans
-- Hooks in `global-hooks/framework/caddy/`: analyze_request, auto_delegate, monitor_progress
+- Selects optimal strategy: direct, team coordination, rlm delegation, fusion, research
+- Plans agent teams, spawns specialized agents, coordinates execution
+- Aggregates results and provides synthesized reports
+- Handles all coordination decisions and agent team composition
+- You give high-level goals -- Orchestrator handles everything
+
+### 11. Caddy-Assistant -- Support Services
+- **Caddy-Assistant** (global-agents/team/caddy-assistant.md, Haiku): Support assistant for rapid triage
+- Provides skill auditing and security scanning before recommendations
+- Quick classification and context summarization
+- Maintains skill registry and performs preliminary matching
+- Auditor: `global-hooks/framework/caddy/skill_auditor.py`
 - Config: `data/caddy_config.yaml`
-- User just states their goal -- Caddy handles everything
+- Advisory role only -- all recommendations reviewed by Orchestrator
 
 ### 11. Guardrails -- Anti-Loop Protection
 - Anti-loop guardrails in `global-hooks/framework/guardrails/`
@@ -203,11 +212,12 @@ Defense-in-depth security across 7 layers: permissions > command hooks > prompt 
 - Documentation: `docs/SKILLS_INTEGRITY.md`
 
 ### Automatic Skill Auditing
-- Caddy audits skills before recommending them (code injection, dangerous commands, sensitive file access, insecure permissions)
+- Caddy-Assistant audits skills before recommendations (code injection, dangerous commands, sensitive file access, insecure permissions)
 - Auditor: `global-hooks/framework/caddy/skill_auditor.py`
 - CLI: `scripts/audit_skill.py`
 - Config: `data/caddy_config.yaml` under `skill_audit`
 - Critical findings block skill recommendations; warnings are shown to user
+- All audit results reviewed by Orchestrator before final recommendation
 
 ### Input Validation
 - worktree-manager-skill: character allowlist validation via `scripts/validate_name.sh`, path containment checks
@@ -238,7 +248,7 @@ When `/prime` runs, it automatically scans all local project skills in `.claude/
 ### Security Documentation
 - Full guide: `docs/SECURITY_BEST_PRACTICES.md`
 - Skills integrity: `docs/SKILLS_INTEGRITY.md`
-- Caddy auditing: `global-agents/caddy.md` (Skill Security Audit section)
+- Skill auditing: `global-agents/team/caddy-assistant.md` (Skill Security Audit section)
 
 ## Key Rules
 - Focus on clarity and simplicity when writing documentation

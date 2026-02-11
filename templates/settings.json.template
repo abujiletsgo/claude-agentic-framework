@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
     "allow": [
       "*"
@@ -16,6 +19,7 @@
     ]
   },
   "model": "opusplan",
+  "teammateMode": "in-process",
   "hooks": {
     "PreToolUse": [
       {
@@ -70,6 +74,26 @@
         ]
       },
       {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/anti_loop_team.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/delegate_mode_enforcer.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
@@ -85,6 +109,26 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse --summarize",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/teammate_monitor.py"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/task_validator.py"
           }
         ]
       }

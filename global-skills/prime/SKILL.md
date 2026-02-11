@@ -129,7 +129,82 @@ ls -1 .claude/commands/ 2>/dev/null
 ls -1 .claude/skills/ 2>/dev/null
 ```
 
-### Step 6: Generate Structured Report
+### Step 6: Team Assessment & Spawning
+
+**Logic**: Analyze project structure from earlier discovery and determine if spawning an agent team would be beneficial.
+
+**Complexity Indicators to Check**:
+
+1. **Multi-layer Architecture**:
+   - Frontend + backend directories detected
+   - Separate test suites (unit/integration/e2e)
+   - Multiple package.json files or workspace configurations
+   - Microservices structure
+
+2. **Multiple Technologies**:
+   - 3+ different languages in use
+   - Multiple frameworks (React + Express + GraphQL)
+   - Polyglot repository
+
+3. **Large Codebase**:
+   - More than 50 tracked files (`git ls-files | wc -l`)
+   - Multiple deeply nested directories (3+ levels)
+   - Large test suites
+
+4. **Security Concerns**:
+   - Critical or warning findings from Step 4 security audit
+   - Authentication/authorization implementation detected
+   - API key management patterns found
+   - Database connection strings in config
+
+5. **Unfamiliar Stack**:
+   - Technologies not commonly used together
+   - Custom build systems or tooling
+   - Legacy framework versions
+
+**Team Recommendation Logic**:
+
+Based on detected indicators, suggest appropriate team structure:
+
+- **Review Team**: If security audit found critical issues or warnings
+  - **Composition**: security-scanner + validator + builder (for fixes)
+  - **Use case**: Security-critical codebases, production apps, authentication systems
+
+- **Architecture Team**: If multi-layer structure detected
+  - **Composition**: project-architect + builder + validator
+  - **Use case**: Complex projects needing design before implementation
+
+- **Research Team**: If unfamiliar stack detected
+  - **Composition**: researcher + critical-analyst + builder
+  - **Use case**: New technologies, legacy systems, undocumented codebases
+
+- **Full Development Team**: If multiple indicators present
+  - **Composition**: orchestrator + builder + validator + researcher
+  - **Use case**: Large-scale refactoring, new feature development, complex migrations
+
+**Implementation Steps**:
+
+1. After completing Step 5, analyze complexity indicators
+2. If 2+ indicators detected, formulate team recommendation
+3. Include recommendation in priming report (see updated template below)
+4. Present rationale and estimated cost multiplier
+5. Ask user for approval before spawning
+6. If approved:
+   - Load appropriate team template from `global-agents/team/` or use orchestrator
+   - Spawn team using Task tool or /orchestrate command
+   - Track team work via TaskList
+
+**Decision Tree**:
+```
+Complexity Score = (multi-layer * 2) + (multiple-tech * 1.5) + (large-codebase * 1) + (security-concerns * 2) + (unfamiliar * 1.5)
+
+Score >= 4.0: Recommend Full Development Team
+Score >= 3.0: Recommend specific team based on highest-weighted indicator
+Score >= 2.0: Mention team option but don't recommend
+Score < 2.0: Single-agent sufficient
+```
+
+### Step 7: Generate Structured Report
 
 Provide a **concise summary** using this template:
 
@@ -188,6 +263,32 @@ project-root/
 
 ### Key Insights
 [3-5 bullet points about what makes this project unique or important context]
+
+### 🤝 Team Recommendation
+**Complexity Score**: [X.X] ([Calculation breakdown])
+
+**Indicators Detected**:
+- ✅/❌ Multi-layer architecture
+- ✅/❌ Multiple technologies
+- ✅/❌ Large codebase (N files)
+- ✅/❌ Security concerns
+- ✅/❌ Unfamiliar stack
+
+**Recommendation**: [No team needed / Review Team / Architecture Team / Research Team / Full Development Team]
+
+**Rationale**: [Brief explanation based on indicators]
+
+**Suggested Composition**:
+- [agent-name] ([model-tier]) - [role]
+- [agent-name] ([model-tier]) - [role]
+- [agent-name] ([model-tier]) - [role]
+
+**Estimated Cost**: [N×] single session cost
+
+**Approval**: Would you like me to spawn this team? [Yes/No]
+
+[If score < 2.0, replace this section with:]
+**Team Assessment**: Single-agent workflow sufficient for this project's complexity.
 
 ### ✅ Status
 **Agent Primed.** Context loaded efficiently. Ready for instructions.
