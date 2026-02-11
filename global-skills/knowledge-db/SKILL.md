@@ -1,6 +1,6 @@
 ---
 name: Knowledge Database
-version: 0.1.0
+version: 0.2.0
 description: "This skill should be used when the user asks about remembering things, knowledge management, searching past decisions, storing learnings, or persistent memory. It provides a SQLite FTS5-powered knowledge database for persistent memory across sessions."
 ---
 

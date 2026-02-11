@@ -22,13 +22,13 @@ apps/observability/  Vue 3 dashboard + Bun server
 guides/              15 engineering guides
 data/                knowledge-db/ + model_tiers.yaml + logs/ + tts_queue/
 templates/           settings.json.template (__REPO_DIR__ placeholder) + long-migration.md
-docs/                2026_UPGRADE_GUIDE.md
+docs/                2026_UPGRADE_GUIDE.md + SKILLS_INTEGRITY.md + SECURITY_BEST_PRACTICES.md
 install.sh           Symlinks + generates ~/.claude/settings.json
 ```
 
 ## Operational Mode: Full Autonomous (Yolo)
 
-Permissions: `"allow": ["*"]` with deny rules for destructive ops and ask for force-push/hard-reset. Three-layer security: permissions > command hooks (pattern match) > prompt hooks (LLM semantic review) on Bash/Edit/Write.
+Permissions: `"allow": ["*"]` with deny rules for destructive ops and ask for force-push/hard-reset. Seven-layer security: permissions > command hooks (pattern match) > prompt hooks (LLM semantic review) > skills integrity (SHA-256 verification) > skill auditing (Caddy) > input validation (per-skill) > file permissions (0o600). See Security section below.
 
 ## Multi-Model Tiers
 
@@ -190,6 +190,46 @@ All hooks emit events to the observability dashboard (apps/observability/):
 - Server: `just server` (port 4000)
 - Client: `just client` (port 5173)
 - Events tracked: tool use, subagent lifecycle, sessions, errors, permissions, model tiers
+
+## Security
+
+Defense-in-depth security across 7 layers: permissions > command hooks > prompt hooks > skills integrity > skill auditing > input validation > file permissions.
+
+### Skills Integrity Verification
+- SHA-256 hashes of all skill files stored in `~/.claude/skills.lock`
+- Verification hook runs on `SessionStart` -- reports modified, deleted, new, missing, or unlocked files
+- Generator: `scripts/generate_skills_lock.py`
+- Verifier: `global-hooks/framework/security/verify_skills.py`
+- Documentation: `docs/SKILLS_INTEGRITY.md`
+
+### Automatic Skill Auditing
+- Caddy audits skills before recommending them (code injection, dangerous commands, sensitive file access, insecure permissions)
+- Auditor: `global-hooks/framework/caddy/skill_auditor.py`
+- CLI: `scripts/audit_skill.py`
+- Config: `data/caddy_config.yaml` under `skill_audit`
+- Critical findings block skill recommendations; warnings are shown to user
+
+### Input Validation
+- worktree-manager-skill: character allowlist validation via `scripts/validate_name.sh`, path containment checks
+- video-processor: output path restricted to CWD, system directory write-blocking, input file validation
+- knowledge-db: import path restricted to `~/.claude/` and CWD, path traversal blocked
+
+### File Permissions
+- Knowledge database and logs: `0o600` (owner read/write only)
+- Enforced on every open operation, not just creation
+
+### Security Commands
+```bash
+just skills-lock          # Generate SHA-256 lock file
+just skills-verify        # Verify skill integrity
+just audit-skill <name>   # Audit one skill
+just audit-all-skills     # Audit all skills
+```
+
+### Security Documentation
+- Full guide: `docs/SECURITY_BEST_PRACTICES.md`
+- Skills integrity: `docs/SKILLS_INTEGRITY.md`
+- Caddy auditing: `global-agents/caddy.md` (Skill Security Audit section)
 
 ## Key Rules
 - Focus on clarity and simplicity when writing documentation

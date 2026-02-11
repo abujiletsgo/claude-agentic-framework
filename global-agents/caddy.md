@@ -501,6 +501,52 @@ just audit-all-skills
 
 The CLI tool exits with code 1 if critical issues are found, 0 otherwise.
 
+### Example: Blocked Skill
+
+If a skill contains `eval()` on user input, the audit produces:
+
+```
+--- CRITICAL ---
+[line 42] Code injection: eval(user_data)
+
+Summary: 1 critical, 0 warnings, 0 info
+```
+
+Caddy will refuse to recommend this skill and warn the user:
+
+```
+Caddy Analysis:
+  Skill "unsafe-skill" has CRITICAL security issues.
+  Blocked from recommendation. Run `just audit-skill unsafe-skill` for details.
+```
+
+### Example: Skill with Warnings
+
+A skill using HTTP instead of HTTPS:
+
+```
+--- WARNING ---
+[line 18] Insecure HTTP endpoint: http://api.example.com/data
+
+Summary: 0 critical, 1 warning, 0 info
+```
+
+Caddy will recommend the skill but include a notice:
+
+```
+Skills: unsafe-http-skill (WARNING: insecure HTTP endpoint detected)
+```
+
+### Integration with Skills Integrity
+
+The skill auditor works alongside the `skills.lock` integrity system:
+
+- **skills.lock** detects file tampering (hash comparison)
+- **Skill auditor** detects dangerous code patterns (content scanning)
+- Both run independently -- tamper detection on session start, auditing on demand or when Caddy selects skills
+
+See [docs/SKILLS_INTEGRITY.md](../docs/SKILLS_INTEGRITY.md) and [docs/SECURITY_BEST_PRACTICES.md](../docs/SECURITY_BEST_PRACTICES.md) for full documentation.
+
 ---
 
 ## Anti-Patterns (What Caddy Should NEVER Do)

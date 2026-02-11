@@ -40,6 +40,7 @@ The **Claude Agentic Framework** is a comprehensive autonomous engineering platf
 - [Architecture Overview](#architecture-overview)
 - [Core Concepts](#core-concepts)
 - [New in 2026](#new-in-2026)
+- [Security](#security)
 - [Commands Reference](#commands-reference)
 - [Skills Reference](#skills-reference)
 - [Step-by-Step Guide](#step-by-step-guide)
@@ -462,6 +463,61 @@ Git worktree skills for parallel development:
 /list-worktrees     # List all worktrees
 /remove-worktree    # Remove a worktree
 ```
+
+## Security
+
+The framework implements defense-in-depth security across multiple layers. For full details see [docs/SECURITY_BEST_PRACTICES.md](docs/SECURITY_BEST_PRACTICES.md).
+
+### Skills Integrity Checking
+
+Every skill file is hashed with SHA-256 and recorded in `~/.claude/skills.lock`. On session start, a verification hook compares current hashes against the lock and warns about any modified, deleted, or injected files.
+
+```bash
+# Generate the lock file after any skill changes
+just skills-lock
+
+# Verify skill integrity manually
+just skills-verify
+```
+
+See [docs/SKILLS_INTEGRITY.md](docs/SKILLS_INTEGRITY.md) for detailed documentation.
+
+### Automatic Skill Auditing
+
+The Caddy meta-orchestrator automatically audits skills before recommending them. The auditor scans for code injection patterns, dangerous commands, sensitive file access, insecure permissions, and secret handling issues. Critical findings block the skill from being recommended.
+
+```bash
+# Audit a specific skill
+just audit-skill <skill-name>
+
+# Audit all installed skills
+just audit-all-skills
+```
+
+### Input Validation
+
+Critical skills enforce strict input validation:
+
+- **worktree-manager-skill**: Feature names validated against character allowlist (`a-zA-Z0-9._-`), path traversal blocked, path containment verified
+- **video-processor**: Output paths restricted to current working directory, system directory writes blocked, input files validated
+- **knowledge-db**: Import paths restricted to `~/.claude/` and current working directory, path traversal blocked
+
+### File Permissions Enforcement
+
+Sensitive data files (knowledge database, durability logs) are created with `0o600` permissions (owner read/write only), enforced on every open operation.
+
+### Force Flag Convention
+
+Destructive operations (file overwrite, dirty worktree removal) default to safe behavior and require explicit `--force` to proceed. This prevents accidental data loss across all skills.
+
+### Security Commands
+
+| Command | Purpose |
+|---------|---------|
+| `just skills-lock` | Generate SHA-256 lock file for all skills |
+| `just skills-verify` | Verify skills against lock file |
+| `just audit-skill <name>` | Audit one skill for security issues |
+| `just audit-all-skills` | Audit every installed skill |
 
 ## Skills Reference
 
@@ -1399,6 +1455,12 @@ Built on patterns from:
 - Hybrid security: prompt hooks (LLM semantic validation) alongside pattern-matching command hooks
 - Prompt hooks for Bash, Edit, and Write tools
 - Anti-loop guardrails system for agent safety
+- Skills integrity verification via SHA-256 lock file (`just skills-lock`, `just skills-verify`)
+- Automatic skill auditing by Caddy meta-orchestrator (`just audit-skill`, `just audit-all-skills`)
+- P0 vulnerability fixes: command injection (worktree-manager), file overwrite (video-processor), access control (knowledge-db)
+- Input validation enforcement in critical skills (character allowlists, path containment)
+- File permissions hardening (`0o600` on sensitive data files)
+- `--force` flag convention for destructive operations across all skills
 
 **Knowledge & Review**
 - SQLite FTS5 knowledge database for persistent cross-session memory

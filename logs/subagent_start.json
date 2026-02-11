@@ -367,5 +367,14 @@
     "agent_id": "a824818",
     "agent_type": "builder",
     "logged_at": "2026-02-11T23:24:46.130832"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "abd5b2c",
+    "agent_type": "builder",
+    "logged_at": "2026-02-11T23:39:33.997969"
   }
 ]

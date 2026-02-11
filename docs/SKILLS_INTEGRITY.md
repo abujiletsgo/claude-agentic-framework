@@ -106,9 +106,31 @@ A skill directory exists but has no entry in the lock file. This typically happe
 | Skills source | `global-skills/` (repo) |
 | Skills symlinks | `~/.claude/skills/` (installed) |
 
+## Integration with Caddy Skill Auditing
+
+The skills integrity system works alongside the Caddy skill auditor. While `skills.lock` detects unauthorized file changes (tamper detection), the skill auditor scans file contents for security patterns (vulnerability detection). Together they provide:
+
+1. **Tamper detection**: `skills.lock` catches unauthorized modifications
+2. **Vulnerability detection**: `audit_skill.py` finds dangerous patterns in skill code
+3. **Continuous monitoring**: Both run automatically (session start for integrity, on-demand for auditing)
+
+For a complete security workflow:
+```bash
+# After modifying or adding skills:
+just skills-lock        # Update integrity hashes
+just audit-all-skills   # Scan for vulnerabilities
+just skills-verify      # Confirm integrity
+```
+
 ## Security Notes
 
 - The lock file itself is not cryptographically signed. It relies on filesystem permissions for protection.
 - The verification hook follows symlinks, so it checks the actual file content regardless of whether skills are symlinked or copied.
 - Hidden files, `__pycache__` directories, and `.pyc`/`.pyo` files are excluded from hashing to avoid false positives from runtime artifacts.
 - The overall_checksum field provides a quick way to detect any change without comparing individual files.
+
+## Related Documentation
+
+- [SECURITY_BEST_PRACTICES.md](SECURITY_BEST_PRACTICES.md) -- Comprehensive security guide
+- [2026_UPGRADE_GUIDE.md](2026_UPGRADE_GUIDE.md) -- Security improvements in the 2026 upgrade
+- `global-agents/caddy.md` -- Caddy meta-orchestrator with skill auditing section

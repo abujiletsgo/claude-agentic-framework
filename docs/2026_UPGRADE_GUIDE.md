@@ -23,6 +23,7 @@ This document summarizes every new feature, structural change, and migration ste
 - [Community Skill Patterns](#community-skill-patterns)
 - [Project Skill Generator](#project-skill-generator)
 - [Guardrails System](#guardrails-system)
+- [Security Improvements](#security-improvements)
 - [Updated Commands](#updated-commands)
 - [Breaking Changes](#breaking-changes)
 - [Configuration Changes](#configuration-changes)
@@ -42,8 +43,10 @@ The 2026 upgrade transforms the framework from a command-and-agent toolkit into 
 | Knowledge | None | SQLite FTS5 persistent memory |
 | Review | None | Continuous post-commit review |
 | Model Tiers | Single model | 3-tier (Opus/Sonnet/Haiku) per agent |
-| Security | Pattern-only | Hybrid (pattern + LLM semantic) |
+| Security | Pattern-only | Hybrid (pattern + LLM semantic) + skills integrity + skill auditing |
 | Worktrees | None | Full git worktree management |
+| Vulnerability Fixes | N/A | 3 P0 fixes (command injection, file overwrite, access control) |
+| Security Tooling | None | skills.lock, audit_skill.py, verify_skills.py |
 
 ---
 
@@ -72,6 +75,9 @@ Builder + Validator pattern for implementation tasks. Project Skill Generator fo
 
 ### 8. Worktree Management
 Git worktree skills for parallel development across multiple branches without stashing or context switching.
+
+### 9. Security Hardening
+Skills integrity verification (SHA-256 lock file), automatic skill auditing (Caddy), P0 vulnerability fixes (command injection, file overwrite, access control), input validation standards, file permission enforcement, and `--force` flag convention. See [SECURITY_BEST_PRACTICES.md](SECURITY_BEST_PRACTICES.md).
 
 ---
 
@@ -499,6 +505,88 @@ Documentation: `global-hooks/framework/ANTI_LOOP_GUARDRAILS.md`
 
 ---
 
+## Security Improvements
+
+The 2026 upgrade includes significant security hardening across the skill ecosystem.
+
+### P0 Vulnerability Fixes
+
+Three critical vulnerabilities were identified and fixed:
+
+| Vulnerability | Skill | Fix | Version |
+|---------------|-------|-----|---------|
+| Command injection | worktree-manager-skill | Input validation via `scripts/validate_name.sh` (character allowlist, path containment) | 0.1.0 -> 0.2.0 |
+| File overwrite | video-processor | Overwrite protection with `--force` flag, output path restriction to CWD, system directory blocking | 0.1.0 -> 0.2.0 |
+| Missing access control | knowledge-db | `0o600` file permissions, import path restrictions, export limits | 0.1.0 -> 0.2.0 |
+
+### New Security Tools
+
+| Tool | Location | Purpose |
+|------|----------|---------|
+| `generate_skills_lock.py` | `scripts/` | Generate SHA-256 lock file for all skill files |
+| `verify_skills.py` | `global-hooks/framework/security/` | Verify skill integrity against lock file (SessionStart hook) |
+| `audit_skill.py` | `scripts/` | Audit a skill for security patterns (code injection, dangerous commands, etc.) |
+| `skill_auditor.py` | `global-hooks/framework/caddy/` | Auditor module used by Caddy and CLI |
+
+### New Security Commands
+
+```bash
+# Generate skills.lock with SHA-256 hashes of all skill files
+just skills-lock
+
+# Verify skills integrity against skills.lock
+just skills-verify
+
+# Audit a single skill for security issues
+just audit-skill <skill-name>
+
+# Audit all installed skills
+just audit-all-skills
+```
+
+### Skills Integrity System
+
+Every file in every skill is hashed with SHA-256 and stored in `~/.claude/skills.lock`. On session start, a verification hook compares current hashes and reports discrepancies (modified, deleted, new, missing, or unlocked files). See [SKILLS_INTEGRITY.md](SKILLS_INTEGRITY.md) for full documentation.
+
+### Caddy Skill Auditing
+
+The Caddy meta-orchestrator now automatically audits skills before recommending them. Skills with critical findings (code injection, `eval()`, `shell=True`) are blocked from recommendations. Skills with warnings are allowed but flagged. Configure in `data/caddy_config.yaml` under `skill_audit`.
+
+### Input Validation Standards
+
+Skills that accept user input now enforce strict validation:
+
+- **Character allowlists**: Only permitted characters pass through (not blocklists)
+- **Path containment**: Computed paths are verified to stay within expected directories
+- **Path traversal blocking**: `..` sequences are rejected in all path inputs
+- **System directory protection**: Write operations to `/bin`, `/etc`, `/usr`, `/var`, etc. are blocked
+
+### File Permission Model
+
+Sensitive data files are now created with `0o600` permissions (owner read/write only), enforced on every open operation. This applies to knowledge databases, durability logs, and lock files.
+
+### --force Flag Convention
+
+All destructive operations now default to safe behavior and require `--force` for the destructive path:
+
+- Worktree removal aborts on uncommitted changes unless `--force`
+- Video output files prompt before overwriting unless `--force`
+- Branch deletion uses safe `-d` flag (fails on unmerged) unless `--force`
+
+### Security Best Practices Guide
+
+A comprehensive security guide has been created at [SECURITY_BEST_PRACTICES.md](SECURITY_BEST_PRACTICES.md) covering:
+
+- How to safely use skills
+- How to audit new skills before installation
+- How to generate and verify `skills.lock`
+- Input validation patterns for skill authors
+- File permission model
+- Vulnerability response process
+- Security checklist for skill authors
+
+---
+
 ## Updated Commands
 
 ### New Commands (v2)
@@ -604,6 +692,10 @@ The 2026 upgrade brings:
 - **Strategic agents** for project analysis and critical thinking
 - **Worktree management** for parallel development
 - **Guardrails** to prevent agent infinite loops
+- **Skills integrity** via SHA-256 lock file and session-start verification
+- **Automatic skill auditing** by Caddy meta-orchestrator
+- **P0 vulnerability fixes** across worktree-manager, video-processor, and knowledge-db
+- **Security best practices** guide with checklist for skill authors
 
 To upgrade: `git pull && ./install.sh`
 
