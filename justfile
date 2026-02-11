@@ -185,3 +185,118 @@ review-blocked-skills:
 # Open the observability dashboard in browser
 open:
     open http://localhost:{{client_port}}
+
+# ─── Team Health ─────────────────────────────────────────
+
+# Check health of all agent team components
+team-health:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PROJECT_ROOT="{{project_root}}"
+    PASS=0
+    FAIL=0
+    echo "========================================"
+    echo "  Agent Team Health Check"
+    echo "========================================"
+    echo ""
+    # ── 1. Team Templates ──────────────────────
+    echo "=== Team Templates ==="
+    TEMPLATES_DIR="$PROJECT_ROOT/data/team_templates"
+    for tmpl in review_team.yaml architecture_team.yaml research_team.yaml debug_team.yaml; do
+        FILE="$TEMPLATES_DIR/$tmpl"
+        if [ ! -f "$FILE" ]; then
+            echo "  [FAIL] $tmpl - file not found"
+            FAIL=$((FAIL + 1))
+            continue
+        fi
+        if [ ! -s "$FILE" ]; then
+            echo "  [FAIL] $tmpl - file is empty"
+            FAIL=$((FAIL + 1))
+            continue
+        fi
+        HAS_NAME=$(grep -c "^name:" "$FILE" 2>/dev/null || true)
+        HAS_TEAMMATES=$(grep -c "^teammates:" "$FILE" 2>/dev/null || true)
+        if [ "$HAS_NAME" -ge 1 ] && [ "$HAS_TEAMMATES" -ge 1 ]; then
+            echo "  [OK]   $tmpl - valid (has name + teammates)"
+            PASS=$((PASS + 1))
+        else
+            echo "  [FAIL] $tmpl - missing required keys (name/teammates)"
+            FAIL=$((FAIL + 1))
+        fi
+    done
+    echo ""
+    # ── 2. Coordination Hooks ──────────────────
+    echo "=== Coordination Hooks ==="
+    HOOKS_DIR="$HOME/.claude/hooks/validators"
+    if [ ! -d "$HOOKS_DIR" ]; then
+        echo "  [FAIL] Hooks directory not found: $HOOKS_DIR"
+        FAIL=$((FAIL + 1))
+    else
+        for hook in "$HOOKS_DIR"/*.py; do
+            HOOK_NAME=$(basename "$hook")
+            if [ -L "$hook" ]; then
+                TARGET=$(readlink "$hook")
+                if [ -f "$TARGET" ]; then
+                    echo "  [OK]   $HOOK_NAME -> $(basename "$TARGET") (symlink valid)"
+                    PASS=$((PASS + 1))
+                else
+                    echo "  [FAIL] $HOOK_NAME -> $TARGET (broken symlink)"
+                    FAIL=$((FAIL + 1))
+                fi
+            elif [ -f "$hook" ]; then
+                echo "  [OK]   $HOOK_NAME (regular file)"
+                PASS=$((PASS + 1))
+            else
+                echo "  [FAIL] $HOOK_NAME - not found"
+                FAIL=$((FAIL + 1))
+            fi
+        done
+    fi
+    echo ""
+    # ── 3. Active Teams ────────────────────────
+    echo "=== Active Teams ==="
+    TEAMS_DIR="$HOME/.claude/teams"
+    if [ ! -d "$TEAMS_DIR" ]; then
+        echo "  No teams directory found (~/.claude/teams/)"
+    else
+        TEAM_COUNT=$(find "$TEAMS_DIR" -mindepth 1 -maxdepth 1 -not -name "README.md" -not -name ".*" 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$TEAM_COUNT" -eq 0 ]; then
+            echo "  No active teams"
+        else
+            echo "  Found $TEAM_COUNT active team(s):"
+            find "$TEAMS_DIR" -mindepth 1 -maxdepth 1 -not -name "README.md" -not -name ".*" -exec basename {} \; 2>/dev/null | sort | while read -r team; do
+                echo "    - $team"
+            done
+        fi
+    fi
+    echo ""
+    # ── 4. Context Manager Summaries ───────────
+    echo "=== Context Manager Summaries ==="
+    CONTEXT_DIR="$PROJECT_ROOT/data/team-context"
+    if [ ! -d "$CONTEXT_DIR" ]; then
+        echo "  [FAIL] Context directory not found: $CONTEXT_DIR"
+        FAIL=$((FAIL + 1))
+    else
+        SUMMARY_COUNT=$(find "$CONTEXT_DIR" -maxdepth 1 -name "*.md" -not -name "README.md" 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$SUMMARY_COUNT" -eq 0 ]; then
+            echo "  No team context summaries found"
+        else
+            echo "  Found $SUMMARY_COUNT summary file(s):"
+            find "$CONTEXT_DIR" -maxdepth 1 -name "*.md" -not -name "README.md" -exec basename {} \; 2>/dev/null | sort | while read -r f; do
+                echo "    - $f"
+            done
+        fi
+        echo "  [OK]   Context directory exists"
+        PASS=$((PASS + 1))
+    fi
+    echo ""
+    # ── Summary ────────────────────────────────
+    echo "========================================"
+    TOTAL=$((PASS + FAIL))
+    echo "  Results: $PASS passed, $FAIL failed (out of $TOTAL checks)"
+    if [ "$FAIL" -eq 0 ]; then
+        echo "  Status: ALL HEALTHY"
+    else
+        echo "  Status: ISSUES FOUND"
+    fi
+    echo "========================================"
