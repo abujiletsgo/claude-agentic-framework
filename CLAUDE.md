@@ -151,7 +151,7 @@ For implementation tasks:
 - Config: `data/caddy_config.yaml`
 - Advisory role only -- all recommendations reviewed by Orchestrator
 
-### 11. Guardrails -- Anti-Loop Protection
+### 12. Guardrails -- Anti-Loop Protection
 - Anti-loop guardrails in `global-hooks/framework/guardrails/`
 - 8 guardrail agents in `global-agents/team/guardrails/`
 - Documentation: `global-hooks/framework/ANTI_LOOP_GUARDRAILS.md`

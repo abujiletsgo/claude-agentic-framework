@@ -755,5 +755,17 @@
         "destination": "localSettings"
       }
     ]
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && echo \"=== Remaining documentation ===\" && ls -1 *.md 2>/dev/null",
+      "description": "Show remaining documentation files"
+    }
   }
 ]

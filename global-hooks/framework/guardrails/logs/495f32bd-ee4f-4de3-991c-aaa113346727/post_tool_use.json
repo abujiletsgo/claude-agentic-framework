@@ -1118,5 +1118,19 @@
     "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
     "hook_event_name": "PostToolUse",
     "is_mcp_tool": false
+  },
+  {
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01KsVGNuHTdw6KQZLpvFyp5F",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUse",
+    "is_mcp_tool": false
+  },
+  {
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01U5ibo4pi9Jr19m4WAGow5t",
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "PostToolUse",
+    "is_mcp_tool": false
   }
 ]

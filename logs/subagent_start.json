@@ -493,5 +493,50 @@
     "agent_id": "a6f9771",
     "agent_type": "builder",
     "logged_at": "2026-02-12T01:21:16.430169"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae9a44d",
+    "agent_type": "orchestrator",
+    "logged_at": "2026-02-12T01:39:52.371860"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae9a44d",
+    "agent_type": "orchestrator",
+    "logged_at": "2026-02-12T01:44:45.668696"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "addd4d3",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:54:45.294765"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a21967b",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:54:49.660630"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a47a9fa",
+    "agent_type": "builder",
+    "logged_at": "2026-02-12T01:54:54.383737"
   }
 ]

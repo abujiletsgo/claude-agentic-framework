@@ -201,5 +201,12 @@
     "notification_type": "permission_prompt",
     "message": "Claude needs your permission to use Bash",
     "title": ""
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Bash",
+    "title": ""
   }
 ]

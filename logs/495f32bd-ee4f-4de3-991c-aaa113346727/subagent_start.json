@@ -437,5 +437,50 @@
     "agent_id": "a6f9771",
     "agent_type": "builder",
     "model_tier": "sonnet"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae9a44d",
+    "agent_type": "orchestrator",
+    "model_tier": "opus"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "ae9a44d",
+    "agent_type": "orchestrator",
+    "model_tier": "opus"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "addd4d3",
+    "agent_type": "builder",
+    "model_tier": "sonnet"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a21967b",
+    "agent_type": "builder",
+    "model_tier": "sonnet"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a47a9fa",
+    "agent_type": "builder",
+    "model_tier": "sonnet"
   }
 ]

@@ -5,22 +5,6 @@
     "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
     "permission_mode": "acceptEdits",
     "hook_event_name": "UserPromptSubmit",
-    "prompt": "work in parallel and let's get this whole system implemented. please check over our current system to make sure it doesn't do the work twice and make it all loopy. also let's create a new agent that updates logs / memory / like an assitant that keeps every teamembers context but summarizes after a sucessful work done by team member saving context windows for the main agent to understand how everything is running. and do a full review of the claude-agentc-framework and maeksure that nothing is overlapping, all systematic and dynamic tasks /  prompts and systems are all very specialized and delgated but connected and managed by different but specific agents. i need this team to have a clear R&R with clear hierchy with efficient communication systems with each others especially when calling out tools and skills as well. caddy can have an assitant of it's own to make caddy's work more effective and efficient. "
-  },
-  {
-    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "yes fix it"
-  },
-  {
-    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "yes change it to sonnet"
+    "prompt": "yes fix the P0 issues"
   }
 ]

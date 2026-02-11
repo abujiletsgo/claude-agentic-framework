@@ -5900,5 +5900,45 @@
       "noOutputExpected": false
     },
     "tool_use_id": "toolu_01JZrXMnBbHXb6Y18uaWAju6"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && mkdir -p .archived && mv BUG_ANALYSIS.md ERROR_LOG.md LESSONS_LEARNED.md QA_RESULTS.md IMPLEMENTATION_STATUS.md TASK_*.md TASKS_STATUS.md FILES_CREATED*.md TEST_FIXES*.md .archived/ 2>/dev/null && echo \"Moved artifact files to .archived/\" && ls -1 .archived/",
+      "description": "Archive development artifacts instead of deleting"
+    },
+    "tool_response": {
+      "stdout": "Moved artifact files to .archived/\nBUG_ANALYSIS.md\nERROR_LOG.md\nFILES_CREATED_TASK3.md\nFILES_CREATED_TASK4.md\nFILES_CREATED.md\nIMPLEMENTATION_STATUS.md\nLESSONS_LEARNED.md\nQA_RESULTS.md\nTASK_2_COMPLETION.md\nTASK_3_COMPLETION.md\nTASK_4_COMPLETION.md\nTASK_7_COMPLETION.md\nTASKS_STATUS.md\nTEST_FIXES_FINAL_SUMMARY.md\nTEST_FIXES_SUMMARY.md",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01KsVGNuHTdw6KQZLpvFyp5F"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd ~/Documents/claude-agentic-framework/global-hooks/framework/guardrails && echo \"=== Remaining documentation ===\" && ls -1 *.md 2>/dev/null",
+      "description": "Show remaining documentation files"
+    },
+    "tool_response": {
+      "stdout": "=== Remaining documentation ===\nCIRCUIT_BREAKER_README.md\nCLI_README.md\nCLI_USAGE.md\nCONFIG_README.md\nCONFIG.md\nINTEGRATION_GUIDE.md\nQUICKSTART.md\nREADME.md",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01U5ibo4pi9Jr19m4WAGow5t"
   }
 ]

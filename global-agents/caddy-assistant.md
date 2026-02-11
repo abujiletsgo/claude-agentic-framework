@@ -1,7 +1,7 @@
 ---
 name: caddy-assistant
 description: Support assistant for skill auditing, registry maintenance, health monitoring, and configuration validation. Does NOT orchestrate or coordinate work - only provides support services.
-tools: Task, Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash
 color: cyan
 model: sonnet
 role: support
