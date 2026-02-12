@@ -1291,5 +1291,158 @@
       "is_interrupt": false,
       "logged_at": "2026-02-12T01:58:47.970449"
     }
+  },
+  {
+    "timestamp": "2026-02-12T05:17:17.326717",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01AzMRFi8eUg8eCqmeUqqH3Y",
+    "tool_input": {
+      "command": "ls -laR /Users/tomkwon/Documents/claude-agentic-framework/guardrails/",
+      "description": "List all guardrails agents"
+    },
+    "error": "Exit code 1\nls: /Users/tomkwon/Documents/claude-agentic-framework/guardrails/: No such file or directory",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "raw_input": {
+      "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls -laR /Users/tomkwon/Documents/claude-agentic-framework/guardrails/",
+        "description": "List all guardrails agents"
+      },
+      "tool_use_id": "toolu_01AzMRFi8eUg8eCqmeUqqH3Y",
+      "error": "Exit code 1\nls: /Users/tomkwon/Documents/claude-agentic-framework/guardrails/: No such file or directory",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T05:17:17.326717"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T05:17:18.394865",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_011MbN2KfMDSQPvtYzUY4ZKF",
+    "tool_input": {
+      "command": "ls -laR /Users/tomkwon/Documents/claude-agentic-framework/team/",
+      "description": "List all team agents"
+    },
+    "error": "Exit code 1\nls: /Users/tomkwon/Documents/claude-agentic-framework/team/: No such file or directory",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "raw_input": {
+      "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls -laR /Users/tomkwon/Documents/claude-agentic-framework/team/",
+        "description": "List all team agents"
+      },
+      "tool_use_id": "toolu_011MbN2KfMDSQPvtYzUY4ZKF",
+      "error": "Exit code 1\nls: /Users/tomkwon/Documents/claude-agentic-framework/team/: No such file or directory",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T05:17:18.394865"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T05:18:39.746368",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Read",
+    "tool_use_id": "toolu_0176kR5xJFg1ANsmnpC29Rqu",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-commands/agent_prompts/logs"
+    },
+    "error": "EISDIR: illegal operation on a directory, read",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "raw_input": {
+      "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-commands/agent_prompts/logs"
+      },
+      "tool_use_id": "toolu_0176kR5xJFg1ANsmnpC29Rqu",
+      "error": "EISDIR: illegal operation on a directory, read",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T05:18:39.746368"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T05:19:57.447980",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_016iFNje566jcLqspX4B6C4y",
+    "tool_input": {
+      "command": "ls -la /Users/tomkwon/Documents/agbot/.claude/ 2>/dev/null; echo \"---\"; ls -la /Users/tomkwon/Documents/vaultmind/.claude/ 2>/dev/null",
+      "description": "Check if .claude dirs exist in project repos"
+    },
+    "error": "Exit code 1\ntotal 8\ndrwxr-xr-x@  4 tomkwon  staff   128 Feb 11 22:51 .\ndrwxr-xr-x@ 40 tomkwon  staff  1280 Feb 11 22:43 ..\ndrwxr-xr-x@  3 tomkwon  staff    96 Feb 10 13:54 data\n-rw-r--r--@  1 tomkwon  staff   470 Feb 11 22:51 settings.local.json\n---",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "raw_input": {
+      "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls -la /Users/tomkwon/Documents/agbot/.claude/ 2>/dev/null; echo \"---\"; ls -la /Users/tomkwon/Documents/vaultmind/.claude/ 2>/dev/null",
+        "description": "Check if .claude dirs exist in project repos"
+      },
+      "tool_use_id": "toolu_016iFNje566jcLqspX4B6C4y",
+      "error": "Exit code 1\ntotal 8\ndrwxr-xr-x@  4 tomkwon  staff   128 Feb 11 22:51 .\ndrwxr-xr-x@ 40 tomkwon  staff  1280 Feb 11 22:43 ..\ndrwxr-xr-x@  3 tomkwon  staff    96 Feb 10 13:54 data\n-rw-r--r--@  1 tomkwon  staff   470 Feb 11 22:51 settings.local.json\n---",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T05:19:57.447980"
+    }
+  },
+  {
+    "timestamp": "2026-02-12T05:22:53.346943",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_01JjXKNNpzWsvvF1HTc3PzzE",
+    "tool_input": {
+      "command": "ls /Users/tomkwon/Documents/claude-agentic-framework/global-skills/vaultmind* 2>/dev/null",
+      "description": "List VaultMind skill directories"
+    },
+    "error": "Exit code 1\n(eval):1: no matches found: /Users/tomkwon/Documents/claude-agentic-framework/global-skills/vaultmind*",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "raw_input": {
+      "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "acceptEdits",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls /Users/tomkwon/Documents/claude-agentic-framework/global-skills/vaultmind* 2>/dev/null",
+        "description": "List VaultMind skill directories"
+      },
+      "tool_use_id": "toolu_01JjXKNNpzWsvvF1HTc3PzzE",
+      "error": "Exit code 1\n(eval):1: no matches found: /Users/tomkwon/Documents/claude-agentic-framework/global-skills/vaultmind*",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T05:22:53.346943"
+    }
   }
 ]

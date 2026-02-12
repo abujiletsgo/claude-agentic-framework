@@ -8,14 +8,15 @@ Consolidated agentic engineering system. One repo, one install, one source of tr
 
 ```
 global-hooks/        5 namespaces: mastery/ observability/ damage-control/ framework/ prompt-hooks/
-global-agents/       33 agents (13 root + 4 team + 8 guardrails + 8 agbot)
+global-agents/       25 agents (13 root + 4 team + 8 guardrails)
 global-commands/     21 commands + bench/
-global-skills/       20 skills (meta-skill, video-processor, code-review, dependency-audit,
+global-skills/       19 skills (meta-skill, code-review, dependency-audit,
                      documentation-writer, error-analyzer, git-workflow, knowledge-db,
                      multi-model-tiers, performance-profiler, project-scaffolder,
                      refactoring-assistant, security-scanner, test-generator, tdd-workflow,
                      brainstorm-before-code, feasibility-analysis, task-decomposition,
                      downstream-correction, verification-checklist)
+                     + symlinks: video-processor → vaultmind project
 global-output-styles/ 11 styles
 global-status-lines/ mastery/(9 versions) + observability/(2)
 apps/observability/  Vue 3 dashboard + Bun server

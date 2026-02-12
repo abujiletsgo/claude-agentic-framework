@@ -35,6 +35,18 @@
         <!-- Right: Action Buttons -->
         <div class="flex items-center gap-2">
           <button
+            @click="show3DView = !show3DView"
+            :class="[
+              'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2',
+              show3DView
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700'
+                : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80'
+            ]"
+          >
+            <span>{{ show3DView ? '🎮' : '📊' }}</span>
+            <span>{{ show3DView ? '3D Game' : '2D View' }}</span>
+          </button>
+          <button
             @click="showFilters = !showFilters"
             :class="[
               'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
@@ -88,8 +100,13 @@
       </div>
     </div>
 
+    <!-- 3D Game View -->
+    <div v-if="show3DView" class="flex-1 w-full h-full overflow-hidden">
+      <GameWorld3DIntegrated :events="events" />
+    </div>
+
     <!-- Main Content Area with Cards -->
-    <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 space-y-6 overflow-auto">
+    <div v-else class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 space-y-6 overflow-auto">
 
       <!-- Live Pulse Chart Card -->
       <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden">
@@ -193,6 +210,7 @@ import ThemeManager from './components/ThemeManager.vue';
 import ToastNotification from './components/ToastNotification.vue';
 import AgentSwimLaneContainer from './components/AgentSwimLaneContainer.vue';
 import CostTracker from './components/CostTracker.vue';
+import GameWorld3DIntegrated from './components/GameWorld3DIntegrated.vue';
 import { WS_URL } from './config';
 
 // WebSocket connection
@@ -216,6 +234,7 @@ const stickToBottom = ref(true);
 const showThemeManager = ref(false);
 const showFilters = ref(false);
 const showCostTracker = ref(true);
+const show3DView = ref(false);
 const uniqueAppNames = ref<string[]>([]); // Apps active in current time window
 const allAppNames = ref<string[]>([]); // All apps ever seen in session
 const selectedAgentLanes = ref<string[]>([]);

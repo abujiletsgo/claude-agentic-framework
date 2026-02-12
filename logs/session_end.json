@@ -40,5 +40,33 @@
     "hook_event_name": "SessionEnd",
     "reason": "prompt_input_exit",
     "logged_at": "2026-02-11T00:23:03.088796"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionEnd",
+    "reason": "clear",
+    "logged_at": "2026-02-12T02:20:50.316814"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "hook_event_name": "SessionEnd",
+    "reason": "clear",
+    "logged_at": "2026-02-12T02:20:50.318545"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionEnd",
+    "reason": "clear",
+    "logged_at": "2026-02-12T05:36:29.646640"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "SessionEnd",
+    "reason": "clear",
+    "logged_at": "2026-02-12T05:36:29.647781"
   }
 ]

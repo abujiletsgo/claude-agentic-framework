@@ -1,10 +1,66 @@
 [
   {
-    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
     "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
     "permission_mode": "acceptEdits",
     "hook_event_name": "UserPromptSubmit",
-    "prompt": "continue, but i realized there are many duplicate commands and tools? please go over the whole thing and make an update and when any code update happens, update the docs ofccourse"
+    "prompt": "i did"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "/sentient "
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "<task-notification>\n<task-id>b38aed5</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output</output-file>\n<status>killed</status>\n<summary>Background command \"Check running agent tasks\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "<task-notification>\n<task-id>b0f0cc2</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output</output-file>\n<status>killed</status>\n<summary>Background command \"Append complete inventory content to file\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "<task-notification>\n<task-id>b0f0cc2</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output</output-file>\n<status>killed</status>\n<summary>Background command \"Append complete inventory content to file\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "clear context"
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "can you update the githyubo"
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "1."
   }
 ]

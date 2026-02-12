@@ -13,5 +13,28 @@
     "source": "compact",
     "model": "claude-sonnet-4-5-20250929",
     "agent_type": ""
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  {
+    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-sonnet-4-5-20250929",
+    "agent_type": ""
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-sonnet-4-5-20250929"
   }
 ]
