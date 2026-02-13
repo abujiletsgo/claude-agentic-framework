@@ -29,17 +29,21 @@ Haiku  (2): validator, docs-scraper
 
 Config: `data/model_tiers.yaml`.
 
-## Context Discipline (Always On)
+## Context Discipline (Adaptive)
 
-Every interaction follows these principles to preserve tokens and attention:
+Scale approach to task complexity. Direct for simple, delegate for complex.
 
-1. **Search before read** -- Grep/Glob first. Never open a file blind.
-2. **Small slices** -- Read max 50-100 lines at a time. Use offset+limit.
-3. **Delegate heavy analysis** -- 5+ files or 200+ lines = spawn sub-agents. Keep primary context for coordination.
-4. **Summaries not dumps** -- Sub-agents return 2-3 sentence findings, not raw code.
-5. **Parallel sub-agents** -- Independent analyses in one message, not sequential.
+**Direct** (1-2 files, <200 lines, known location):
+- Read the file. Fix the thing. No ceremony.
 
-/rlm enforces these as a strict formal loop. But the principles apply to ALL work by default.
+**Delegated** (5+ files, 500+ lines, exploration needed, audits/scans):
+- Search before read. Grep/Glob first, never open blind.
+- Small slices. Max 50-100 lines at a time.
+- Spawn sub-agents for analysis. Primary context coordinates only.
+- Sub-agents return 2-3 sentence findings, not raw code.
+- Parallel sub-agents in one message.
+
+/rlm forces strict delegated mode. Otherwise, match approach to scope.
 
 ## Execution Protocol
 
