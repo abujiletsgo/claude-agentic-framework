@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 # Set to False to disable caching and always read from transcript
-ENABLE_CACHING = False
+ENABLE_CACHING = True
 
 
 def get_model_from_transcript(session_id: str, transcript_path: str, ttl: int = 60) -> str:

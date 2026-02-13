@@ -22,9 +22,8 @@ Use the Orchestrator when you need:
 
 ---
 
-## Examples
+## Example
 
-### Example 1: Feature Implementation
 ```
 /orchestrate "Implement OAuth2 authentication with comprehensive security"
 ```
@@ -35,39 +34,6 @@ Use the Orchestrator when you need:
 3. Orchestrator spawns Builder agent (with context from 1 & 2)
 4. Orchestrator spawns Tester agent
 5. Orchestrator synthesizes results and reports back
-
-**Time**: 15-20 minutes (vs 4-6 hours manually)
-
----
-
-### Example 2: Codebase Audit
-```
-/orchestrate "Audit entire codebase for security vulnerabilities"
-```
-
-**What Happens**:
-1. Orchestrator spawns Directory Analyzer
-2. Orchestrator spawns 10 Security Auditor agents (parallel)
-3. Orchestrator spawns Prioritizer agent
-4. Orchestrator synthesizes consolidated security report
-
-**Time**: 10-15 minutes (vs 8 hours manually)
-
----
-
-### Example 3: Performance Optimization
-```
-/orchestrate "Optimize all API endpoints to respond under 300ms"
-```
-
-**What Happens**:
-1. Orchestrator spawns Metrics Analyzer
-2. Orchestrator spawns Profiler agents (parallel, one per slow endpoint)
-3. Orchestrator spawns Optimizer agents (parallel)
-4. Orchestrator spawns Validator agents (parallel)
-5. Orchestrator synthesizes performance improvement report
-
-**Time**: 20 minutes (vs 6 hours manually)
 
 ---
 
@@ -109,33 +75,6 @@ The Orchestrator:
 
 ---
 
-## Token Economics
-
-### Traditional Approach (No Orchestrator)
-```
-You manually coordinate:
-  - Read 50 files: 50k tokens (your context)
-  - Write code: 20k tokens (your context)
-  - Write tests: 10k tokens (your context)
-  - Total: 80k tokens in YOUR context
-```
-
-### With Orchestrator
-```
-Orchestrator coordinates:
-  - Your context: 5k tokens (just the plan)
-  - Sub-agent 1 (Research): 20k tokens (isolated)
-  - Sub-agent 2 (Build): 30k tokens (isolated)
-  - Sub-agent 3 (Test): 10k tokens (isolated)
-  - Sub-agent contexts: 60k tokens (ISOLATED)
-  - Orchestrator synthesis: 2k tokens
-  - Total YOUR context: 7k tokens (93% reduction)
-```
-
-**Key**: Orchestrator keeps YOUR context pristine while distributing work.
-
----
-
 ## Combining with Other Tools
 
 ### With Context Priming
@@ -155,15 +94,6 @@ Orchestrator benefits from primed context for better planning.
 ```
 
 Orchestrator restores previous session intelligence before planning.
-
----
-
-### With E2B Sandboxes
-```
-/orchestrate "Build and deploy full-stack app"
-```
-
-Orchestrator automatically uses E2B sandboxes for Builder agents.
 
 ---
 
@@ -224,33 +154,6 @@ The Orchestrator ensures sub-agents generate requested format.
 
 ---
 
-## Monitoring Progress
-
-While the Orchestrator works, you'll see:
-
-```
-🤖 Orchestrator: Planning agent team...
-   ├─ Identified 3 sub-tasks
-   ├─ Spawning Researcher agent...
-   ├─ Spawning Security Analyst agent...
-   └─ Waiting for research phase...
-
-🤖 Orchestrator: Research complete. Building...
-   ├─ Spawning Builder agent (E2B sandbox)...
-   └─ Waiting for implementation...
-
-🤖 Orchestrator: Implementation complete. Testing...
-   ├─ Spawning Tester agent...
-   └─ Running test suite...
-
-🤖 Orchestrator: All agents complete. Synthesizing...
-   └─ Generating executive summary...
-
-✅ Orchestrator: Task complete!
-```
-
----
-
 ## Troubleshooting
 
 ### Issue: Orchestrator seems slow
@@ -284,28 +187,6 @@ Ctrl+C
 
 ---
 
-## Cost Analysis
-
-### Traditional Development
-```
-Engineer: 6 hours @ $75/hr = $450
-Context overhead: 80k tokens = $2.40
-Total: $452.40
-```
-
-### With Orchestrator
-```
-Engineer: 5 minutes @ $75/hr = $6.25
-Orchestrator context: 7k tokens = $0.21
-Sub-agent contexts: 60k tokens = $1.80
-Total: $8.26
-
-Savings: 98% cost reduction
-Time: 6 hours → 20 minutes
-```
-
----
-
 ## Summary
 
 The `/orchestrate` command transforms you from **Lead Engineer** to **Executive**:
@@ -318,7 +199,3 @@ The `/orchestrate` command transforms you from **Lead Engineer** to **Executive*
 
 **Before**: Serial execution (one thing at a time)
 **After**: Parallel execution (many agents simultaneously)
-
----
-
-**You're now operating at the Executive level. Welcome to Living Software.** 🚀

@@ -134,18 +134,10 @@ Bundles are structured JSON:
       "tool": "Read",
       "file": "src/auth/jwt.js",
       "action": "read"
-    },
-    {
-      "timestamp": "2026-02-10T14:35:42",
-      "tool": "Edit",
-      "file": "src/auth/jwt.js",
-      "action": "edit",
-      "old_string": "const secret = ...",
-      "new_string": "const secret = process.env..."
     }
   ],
-  "files_read": ["src/auth/jwt.js", "src/auth/middleware.js", ...],
-  "files_modified": ["src/auth/jwt.js", "tests/auth.test.js"],
+  "files_read": ["src/auth/jwt.js", ...],
+  "files_modified": ["src/auth/jwt.js", ...],
   "summary": {
     "read_count": 95,
     "edit_count": 35,
@@ -153,26 +145,6 @@ Bundles are structured JSON:
     "total_operations": 145
   }
 }
-```
-
----
-
-## Token Economics
-
-### Without Bundles (Fragile)
-```
-Terminal crashes → Start new session
-Must re-read 50 files = 50,000 tokens
-Agent has no memory of previous work
-```
-
-### With Bundles (Resilient)
-```
-Terminal crashes → Start new session
-/loadbundle previous-session
-Reads summary only = 500 tokens
-Agent instantly "remembers" previous work
-Token savings: 99%
 ```
 
 ---
@@ -212,22 +184,6 @@ git push
 git pull
 /loadbundle <session-id>
 ```
-
-### Merge Bundles (Advanced)
-If you have multiple related sessions, you could create a command to merge their bundles for comprehensive restoration.
-
----
-
-## Integration with Elite Context Engineering
-
-**The Complete Stack**:
-
-1. **Strip Global Context** - Save 10-20% permanently
-2. **On-Demand Priming** (`/prime`) - Load project context when needed
-3. **Sub-Agent Delegation** (`/research`) - Preserve context during heavy tasks
-4. **Context Bundles** (`/loadbundle`) - Restore agent intelligence across sessions
-
-**Result**: Your agent is **resilient, efficient, and infinitely scalable**.
 
 ---
 

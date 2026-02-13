@@ -53,9 +53,14 @@ Scale approach to task complexity. Direct for simple, delegate for complex.
 4. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
 5. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
 
+## Compaction Preservation
+
+When context compacts, preserve: task list state, modified file paths, test commands, validation results, key decisions.
+
 ## Key Rules
 
 - `uv run` for all Python execution
 - Edit template not settings.json directly -- run `bash install.sh` to apply
 - Never delete hook files the live settings.json references -- stub them first, delete after reinstall
 - Knowledge DB: `data/knowledge-db/` via knowledge-db skill
+- Big outputs (>1000 tokens) -- save to `/tmp/claude/` and reference, don't flood context

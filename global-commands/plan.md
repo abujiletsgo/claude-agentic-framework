@@ -27,7 +27,7 @@ hooks:
 
 # Plan With Team
 
-Create a detailed implementation plan based on the user's requirements provided through the `USER_PROMPT` variable. Analyze the request, think through the implementation approach, and save a comprehensive specification document to `PLAN_OUTPUT_DIRECTORY/<name-of-plan>.md` that can be used as a blueprint for actual development work. Follow the `Instructions` and work through the `Workflow` to create the plan.
+Create a detailed implementation plan based on the user's requirements provided through the `USER_PROMPT` variable. Analyze the request, think through the implementation approach, and save a comprehensive specification document to `PLAN_OUTPUT_DIRECTORY/<name-of-plan>.md` that can be used as a blueprint for actual development work.
 
 ## Variables
 
@@ -44,20 +44,17 @@ GENERAL_PURPOSE_AGENT: `general-purpose`
 - If `ORCHESTRATION_PROMPT` is provided, use it to guide team composition, task granularity, dependency structure, and parallel/sequential decisions.
 - Carefully analyze the user's requirements provided in the USER_PROMPT variable
 - Determine the task type (chore|feature|refactor|fix|enhancement) and complexity (simple|medium|complex)
-- Think deeply (ultrathink) about the best approach to implement the requested functionality or solve the problem
+- Think deeply about the best approach to implement the requested functionality or solve the problem
 - Understand the codebase directly without subagents to understand existing patterns and architecture
-- Follow the Plan Format below to create a comprehensive implementation plan
 - Include all required sections and conditional sections based on task type and complexity
 - Generate a descriptive, kebab-case filename based on the main topic of the plan
 - Save the complete implementation plan to `PLAN_OUTPUT_DIRECTORY/<descriptive-name>.md`
 - Ensure the plan is detailed enough that another developer could follow it to implement the solution
-- Include code examples or pseudo-code where appropriate to clarify complex concepts
 - Consider edge cases, error handling, and scalability concerns
-- Understand your role as the team lead. Refer to the `Team Orchestration` section for more details.
 
 ### Team Orchestration
 
-As the team lead, you have access to powerful tools for coordinating work across multiple agents. You NEVER write code directly - you orchestrate team members using these tools.
+As the team lead, you orchestrate team members using Task Management Tools. You NEVER write code directly - you coordinate team members.
 
 #### Task Management Tools
 
@@ -66,7 +63,7 @@ As the team lead, you have access to powerful tools for coordinating work across
 TaskCreate({
   subject: "Implement user authentication",
   description: "Create login/logout endpoints with JWT tokens. See specs/auth-plan.md for details.",
-  activeForm: "Implementing authentication"  // Shows in UI spinner when in_progress
+  activeForm: "Implementing authentication"
 })
 // Returns: taskId (e.g., "1")
 ```
@@ -86,15 +83,9 @@ TaskList({})
 // Returns: Array of tasks with id, subject, status, owner, blockedBy
 ```
 
-**TaskGet** - Get full details of a specific task:
-```typescript
-TaskGet({ taskId: "1" })
-// Returns: Full task including description
-```
-
 #### Task Dependencies
 
-Use `addBlockedBy` to create sequential dependencies - blocked tasks cannot start until dependencies complete:
+Use `addBlockedBy` to create sequential dependencies:
 
 ```typescript
 // Task 2 depends on Task 1
@@ -102,35 +93,6 @@ TaskUpdate({
   taskId: "2",
   addBlockedBy: ["1"]  // Task 2 blocked until Task 1 completes
 })
-
-// Task 3 depends on both Task 1 and Task 2
-TaskUpdate({
-  taskId: "3",
-  addBlockedBy: ["1", "2"]
-})
-```
-
-Dependency chain example:
-```
-Task 1: Setup foundation     → no dependencies
-Task 2: Implement feature    → blockedBy: ["1"]
-Task 3: Write tests          → blockedBy: ["2"]
-Task 4: Final validation     → blockedBy: ["1", "2", "3"]
-```
-
-#### Owner Assignment
-
-Assign tasks to specific team members for clear accountability:
-
-```typescript
-// Assign task to a specific builder
-TaskUpdate({
-  taskId: "1",
-  owner: "builder-api"
-})
-
-// Team members check for their assignments
-TaskList({})  // Filter by owner to find assigned work
 ```
 
 #### Agent Deployment with Task Tool
@@ -141,7 +103,7 @@ Task({
   description: "Implement auth endpoints",
   prompt: "Implement the authentication endpoints as specified in Task 1...",
   subagent_type: "general-purpose",
-  model: "opus",  // or "opus" for complex work, "haiku" for VERY simple
+  model: "opus",  // or "sonnet", "haiku" for simpler work
   run_in_background: false  // true for parallel execution
 })
 // Returns: agentId (e.g., "a1b2c3")
@@ -152,7 +114,7 @@ Task({
 Store the agentId to continue an agent's work with preserved context:
 
 ```typescript
-// First deployment - agent works on initial task
+// First deployment
 Task({
   description: "Build user service",
   prompt: "Create the user service with CRUD operations...",
@@ -165,13 +127,9 @@ Task({
   description: "Continue user service",
   prompt: "Now add input validation to the endpoints you created...",
   subagent_type: "general-purpose",
-  resume: "abc123"  // Continues with previous context
+  resume: "abc123"
 })
 ```
-
-When to resume vs start fresh:
-- **Resume**: Continuing related work, agent needs prior context
-- **Fresh**: Unrelated task, clean slate preferred
 
 #### Parallel Execution
 
@@ -185,7 +143,6 @@ Task({
   subagent_type: "general-purpose",
   run_in_background: true
 })
-// Returns immediately with agentId and output_file path
 
 Task({
   description: "Build frontend components",
@@ -195,17 +152,10 @@ Task({
 })
 // Both agents now working simultaneously
 
-// Check on progress
-TaskOutput({
-  task_id: "agentId",
-  block: false,  // non-blocking check
-  timeout: 5000
-})
-
 // Wait for completion
 TaskOutput({
   task_id: "agentId",
-  block: true,  // blocks until done
+  block: true,
   timeout: 300000
 })
 ```
@@ -222,22 +172,20 @@ TaskOutput({
 
 ## Workflow
 
-IMPORTANT: **PLANNING ONLY** - Do not execute, build, or deploy. Output is a plan document.
+**PLANNING ONLY** - Do not execute, build, or deploy. Output is a plan document.
 
 1. Analyze Requirements - Parse the USER_PROMPT to understand the core problem and desired outcome
-2. Understand Codebase - Without subagents, directly understand existing patterns, architecture, and relevant files
+2. Understand Codebase - Directly understand existing patterns, architecture, and relevant files
 3. Design Solution - Develop technical approach including architecture decisions and implementation strategy
 4. Define Team Members - Use `ORCHESTRATION_PROMPT` (if provided) to guide team composition. Identify from `.claude/agents/team/*.md` or use `general-purpose`. Document in plan.
 5. Define Step by Step Tasks - Use `ORCHESTRATION_PROMPT` (if provided) to guide task granularity and parallel/sequential structure. Write out tasks with IDs, dependencies, assignments. Document in plan.
 6. Generate Filename - Create a descriptive kebab-case filename based on the plan's main topic
 7. Save Plan - Write the plan to `PLAN_OUTPUT_DIRECTORY/<filename>.md`
-8. Save & Report - Follow the `Report` section to write the plan to `PLAN_OUTPUT_DIRECTORY/<filename>.md` and provide a summary of key components
+8. Report - Provide a summary of key components
 
 ## Plan Format
 
-- IMPORTANT: Replace <requested content> with the requested content. It's been templated for you to replace. Consider it a micro prompt to replace the requested content.
-- IMPORTANT: Anything that's NOT in <requested content> should be written EXACTLY as it appears in the format below.
-- IMPORTANT: Follow this EXACT format when creating implementation plans:
+IMPORTANT: Replace <requested content> with the requested content. Anything NOT in <requested content> should be written EXACTLY as it appears below.
 
 ```md
 # Plan: <task name>
@@ -277,49 +225,41 @@ Use these files to complete the task:
 
 - You operate as the team lead and orchestrate the team to execute the plan.
 - You're responsible for deploying the right team members with the right context to execute the plan.
-- IMPORTANT: You NEVER operate directly on the codebase. You use `Task` and `Task*` tools to deploy team members to to the building, validating, testing, deploying, and other tasks.
-  - This is critical. You're job is to act as a high level director of the team, not a builder.
-  - You're role is to validate all work is going well and make sure the team is on track to complete the plan.
-  - You'll orchestrate this by using the Task* Tools to manage coordination between the team members.
-  - Communication is paramount. You'll use the Task* Tools to communicate with the team members and ensure they're on track to complete the plan.
-- Take note of the session id of each team member. This is how you'll reference them.
+- IMPORTANT: You NEVER operate directly on the codebase. You use `Task` and `Task*` tools to deploy team members.
+- Your role is to validate all work is going well and make sure the team is on track to complete the plan.
+- Communication is paramount. Use Task* Tools to communicate with team members and ensure they're on track.
 
 ### Team Members
 <list the team members you'll use to execute the plan>
 
 - Builder
-  - Name: <unique name for this builder - this allows you and other team members to reference THIS builder by name. Take note there may be multiple builders, the name make them unique.>
-  - Role: <the single role and focus of this builder will play>
-  - Agent Type: <the subagent type of this builder, you'll specify based on the name in TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
-  - Resume: <default true. This lets the agent continue working with the same context. Pass false if you want to start fresh with a new context.>
-- <continue with additional team members as needed in the same format as above>
+  - Name: <unique name for this builder>
+  - Role: <the single role and focus of this builder>
+  - Agent Type: <the subagent type of this builder>
+  - Resume: <default true. Pass false if you want to start fresh with a new context.>
+- <continue with additional team members as needed>
 
 ## Step by Step Tasks
 
-- IMPORTANT: Execute every step in order, top to bottom. Each task maps directly to a `TaskCreate` call.
-- Before you start, run `TaskCreate` to create the initial task list that all team members can see and execute.
+IMPORTANT: Execute every step in order, top to bottom. Each task maps directly to a `TaskCreate` call.
 
 <list step by step tasks as h3 headers. Start with foundational work, then core implementation, then validation.>
 
 ### 1. <First Task Name>
-- **Task ID**: <unique kebab-case identifier, e.g., "setup-database">
+- **Task ID**: <unique kebab-case identifier>
 - **Depends On**: <Task ID(s) this depends on, or "none" if no dependencies>
 - **Assigned To**: <team member name from Team Members section>
-- **Agent Type**: <subagent from TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
+- **Agent Type**: <subagent type>
 - **Parallel**: <true if can run alongside other tasks, false if must be sequential>
-- <specific action to complete>
 - <specific action to complete>
 
 ### 2. <Second Task Name>
 - **Task ID**: <unique-id>
-- **Depends On**: <previous Task ID, e.g., "setup-database">
+- **Depends On**: <previous Task ID>
 - **Assigned To**: <team member name>
-- **Agent Type**: <subagent type from TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
+- **Agent Type**: <subagent type>
 - **Parallel**: <true/false>
 - <specific action>
-- <specific action>
-
-### 3. <Continue Pattern>
 
 ### N. <Final Validation Task>
 - **Task ID**: validate-all
@@ -329,8 +269,6 @@ Use these files to complete the task:
 - **Parallel**: false
 - Run all validation commands
 - Verify acceptance criteria met
-
-<continue with additional tasks as needed. Agent types must exist in .claude/agents/team/*.md>
 
 ## Acceptance Criteria
 <list specific, measurable criteria that must be met for the task to be considered complete>
@@ -347,7 +285,7 @@ Execute these commands to validate the task is complete:
 
 ## Report
 
-After creating and saving the implementation plan, provide a concise report with the following format:
+After creating and saving the implementation plan, provide a concise report:
 
 ```
 ✅ Implementation Plan Created
@@ -360,11 +298,11 @@ Key Components:
 - <main component 3>
 
 Team Task List:
-- <list of tasks, and owner (concise)>
+- <list of tasks and owner (concise)>
 
 Team members:
 - <list of team members and their roles (concise)>
 
-When you're ready, you can execute the plan in a new agent by running:
+When you're ready, execute the plan:
 /build <replace with path to plan>
 ```

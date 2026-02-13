@@ -23,31 +23,11 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/damage-control/bash-tool-damage-control.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/damage-control/edit-tool-damage-control.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/damage-control/write-tool-damage-control.py",
+            "command": "uv run __REPO_DIR__/global-hooks/damage-control/unified-damage-control.py",
             "timeout": 5
           }
         ]
@@ -57,7 +37,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -73,7 +54,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUse",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -84,7 +66,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type Stop --add-chat",
-            "timeout": 10
+            "timeout": 10,
+            "async": true
           },
           {
             "type": "command",
@@ -100,7 +83,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStop",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -111,7 +95,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStart",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -122,7 +107,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type UserPromptSubmit",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -138,7 +124,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionStart",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -149,7 +136,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionEnd",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -160,7 +148,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreCompact",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -171,7 +160,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PermissionRequest",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -182,7 +172,8 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUseFailure",
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }

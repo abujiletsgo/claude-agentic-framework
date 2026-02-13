@@ -116,13 +116,6 @@ This will scan all skills in `.claude/skills/` and report:
 - Focus on findings in executable files (.sh, .py, .js, etc.) as highest priority
 - When in doubt, read the file at the reported line number to verify if it's actual dangerous code
 
-**If Blocked Skills Detected**, offer to run detailed review:
-```bash
-just review-blocked-skills
-```
-
-This interactive tool shows detailed findings with code context and allows whitelisting trusted skills.
-
 ---
 
 ## Phase 6: Team Assessment
@@ -164,19 +157,15 @@ Based on detected indicators, suggest appropriate team structure:
 
 - **Review Team**: If security audit found critical issues or warnings
   - Composition: security-scanner + validator + builder (for fixes)
-  - Use case: Security-critical codebases, production apps, authentication systems
 
 - **Architecture Team**: If multi-layer structure detected
   - Composition: project-architect + builder + validator
-  - Use case: Complex projects needing design before implementation
 
 - **Research Team**: If unfamiliar stack detected
   - Composition: researcher + critical-analyst + builder
-  - Use case: New technologies, legacy systems, undocumented codebases
 
 - **Full Development Team**: If multiple indicators present
   - Composition: orchestrator + builder + validator + researcher
-  - Use case: Large-scale refactoring, new feature development, complex migrations
 
 **Decision Tree**:
 ```
@@ -207,13 +196,9 @@ After completing all phases, provide a **concise, structured summary**:
 ### 🔒 Security Audit (Local Skills)
 **Status**: [CLEAN / WARNINGS / CRITICAL]
 
-[If local skills detected, show audit results here:]
-- ✅ **skill-name**: CLEAN (no issues)
-- ⚠️ **skill-name**: 2 warnings (API key handling, rm -rf)
-- 🚫 **skill-name**: BLOCKED (1 critical: eval() call)
+[If local skills detected, show audit results]
 
-[For blocked skills:]
-**Blocked Skills** (not loaded due to critical security issues):
+**Blocked Skills** (if any):
 - skill-name: [Brief description of critical issue]
 
 **Action Required**: Review and fix critical issues before loading blocked skills.
@@ -250,13 +235,10 @@ After completing all phases, provide a **concise, structured summary**:
 **Suggested Composition**:
 - [agent-name] ([model-tier]) - [role]
 - [agent-name] ([model-tier]) - [role]
-- [agent-name] ([model-tier]) - [role]
-
-**Estimated Cost**: [N×] single session cost
 
 **Approval**: Would you like me to spawn this team? [Yes/No]
 
-[If score < 2.0, replace this section with:]
+[If score < 2.0:]
 **Team Assessment**: Single-agent workflow sufficient for this project's complexity.
 
 ### ✅ Ready to Execute
