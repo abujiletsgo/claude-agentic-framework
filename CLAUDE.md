@@ -29,14 +29,25 @@ Haiku  (2): validator, docs-scraper
 
 Config: `data/model_tiers.yaml`.
 
+## Context Discipline (Always On)
+
+Every interaction follows these principles to preserve tokens and attention:
+
+1. **Search before read** -- Grep/Glob first. Never open a file blind.
+2. **Small slices** -- Read max 50-100 lines at a time. Use offset+limit.
+3. **Delegate heavy analysis** -- 5+ files or 200+ lines = spawn sub-agents. Keep primary context for coordination.
+4. **Summaries not dumps** -- Sub-agents return 2-3 sentence findings, not raw code.
+5. **Parallel sub-agents** -- Independent analyses in one message, not sequential.
+
+/rlm enforces these as a strict formal loop. But the principles apply to ALL work by default.
+
 ## Execution Protocol
 
 1. **Task Lists** -- 3+ steps = TaskList. Parallelize. Mark in_progress/completed.
 2. **Parallel** -- Launch independent subagents simultaneously. Never serialize parallelizable work.
 3. **Orchestrator** -- /orchestrate for complex multi-agent tasks.
-4. **RLM** -- /rlm for context-exceeding tasks. Fresh context per iteration.
-5. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
-6. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
+4. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
+5. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
 
 ## Key Rules
 
