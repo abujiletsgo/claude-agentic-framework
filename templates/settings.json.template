@@ -28,14 +28,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/bash-tool-damage-control.py",
-            "timeout": 5,
-            "statusMessage": "Pattern-matching bash security check..."
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are a security reviewer for shell commands. Analyze this bash command: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the command would:\n- Delete or destroy files/directories recursively or in bulk (rm -rf, find -delete, xargs rm)\n- Overwrite or corrupt critical system files, configs, or databases\n- Expose secrets by piping credentials to stdout, logs, or network\n- Execute obfuscated/encoded payloads (base64 decode | bash, eval, curl | sh)\n- Modify system-level configs (/etc/*, crontab, systemctl, launchctl)\n- Perform network exfiltration (curl/wget posting file contents to external URLs)\n- Chain destructive operations via pipes or subshells to bypass simple pattern checks\n- Use variable expansion or command substitution to hide destructive intent\n\nAllow (ok: true) if the command is:\n- Read-only operations (cat, ls, grep, find without -delete/-exec rm, head, tail)\n- Standard dev commands (git status/log/diff, npm install/test/build, pytest, cargo build)\n- Safe file writes to project directories\n- Package management (brew, apt, pip install)\n- Process inspection (ps, top, htop)\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
-            "timeout": 10,
-            "statusMessage": "LLM semantic bash validation..."
+            "timeout": 5
           }
         ]
       },
@@ -45,14 +38,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/edit-tool-damage-control.py",
-            "timeout": 5,
-            "statusMessage": "Pattern-matching edit security check..."
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are a code safety reviewer for file edits. Analyze this edit operation: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the edit would:\n- Remove or gut security checks, input validation, authentication, or authorization logic\n- Inject code that executes external commands with unsanitized user input (eval, exec, os.system)\n- Replace working code with empty stubs, TODOs, or 'pass' statements without explanation\n- Modify credential files, environment configs, or security-sensitive settings\n- Introduce SQL injection, XSS, path traversal, or command injection vulnerabilities\n- Disable logging, error handling, or audit trails\n- Change file permissions or access control configurations\n\nAllow (ok: true) if the edit:\n- Makes targeted, scoped changes to application code\n- Adds or modifies features, tests, or documentation\n- Refactors code while maintaining equivalent functionality\n- Fixes bugs, improves error handling, or adds validation\n- Updates imports, types, or formatting\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
-            "timeout": 10,
-            "statusMessage": "LLM semantic edit validation..."
+            "timeout": 5
           }
         ]
       },
@@ -62,33 +48,6 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/damage-control/write-tool-damage-control.py",
-            "timeout": 5,
-            "statusMessage": "Pattern-matching write security check..."
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are a file safety reviewer for write operations. Analyze this file write: $ARGUMENTS\n\nRESPOND WITH ONLY JSON.\n\nBlock (ok: false) if the write would:\n- Overwrite critical config files with empty or minimal placeholder content\n- Write credentials, API keys, tokens, or secrets to version-controlled files\n- Create files in system directories or outside the project scope\n- Replace a large, functioning file with a stub, skeleton, or drastically reduced version\n- Write executable scripts with dangerous permissions or destructive operations\n- Create files that could be used for privilege escalation (cron jobs, sudoers, systemd units)\n- Overwrite lock files, build artifacts, or generated files that should not be manually edited\n\nAllow (ok: true) if the write:\n- Creates or updates application code, tests, or documentation\n- Writes to appropriate project directories\n- Contains substantive, complete, well-structured content\n- Follows the project's existing patterns and conventions\n- Creates configuration files with safe defaults\n\nRespond: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief explanation\"}",
-            "timeout": 10,
-            "statusMessage": "LLM semantic write validation..."
-          }
-        ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/anti_loop_team.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/delegate_mode_enforcer.py",
             "timeout": 5
           }
         ]
@@ -97,38 +56,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/pre_tool_use.py",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse",
             "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/pre_tool_use.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse --summarize",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/teammate_monitor.py"
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/teams/task_validator.py"
           }
         ]
       }
@@ -143,38 +72,7 @@
           },
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/post_tool_use.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/post_tool_use.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUse --summarize",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/notification.py --notify",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/notification.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type Notification --summarize",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUse",
             "timeout": 5
           }
         ]
@@ -185,23 +83,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/stop.py --chat --notify",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/stop.py --chat",
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type Stop --add-chat",
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/validators/run_tests.py",
-            "timeout": 120
           },
           {
             "type": "command",
@@ -216,149 +99,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/subagent_stop.py --notify",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/subagent_stop.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStop",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/user_prompt_submit.py --log-only --store-last-prompt --name-agent",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/user_prompt_submit.py --log-only --store-last-prompt --name-agent",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type UserPromptSubmit --summarize",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/pre_compact.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/pre_compact.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreCompact",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/session_start.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/session_start.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionStart",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/security/verify_skills.py",
-            "timeout": 5,
-            "statusMessage": "Verifying skills integrity..."
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/session_end.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/session_end.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionEnd",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/permission_request.py --log-only",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/permission_request.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PermissionRequest --summarize",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/post_tool_use_failure.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/post_tool_use_failure.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUseFailure --summarize",
             "timeout": 5
           }
         ]
@@ -369,28 +110,78 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/subagent_start.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/subagent_start.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStart",
             "timeout": 5
           }
         ]
       }
     ],
-    "Setup": [
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/mastery/setup.py",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type UserPromptSubmit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/security/verify_skills.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionEnd",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreCompact",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PermissionRequest",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUseFailure",
             "timeout": 5
           }
         ]
@@ -402,7 +193,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_v6.py",
+    "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_v9.py",
     "padding": 0
   }
 }
