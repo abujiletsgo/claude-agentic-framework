@@ -6,7 +6,7 @@ v2.1.0 | One repo, one install, one source of truth.
 
 ```
 global-hooks/        damage-control/ observability/ framework/
-global-agents/       11 agents (8 root + 3 team)
+global-agents/       8 agents (8 root + 0 team)
 global-commands/     14 commands
 global-skills/       6 skills
 global-status-lines/ mastery/v9 + observability/
@@ -15,16 +15,36 @@ data/                knowledge-db/ + model_tiers.yaml
 templates/           settings.json.template
 ```
 
-## Mode: Yolo
+## Mode: Maximum Autonomy (Yolo++)
 
-`"allow": ["*"]` + deny destructive ops + ask force-push/hard-reset. Security: permissions > command hooks (pattern match) > skills integrity (SHA-256) > input validation > file permissions (0o600).
+**CRITICAL**: Operate with maximum autonomy. Only ask user for clarification when truly needed.
+
+**Permission Model**: `"allow": ["*"]` - Trust by default, auto-execute everything except catastrophic operations.
+
+**Auto-Execute (NO permission prompts)**:
+- ✅ Read, Glob, Grep (always)
+- ✅ Edit, Write (always, hooks will block if dangerous)
+- ✅ Bash commands (except rm -rf /, dd, mkfs, format)
+- ✅ Task spawning, agent teams, background execution
+- ✅ Git operations (commit, pull, push to branches, merge)
+- ✅ Skill invocation, test execution
+
+**Only Ask User When**:
+- Need to clarify ambiguous requirements ("which approach?")
+- About to force-push to main/master branch
+- Missing critical information that blocks progress
+- About to execute: rm -rf /, dd if=, mkfs, format, chmod -R 777 /
+
+**Never Ask For**: File operations, code edits, searches, safe git commands, agent spawning, test runs.
+
+**Security**: Automatic via hooks + integrity checks, NOT via user prompts.
 
 ## Model Tiers
 
 ```
   Opus (4): orchestrator, project-architect, critical-analyst, rlm-root
-Sonnet (5): researcher, meta-agent, scout-report-suggest, builder, project-skill-generator
- Haiku (2): docs-scraper, validator
+Sonnet (3): researcher, meta-agent, scout-report-suggest
+ Haiku (1): docs-scraper
 ```
 
 Config: `data/model_tiers.yaml`.
@@ -47,40 +67,11 @@ Scale approach to task complexity. Direct for simple, delegate for complex.
 
 ## Execution Protocol
 
-### Auto-Orchestration (Seamless Team Coordination)
-
-**CRITICAL**: Automatically invoke orchestrator for complex tasks WITHOUT asking user confirmation. Analyze request complexity and auto-delegate.
-
-**Auto-Trigger Orchestration When**:
-- **Multi-step** (5+ distinct steps) AND **multi-file** (4+ files affected)
-- **Unknown scope** requiring exploration before implementation
-- **Security-sensitive** (auth, API keys, permissions, encryption)
-- **Performance-critical** (profiling needed + optimization + validation)
-- **Full-stack** (frontend + backend + database changes)
-- **Large refactoring** (15+ files, architectural changes)
-- **Audits/scans** (security-scanner, code-review, dependency-audit)
-
-**Auto-Orchestration Workflow**:
-```
-1. Detect qualifying task (silent analysis)
-2. Spawn specialized team in PARALLEL (one message, multiple agents)
-3. Agents work simultaneously on different parts
-4. Synthesize results
-5. Report completion
-```
-
-**Examples**:
-- ✅ "Add OAuth2" → Auto-spawn: researcher + security + builder + tester (parallel)
-- ✅ "Security audit" → Auto-spawn: scanner + reviewer + validator (parallel)
-- ❌ "Fix typo" → Direct (simple, 1 file)
-
-### Execution Rules
-
 1. **Task Lists** -- 3+ steps = TaskList. Parallelize. Mark in_progress/completed.
-2. **TRUE Parallel** -- Spawn independent agents in ONE message simultaneously.
-3. **Auto-Orchestrate** -- Complex tasks trigger parallel teams automatically (no user prompt).
-4. **Validate** -- Always spawn validator in parallel with builders.
-5. **Teams** -- Builder + Validator work simultaneously, not sequentially.
+2. **Parallel** -- Launch independent subagents simultaneously. Never serialize parallelizable work.
+3. **Orchestrator** -- /orchestrate for complex multi-agent tasks.
+4. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
+5. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
 
 ## Compaction Preservation
 
