@@ -142,6 +142,23 @@ def get_active_team_members():
 
     return team_members[:5]  # Limit to 5 activities max
 
+def check_compaction_active():
+    """Check if auto context compaction is active (flag written by auto_context_manager)."""
+    flag_file = Path("/tmp/claude/compacting_custom")
+    if not flag_file.exists():
+        return False
+    try:
+        import time
+        # Flag is active if written within last 60 seconds
+        age = time.time() - flag_file.stat().st_mtime
+        if age < 60:
+            return True
+        # Stale flag — clean it up
+        flag_file.unlink(missing_ok=True)
+    except Exception:
+        pass
+    return False
+
 
 # ─── ANSI Colors ─────────────────────────────────────────────────────
 
@@ -205,6 +222,10 @@ def build_status_line(hook_input):
             ctx_color = FG_GRAY
 
         segments.append(f"{FG_GRAY}│{RESET} {ctx_color}{context_pct:.0f}%{RESET}")
+
+    # Compaction indicator
+    if check_compaction_active():
+        segments.append(f"{FG_GRAY}│{RESET} {FG_YELLOW}COMPACTING{RESET}")
 
     # Activity indicators (action emojis only)
     if action_emojis:
