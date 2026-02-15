@@ -21,14 +21,10 @@ import sys
 import os
 import subprocess
 from pathlib import Path
-from datetime import datetime
 
 # ─── Action Emoji Assignments ────────────────────────────────────────
 
-# Main Claude activity indicator (loading animation)
-LOADING_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]  # Braille spinner
-# Alternative: ["◐", "◓", "◑", "◒"]  # Circle spinner
-# Alternative: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]  # Box spinner
+# No spinner - static display only (Claude Code refreshes too slowly for animation)
 
 # Agent action emojis (what they're doing)
 AGENT_ACTIONS = {
@@ -79,30 +75,34 @@ def get_project_dir():
 
 def get_context_percentage(hook_input):
     """Estimate context usage percentage."""
-    # Try to get from hook input
-    input_tokens = hook_input.get("inputTokens", 0)
-
-    # Rough estimate: 200k max context
-    max_tokens = 200000
-
-    if input_tokens > 0:
-        pct = (input_tokens / max_tokens) * 100
-        return min(pct, 99)  # Cap at 99%
+    # Claude Code sends context_window dict with used_percentage
+    context_data = hook_input.get("context_window", {})
+    if isinstance(context_data, dict):
+        pct = context_data.get("used_percentage", 0) or 0
+        return min(pct, 99)
 
     return 0
 
 def get_model_tier(hook_input):
     """Get model tier (Opus/Sonnet/Haiku)."""
-    model = hook_input.get("model", "")
+    # Claude Code sends model as dict with display_name
+    model_info = hook_input.get("model", {})
+    if isinstance(model_info, dict):
+        model = model_info.get("display_name", "")
+    elif isinstance(model_info, str):
+        model = model_info
+    else:
+        model = ""
 
-    if "opus" in model.lower():
+    model_lower = model.lower()
+    if "opus" in model_lower:
         return "Opus"
-    elif "sonnet" in model.lower():
+    elif "sonnet" in model_lower:
         return "Sonnet"
-    elif "haiku" in model.lower():
+    elif "haiku" in model_lower:
         return "Haiku"
 
-    return "Unknown"
+    return model[:10] if model else "Claude"
 
 def get_active_team_members():
     """
@@ -142,12 +142,6 @@ def get_active_team_members():
 
     return team_members[:5]  # Limit to 5 activities max
 
-def get_loading_frame():
-    """Get current loading animation frame based on time."""
-    # Cycle through frames every 0.1 seconds for smooth animation
-    now = datetime.now()
-    frame_idx = (now.second * 10 + now.microsecond // 100000) % len(LOADING_FRAMES)
-    return LOADING_FRAMES[frame_idx]
 
 # ─── ANSI Colors ─────────────────────────────────────────────────────
 
@@ -176,7 +170,6 @@ def build_status_line(hook_input):
     context_pct = get_context_percentage(hook_input)
 
     # Get activity indicators
-    loading = get_loading_frame()
     team_members = get_active_team_members()
     action_emojis = "".join(AGENT_ACTIONS.get(agent, AGENT_ACTIONS["unknown"]) for agent in team_members)
 
@@ -213,15 +206,9 @@ def build_status_line(hook_input):
 
         segments.append(f"{FG_GRAY}│{RESET} {ctx_color}{context_pct:.0f}%{RESET}")
 
-    # Activity indicators (loading animation + action emojis)
+    # Activity indicators (action emojis only)
     if action_emojis:
-        # Show loading + team actions
-        activities = f"{loading} {action_emojis}"
-    else:
-        # Just loading animation
-        activities = loading
-
-    segments.append(f"{FG_GRAY}│{RESET} {activities}")
+        segments.append(f"{FG_GRAY}│{RESET} {action_emojis}")
 
     # Join and return
     return " ".join(segments)
@@ -246,8 +233,8 @@ def main():
         print(status_line, flush=True)
 
     except Exception as e:
-        # Fallback: minimal status with just loading
-        print(f"Claude ⠋", flush=True)
+        # Fallback: minimal status
+        print(f"Claude", flush=True)
 
 if __name__ == "__main__":
     main()

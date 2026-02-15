@@ -58,34 +58,36 @@ TEAM_UPDATE_MESSAGES = [
 
 def detect_task_completion(hook_input):
     """Detect if a task was marked as completed."""
-    tool_name = hook_input.get("tool_name", "")
-    tool_input = hook_input.get("tool_input", {})
+    # Claude Code nests tool info under 'tool' dict
+    tool = hook_input.get("tool", {})
+    tool_name = tool.get("name", "")
+    tool_params = tool.get("input", {})
 
     # Check if TaskUpdate with status=completed
     if tool_name == "TaskUpdate":
-        status = tool_input.get("status", "")
+        status = tool_params.get("status", "")
         if status == "completed":
-            subject = tool_input.get("subject", "Task")
+            subject = tool_params.get("subject", "Task")
             return True, subject
 
     return False, None
 
 def detect_error_or_attention(hook_input):
     """Detect if there's an error or attention needed."""
-    tool_name = hook_input.get("tool_name", "")
-    tool_output = hook_input.get("tool_output", "")
+    tool = hook_input.get("tool", {})
+    tool_name = tool.get("name", "")
+    tool_result = str(hook_input.get("tool_result", ""))
 
-    # Check for error indicators
+    # Check for error indicators in tool result
     error_indicators = [
         "error",
         "failed",
         "exception",
         "attention needed",
-        "warning",
         "critical"
     ]
 
-    output_lower = str(tool_output).lower()
+    output_lower = tool_result.lower()
 
     for indicator in error_indicators:
         if indicator in output_lower:
@@ -95,15 +97,15 @@ def detect_error_or_attention(hook_input):
 
 def detect_team_update(hook_input):
     """Detect team member completion."""
-    # Check for SendMessage or team-related tools
-    tool_name = hook_input.get("tool_name", "")
+    tool = hook_input.get("tool", {})
+    tool_name = tool.get("name", "")
+    tool_params = tool.get("input", {})
 
     if tool_name == "SendMessage":
-        tool_input = hook_input.get("tool_input", {})
-        msg_type = tool_input.get("type", "")
+        msg_type = tool_params.get("type", "")
 
         if msg_type in ["message", "broadcast"]:
-            content = tool_input.get("content", "")
+            content = tool_params.get("content", "")
             if "completed" in content.lower() or "done" in content.lower():
                 return True
 

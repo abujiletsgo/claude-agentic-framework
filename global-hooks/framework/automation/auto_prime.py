@@ -121,16 +121,13 @@ def main():
 
         # Cache is valid - load silently
         if load_context_silently(cache_file):
-            # Successfully loaded - no output (silent load)
-            # In a full implementation, this would inject context into
-            # the conversation via Claude Code's context system
             pass
 
     except Exception as e:
-        # Fail silently - auto prime should never block session start
         print(f"Auto prime error (non-blocking): {e}", file=sys.stderr)
 
-    # Always exit 0 (never block session start)
+    # Always output valid JSON and exit 0
+    print(json.dumps({"result": "continue"}))
     sys.exit(0)
 
 
