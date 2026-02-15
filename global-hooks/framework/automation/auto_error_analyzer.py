@@ -123,12 +123,13 @@ def main():
         hook_input = json.loads(sys.stdin.read())
 
         # Only process Bash tool
-        tool_name = hook_input.get("toolName", "")
+        tool = hook_input.get("tool", {})
+        tool_name = tool.get("name", "")
         if tool_name != "Bash":
             sys.exit(0)
 
         # Get command and execution details
-        tool_input = hook_input.get("toolInput", {})
+        tool_input = tool.get("input", {})
         if isinstance(tool_input, str):
             tool_input = json.loads(tool_input)
 
@@ -139,14 +140,13 @@ def main():
             sys.exit(0)
 
         # Get execution results
-        tool_output = hook_input.get("toolOutput", {})
-        if isinstance(tool_output, str):
+        tool_result = hook_input.get("tool_result", "")
+        tool_output = {}
+        if isinstance(tool_result, str):
             try:
-                tool_output = json.loads(tool_output)
+                tool_output = json.loads(tool_result)
             except json.JSONDecodeError:
-                # Output might be plain text
-                tool_output = {"stdout": tool_output}
-
+                tool_output = {"stdout": tool_result}
         # Check exit code
         exit_code = tool_output.get("exit_code")
         if exit_code is None:

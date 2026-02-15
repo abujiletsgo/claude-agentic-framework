@@ -66,15 +66,16 @@ def post_tool_use_handler():
     except json.JSONDecodeError:
         return
 
-    tool_name = hook_input.get("toolName", "")
-    tool_input = hook_input.get("toolInput", {})
+    tool = hook_input.get("tool", {})
+    tool_name = tool.get("name", "")
+    tool_input = tool.get("input", {})
     if isinstance(tool_input, str):
         try:
             tool_input = json.loads(tool_input)
         except json.JSONDecodeError:
             tool_input = {}
 
-    tool_output = hook_input.get("toolOutput", "")
+    tool_output = hook_input.get("tool_result", "")
 
     # Check if this is a review command
     if not is_review_command(tool_name, tool_input):

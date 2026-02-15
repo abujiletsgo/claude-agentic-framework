@@ -288,6 +288,16 @@ def main():
             queued_count = queue_segments_for_compression(cold_segments, current_turn)
 
             if queued_count > 0:
+                # Write flag for status line
+                flag_dir = Path("/tmp/claude")
+                flag_dir.mkdir(parents=True, exist_ok=True)
+                (flag_dir / "compacting_custom").write_text(json.dumps({
+                    "queued": queued_count,
+                    "context_pct": round(context_pct),
+                    "cold_topics": len(cold_segments),
+                    "timestamp": datetime.now().isoformat()
+                }))
+
                 # Output system reminder for Claude to see
                 print(
                     f"\n⚡ CONTEXT_MANAGER: {queued_count} cold segments ready for compression "

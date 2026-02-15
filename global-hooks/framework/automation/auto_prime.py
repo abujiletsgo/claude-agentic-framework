@@ -84,6 +84,12 @@ def load_context_silently(cache_file):
     return False
 
 
+def emit_and_exit():
+    """Output valid JSON and exit 0."""
+    print(json.dumps({"result": "continue"}))
+    sys.exit(0)
+
+
 def main():
     """Main entry point for auto prime hook."""
     try:
@@ -99,36 +105,29 @@ def main():
 
         # Check if cache exists
         if not cache_file.exists():
-            # No cache - user can manually run /prime if needed
-            sys.exit(0)
+            emit_and_exit()
 
         # Get current git hash
         current_hash = get_git_hash(repo_root)
         if not current_hash:
-            # Not a git repo or git unavailable - skip
-            sys.exit(0)
+            emit_and_exit()
 
         # Get cached hash
         cached_hash = get_cached_hash(cache_file)
         if not cached_hash:
-            # Cache missing hash metadata - treat as stale
-            sys.exit(0)
+            emit_and_exit()
 
         # Compare hashes
         if current_hash != cached_hash:
-            # Cache is stale - user can manually run /prime
-            sys.exit(0)
+            emit_and_exit()
 
         # Cache is valid - load silently
-        if load_context_silently(cache_file):
-            pass
+        load_context_silently(cache_file)
 
     except Exception as e:
         print(f"Auto prime error (non-blocking): {e}", file=sys.stderr)
 
-    # Always output valid JSON and exit 0
-    print(json.dumps({"result": "continue"}))
-    sys.exit(0)
+    emit_and_exit()
 
 
 if __name__ == "__main__":

@@ -122,10 +122,11 @@ def main():
         # Read hook input
         input_data = json.load(sys.stdin)
 
-        # Extract key fields
-        session_id = input_data.get("session_id", "unknown")
-        tool_name = input_data.get("tool_name")
-        tool_input = input_data.get("tool_input", {})
+        # Extract key fields (Claude Code nests tool info under 'tool' dict)
+        session_id = input_data.get("session_id", input_data.get("sessionId", "unknown"))
+        tool = input_data.get("tool", {})
+        tool_name = tool.get("name")
+        tool_input = tool.get("input", {})
         timestamp = input_data.get("timestamp", datetime.now().isoformat())
 
         # Only log Read, Edit, Write, NotebookEdit
