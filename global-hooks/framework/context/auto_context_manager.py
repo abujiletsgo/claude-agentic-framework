@@ -298,12 +298,22 @@ def main():
                     "timestamp": datetime.now().isoformat()
                 }))
 
-                # Output system reminder for Claude to see
-                print(
-                    f"\n⚡ CONTEXT_MANAGER: {queued_count} cold segments ready for compression "
-                    f"(context at {context_pct:.0f}%, {len(cold_segments)} cold topics)\n",
-                    file=sys.stderr
-                )
+                # Build topic list for Claude
+                topics = [s.get("topic", "unknown")[:50] for s in cold_segments[:5]]
+                topic_list = ", ".join(t for t in topics if t)
+
+                # Output JSON message that Claude sees — triggers incremental compaction
+                result = {
+                    "result": "continue",
+                    "message": (
+                        f"INCREMENTAL COMPACTION NEEDED: Context at {context_pct:.0f}%. "
+                        f"{queued_count} cold segment(s) detected ({topic_list}). "
+                        f"Summarize completed work from these topics into 2-3 sentences each, "
+                        f"then continue. Do NOT wait until context limit — compact now incrementally."
+                    )
+                }
+                print(json.dumps(result))
+                sys.exit(0)
 
         # Periodic archive pruning (every 50 turns)
         if current_turn % 50 == 0:
