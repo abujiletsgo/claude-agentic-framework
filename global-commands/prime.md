@@ -1,18 +1,77 @@
 ---
 description: Intelligently prime agent with project-specific context on demand
-allowed-tools: Bash, Read, Glob, Grep
+allowed-tools: Bash, Read, Glob, Grep, Write
 ---
 
-# Context Priming Protocol
+# Context Priming Protocol v2.0 (Git-Aware Caching)
 
-You are executing the **Elite Context Engineering** priming workflow. Your goal is to efficiently load project-specific context **on demand** rather than permanently.
+You are executing the **Elite Context Engineering** priming workflow with intelligent caching. Your goal is to efficiently load project-specific context **on demand** with automatic cache invalidation on git changes.
 
 ## Core Principles
 
+- **Cache-First**: Load cached context when available and valid
+- **Git-Aware**: Auto-detect changes via commit hash tracking
 - **Efficiency First**: Minimize token usage, maximize understanding
 - **Adaptive Discovery**: Intelligently find relevant documentation
 - **Structured Summary**: Report findings in organized format
-- **Read-Only Mode**: Do NOT modify any files during priming
+- **Smart Persistence**: Save detailed context for future primes
+
+---
+
+## Phase 0: Cache Detection & Validation
+
+**ALWAYS START HERE** - Check for cached context before doing full analysis.
+
+```bash
+# Check if context cache exists
+if [ -f .claude/PROJECT_CONTEXT.md ]; then
+  echo "✅ Found cached context"
+
+  # Get current git commit hash
+  CURRENT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "no-git")
+
+  # Extract cached hash from context file (first line should be: <!-- GIT_HASH: abc123 -->)
+  CACHED_HASH=$(head -1 .claude/PROJECT_CONTEXT.md | grep -oE '[a-f0-9]{40}' || echo "no-hash")
+
+  if [ "$CURRENT_HASH" = "$CACHED_HASH" ]; then
+    echo "✅ Cache valid (no git changes detected)"
+    echo "CACHE_STATUS=VALID"
+  else
+    echo "⚠️ Cache stale (git changes detected)"
+    echo "CACHE_STATUS=STALE"
+    echo "Old: $CACHED_HASH"
+    echo "New: $CURRENT_HASH"
+  fi
+else
+  echo "📝 No cache found - first prime"
+  echo "CACHE_STATUS=NONE"
+fi
+```
+
+**Decision Tree**:
+- `CACHE_STATUS=VALID` → **Load cache internally and give brief confirmation** (instant, minimal output)
+- `CACHE_STATUS=STALE` → **Run Phase 1-7** (re-analyze changed files + update cache, then display full report)
+- `CACHE_STATUS=NONE` → **Run Phase 1-7** (full analysis + create cache, then display full report)
+
+### If CACHE_STATUS=VALID:
+
+Read `.claude/PROJECT_CONTEXT.md` **internally** (to load context into your understanding) but **do NOT dump it to the user**.
+
+Instead, extract key summary info and present this brief confirmation:
+
+```
+🚀 **Cached Context Loaded** (instant - no git changes)
+
+✅ [Project Name] v[version if available]
+✅ [N] agents, [N] commands, [N] skills
+✅ [Primary tech stack in 3-5 words]
+
+Ready for instructions.
+```
+
+**Total output: ~50-100 tokens maximum**
+
+**Then STOP** - Do not re-run Phase 1-7 (cache is valid). Do not show the full report.
 
 ---
 
@@ -92,7 +151,13 @@ Use Grep to identify key technologies:
 
 **CRITICAL: Always run security audit before loading local skills**
 
-Scan all project-local skills for security issues:
+**If CACHE_STATUS=STALE**: Only re-scan skills that changed since last prime:
+```bash
+# Get list of changed files since cached commit
+git diff --name-only $CACHED_HASH HEAD | grep '.claude/skills/'
+```
+
+**If CACHE_STATUS=NONE**: Scan all project-local skills for security issues:
 
 ```bash
 # Run security audit on local project skills
@@ -246,6 +311,93 @@ Confirm: "Agent primed. Context loaded. Ready for instructions."
 
 ---
 
+## Phase 7: Save Context Cache
+
+**CRITICAL: Always save context after completing analysis**
+
+After generating the report in Phase 6, save it to `.claude/PROJECT_CONTEXT.md` for future primes:
+
+```bash
+# Get current git commit hash
+GIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "no-git-$(date +%s)")
+
+# Create .claude directory if it doesn't exist
+mkdir -p .claude
+```
+
+Then use the **Write tool** to create/overwrite `.claude/PROJECT_CONTEXT.md` with this format:
+
+**CRITICAL**: Use Write, NOT Edit. Write completely overwrites the file, ensuring the cache stays fresh and doesn't accumulate old data.
+
+```markdown
+<!-- GIT_HASH: [insert actual git hash here] -->
+<!-- GENERATED: [insert current date/time] -->
+<!-- PRIME_VERSION: 2.0 -->
+
+# Project Context Cache
+
+[Insert the ENTIRE report from Phase 6 here, including all sections:
+- 🎯 Project Overview
+- 📚 Documentation Available
+- 🔒 Security Audit
+- 🔧 Claude Code Integration
+- 🏗️ Architecture Highlights
+- 💡 Key Insights
+- 🤝 Team Recommendation
+]
+
+---
+
+## Change Detection
+
+This cache will be invalidated automatically when:
+- Git commit hash changes (pull, commit, checkout)
+- .claude/PROJECT_CONTEXT.md is deleted
+- /prime is run with --force flag
+
+To force re-analysis: `rm .claude/PROJECT_CONTEXT.md && /prime`
+```
+
+**Important Notes**:
+- **Always use Write tool** - completely overwrites the file (no appending, no old data accumulation)
+- Save the FULL detailed report, not a summary
+- Include all sections with complete information
+- Each update replaces the entire cache - keeps context fresh and up-to-date
+- File should be 1000-2000 lines for comprehensive context
+
+---
+
+## Phase 8: Report Delivery
+
+Present the final report to the user:
+
+**If this was a full analysis (CACHE_STATUS=NONE or STALE)**:
+```
+✅ **Analysis Complete & Cached**
+
+[Show the full report]
+
+💾 Context saved to .claude/PROJECT_CONTEXT.md
+🔄 Next /prime will load instantly (unless git changes detected)
+
+Ready for instructions.
+```
+
+**If this was a cache load (CACHE_STATUS=VALID)**:
+```
+🚀 **Cached Context Loaded** (instant - no git changes)
+
+✅ [Project Name] v[version]
+✅ [N] agents, [N] commands, [N] skills
+✅ [Primary tech stack]
+
+Ready for instructions.
+```
+
+**Token efficiency**: ~50-100 tokens total (vs 3,500+ if dumping full cache)
+
+---
+
 ## Anti-Patterns (DO NOT DO)
 
 - ❌ Do NOT dump entire file contents
@@ -253,6 +405,7 @@ Confirm: "Agent primed. Context loaded. Ready for instructions."
 - ❌ Do NOT modify any files during priming
 - ❌ Do NOT load context permanently (this is on-demand only)
 - ❌ Do NOT include raw JSON/YAML dumps in report
+- ❌ **Do NOT dump cached report when CACHE_STATUS=VALID** (this wastes 3,500+ tokens)
 
 ---
 
@@ -276,4 +429,18 @@ Run this command at the start of a new session or when switching projects:
 /prime
 ```
 
-This gives you targeted context **on demand** without permanently loading it into every conversation.
+**Behavior**:
+- **First time**: Full analysis (~4,000 tokens) → saves cache → shows full report
+- **Subsequent times**: Instant load (~50-100 tokens) → brief confirmation only
+- **After git pull/commit**: Auto-detects changes → re-analyzes → shows full report → updates cache
+
+**Token savings**: 97-98% reduction on cached loads (4,000 → 50 tokens)
+
+**Force re-analysis**:
+```bash
+rm .claude/PROJECT_CONTEXT.md && /prime
+```
+
+**Cache location**: `.claude/PROJECT_CONTEXT.md` (git-ignored, project-specific)
+
+This gives you targeted context **on demand** without permanently loading it into every conversation, with intelligent caching to avoid redundant analysis.
