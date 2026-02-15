@@ -56,3 +56,4 @@ out/
 # AI Docs (auto-generated)
 ai_docs/*.md
 !ai_docs/README.md
+.claude/PROJECT_CONTEXT.md

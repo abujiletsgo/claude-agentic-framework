@@ -1,0 +1,34 @@
+[
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_id": "a790506",
+    "agent_type": "",
+    "agent_transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b/subagents/agent-a790506.jsonl"
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_id": "ae1a447",
+    "agent_type": "",
+    "agent_transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b/subagents/agent-ae1a447.jsonl"
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_id": "a78f952",
+    "agent_type": "",
+    "agent_transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b/subagents/agent-a78f952.jsonl"
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_id": "ab5c05b",
+    "agent_type": "",
+    "agent_transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b/subagents/agent-ab5c05b.jsonl"
+  }
+]

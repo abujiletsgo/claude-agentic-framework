@@ -36,5 +36,33 @@
     "hook_event_name": "SessionStart",
     "source": "startup",
     "model": "claude-sonnet-4-5-20250929"
+  },
+  {
+    "session_id": "7edb8fed-ed2b-4a90-9c93-6222cdde9b57",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "",
+    "agent_type": ""
+  },
+  {
+    "session_id": "7edb8fed-ed2b-4a90-9c93-6222cdde9b57",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/7edb8fed-ed2b-4a90-9c93-6222cdde9b57.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "",
+    "agent_type": ""
   }
 ]

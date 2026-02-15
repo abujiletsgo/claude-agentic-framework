@@ -590,5 +590,261 @@
     "permission_mode": "default",
     "hook_event_name": "Stop",
     "stop_hook_active": false
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
   }
 ]

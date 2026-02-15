@@ -51,69 +51,35 @@ tiers:
 # ─── Agent Assignments ──────────────────────────────────────────────
 
 agent_tiers:
-  # Opus tier (5 agents) - Deep reasoning, planning, architecture
+  # Opus tier (4 agents) - Deep reasoning, planning, architecture
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
     - critical-analyst        # Deep critical thinking, risk analysis
     - rlm-root                # Recursive context control, delegation
-    - caddy                   # Meta-orchestrator, autonomous goal decomposition
 
-  # Sonnet tier (16 agents) - Implementation, research, analysis
+  # Sonnet tier (5 agents) - Implementation, research, analysis
   sonnet:
-    - builder                 # Code implementation (was opus, downgraded)
     - researcher              # Research and analysis
     - meta-agent              # Agent file generation (was opus, downgraded)
-    - project-skill-generator # Skill/hook generation (was opus, downgraded)
     - scout-report-suggest    # Codebase scouting and analysis
-    - llm-ai-agents-and-eng-research  # AI/ML research
-    - fetch-docs-sonnet45     # Doc fetching benchmark (sonnet variant)
-    - combo-optimizer         # AGBot: combo optimization (was opus, downgraded)
-    - strategy-advisor        # AGBot: strategy recommendations (was opus, downgraded)
-    - market-researcher       # AGBot: market research
-    - performance-analyzer    # AGBot: performance metrics
-    - risk-assessor           # AGBot: risk assessment
-    - circuit-breaker-agent   # Guardrails: state machine implementation
-    - cli-tool-agent          # Guardrails: CLI interface
-    - integration-agent       # Guardrails: system integration
-    - state-manager-agent     # Guardrails: state persistence
+    - builder                 # Code implementation (team agent)
+    - project-skill-generator # Project-specific skill generation (team agent)
 
-  # Haiku tier (13 agents) - Validation, simple ops, data tasks
+  # Haiku tier (2 agents) - Validation, simple ops, data tasks
   haiku:
-    - validator               # Read-only verification (was opus, downgraded)
-    - create-worktree-subagent # Mechanical slash command delegation (was sonnet, downgraded)
-    - scout-report-suggest-fast # Fast codebase scouting
     - docs-scraper            # Documentation scraping
-    - fetch-docs-haiku45      # Doc fetching benchmark (haiku variant)
-    - hello-world-agent       # Simple greeting
-    - work-completion-summary # TTS audio summaries
-    - data-ingestion-helper   # AGBot: data import
-    - trader-data-validator   # AGBot: data quality checks
-    - config-agent            # Guardrails: YAML config (low complexity)
-    - docs-agent              # Guardrails: documentation writing
-    - qa-validator-agent      # Guardrails: QA validation
-    - test-agent              # Guardrails: test execution
+    - validator               # Read-only verification (team agent)
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 
 skill_default_models:
-  multi-model-tiers: sonnet
-  prime: sonnet
-  meta-skill: sonnet
   test-generator: haiku
   code-review: sonnet
   refactoring-assistant: sonnet
   security-scanner: opus
-  documentation-writer: haiku
   error-analyzer: sonnet
-  dependency-audit: haiku
-  performance-profiler: sonnet
-  git-workflow: haiku
-  project-scaffolder: sonnet
   knowledge-db: haiku
-  video-processor: sonnet
-  create-worktree-skill: haiku
-  worktree-manager-skill: haiku
 
 # ─── Cost Estimation ────────────────────────────────────────────────
 #

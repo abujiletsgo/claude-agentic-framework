@@ -6,14 +6,13 @@ v2.1.0 | One repo, one install, one source of truth.
 
 ```
 global-hooks/        damage-control/ observability/ framework/
-global-agents/       8 agents (8 root + 0 team, team archived)
-global-commands/     8 commands (core workflow only)
-global-skills/       6 skills (essentials only)
+global-agents/       11 agents (8 root + 3 team)
+global-commands/     14 commands
+global-skills/       6 skills
 global-status-lines/ mastery/v9 + observability/
 apps/observability/  Vue 3 + Bun (ports 4000/5173)
 data/                knowledge-db/ + model_tiers.yaml
 templates/           settings.json.template
-archive/             11 skills + 6 commands (rarely used)
 ```
 
 ## Mode: Yolo
@@ -23,9 +22,9 @@ archive/             11 skills + 6 commands (rarely used)
 ## Model Tiers
 
 ```
-Opus  (4): orchestrator, project-architect, critical-analyst, rlm-root
-Sonnet (5): builder, researcher, meta-agent, project-skill-generator, scout-report-suggest
-Haiku  (2): validator, docs-scraper
+  Opus (4): orchestrator, project-architect, critical-analyst, rlm-root
+Sonnet (5): researcher, meta-agent, scout-report-suggest, builder, project-skill-generator
+ Haiku (2): docs-scraper, validator
 ```
 
 Config: `data/model_tiers.yaml`.
@@ -48,40 +47,9 @@ Scale approach to task complexity. Direct for simple, delegate for complex.
 
 ## Execution Protocol
 
-### Auto-Orchestration (Seamless Team Coordination)
-
-**CRITICAL**: Automatically invoke orchestrator for complex tasks WITHOUT asking user confirmation. Analyze request complexity and auto-delegate.
-
-**Auto-Trigger Orchestration When**:
-- **Multi-step** (5+ distinct steps) AND **multi-file** (4+ files affected)
-- **Unknown scope** requiring exploration before implementation
-- **Security-sensitive** (auth, API keys, permissions, encryption)
-- **Performance-critical** (profiling needed + optimization + validation)
-- **Full-stack** (frontend + backend + database changes)
-- **Large refactoring** (15+ files, architectural changes)
-- **Audits/scans** (security-scanner, code-review, dependency-audit)
-
-**Auto-Orchestration Workflow**:
-```
-1. Detect qualifying task (silent analysis)
-2. Invoke orchestrator agent (no confirmation needed)
-3. Orchestrator spawns specialized team in parallel
-4. Orchestrator synthesizes results
-5. Report completion to user
-```
-
-**Examples**:
-- ✅ "Add OAuth2 authentication" → Auto-orchestrate (security + multi-file + complex)
-- ✅ "Optimize database queries" → Auto-orchestrate (profiling + testing needed)
-- ✅ "Security audit the API" → Auto-orchestrate (scan + analyze + report)
-- ❌ "Fix typo in README" → Direct (simple, 1 file)
-- ❌ "Add logging to function X" → Direct (simple, 1 file)
-
-### Execution Rules
-
 1. **Task Lists** -- 3+ steps = TaskList. Parallelize. Mark in_progress/completed.
 2. **Parallel** -- Launch independent subagents simultaneously. Never serialize parallelizable work.
-3. **Auto-Orchestrate** -- Complex tasks trigger orchestrator automatically (no user prompt).
+3. **Orchestrator** -- /orchestrate for complex multi-agent tasks.
 4. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
 5. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
 

@@ -1,0 +1,30 @@
+[
+  {
+    "session_id": "7775e1a8-c613-4a8e-8dbd-9987c311e067",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Web Search",
+    "title": ""
+  },
+  {
+    "session_id": "7775e1a8-c613-4a8e-8dbd-9987c311e067",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Read",
+    "title": ""
+  },
+  {
+    "session_id": "7775e1a8-c613-4a8e-8dbd-9987c311e067",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Fetch",
+    "title": ""
+  },
+  {
+    "session_id": "7775e1a8-c613-4a8e-8dbd-9987c311e067",
+    "hook_event_name": "Notification",
+    "notification_type": "permission_prompt",
+    "message": "Claude needs your permission to use Bash",
+    "title": ""
+  }
+]

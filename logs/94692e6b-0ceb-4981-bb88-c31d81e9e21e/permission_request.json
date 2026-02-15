@@ -1,0 +1,324 @@
+[
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-agents/agbot/combo-optimizer.md",
+      "limit": 30
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/claude-agentic-framework/global-agents/agbot/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      },
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/agbot/.claude/agents/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      },
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/AGBot/.claude/agents/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-agents/agbot/strategy-advisor.md",
+      "limit": 30
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/claude-agentic-framework/global-agents/agbot/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      },
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/agbot/.claude/agents/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      },
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/AGBot/.claude/agents/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/templates/settings.json.template",
+      "old_string": "          {\n            \"type\": \"prompt\",\n            \"prompt\": \"You are a security reviewer for shell commands. Analyze this bash command: $ARGUMENTS\\n\\nRESPOND WITH ONLY JSON.\\n\\nBlock (ok: false) if the command would:\\n- Delete or destroy files/directories recursively or in bulk (rm -rf, find -delete, xargs rm)\\n- Overwrite or corrupt critical system files, configs, or databases\\n- Expose secrets by piping credentials to stdout, logs, or network\\n- Execute obfuscated/encoded payloads (base64 decode | bash, eval, curl | sh)\\n- Modify system-level configs (/etc/*, crontab, systemctl, launchctl)\\n- Perform network exfiltration (curl/wget posting file contents to external URLs)\\n- Chain destructive operations via pipes or subshells to bypass simple pattern checks\\n- Use variable expansion or command substitution to hide destructive intent\\n\\nAllow (ok: true) if the command is:\\n- Read-only operations (cat, ls, grep, find without -delete/-exec rm, head, tail)\\n- Standard dev commands (git status/log/diff, npm install/test/build, pytest, cargo build)\\n- Safe file writes to project directories\\n- Package management (brew, apt, pip install)\\n- Process inspection (ps, top, htop)\\n\\nRespond: {\\\"ok\\\": true} or {\\\"ok\\\": false, \\\"reason\\\": \\\"brief explanation\\\"}\",\n            \"timeout\": 10,\n            \"statusMessage\": \"LLM semantic bash validation...\"\n          }",
+      "new_string": "",
+      "replace_all": false
+    },
+    "permission_suggestions": [
+      {
+        "type": "setMode",
+        "mode": "acceptEdits",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/.claude/settings.json"
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/.claude/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"echo hello\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/damage-control/bash-tool-damage-control.py 2>&1; echo \"EXIT: $?\"",
+      "description": "Test bash hook with stdin input",
+      "dangerouslyDisableSandbox": true
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "uv run:*"
+          },
+          {
+            "toolName": "Bash",
+            "ruleContent": "echo:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"echo hello\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/damage-control/bash-tool-damage-control.py 2>&1; echo \"---EXIT: $?\"",
+      "description": "Test bash hook with proper exit code capture",
+      "dangerouslyDisableSandbox": true
+    }
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Read\", \"tool_input\": {\"file_path\": \"/tmp/test\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/mastery/pre_tool_use.py 2>&1; echo \"---EXIT: $?\"",
+      "description": "Test mastery pre_tool_use hook",
+      "dangerouslyDisableSandbox": true
+    }
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Read\", \"tool_input\": {\"file_path\": \"/tmp/test\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse --summarize 2>&1; echo \"---EXIT: $?\"",
+      "description": "Test observability send_event hook",
+      "dangerouslyDisableSandbox": true
+    }
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"echo hello\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/damage-control/bash-tool-damage-control.py; RET=$?; echo \"RETURN_CODE=$RET\"",
+      "description": "Test bash hook exit code",
+      "dangerouslyDisableSandbox": true
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "RET=$?"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo '{\"tool_name\": \"Edit\", \"tool_input\": {\"file_path\": \"/tmp/test.txt\", \"old_string\": \"a\", \"new_string\": \"b\"}}' | uv run /Users/tomkwon/Documents/claude-agentic-framework/global-hooks/damage-control/edit-tool-damage-control.py; RET=$?; echo \"RETURN_CODE=$RET\"",
+      "description": "Test edit hook exit code",
+      "dangerouslyDisableSandbox": true
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "RET=$?"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/Documents/claude-agentic-framework/global-skills/video-processor/SKILL.md",
+      "limit": 30
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/claude-agentic-framework/global-skills/video-processor/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      },
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Read",
+            "ruleContent": "//Users/tomkwon/Documents/vaultmind/.claude/skills/video-processor/**"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "session"
+      }
+    ]
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "bash install.sh 2>&1",
+      "description": "Test install.sh validation + generation",
+      "dangerouslyDisableSandbox": true
+    },
+    "permission_suggestions": [
+      {
+        "type": "addRules",
+        "rules": [
+          {
+            "toolName": "Bash",
+            "ruleContent": "bash install.sh:*"
+          }
+        ],
+        "behavior": "allow",
+        "destination": "localSettings"
+      }
+    ]
+  }
+]

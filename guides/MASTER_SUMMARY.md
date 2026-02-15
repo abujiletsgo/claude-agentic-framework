@@ -35,9 +35,10 @@ From "beginner with bloated context" to "elite engineer with automated agent fle
 ┌─────────────────────────────────────────────────────────┐
 │  Level 2: On-Demand Priming ✅                          │
 ├─────────────────────────────────────────────────────────┤
-│  - /prime command (2-4k tokens only when needed)        │
+│  - /prime command with git-aware caching                │
+│  - First prime: 2-4k tokens, subsequent: <500 tokens    │
+│  - Auto-invalidates on git changes                      │
 │  - Prime skill (auto-trigger on "get context")          │
-│  - Strategic context loading                            │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -199,7 +200,7 @@ From "beginner with bloated context" to "elite engineer with automated agent fle
 ### Commands (25+)
 ```bash
 # Context Management
-/prime                    # Load project context (2-4k tokens)
+/prime                    # Load project context (cached: <500 tokens, first: 2-4k)
 /loadbundle <session-id>  # Restore session intelligence
 /start                    # Initialize a new session
 

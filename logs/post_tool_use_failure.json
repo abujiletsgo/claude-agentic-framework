@@ -1444,5 +1444,65 @@
       "is_interrupt": false,
       "logged_at": "2026-02-12T05:22:53.346943"
     }
+  },
+  {
+    "timestamp": "2026-02-12T15:33:52.343773",
+    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_0194eQqfMPMLCTK7SMbAino7",
+    "tool_input": {
+      "command": "git commit -m \"$(cat <<'EOF'\nCLEANUP: Remove deprecated agents and add 3D game visualization\n\n- Remove old crypto and agbot agent backups from .deleted/\n- Remove deprecated migration documentation\n- Add GameWorld3D visualization components to observability dashboard\n- Add animal and tool models with personalities for gamification\n- Update CLAUDE.md to reflect current agent count and structure\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\"",
+      "description": "Create commit with cleanup and visualization changes"
+    },
+    "error": "Exit code 1\n(eval):1: can't create temp file for here document: operation not permitted\nAborting commit due to empty commit message.",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "raw_input": {
+      "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "git commit -m \"$(cat <<'EOF'\nCLEANUP: Remove deprecated agents and add 3D game visualization\n\n- Remove old crypto and agbot agent backups from .deleted/\n- Remove deprecated migration documentation\n- Add GameWorld3D visualization components to observability dashboard\n- Add animal and tool models with personalities for gamification\n- Update CLAUDE.md to reflect current agent count and structure\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\"",
+        "description": "Create commit with cleanup and visualization changes"
+      },
+      "tool_use_id": "toolu_0194eQqfMPMLCTK7SMbAino7",
+      "error": "Exit code 1\n(eval):1: can't create temp file for here document: operation not permitted\nAborting commit due to empty commit message.",
+      "is_interrupt": false,
+      "logged_at": "2026-02-12T15:33:52.343773"
+    }
+  },
+  {
+    "timestamp": "2026-02-13T12:14:59.969924",
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "hook_event_name": "PostToolUseFailure",
+    "tool_name": "Read",
+    "tool_use_id": "toolu_01FTedkDR89NymZ9CbPvS4xo",
+    "tool_input": {
+      "file_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/memory/MEMORY.md"
+    },
+    "error": "File does not exist.",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "default",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "raw_input": {
+      "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+      "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+      "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/memory/MEMORY.md"
+      },
+      "tool_use_id": "toolu_01FTedkDR89NymZ9CbPvS4xo",
+      "error": "File does not exist.",
+      "is_interrupt": false,
+      "logged_at": "2026-02-13T12:14:59.969924"
+    }
   }
 ]

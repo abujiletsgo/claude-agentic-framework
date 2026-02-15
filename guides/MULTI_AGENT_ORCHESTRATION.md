@@ -307,7 +307,7 @@ Result: 90% context savings + parallelization
 **The Complete Stack**:
 
 1. **Strip Global Context** → 10-20% permanent savings
-2. **On-Demand Priming** → `/prime` when needed
+2. **On-Demand Priming** → `/prime` with git-aware caching (90% faster repeats)
 3. **Sub-Agent Delegation** → `/research` for heavy tasks
 4. **Context Bundles** → `/loadbundle` for resilience
 5. **Multi-Agent Orchestration** → Scale compute infinitely

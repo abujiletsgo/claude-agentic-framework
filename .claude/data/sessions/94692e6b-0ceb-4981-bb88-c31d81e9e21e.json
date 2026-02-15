@@ -1,0 +1,16 @@
+{
+  "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+  "prompts": [
+    "/research",
+    "<ide_opened_file>The user opened the file /Users/tomkwon/Documents/claude-agentic-framework/global-skills/brainstorm-before-code/SKILL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>\ni want to make my claude to be more token efficient. but at the same time time efficient in solving problems with me",
+    "<ide_opened_file>The user opened the file /Users/tomkwon/Documents/claude-agentic-framework/global-skills/task-decomposition/SKILL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>\n1. if the prompt hooks aren't as useful maybe even consider removing them?\n2. lets do that\n3. let's trim it. forget about proper grammar. we want efficiency.\n4. i don't think this is necessary\n5. i think it's fine for now.",
+    "i just did can youremove bash install.sh from the folder",
+    "can you test run and see if t works well. i see so many hook errors",
+    "just because it's \"working\" doesn't mean it's good. every single line  of code and settings, tools skills have to have an exact purpose and be as efficient as possible. i need you to combthrough everything so this is the most well written configuration for global claude",
+    "<ide_opened_file>The user opened the file /Users/tomkwon/Documents/claude-agentic-framework/global-skills/test-generator/SKILL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>\nokay let' sdo all changes. and let me know how i can uninstall old config and reinstall to my claude code in a seperate comupter",
+    "this is the problem, you are in an infinite loop, that's why i had precautions to stop this from happening.",
+    "good",
+    "would this memory be transferable as well? wehn someone uninstalls and installs the new claude config?",
+    "but some needs to be transferred like the on you learned. the inifite looping will happen to others as well. we should fix that in the fundamental level. also can you make sure there is no single line of md file or code that doesn't have a purpose and errors when ran?"
+  ]
+}

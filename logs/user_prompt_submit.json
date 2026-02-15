@@ -1,66 +1,90 @@
 [
   {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "i did"
-  },
-  {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "/sentient "
-  },
-  {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "<task-notification>\n<task-id>b38aed5</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output</output-file>\n<status>killed</status>\n<summary>Background command \"Check running agent tasks\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output"
-  },
-  {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "<task-notification>\n<task-id>b0f0cc2</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output</output-file>\n<status>killed</status>\n<summary>Background command \"Append complete inventory content to file\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output"
-  },
-  {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "<task-notification>\n<task-id>b0f0cc2</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output</output-file>\n<status>killed</status>\n<summary>Background command \"Append complete inventory content to file\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output"
-  },
-  {
-    "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents/01d47676-ba60-475c-b349-dc3623e7bafe.jsonl",
-    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "acceptEdits",
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "clear context"
-  },
-  {
-    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
     "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
     "permission_mode": "default",
     "hook_event_name": "UserPromptSubmit",
-    "prompt": "can you update the githyubo"
+    "prompt": "<ide_opened_file>The user opened the file /Users/tomkwon/Documents/claude-agentic-framework/global-skills/task-decomposition/SKILL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>\n1. if the prompt hooks aren't as useful maybe even consider removing them?\n2. lets do that\n3. let's trim it. forget about proper grammar. we want efficiency.\n4. i don't think this is necessary\n5. i think it's fine for now."
   },
   {
-    "session_id": "c16a2db9-e3c7-4cbf-92f1-eadf20bc930b",
-    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/c16a2db9-e3c7-4cbf-92f1-eadf20bc930b.jsonl",
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
     "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
-    "permission_mode": "default",
+    "permission_mode": "acceptEdits",
     "hook_event_name": "UserPromptSubmit",
-    "prompt": "1."
+    "prompt": "i just did can youremove bash install.sh from the folder"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "can you test run and see if t works well. i see so many hook errors"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "can you test run and see if t works well. i see so many hook errors"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "just because it's \"working\" doesn't mean it's good. every single line  of code and settings, tools skills have to have an exact purpose and be as efficient as possible. i need you to combthrough everything so this is the most well written configuration for global claude"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "just because it's \"working\" doesn't mean it's good. every single line  of code and settings, tools skills have to have an exact purpose and be as efficient as possible. i need you to combthrough everything so this is the most well written configuration for global claude"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "<ide_opened_file>The user opened the file /Users/tomkwon/Documents/claude-agentic-framework/global-skills/test-generator/SKILL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>\nokay let' sdo all changes. and let me know how i can uninstall old config and reinstall to my claude code in a seperate comupter"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "this is the problem, you are in an infinite loop, that's why i had precautions to stop this from happening."
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "good"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "would this memory be transferable as well? wehn someone uninstalls and installs the new claude config?"
+  },
+  {
+    "session_id": "94692e6b-0ceb-4981-bb88-c31d81e9e21e",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon-Documents-claude-agentic-framework/94692e6b-0ceb-4981-bb88-c31d81e9e21e.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "but some needs to be transferred like the on you learned. the inifite looping will happen to others as well. we should fix that in the fundamental level. also can you make sure there is no single line of md file or code that doesn't have a purpose and errors when ran?"
   }
 ]

@@ -1,27 +1,33 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
+  "version": "1.0",
   "permissions": {
     "allow": [
       "*"
     ],
     "deny": [
-      "Bash(rm -rf /*:*)",
-      "Bash(rm -rf ~/*:*)",
-      "Bash(sudo rm -rf:*)",
-      "Bash(mkfs:*)",
-      "Bash(dd if=* of=/dev/*:*)"
-    ],
-    "ask": [
-      "Bash(git push --force:*)",
-      "Bash(git reset --hard:*)"
+      "rm -rf /",
+      "rm -rf ~",
+      "rm -rf .",
+      "dd if=",
+      "mkfs",
+      "format",
+      ":(){:|:&};:",
+      "chmod -R 777 /",
+      "chown -R"
     ]
   },
-  "model": "opusplan",
-  "teammateMode": "in-process",
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Bash|Edit|Write",
         "hooks": [
@@ -31,16 +37,6 @@
             "timeout": 5
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreToolUse",
-            "timeout": 5,
-            "async": true
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -48,14 +44,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5
-          },
+          }
+        ]
+      },
+      {
+        "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUse",
-            "timeout": 5,
-            "async": true
+            "command": "uv run __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
+            "timeout": 5
           }
         ]
       }
@@ -65,50 +64,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type Stop --add-chat",
-            "timeout": 10,
-            "async": true
-          },
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
             "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStop",
-            "timeout": 5,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SubagentStart",
-            "timeout": 5,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type UserPromptSubmit",
-            "timeout": 5,
-            "async": true
           }
         ]
       }
@@ -118,62 +84,26 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/security/verify_skills.py",
             "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionStart",
-            "timeout": 5,
-            "async": true
           }
         ]
-      }
-    ],
-    "SessionEnd": [
+      },
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type SessionEnd",
-            "timeout": 5,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PreCompact",
-            "timeout": 5,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PermissionRequest",
-            "timeout": 5,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/observability/send_event.py --source-app global-system --event-type PostToolUseFailure",
-            "timeout": 5,
-            "async": true
+            "command": "uv run __REPO_DIR__/global-hooks/framework/security/validate_docs.py",
+            "timeout": 5
           }
         ]
       }
@@ -181,10 +111,5 @@
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_v9.py",
-    "padding": 0
   }
 }
