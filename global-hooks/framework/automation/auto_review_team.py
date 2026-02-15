@@ -224,9 +224,8 @@ def main():
         print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
         sys.exit(1)
 
-    tool = input_data.get("tool", {})
-    tool_name = tool.get("name", "")
-    tool_input = tool.get("input", {})
+    tool_name = input_data.get("tool_name", "")
+    tool_input = input_data.get("tool_input", {})
 
     # Only process Bash tool
     if tool_name != "Bash":

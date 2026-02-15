@@ -154,35 +154,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/security/verify_skills.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/security/validate_docs.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_prime.py",
-            "timeout": 3
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
+            "timeout": 10
           }
         ]
       }

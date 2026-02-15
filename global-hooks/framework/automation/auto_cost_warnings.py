@@ -139,18 +139,15 @@ def main():
         # Read hook input from stdin
         hook_input = json.loads(sys.stdin.read())
 
-        # Extract session info
+        # Extract session info (flat snake_case keys per Claude Code docs)
         session_id = hook_input.get("session_id", "unknown")
-        model_info = hook_input.get("model", {})
-        model = model_info.get("display_name", "") if isinstance(model_info, dict) else str(model_info)
-        tool = hook_input.get("tool", {})
-        tool_name = tool.get("name", "")
+        model = hook_input.get("model", "")  # plain string like "claude-sonnet-4-5-20250929"
+        tool_name = hook_input.get("tool_name", "")
 
-        # Extract token usage from context_window
-        context = hook_input.get("context_window", {})
-        input_tokens = context.get("input_tokens", 0) or hook_input.get("inputTokens", 0)
-        output_tokens = context.get("output_tokens", 0) or hook_input.get("outputTokens", 0)
-        agent_name = hook_input.get("agentName", "")
+        # Token usage not provided in hook input — estimate from model tier
+        input_tokens = 0
+        output_tokens = 0
+        agent_name = ""
 
         # Skip if no token usage to track
         if input_tokens == 0 and output_tokens == 0:

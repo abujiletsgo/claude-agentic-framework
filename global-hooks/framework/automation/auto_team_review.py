@@ -45,11 +45,11 @@ def get_team_mode_file():
 
 def detect_team_create(hook_input):
     """Detect if TeamCreate was called."""
-    tool = hook_input.get("tool", {})
-    tool_name = tool.get("name", "")
+    # Flat snake_case keys per Claude Code docs
+    tool_name = hook_input.get("tool_name", "")
 
     if tool_name == "TeamCreate":
-        tool_input = tool.get("input", {})
+        tool_input = hook_input.get("tool_input", {})
         team_name = tool_input.get("team_name", "unknown")
         return True, team_name
 
@@ -64,8 +64,8 @@ def detect_team_completion(hook_input):
     - Multiple SendMessage with type="shutdown_response" approve=true
     - Task tool spawns multiple agents then all go idle
     """
-    tool = hook_input.get("tool", {})
-    tool_name = tool.get("name", "")
+    # Flat snake_case keys per Claude Code docs
+    tool_name = hook_input.get("tool_name", "")
 
     # Direct signal: TeamDelete
     if tool_name == "TeamDelete":
@@ -73,7 +73,7 @@ def detect_team_completion(hook_input):
 
     # Shutdown responses (team winding down)
     if tool_name == "SendMessage":
-        tool_input = tool.get("input", {})
+        tool_input = hook_input.get("tool_input", {})
         msg_type = tool_input.get("type", "")
 
         if msg_type == "shutdown_response":

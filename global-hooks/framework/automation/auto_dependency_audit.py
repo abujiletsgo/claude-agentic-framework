@@ -268,7 +268,7 @@ def main():
         hook_input = json.loads(sys.stdin.read())
 
         # Extract session info
-        session_id = hook_input.get("sessionId", "unknown")
+        session_id = hook_input.get("session_id", "unknown")
 
         # Load state
         state = load_state(session_id)

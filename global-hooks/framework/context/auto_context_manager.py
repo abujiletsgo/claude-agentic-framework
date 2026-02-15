@@ -255,7 +255,7 @@ def main():
         input_data = json.load(sys.stdin)
 
         # Get session ID
-        session_id = input_data.get("sessionId", os.environ.get("CLAUDE_SESSION_ID", "unknown"))
+        session_id = input_data.get("session_id", os.environ.get("CLAUDE_SESSION_ID", "unknown"))
 
         # Load conversation history from session file
         messages = load_session_messages(session_id)

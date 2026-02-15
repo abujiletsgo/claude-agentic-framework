@@ -204,26 +204,24 @@ def session_start_handler():
     else:
         emit({"result": "continue"})
 
-def pre_tool_use_handler():
+def pre_tool_use_handler(hook_input):
     """PreToolUse hook"""
-    # Read stdin for hook input
-    hook_input = json.loads(sys.stdin.read())
-    tool = hook_input.get("tool", {})
-    tool_name = tool.get("name", "")
-    params = tool.get("input", {})
+    # Flat snake_case keys per Claude Code docs
+    tool_name = hook_input.get("tool_name", "")
+    tool_input = hook_input.get("tool_input", {})
 
     # Check for file operations
     file_path = None
     operation = tool_name
 
     if tool_name == "Read":
-        file_path = params.get("file_path")
+        file_path = tool_input.get("file_path")
         operation = "reading"
     elif tool_name == "Edit":
-        file_path = params.get("file_path")
+        file_path = tool_input.get("file_path")
         operation = "editing"
     elif tool_name == "Write":
-        file_path = params.get("file_path")
+        file_path = tool_input.get("file_path")
         operation = "writing"
     elif tool_name == "Bash":
         # Could parse bash command for file operations, but that's complex
@@ -240,19 +238,15 @@ def pre_tool_use_handler():
 
     emit({"result": "continue"})
 
-def post_tool_use_handler():
+def post_tool_use_handler(hook_input):
     """PostToolUse hook - lock files being modified"""
-    hook_input = json.loads(sys.stdin.read())
-    tool = hook_input.get("tool", {})
-    tool_name = tool.get("name", "")
-    params = tool.get("input", {})
-
-    file_path = None
-    operation = tool_name
+    # Flat snake_case keys per Claude Code docs
+    tool_name = hook_input.get("tool_name", "")
+    tool_input = hook_input.get("tool_input", {})
 
     if tool_name in ["Edit", "Write"]:
-        file_path = params.get("file_path")
-        lock_file(file_path, operation)
+        file_path = tool_input.get("file_path")
+        lock_file(file_path, tool_name)
 
     emit({"result": "continue"})
 
@@ -263,14 +257,22 @@ def stop_handler():
 
 def main():
     """Main entry point"""
-    hook_event = os.environ.get("HOOK_EVENT", "")
+    try:
+        # Read hook input from stdin — all hook events send JSON
+        hook_input = json.loads(sys.stdin.read())
+    except (json.JSONDecodeError, Exception):
+        emit({"result": "continue"})
+        return
+
+    # Determine hook event from JSON (not env var — HOOK_EVENT doesn't exist)
+    hook_event = hook_input.get("hook_event_name", "")
 
     if hook_event == "SessionStart":
         session_start_handler()
     elif hook_event == "PreToolUse":
-        pre_tool_use_handler()
+        pre_tool_use_handler(hook_input)
     elif hook_event == "PostToolUse":
-        post_tool_use_handler()
+        post_tool_use_handler(hook_input)
     elif hook_event == "Stop":
         stop_handler()
     else:

@@ -122,14 +122,13 @@ def main():
         # Read hook input from stdin
         hook_input = json.loads(sys.stdin.read())
 
-        # Only process Bash tool
-        tool = hook_input.get("tool", {})
-        tool_name = tool.get("name", "")
+        # Only process Bash tool (flat snake_case keys per Claude Code docs)
+        tool_name = hook_input.get("tool_name", "")
         if tool_name != "Bash":
             sys.exit(0)
 
         # Get command and execution details
-        tool_input = tool.get("input", {})
+        tool_input = hook_input.get("tool_input", {})
         if isinstance(tool_input, str):
             tool_input = json.loads(tool_input)
 
@@ -139,14 +138,14 @@ def main():
         if not is_test_command(command):
             sys.exit(0)
 
-        # Get execution results
-        tool_result = hook_input.get("tool_result", "")
+        # Get execution results (tool_response is the correct key for PostToolUse)
+        tool_response = hook_input.get("tool_response", "")
         tool_output = {}
-        if isinstance(tool_result, str):
+        if isinstance(tool_response, str):
             try:
-                tool_output = json.loads(tool_result)
+                tool_output = json.loads(tool_response)
             except json.JSONDecodeError:
-                tool_output = {"stdout": tool_result}
+                tool_output = {"stdout": tool_response}
         # Check exit code
         exit_code = tool_output.get("exit_code")
         if exit_code is None:
