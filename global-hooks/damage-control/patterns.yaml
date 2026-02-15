@@ -124,7 +124,7 @@ bashToolPatterns:
   # ---------------------------------------------------------------------------
   # SHELL OBFUSCATION BYPASSES (P1 CRITICAL)
   # ---------------------------------------------------------------------------
-  - pattern: 'eval\s+'
+  - pattern: '\beval\s+'
     reason: Blocks eval command execution (can bypass all pattern matching)
 
   - pattern: 'bash\s+-c\s+'
@@ -139,10 +139,10 @@ bashToolPatterns:
   - pattern: 'curl\s+.*\|\s*(bash|sh)'
     reason: Blocks curl pipe to shell (arbitrary code download/execution)
 
-  - pattern: 'python\s+-c.*(os\.remove|os\.unlink|shutil\.rmtree)'
+  - pattern: 'python\s+-c.*\b(os\.remove|os\.unlink|shutil\.rmtree)'
     reason: Blocks python -c destruction commands
 
-  - pattern: 'xargs\s+.*rm'
+  - pattern: 'xargs\s+.*\brm\b'
     reason: Blocks xargs with rm (mass deletion via piping)
 
   # ---------------------------------------------------------------------------

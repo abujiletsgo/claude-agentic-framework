@@ -4,17 +4,6 @@
   "permissions": {
     "allow": [
       "*"
-    ],
-    "deny": [
-      "rm -rf /",
-      "rm -rf ~",
-      "rm -rf .",
-      "dd if=",
-      "mkfs",
-      "format",
-      ":(){:|:&};:",
-      "chmod -R 777 /",
-      "chown -R"
     ]
   },
   "hooks": {
@@ -38,6 +27,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_review_team.py",
+            "timeout": 2
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -56,6 +55,72 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_cost_warnings.py",
+            "timeout": 2
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
+            "timeout": 3
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/context/auto_context_manager.py",
+            "timeout": 2
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
+            "timeout": 2
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_team_review.py",
+            "timeout": 2
           }
         ]
       }
@@ -107,10 +172,24 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_prime.py",
+            "timeout": 3
+          }
+        ]
       }
     ]
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_custom.py",
+    "padding": 0
   }
 }

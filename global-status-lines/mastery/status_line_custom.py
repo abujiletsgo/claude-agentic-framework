@@ -1,0 +1,253 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+
+"""
+Custom Status Line - Minimal + Action Emojis + Loading Animation
+
+Display: Opus  main  ~/project  42%  ⚡🔬🌐
+
+Features:
+- Minimal info (model, branch, directory, context %)
+- Animated loading indicator when working
+- Action emojis for active agents (what they're doing, not animals)
+- Clean, cute aesthetic
+"""
+
+import json
+import sys
+import os
+import subprocess
+from pathlib import Path
+from datetime import datetime
+
+# ─── Action Emoji Assignments ────────────────────────────────────────
+
+# Main Claude activity indicator (loading animation)
+LOADING_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]  # Braille spinner
+# Alternative: ["◐", "◓", "◑", "◒"]  # Circle spinner
+# Alternative: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]  # Box spinner
+
+# Agent action emojis (what they're doing)
+AGENT_ACTIONS = {
+    "orchestrator": "🎯",      # Coordinating/targeting
+    "builder": "🔨",           # Building/constructing
+    "validator": "✅",         # Checking/validating
+    "researcher": "🔬",        # Researching/analyzing
+    "project-architect": "📐", # Designing/architecting
+    "critical-analyst": "🔍",  # Deep analysis/investigating
+    "rlm-root": "🔄",          # Recursing/iterating
+    "meta-agent": "⚙️",        # Generating/configuring
+    "scout-report-suggest": "🗺️", # Exploring/mapping
+    "docs-scraper": "📄",      # Fetching documents
+    "error-analyzer": "🐛",    # Debugging
+    "test-generator": "🧪",    # Testing
+    "code-review": "👀",       # Reviewing
+    "security-scanner": "🔒",  # Security checking
+    "refactoring-assistant": "♻️", # Refactoring
+    "knowledge-db": "💾",      # Database operations
+
+    # Fallback for unknown agents
+    "unknown": "⚡"
+}
+
+# ─── Utility Functions ───────────────────────────────────────────────
+
+def get_git_branch():
+    """Get current git branch name."""
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=1
+        )
+        if result.returncode == 0:
+            branch = result.stdout.strip()
+            if branch:
+                return branch[:15]  # Limit length
+    except Exception:
+        pass
+    return None
+
+def get_project_dir():
+    """Get current project directory name."""
+    cwd = Path.cwd()
+    return f"~/{cwd.name}" if cwd.name else "~"
+
+def get_context_percentage(hook_input):
+    """Estimate context usage percentage."""
+    # Try to get from hook input
+    input_tokens = hook_input.get("inputTokens", 0)
+
+    # Rough estimate: 200k max context
+    max_tokens = 200000
+
+    if input_tokens > 0:
+        pct = (input_tokens / max_tokens) * 100
+        return min(pct, 99)  # Cap at 99%
+
+    return 0
+
+def get_model_tier(hook_input):
+    """Get model tier (Opus/Sonnet/Haiku)."""
+    model = hook_input.get("model", "")
+
+    if "opus" in model.lower():
+        return "Opus"
+    elif "sonnet" in model.lower():
+        return "Sonnet"
+    elif "haiku" in model.lower():
+        return "Haiku"
+
+    return "Unknown"
+
+def get_active_team_members():
+    """
+    Detect active team members from team config or task list.
+
+    Returns: list of agent names currently working
+    """
+    team_members = []
+
+    # Check for team config
+    session_id = os.environ.get("CLAUDE_SESSION_ID", "unknown")
+
+    # Try to find team config
+    team_config_paths = [
+        Path.home() / ".claude" / "teams",
+        Path.cwd() / ".claude" / "teams"
+    ]
+
+    for teams_dir in team_config_paths:
+        if not teams_dir.exists():
+            continue
+
+        # Find team configs
+        for team_file in teams_dir.glob("*/config.json"):
+            try:
+                with open(team_file, 'r') as f:
+                    team_data = json.load(f)
+                    members = team_data.get("members", [])
+
+                    # Extract agent types
+                    for member in members:
+                        agent_type = member.get("agentType", "unknown")
+                        if agent_type and agent_type not in team_members:
+                            team_members.append(agent_type)
+            except Exception:
+                continue
+
+    return team_members[:5]  # Limit to 5 activities max
+
+def get_loading_frame():
+    """Get current loading animation frame based on time."""
+    # Cycle through frames every 0.1 seconds for smooth animation
+    now = datetime.now()
+    frame_idx = (now.second * 10 + now.microsecond // 100000) % len(LOADING_FRAMES)
+    return LOADING_FRAMES[frame_idx]
+
+# ─── ANSI Colors ─────────────────────────────────────────────────────
+
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+
+# Foreground colors
+FG_CYAN = "\033[36m"
+FG_GREEN = "\033[32m"
+FG_YELLOW = "\033[33m"
+FG_MAGENTA = "\033[35m"
+FG_BLUE = "\033[34m"
+FG_WHITE = "\033[97m"
+FG_GRAY = "\033[90m"
+
+# ─── Status Line Builder ─────────────────────────────────────────────
+
+def build_status_line(hook_input):
+    """Build the status line output."""
+
+    # Get info
+    model_tier = get_model_tier(hook_input)
+    branch = get_git_branch()
+    project = get_project_dir()
+    context_pct = get_context_percentage(hook_input)
+
+    # Get activity indicators
+    loading = get_loading_frame()
+    team_members = get_active_team_members()
+    action_emojis = "".join(AGENT_ACTIONS.get(agent, AGENT_ACTIONS["unknown"]) for agent in team_members)
+
+    # Build segments
+    segments = []
+
+    # Model tier
+    if model_tier == "Opus":
+        color = FG_MAGENTA
+    elif model_tier == "Sonnet":
+        color = FG_CYAN
+    elif model_tier == "Haiku":
+        color = FG_GREEN
+    else:
+        color = FG_WHITE
+
+    segments.append(f"{color}{BOLD}{model_tier}{RESET}")
+
+    # Git branch (if available)
+    if branch:
+        segments.append(f"{FG_GRAY}│{RESET} {FG_BLUE}{branch}{RESET}")
+
+    # Project directory
+    segments.append(f"{FG_GRAY}│{RESET} {DIM}{project}{RESET}")
+
+    # Context percentage
+    if context_pct > 0:
+        if context_pct > 80:
+            ctx_color = FG_YELLOW
+        elif context_pct > 60:
+            ctx_color = FG_GREEN
+        else:
+            ctx_color = FG_GRAY
+
+        segments.append(f"{FG_GRAY}│{RESET} {ctx_color}{context_pct:.0f}%{RESET}")
+
+    # Activity indicators (loading animation + action emojis)
+    if action_emojis:
+        # Show loading + team actions
+        activities = f"{loading} {action_emojis}"
+    else:
+        # Just loading animation
+        activities = loading
+
+    segments.append(f"{FG_GRAY}│{RESET} {activities}")
+
+    # Join and return
+    return " ".join(segments)
+
+# ─── Main ────────────────────────────────────────────────────────────
+
+def main():
+    """Main entry point."""
+    try:
+        # Read hook input from stdin
+        hook_input = {}
+        if not sys.stdin.isatty():
+            try:
+                input_data = sys.stdin.read().strip()
+                if input_data:
+                    hook_input = json.loads(input_data)
+            except json.JSONDecodeError:
+                pass
+
+        # Build and print status line
+        status_line = build_status_line(hook_input)
+        print(status_line, flush=True)
+
+    except Exception as e:
+        # Fallback: minimal status with just loading
+        print(f"Claude ⠋", flush=True)
+
+if __name__ == "__main__":
+    main()

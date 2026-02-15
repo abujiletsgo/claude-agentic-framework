@@ -15,35 +15,15 @@ data/                knowledge-db/ + model_tiers.yaml
 templates/           settings.json.template
 ```
 
-## Mode: Maximum Autonomy (Yolo++)
+## Mode: Yolo
 
-**CRITICAL**: Operate with maximum autonomy. Only ask user for clarification when truly needed.
-
-**Permission Model**: `"allow": ["*"]` - Trust by default, auto-execute everything except catastrophic operations.
-
-**Auto-Execute (NO permission prompts)**:
-- ✅ Read, Glob, Grep (always)
-- ✅ Edit, Write (always, hooks will block if dangerous)
-- ✅ Bash commands (except rm -rf /, dd, mkfs, format)
-- ✅ Task spawning, agent teams, background execution
-- ✅ Git operations (commit, pull, push to branches, merge)
-- ✅ Skill invocation, test execution
-
-**Only Ask User When**:
-- Need to clarify ambiguous requirements ("which approach?")
-- About to force-push to main/master branch
-- Missing critical information that blocks progress
-- About to execute: rm -rf /, dd if=, mkfs, format, chmod -R 777 /
-
-**Never Ask For**: File operations, code edits, searches, safe git commands, agent spawning, test runs.
-
-**Security**: Automatic via hooks + integrity checks, NOT via user prompts.
+`"allow": ["*"]` + deny destructive ops + ask force-push/hard-reset. Security: permissions > command hooks (pattern match) > skills integrity (SHA-256) > input validation > file permissions (0o600).
 
 ## Model Tiers
 
 ```
-  Opus (4): orchestrator, project-architect, critical-analyst, rlm-root
-Sonnet (3): researcher, meta-agent, scout-report-suggest
+  Opus (3): orchestrator, project-architect, critical-analyst
+Sonnet (4): researcher, meta-agent, scout-report-suggest, rlm-root
  Haiku (1): docs-scraper
 ```
 

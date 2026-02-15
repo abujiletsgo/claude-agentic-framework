@@ -49,32 +49,32 @@ tiers:
       - Documentation generation (from templates)
 
 # ─── Agent Assignments ──────────────────────────────────────────────
+# Total: 8 root agents (3 opus, 4 sonnet, 1 haiku)
+# Team agents (builder, validator, project-skill-generator) archived
+# Optimization: rlm-root downgraded opus→sonnet for 5x cost savings
 
 agent_tiers:
-  # Opus tier (4 agents) - Deep reasoning, planning, architecture
+  # Opus tier (3 agents) - Deep reasoning, planning, architecture
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
     - critical-analyst        # Deep critical thinking, risk analysis
-    - rlm-root                # Recursive context control, delegation
 
-  # Sonnet tier (5 agents) - Implementation, research, analysis
+  # Sonnet tier (4 agents) - Implementation, research, analysis
   sonnet:
     - researcher              # Research and analysis
     - meta-agent              # Agent file generation (was opus, downgraded)
     - scout-report-suggest    # Codebase scouting and analysis
-    - builder                 # Code implementation (team agent)
-    - project-skill-generator # Project-specific skill generation (team agent)
+    - rlm-root                # Recursive exploration (downgraded from opus for cost optimization)
 
-  # Haiku tier (2 agents) - Validation, simple ops, data tasks
+  # Haiku tier (1 agent) - Simple ops, data tasks
   haiku:
     - docs-scraper            # Documentation scraping
-    - validator               # Read-only verification (team agent)
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 
 skill_default_models:
-  test-generator: haiku
+  test-generator: sonnet  # Upgraded from haiku for better test quality
   code-review: sonnet
   refactoring-assistant: sonnet
   security-scanner: opus
