@@ -60,7 +60,8 @@ def test_analyze_request():
             "prompt": "How does the payment processing work?",
             "expect": {
                 "task_type": "research",
-                "strategy": "research",
+                "codebase_scope": "unknown",
+                "strategy": "rlm",  # unknown scope + research → RLM auto-trigger
             },
         },
         {
@@ -74,7 +75,8 @@ def test_analyze_request():
             "prompt": "Plan the architecture for a new microservices system",
             "expect": {
                 "task_type": "plan",
-                "strategy": "brainstorm",
+                "complexity": "massive",
+                "strategy": "rlm",  # massive complexity → RLM
             },
         },
         {
@@ -94,6 +96,54 @@ def test_analyze_request():
             "expect": {
                 "complexity": "complex",
                 "task_type": "implement",
+            },
+        },
+        # RLM auto-triggering tests
+        {
+            "prompt": "How does the authentication system work?",
+            "expect": {
+                "task_type": "research",
+                "codebase_scope": "unknown",
+                "strategy": "rlm",
+            },
+        },
+        {
+            "prompt": "Audit entire codebase for SQL injection vulnerabilities",
+            "expect": {
+                "task_type": "review",
+                "codebase_scope": "broad",
+                "strategy": "rlm",
+            },
+        },
+        {
+            "prompt": "Search for all uses of deprecated API across the entire project",
+            "expect": {
+                "task_type": "research",
+                "codebase_scope": "broad",
+                "strategy": "rlm",
+            },
+        },
+        {
+            "prompt": "Migrate all files in the entire codebase to use async/await",
+            "expect": {
+                "complexity": "massive",
+                "codebase_scope": "broad",
+                "strategy": "rlm",
+            },
+        },
+        {
+            "prompt": "Implement a login endpoint with validation and error handling",
+            "expect": {
+                "complexity": "moderate",
+                "task_type": "implement",
+                "codebase_scope": "moderate",
+                "strategy": "orchestrate",
+            },
+        },
+        {
+            "prompt": "Update this file to use the new API",
+            "expect": {
+                "codebase_scope": "focused",
             },
         },
     ]
@@ -129,10 +179,11 @@ def test_analyze_request():
         if ok:
             conf = caddy.get("confidence", 0)
             skills = [s["name"] for s in caddy.get("relevant_skills", [])][:2]
+            scope = classification.get('codebase_scope', '?')
             print(
                 f"  PASS  {tc['prompt'][:60]:<62} "
                 f"[{classification.get('complexity','?')}/{classification.get('task_type','?')}"
-                f"/{classification.get('quality_need','?')}] "
+                f"/{classification.get('quality_need','?')}/{scope}] "
                 f"-> {strategy} ({conf:.0%}) skills={skills}"
             )
             passed += 1

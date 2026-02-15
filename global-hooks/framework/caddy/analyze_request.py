@@ -144,15 +144,15 @@ COMPLEXITY_SIGNALS = {
         "refactor", "update", "modify", "extend", "enhance",
     ],
     "complex": [
-        "authentication", "authorization", "migrate", "redesign",
-        "full stack", "end to end", "comprehensive", "overhaul",
+        "authentication", "authorization", "redesign",
+        "full stack", "end to end", "overhaul",
         "integrate", "pipeline", "rest api", "graphql", "rate limit",
         "caching", "websocket", "middleware", "api with",
     ],
     "massive": [
         "entire codebase", "all files", "whole project", "everything",
         "from scratch", "rewrite", "rebuild", "migrate database",
-        "monorepo", "microservices",
+        "monorepo", "microservices", "migrate all", "across the entire",
     ],
 }
 
@@ -167,11 +167,11 @@ TASK_TYPE_SIGNALS = {
     ],
     "refactor": [
         "refactor", "restructure", "clean", "reorganize", "simplify",
-        "extract", "decouple", "modularize",
+        "extract", "decouple", "modularize", "migrate",
     ],
     "research": [
         "how does", "understand", "explain", "analyze", "investigate",
-        "find out", "explore", "what is", "research",
+        "find out", "explore", "what is", "research", "search for",
     ],
     "test": [
         "test", "coverage", "unit test", "integration test", "e2e",
@@ -202,6 +202,27 @@ QUALITY_SIGNALS = {
     "high": [
         "important", "careful", "thorough", "comprehensive", "robust",
         "reliable", "tested",
+    ],
+}
+
+SCOPE_SIGNALS = {
+    "focused": [
+        "this file", "single file", "one file", "specific function",
+        "this method", "just this", "one component", "simple",
+    ],
+    "moderate": [
+        "these files", "related files", "module", "package", "component",
+        "directory", "folder", "endpoint",
+    ],
+    "broad": [
+        "entire codebase", "all files", "whole project", "everywhere",
+        "across the project", "project-wide", "global", "throughout",
+        "codebase", "all components", "every file", "entire", "across the",
+        "all of", "complete", "comprehensive", "entire project",
+    ],
+    "unknown": [
+        "how does", "where is", "explore",
+        "understand", "what is", "which files", "locate",
     ],
 }
 
@@ -272,13 +293,70 @@ def classify_quality_need(text: str) -> str:
     return "standard"
 
 
+def classify_codebase_scope(text: str) -> str:
+    """Classify codebase scope - how many files/areas affected."""
+    text_lower = text.lower()
+
+    # Check for explicit scope signals in priority order
+    # Unknown scope takes precedence for exploratory questions
+    for kw in SCOPE_SIGNALS["unknown"]:
+        if kw in text_lower:
+            return "unknown"
+
+    # Then check broad scope
+    for kw in SCOPE_SIGNALS["broad"]:
+        if kw in text_lower:
+            return "broad"
+
+    # Then moderate
+    for kw in SCOPE_SIGNALS["moderate"]:
+        if kw in text_lower:
+            return "moderate"
+
+    # Then focused
+    for kw in SCOPE_SIGNALS["focused"]:
+        if kw in text_lower:
+            return "focused"
+
+    # Default: moderate (most common for typical tasks)
+    return "moderate"
+
+
 def select_strategy(
     complexity: str,
     task_type: str,
     quality: str,
+    codebase_scope: str,
 ) -> str:
-    """Select execution strategy based on classification."""
-    # Research tasks always start with research
+    """Select execution strategy based on classification.
+
+    Auto-RLM Trigger Logic:
+    - Unknown scope + research task → RLM (explore first, find scope)
+    - Broad scope + review/research/audit → RLM (prevent context rot)
+    - Massive complexity regardless → RLM (iterative approach needed)
+    - Explicit broad keywords → RLM (forced exploration mode)
+    """
+    # Auto-RLM Triggers
+
+    # 1. Unknown scope with research task → RLM explores first
+    if codebase_scope == "unknown" and task_type == "research":
+        return "rlm"
+
+    # 2. Broad scope with review/research/audit → RLM prevents context rot
+    if codebase_scope == "broad" and task_type in ["review", "research", "audit"]:
+        return "rlm"
+
+    # 3. Massive complexity → RLM for iterative approach
+    if complexity == "massive":
+        return "rlm"
+
+    # 4. Broad scope with moderate/complex → delegate exploration to RLM
+    if codebase_scope == "broad" and complexity in ["moderate", "complex"]:
+        return "rlm"
+
+    # Standard strategy selection (no RLM needed)
+
+    # Research tasks (focused scope) use research pattern
     if task_type == "research":
         return "research"
 
@@ -286,7 +364,7 @@ def select_strategy(
     if task_type == "plan":
         return "brainstorm"
 
-    # Look up in strategy map
+    # Look up in strategy map (simple/moderate/complex with quality)
     return STRATEGY_MAP.get((complexity, quality), "orchestrate")
 
 
@@ -450,6 +528,7 @@ def main():
         complexity = classify_complexity(prompt)
         task_type = classify_task_type(prompt)
         quality = classify_quality_need(prompt)
+        codebase_scope = classify_codebase_scope(prompt)
         skills = detect_skills(prompt)
 
         # Security audit: scan detected skills for dangerous patterns
@@ -469,7 +548,7 @@ def main():
             if s["skill"] not in blocked_skills
         ]
 
-        strategy = select_strategy(complexity, task_type, quality)
+        strategy = select_strategy(complexity, task_type, quality, codebase_scope)
         confidence = estimate_confidence(
             complexity, task_type, quality, skills, len(prompt)
         )
@@ -483,6 +562,7 @@ def main():
                     "complexity": complexity,
                     "task_type": task_type,
                     "quality_need": quality,
+                    "codebase_scope": codebase_scope,
                 },
                 "recommended_strategy": strategy,
                 "confidence": round(confidence, 2),
@@ -518,7 +598,7 @@ def main():
 
             suggestions.append(
                 f"[Caddy] Task classified as: "
-                f"{complexity} {task_type} (quality: {quality})"
+                f"{complexity} {task_type} (quality: {quality}, scope: {codebase_scope})"
             )
             suggestions.append(
                 f"[Caddy] Recommended strategy: {strategy} "

@@ -48,14 +48,14 @@ High-level strategy, resource allocation, team coordination, quality control, re
 
 ## Request Analysis Framework
 
-Classify along four dimensions:
+Classify along four dimensions (Caddy auto-classifies these):
 
 **1. Complexity**
 ```
 simple    = Single action, < 3 steps, clear outcome
 moderate  = 3-8 steps, some coordination needed
 complex   = 8+ steps, multiple agents, dependencies between tasks
-massive   = Project-scale, needs iterative approach
+massive   = Project-scale, needs iterative approach → triggers RLM
 ```
 
 **2. Task Type**
@@ -67,38 +67,55 @@ implement | fix | refactor | research | test | review | document | deploy | plan
 ```
 standard  = Normal quality, ship fast
 high      = Important feature, needs careful review
-critical  = Security-sensitive, production-facing, irreversible
+critical  = Security-sensitive, production-facing, irreversible → triggers Fusion
 ```
 
-**4. Codebase Scope**
+**4. Codebase Scope** (NEW - drives RLM auto-triggering)
 ```
-focused   = 1-3 files affected
-moderate  = 4-15 files affected
-broad     = 15+ files, multiple directories
-unknown   = Need to explore first
+focused   = 1-3 files affected → standard orchestration
+moderate  = 4-15 files affected → standard orchestration
+broad     = 15+ files, multiple directories, "entire codebase" → triggers RLM
+unknown   = "how does X work?", exploratory questions → triggers RLM
 ```
+
+**Auto-RLM Examples**:
+- "How does the authentication system work?" → unknown scope + research → **RLM**
+- "Audit entire codebase for SQL injection" → broad scope + review → **RLM**
+- "Find all uses of deprecated API across project" → broad scope + research → **RLM**
+- "Add login endpoint" → focused scope + implement → **Orchestrate**
 
 ---
 
 ## Strategy Selection Decision Tree
 
 ```
-IF complexity == simple AND quality_need == standard:
+# Auto-RLM Triggers (checked first)
+IF codebase_scope == "unknown" AND task_type == "research":
+  -> RLM (explore first, find scope)
+
+ELIF codebase_scope == "broad" AND task_type IN ["review", "research", "audit"]:
+  -> RLM (prevent context rot during exploration)
+
+ELIF complexity == "massive":
+  -> RLM (iterative approach for massive scale)
+
+ELIF codebase_scope == "broad" AND complexity IN ["moderate", "complex"]:
+  -> RLM (delegate exploration phase)
+
+# Standard Strategy Selection
+ELIF complexity == "simple" AND quality_need == "standard":
   -> DIRECT EXECUTION
 
-ELIF task_type == research OR codebase_scope == unknown:
-  -> RESEARCH FIRST
+ELIF task_type == "research" AND codebase_scope != "unknown":
+  -> RESEARCH FIRST (focused research)
 
-ELIF complexity == massive OR codebase_scope == broad:
-  -> RALPH LOOP (RLM)
-
-ELIF quality_need == critical:
+ELIF quality_need == "critical":
   -> FUSION (Best-of-N)
 
-ELIF complexity == moderate OR complexity == complex:
+ELIF complexity IN ["moderate", "complex"]:
   -> ORCHESTRATE
 
-ELIF task_type == plan:
+ELIF task_type == "plan":
   -> BRAINSTORM + PLAN
 
 ELSE:
@@ -118,8 +135,38 @@ Execute yourself using available tools. Verify result. Report completion.
 Spawn 1-3 Explore agents in parallel. Synthesize findings. Re-classify with new information. Execute follow-up strategy.
 
 ### Ralph Loop (RLM)
-**When**: Massive complexity, broad codebase scope.
-Search → Isolate (peek 50 lines) → Delegate analysis → Synthesize → Repeat if needed. Each iteration gets fresh context.
+**When**: Auto-triggered by Caddy for:
+- Unknown scope + research task (e.g., "how does X work?")
+- Broad scope + review/research/audit (e.g., "audit entire codebase for SQL injection")
+- Massive complexity regardless of task type
+- Broad scope + moderate/complex tasks (delegate exploration phase)
+
+**How to Invoke**:
+```python
+# Use Task tool to spawn rlm-root agent
+Task(
+    subagent_type="rlm-root",
+    description="Explore authentication system",
+    prompt=f"""
+    Explore the codebase to understand: [user's question]
+
+    Context from user request:
+    - Task: [original task]
+    - Scope: [broad/unknown]
+    - Expected outcome: [what we need to learn]
+
+    Use your RLM capabilities to:
+    1. Search for relevant files and patterns
+    2. Iteratively explore without context rot
+    3. Build understanding through repeated fresh contexts
+    4. Synthesize findings into actionable report
+
+    Return: Executive summary with key findings, file locations, and recommended next steps.
+    """
+)
+```
+
+**Pattern**: Search → Isolate (peek 50 lines) → Delegate analysis → Synthesize → Repeat if needed. Each iteration gets fresh context.
 
 ### Fusion (Best-of-N)
 **When**: Critical quality, security-sensitive, irreversible changes.
