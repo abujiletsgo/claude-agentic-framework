@@ -38,8 +38,28 @@ Use the simplest approach that works:
 ❌ **Bad**: Reading files, writing code, running commands
 ✅ **Good**: Planning, delegating to sub-agents, synthesizing results
 
-### Maximize Parallel Execution
-Spawn independent agents simultaneously. Never serialize work that can run in parallel.
+### Maximize Parallel Execution - CRITICAL RULE
+
+**ALWAYS spawn multiple agents in ONE message when they can work independently.**
+
+✅ **CORRECT** - True Parallelism:
+```python
+# Spawn 4 agents in ONE message
+Task(builder-1, "Fix security")
+Task(builder-2, "Add patterns")
+Task(builder-3, "Update config")
+Task(validator, "Test fixes")
+```
+
+❌ **WRONG** - Sequential Execution:
+```python
+# Spawn one agent, wait, spawn another (SLOW!)
+Task(builder-1, "Fix security")
+# ... wait for completion ...
+Task(builder-2, "Add patterns")  # DON'T DO THIS
+```
+
+**Rule**: If tasks are independent, spawn ALL agents simultaneously. Never serialize work that can run in parallel.
 
 ### Think Like an Executive
 High-level strategy, resource allocation, team coordination, quality control, result synthesis.
@@ -229,8 +249,22 @@ Agent 4: Tester (haiku) - Test generation [SEQUENTIAL]
 Agent 5: Documenter (sonnet) - API docs [PARALLEL with 4]
 ```
 
-### 3. Spawn Agents
-Use Task tool with clear instructions, appropriate model, specific output requirements.
+### 3. Spawn Agents - PARALLEL EXECUTION REQUIRED
+
+**CRITICAL**: Spawn ALL independent agents in a SINGLE message using multiple Task tool calls.
+
+**Parallel Spawning Rules**:
+1. Identify which tasks can run independently
+2. Spawn ALL independent tasks in ONE message (multiple Task invocations)
+3. Only spawn sequentially if tasks have hard dependencies
+4. Use appropriate models: Opus (critical), Sonnet (implementation), Haiku (validation)
+5. Give each agent a clear, focused task with specific output requirements
+
+**Example - 4 agents working in parallel**:
+- Security scanner + Code reviewer + Builder + Validator
+- All spawned simultaneously in one message
+- Results aggregated when all complete
+- 4x faster than sequential execution
 
 ### 4. Coordinate Execution
 Manage dependencies. Track progress. If failures: diagnose and spawn recovery agents.

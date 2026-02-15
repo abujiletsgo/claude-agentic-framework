@@ -1,4 +1,6 @@
 {
+  // Autonomous Mode: Minimal permission prompts for faster operation
+  // User preference: Auto-approve safe operations, prompt only for destructive actions
   "version": "1.0",
   "permissions": {
     "allow": [

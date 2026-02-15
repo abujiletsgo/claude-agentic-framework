@@ -120,6 +120,31 @@ bashToolPatterns:
   - pattern: '\bhistory\s+-c\b'
     reason: clearing shell history
 
+
+  # ---------------------------------------------------------------------------
+  # SHELL OBFUSCATION BYPASSES (P1 CRITICAL)
+  # ---------------------------------------------------------------------------
+  - pattern: 'eval\s+'
+    reason: Blocks eval command execution (can bypass all pattern matching)
+
+  - pattern: 'bash\s+-c\s+'
+    reason: Blocks bash -c execution (string commands bypass pattern matching)
+
+  - pattern: 'base64\s+(-d|--decode).*\|'
+    reason: Blocks base64 decode piping (encoded command execution)
+
+  - pattern: 'find\s+.*-delete'
+    reason: Blocks find with -delete flag (mass file deletion)
+
+  - pattern: 'curl\s+.*\|\s*(bash|sh)'
+    reason: Blocks curl pipe to shell (arbitrary code download/execution)
+
+  - pattern: 'python\s+-c.*(os\.remove|os\.unlink|shutil\.rmtree)'
+    reason: Blocks python -c destruction commands
+
+  - pattern: 'xargs\s+.*rm'
+    reason: Blocks xargs with rm (mass deletion via piping)
+
   # ---------------------------------------------------------------------------
   # AWS CLI DESTRUCTIVE OPERATIONS
   # ---------------------------------------------------------------------------
@@ -373,6 +398,9 @@ bashToolPatterns:
     reason: SQL DELETE with specific ID
     ask: true
 
+  - pattern: 'UPDATE\s+.*\bSET\b(?\!.*\bWHERE\b)'
+    reason: Blocks SQL UPDATE without WHERE clause
+
 # ---------------------------------------------------------------------------
 # ZERO ACCESS PATHS - No read, write, or any access allowed
 # ---------------------------------------------------------------------------
@@ -474,6 +502,11 @@ zeroAccessPaths:
 # Supports glob patterns: *.lock, *.min.js
 readOnlyPaths:
   # ---------------------------------------------------------------------------
+  # DAMAGE CONTROL SELF-PROTECTION
+  # ---------------------------------------------------------------------------
+  - global-hooks/damage-control/patterns.yaml
+
+  # ---------------------------------------------------------------------------
   # SYSTEM DIRECTORIES
   # ---------------------------------------------------------------------------
   - /etc/
@@ -552,6 +585,7 @@ noDeletePaths:
   # ---------------------------------------------------------------------------
   - ~/.claude/
   - CLAUDE.md
+  - global-hooks/damage-control/
 
   # ---------------------------------------------------------------------------
   # LICENSE AND LEGAL FILES

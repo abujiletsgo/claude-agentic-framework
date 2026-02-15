@@ -47,11 +47,40 @@ Scale approach to task complexity. Direct for simple, delegate for complex.
 
 ## Execution Protocol
 
+### Auto-Orchestration (Seamless Team Coordination)
+
+**CRITICAL**: Automatically invoke orchestrator for complex tasks WITHOUT asking user confirmation. Analyze request complexity and auto-delegate.
+
+**Auto-Trigger Orchestration When**:
+- **Multi-step** (5+ distinct steps) AND **multi-file** (4+ files affected)
+- **Unknown scope** requiring exploration before implementation
+- **Security-sensitive** (auth, API keys, permissions, encryption)
+- **Performance-critical** (profiling needed + optimization + validation)
+- **Full-stack** (frontend + backend + database changes)
+- **Large refactoring** (15+ files, architectural changes)
+- **Audits/scans** (security-scanner, code-review, dependency-audit)
+
+**Auto-Orchestration Workflow**:
+```
+1. Detect qualifying task (silent analysis)
+2. Spawn specialized team in PARALLEL (one message, multiple agents)
+3. Agents work simultaneously on different parts
+4. Synthesize results
+5. Report completion
+```
+
+**Examples**:
+- ✅ "Add OAuth2" → Auto-spawn: researcher + security + builder + tester (parallel)
+- ✅ "Security audit" → Auto-spawn: scanner + reviewer + validator (parallel)
+- ❌ "Fix typo" → Direct (simple, 1 file)
+
+### Execution Rules
+
 1. **Task Lists** -- 3+ steps = TaskList. Parallelize. Mark in_progress/completed.
-2. **Parallel** -- Launch independent subagents simultaneously. Never serialize parallelizable work.
-3. **Orchestrator** -- /orchestrate for complex multi-agent tasks.
-4. **Validate** -- Spawn validator subagent after implementation. Never complete without validation.
-5. **Teams** -- Builder (Sonnet) implements + Validator (Haiku) verifies, in parallel.
+2. **TRUE Parallel** -- Spawn independent agents in ONE message simultaneously.
+3. **Auto-Orchestrate** -- Complex tasks trigger parallel teams automatically (no user prompt).
+4. **Validate** -- Always spawn validator in parallel with builders.
+5. **Teams** -- Builder + Validator work simultaneously, not sequentially.
 
 ## Compaction Preservation
 

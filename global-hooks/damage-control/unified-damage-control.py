@@ -50,9 +50,9 @@ def is_glob_pattern(pattern):
     return '*' in pattern or '?' in pattern or '[' in pattern
 
 def match_path(file_path, pattern):
-    expanded_pattern = os.path.expanduser(pattern)
+    expanded_pattern = os.path.realpath(os.path.expanduser(pattern))
     normalized = os.path.normpath(file_path)
-    expanded_normalized = os.path.expanduser(normalized)
+    expanded_normalized = os.path.realpath(os.path.expanduser(normalized))
 
     if is_glob_pattern(pattern):
         basename = os.path.basename(expanded_normalized).lower()
