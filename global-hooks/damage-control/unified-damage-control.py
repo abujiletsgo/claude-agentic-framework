@@ -96,6 +96,32 @@ def glob_to_regex(glob_pattern):
             result += char
     return result
 
+
+def strip_quoted_content(command: str) -> str:
+    """Remove quoted strings and subshell content from a command string.
+
+    This leaves only unquoted structural tokens — the parts of a command
+    that are actual file paths or flags, not string arguments like commit
+    messages, heredoc bodies, or Python code in -c flags.
+
+    Why: glob patterns like *.key should only match unquoted file path
+    arguments (e.g. `cat private.key`), not string content inside quotes
+    (e.g. `git commit -m "fix: update *.key handling"`).
+
+    Legitimate protected paths are always unquoted arguments. Quoted content
+    is never a file path being accessed by the shell.
+    """
+    # Remove heredoc bodies  (<<'EOF'...EOF  or  <<EOF...EOF)
+    result = re.sub(r"<<'?\w+'?\n.*?(?:^|\n)\w+\n?", ' ', command, flags=re.DOTALL)
+    # Remove $(...) and `...` subshell content
+    result = re.sub(r'\$\([^)]{0,500}\)', ' ', result)
+    result = re.sub(r'`[^`]{0,500}`', ' ', result)
+    # Remove double-quoted string content (keep surrounding quotes stripped too)
+    result = re.sub(r'"[^"\\]*(?:\\.[^"\\]*)*"', ' ', result)
+    # Remove single-quoted string content
+    result = re.sub(r"'[^']*'", ' ', result)
+    return result
+
 # Operation patterns for bash commands
 WRITE_PATTERNS = [
     (r'>\s*{path}', "write"),
@@ -167,6 +193,7 @@ def check_bash_command(command, config):
     read_only_paths = config.get("readOnlyPaths", [])
     no_delete_paths = config.get("noDeletePaths", [])
 
+    # Full command checked for destructive operation patterns (rm -rf, git push --force, etc.)
     for item in patterns:
         pattern = item.get("pattern", "")
         reason = item.get("reason", "Blocked by pattern")
@@ -180,15 +207,23 @@ def check_bash_command(command, config):
         except re.error:
             continue
 
+    # For zero-access glob patterns, strip quoted content first.
+    # Glob patterns like *.key must only match unquoted file path tokens —
+    # not string arguments like commit messages or -c "python code".
+    # Exact paths (non-glob) still check the full command since they're
+    # specific enough not to cause false positives in quoted content.
+    unquoted_command = strip_quoted_content(command)
+
     for zero_path in zero_access_paths:
         if is_glob_pattern(zero_path):
             try:
-                # Use (?!\w) to avoid false positives like *.key matching d.keys() or *.dump matching json.dumps
-                if re.search(glob_to_regex(zero_path) + r'(?!\w)', command, re.IGNORECASE):
+                # Match against unquoted tokens only, with word-boundary check
+                if re.search(glob_to_regex(zero_path) + r'(?!\w)', unquoted_command, re.IGNORECASE):
                     return True, False, f"Blocked: zero-access pattern {zero_path} (no operations allowed)"
             except re.error:
                 continue
         else:
+            # Exact paths: check full command (specific enough to avoid false positives)
             expanded = os.path.expanduser(zero_path)
             if re.search(re.escape(expanded), command) or re.search(re.escape(zero_path), command):
                 return True, False, f"Blocked: zero-access path {zero_path} (no operations allowed)"
