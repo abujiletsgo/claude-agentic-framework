@@ -26,13 +26,22 @@ except ImportError:
     except ImportError:
         HAS_PORTALOCKER = False
 
-from state_schema import (
-    HookState,
-    HookStateData,
-    GlobalStats,
-    CircuitState,
-    get_current_timestamp,
-)
+try:
+    from .state_schema import (
+        HookState,
+        HookStateData,
+        GlobalStats,
+        CircuitState,
+        get_current_timestamp,
+    )
+except ImportError:
+    from state_schema import (
+        HookState,
+        HookStateData,
+        GlobalStats,
+        CircuitState,
+        get_current_timestamp,
+    )
 
 
 class HookStateManager:

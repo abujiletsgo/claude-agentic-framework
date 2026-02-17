@@ -6,6 +6,8 @@
 #   "pyyaml>=6.0",
 # ]
 # ///
+from __future__ import annotations
+
 """
 Caddy Request Analyzer - UserPromptSubmit Hook
 ===============================================

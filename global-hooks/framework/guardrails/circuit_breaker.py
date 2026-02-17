@@ -12,9 +12,14 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional
 
-from state_schema import CircuitState, HookState
-from hook_state_manager import HookStateManager
-from config_loader import GuardrailsConfig
+try:
+    from .state_schema import CircuitState, HookState
+    from .hook_state_manager import HookStateManager
+    from .config_loader import GuardrailsConfig
+except ImportError:
+    from state_schema import CircuitState, HookState
+    from hook_state_manager import HookStateManager
+    from config_loader import GuardrailsConfig
 
 
 class CircuitBreakerDecision(str, Enum):
