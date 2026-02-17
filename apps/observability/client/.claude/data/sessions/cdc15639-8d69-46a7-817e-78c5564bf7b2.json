@@ -1,9 +1,0 @@
-{
-  "session_id": "cdc15639-8d69-46a7-817e-78c5564bf7b2",
-  "prompts": [
-    "<task-notification>\n<task-id>bb3ac71</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon/tasks/bb3ac71.output</output-file>\n<status>completed</status>\n<summary>Background command \"Start observability client dev server\" completed (exit code 0)</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon/tasks/bb3ac71.output",
-    "i think i still see write hook error, what is going on.. is this going to effect my orchestrator?",
-    "ignore the errors and do option A",
-    "okay it's alll good"
-  ]
-}

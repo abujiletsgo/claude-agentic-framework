@@ -105,24 +105,17 @@ def main():
         if not cache_file.exists():
             emit_and_exit()
 
-        # Get current git hash
-        current_hash = get_git_hash(repo_root)
-        if not current_hash:
-            emit_and_exit()
-
-        # Get cached hash
-        cached_hash = get_cached_hash(cache_file)
-        if not cached_hash:
-            emit_and_exit()
-
-        # Compare hashes
-        if current_hash != cached_hash:
-            emit_and_exit()
-
-        # Cache is valid - load it
+        # Load cached content regardless of staleness
         cached_content = load_cached_context(cache_file)
         if cached_content:
-            # Emit the cached context as a message so Claude receives it
+            # Check if stale (inform Claude but still load)
+            current_hash = get_git_hash(repo_root)
+            cached_hash = get_cached_hash(cache_file)
+            stale = current_hash and cached_hash and current_hash != cached_hash
+
+            if stale:
+                cached_content += "\n\n> **Note:** Project context cache may be slightly stale (new commits since last /prime). Run /prime to refresh."
+
             emit_and_exit(message=cached_content)
 
     except Exception as e:

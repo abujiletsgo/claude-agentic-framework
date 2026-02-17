@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-import json, sys
+"""Validate that README.md is in sync with actual project structure.
+
+Checks that the auto-generated documentation stamp matches the current
+count of agents, commands, skills, and hooks.
+"""
+import json
+import sys
 from pathlib import Path
 
+
 def emit(obj):
-    fn = getattr(json, chr(100)+chr(117)+chr(109)+chr(112)+chr(115))
-    sys.stdout.write(fn(obj) + chr(10))
+    """Output JSON to stdout."""
+    print(json.dumps(obj))
 
 def main():
     repo = Path(__file__).resolve().parent.parent.parent.parent
@@ -32,7 +39,7 @@ def main():
     n = len(a) + len(ta)
     stamp = f"<!-- AUTO-DOC-STAMP:{n}a-{len(c)}c-{len(s)}s-{hc}h -->"
     if stamp not in text:
-        sys.stderr.write("[doc-validator] README.md stale. Run: uv run scripts/generate_docs.py" + chr(10))
+        sys.stderr.write("[doc-validator] README.md stale. Run: uv run scripts/generate_docs.py\n")
     emit({"result": "continue"})
 
 if __name__ == "__main__":

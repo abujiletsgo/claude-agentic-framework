@@ -57,3 +57,8 @@ out/
 ai_docs/*.md
 !ai_docs/README.md
 .claude/PROJECT_CONTEXT.md
+
+# Runtime logs (generated at runtime, not source)
+logs/
+apps/observability/client/logs/
+apps/observability/client/.claude/
