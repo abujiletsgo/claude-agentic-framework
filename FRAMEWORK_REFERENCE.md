@@ -121,7 +121,7 @@ All 22 hooks, their events, matchers, timeouts, and purposes.
 | `damage-control/unified-damage-control.py` | Bash\|Edit\|Write | 5s | No | Block destructive commands; protect sensitive paths |
 | `framework/automation/auto_review_team.py` | Bash | 5s | Yes | Coordinate auto-review team spawning |
 
-### PostToolUse (10 hooks)
+### PostToolUse (11 hooks)
 
 | Script | Matcher | Timeout | Circuit Breaker | Purpose |
 |--------|---------|---------|-----------------|---------|
@@ -135,6 +135,7 @@ All 22 hooks, their events, matchers, timeouts, and purposes.
 | `framework/notifications/auto_voice_notifications.py` | Bash\|Write\|Edit | 5s | Yes | macOS voice alerts on completion/errors |
 | `framework/automation/auto_team_review.py` | Write\|Edit | 5s | Yes | Spawn team review after significant writes |
 | `framework/knowledge/extract_learnings.py` | Bash\|Write\|Edit | 5s | Yes | Extract learnings from session for later storage |
+| `framework/automation/auto_escalate.py` | * | 5s | No | Mid-task escalation: inject orchestration directive when 2+ complexity signals fire |
 
 ### Stop (3 hooks)
 
@@ -771,6 +772,21 @@ Fires when `package.json`, `pyproject.toml`, `requirements.txt`, or similar depe
 - Missing security-relevant packages
 
 Timeout is 15s because it may call external APIs.
+
+### auto_escalate.py (PostToolUse: *)
+
+Fires after every tool call. Tracks session-level complexity signals in `~/.claude/auto_escalate_state.json`:
+
+| Signal | Threshold | How tracked |
+|--------|-----------|-------------|
+| `task_count` | ≥ 4 | Increments on each `TaskCreate` call |
+| `error_count` | ≥ 3 | Increments on Bash calls with non-zero exit code |
+| `files_modified` | ≥ 8 | Unique `Edit`/`Write`/`MultiEdit` file paths |
+| `tool_use_count` | ≥ 25 | Total tool calls this session |
+
+When **2+ signals** exceed their thresholds and escalation hasn't already fired, the hook writes a prominent directive to stderr instructing Claude to spawn the orchestrator. One escalation per session — state resets on new session ID.
+
+This handles the case where a prompt was initially classified as simple (direct execution), but complexity grew during execution.
 
 ### auto_cost_warnings.py (PostToolUse: *)
 

@@ -100,11 +100,22 @@ else
   python3 "$REPO_DIR/scripts/generate_docs.py"
 fi
 
-# 7. Verify dependencies
-echo "[7/7] Checking dependencies..."
+# 7. Install git hooks (auto-doc before push)
+echo "[7/8] Installing git hooks..."
+if [ -d "$REPO_DIR/.git" ]; then
+  cp "$REPO_DIR/scripts/pre-push-hook.sh" "$REPO_DIR/.git/hooks/pre-push"
+  chmod +x "$REPO_DIR/.git/hooks/pre-push"
+  echo "  -> .git/hooks/pre-push (auto-regenerates docs before every push)"
+else
+  echo "  Skipped: not a git repository"
+fi
+
+# 8. Verify dependencies
+echo "[8/8] Checking dependencies..."
 command -v uv >/dev/null 2>&1 && echo "  uv: OK" || echo "  uv: MISSING (curl -LsSf https://astral.sh/uv/install.sh | sh)"
 command -v python3 >/dev/null 2>&1 && echo "  python3: OK" || echo "  python3: MISSING"
 command -v git >/dev/null 2>&1 && echo "  git: OK" || echo "  git: MISSING"
 
 echo ""
 echo "Done. Start a new Claude Code session to use the framework."
+echo "Git pre-push hook installed: docs auto-regenerate before every push."
