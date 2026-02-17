@@ -137,7 +137,7 @@ COMPLEXITY_SIGNALS = {
     "simple": [
         "fix typo", "rename", "update version", "change color",
         "add comment", "remove unused", "small change", "quick fix",
-        "one line", "simple",
+        "simple",
     ],
     "moderate": [
         "add feature", "implement", "create endpoint", "add validation",
@@ -148,11 +148,14 @@ COMPLEXITY_SIGNALS = {
         "full stack", "end to end", "overhaul",
         "integrate", "pipeline", "rest api", "graphql", "rate limit",
         "caching", "websocket", "middleware", "api with",
+        "clean it up", "clean up", "go over", "go through",
+        "working together", "for a reason",
     ],
     "massive": [
         "entire codebase", "all files", "whole project", "everything",
         "from scratch", "rewrite", "rebuild", "migrate database",
         "monorepo", "microservices", "migrate all", "across the entire",
+        "the whole thing", "whole thing",
     ],
 }
 
@@ -179,7 +182,7 @@ TASK_TYPE_SIGNALS = {
     ],
     "review": [
         "review", "audit", "scan", "check", "inspect", "evaluate",
-        "assess",
+        "assess", "go over", "clean it up", "clean up", "tidy",
     ],
     "document": [
         "document", "readme", "docs", "api doc", "comment", "jsdoc",
@@ -219,6 +222,7 @@ SCOPE_SIGNALS = {
         "across the project", "project-wide", "global", "throughout",
         "codebase", "all components", "every file", "entire", "across the",
         "all of", "complete", "comprehensive", "entire project",
+        "the whole thing", "whole thing", "project folder",
     ],
     "unknown": [
         "how does", "where is", "explore",
