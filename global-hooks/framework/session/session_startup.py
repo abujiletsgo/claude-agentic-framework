@@ -26,7 +26,11 @@ def emit(obj):
 def main():
     """Run all startup hooks in sequence."""
     # Read hook input once (sub-hooks use hook_event_name from JSON)
-    hook_input = json.loads(sys.stdin.read())
+    try:
+        raw = sys.stdin.read()
+        hook_input = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError:
+        hook_input = {}
     hook_input_str = json.dumps(hook_input)
 
     hooks = [

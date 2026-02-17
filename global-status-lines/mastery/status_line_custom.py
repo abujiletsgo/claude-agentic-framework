@@ -106,16 +106,17 @@ def get_model_tier(hook_input):
 
 def get_active_team_members():
     """
-    Detect active team members from team config or task list.
+    Detect active team members from team config for the current session only.
 
     Returns: list of agent names currently working
     """
     team_members = []
+    session_id = os.environ.get("CLAUDE_SESSION_ID", "")
 
-    # Check for team config
-    session_id = os.environ.get("CLAUDE_SESSION_ID", "unknown")
+    # No session ID means we can't filter — return empty to avoid stale configs
+    if not session_id:
+        return []
 
-    # Try to find team config
     team_config_paths = [
         Path.home() / ".claude" / "teams",
         Path.cwd() / ".claude" / "teams"
@@ -125,22 +126,24 @@ def get_active_team_members():
         if not teams_dir.exists():
             continue
 
-        # Find team configs
         for team_file in teams_dir.glob("*/config.json"):
             try:
                 with open(team_file, 'r') as f:
                     team_data = json.load(f)
-                    members = team_data.get("members", [])
 
-                    # Extract agent types
-                    for member in members:
+                    # Only show teams for the current session
+                    lead_session = team_data.get("leadSessionId", "")
+                    if lead_session != session_id:
+                        continue
+
+                    for member in team_data.get("members", []):
                         agent_type = member.get("agentType", "unknown")
                         if agent_type and agent_type not in team_members:
                             team_members.append(agent_type)
             except Exception:
                 continue
 
-    return team_members[:5]  # Limit to 5 activities max
+    return team_members[:5]
 
 def check_compaction_active():
     """Check if auto context compaction is active (flag written by auto_context_manager)."""
