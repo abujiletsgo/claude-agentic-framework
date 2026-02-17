@@ -506,7 +506,370 @@ This is intentional: permission prompts interrupt flow. The hook system provides
 
 ---
 
-## 10. Troubleshooting
+## 10. Context Compaction
+
+Claude Code automatically compacts the conversation context when it approaches the context window limit. Without intervention, compaction causes the agent to "forget" what tasks are in progress, which files were modified, and what decisions were made. The `pre_compact_preserve.py` hook prevents this.
+
+### How It Works
+
+The `PreCompact` hook fires before any compaction (auto or manual). The hook reads the live session transcript (JSONL file), extracts critical state, then injects that state as `additionalContext` so the compaction summary includes it.
+
+```
+Context approaches limit
+       │
+       ▼
+PreCompact hook fires
+  └─ pre_compact_preserve.py reads transcript JSONL
+       ├─ Scans TaskCreate/TaskUpdate calls → finds in-progress tasks
+       ├─ Scans Write/Edit calls → finds modified files this session
+       ├─ Scans Bash calls → finds test commands run
+       └─ Extracts key decisions from assistant messages
+       │
+       ▼
+Injects preservation block into compaction prompt:
+  "PRESERVE ACROSS COMPACTION:
+   Active tasks: [task 1, task 2, ...]
+   Modified files: [src/auth.py, tests/test_auth.py, ...]
+   Last test command: pytest tests/ -v
+   Key decisions: ..."
+       │
+       ▼
+Claude Code compacts, but the summary retains the extracted state
+       │
+       ▼
+Work continues with no lost context
+```
+
+### What Gets Preserved
+
+| Item | Source | Example |
+|------|--------|---------|
+| Active tasks | TaskCreate/TaskUpdate tool calls | "Implement OAuth2 login [in_progress]" |
+| Modified files | Write/Edit tool calls | `src/auth.py`, `templates/login.html` |
+| Test commands | Bash tool calls matching `pytest/jest/npm test` | `pytest tests/test_auth.py -v` |
+| Key decisions | Assistant messages with decision language | "Decided to use JWT over sessions because..." |
+
+### Without This Hook
+
+Without `pre_compact_preserve.py`, after compaction Claude would:
+- Ask "what are we working on?" (lost task list)
+- Re-read files it already read (wasted tokens)
+- Forget which tests were passing/failing
+- Make decisions inconsistent with earlier choices
+
+### Configuration
+
+The hook is non-configurable — it runs automatically on every `PreCompact` event and always exits 0 (never blocks compaction).
+
+---
+
+## 11. Multi-Agent Teams
+
+The framework includes a full team coordination system for orchestrating multiple Claude agents in parallel. The `teams/` directory provides four hooks that enforce clean separation of concerns between the lead agent and its teammates.
+
+### Team Architecture
+
+```
+Lead Agent (coordinates)
+    │
+    ├─ Task(agent="builder")   → Builder (implements)
+    ├─ Task(agent="validator") → Validator (verifies)
+    └─ Task(agent="researcher")→ Researcher (analyzes)
+
+Rules enforced by hooks:
+  - Lead agent cannot Write/Edit when teammates are active
+  - Teammates cannot spawn their own sub-teams
+  - Tasks must pass validation before marking completed
+  - Teammates must validate deliverables before going idle
+```
+
+### Team Hooks (in `global-hooks/framework/teams/`)
+
+These four hooks are **available but not registered in `settings.json.template` by default** — they're opt-in for projects that use the team system. Add them to your template to enable.
+
+#### anti_loop_team.py (PreToolUse: Task)
+
+Prevents recursive team creation and resource exhaustion.
+
+- Blocks teammates from spawning sub-teams (only lead can delegate)
+- Enforces hierarchy depth limit: `MAX_HIERARCHY_DEPTH = 2` (Main → Team → Stop)
+- Enforces concurrent agent limit: `MAX_ACTIVE_AGENTS = 8`
+- Warns at `WARN_THRESHOLD = 6` active agents
+
+#### delegate_mode_enforcer.py (PreToolUse: Write/Edit)
+
+Forces the lead agent into coordination-only mode while teammates are active.
+
+- Checks if any teammate sessions are active
+- If yes: blocks Write/Edit on implementation files
+- If yes: allows Write/Edit on coordination-only paths: `data/team-context/`, `.claude/plans/`
+- Lead must use Task tool to delegate instead of implementing directly
+
+This prevents context conflicts where both the lead and a teammate modify the same file simultaneously.
+
+#### task_validator.py (TaskCompleted)
+
+Runs when a task is marked `completed` via `TaskUpdate`. Verifies the task is actually done.
+
+Checks:
+- File changes were actually made (not just a status update)
+- Tests pass (if applicable)
+- Task requirements in the description are met
+- No obvious errors remain
+
+Exits 2 (blocks completion) if validation fails, feeding reason back to Claude.
+
+#### teammate_monitor.py (TeammateIdle)
+
+Runs when a teammate is about to go idle. Validates work is complete before allowing it.
+
+Checks:
+- Task status is completed (not still in_progress)
+- Deliverables are present
+- No blockers remain
+
+Also triggers context-manager to create a compressed summary of the teammate's work, so the lead can load it efficiently.
+
+### Registering Team Hooks
+
+To opt in, add to `templates/settings.json.template`:
+
+```json
+"TeammateIdle": [{"hooks": [{"type": "command", "command": "uv run __REPO_DIR__/global-hooks/framework/teams/teammate_monitor.py", "timeout": 10}]}],
+"TaskCompleted": [{"hooks": [{"type": "command", "command": "uv run __REPO_DIR__/global-hooks/framework/teams/task_validator.py", "timeout": 10}]}],
+```
+
+And add to `PreToolUse`:
+```json
+{"matcher": "Write|Edit", "hooks": [{"type": "command", "command": "uv run __REPO_DIR__/global-hooks/framework/teams/delegate_mode_enforcer.py", "timeout": 5}]},
+{"matcher": "Task", "hooks": [{"type": "command", "command": "uv run __REPO_DIR__/global-hooks/framework/teams/anti_loop_team.py", "timeout": 5}]}
+```
+
+### Auto Team Review (auto_team_review.py)
+
+This PostToolUse hook (Write/Edit, already registered) detects when team work completes and automatically runs a quality stack:
+- code-review skill (Sonnet)
+- security-scanner skill (Opus)
+- test-generator skill (Sonnet)
+
+Logic: simple tasks (no team) → skip auto-review (save tokens). Complex tasks (TeamCreate detected in session) → run full review stack after completion (~$2-4 per team).
+
+### Auto Review Team (auto_review_team.py)
+
+This PreToolUse hook (Bash, already registered) detects PR creation commands (`gh pr create`, `git push` with pr/ branch) and offers to spawn a parallel review team:
+- Security reviewer (Opus) — vulnerabilities, auth issues
+- Performance reviewer (Sonnet) — bottlenecks, complexity
+- Architecture reviewer (Opus) — design patterns, maintainability
+
+Always exits 0 (never blocks the PR command, just offers the team).
+
+### Team Logs
+
+All team hooks write JSONL to `~/.claude/logs/teams/`:
+```bash
+tail -f ~/.claude/logs/teams/anti_loop_team.jsonl
+tail -f ~/.claude/logs/teams/task_validator.jsonl
+```
+
+---
+
+## 12. Context Bundle / Session Restore
+
+The context bundle system creates a "save game" of what the agent has read and done, so a new session can be restored to the same knowledge state with zero token waste.
+
+### How Bundles Work
+
+`context-bundle-logger.py` runs on every PostToolUse event (Bash/Write/Edit). It logs:
+- Every file Read, Edit, Write, NotebookEdit this session
+- The content read/written and timestamps
+- Tool successes/failures
+
+Bundles are stored at `~/.claude/bundles/{session_id}.json`.
+
+### Restoring a Bundle
+
+Use the `/loadbundle` command at the start of a new session:
+
+```
+/loadbundle
+```
+
+This reads the most recent bundle file and injects all the file content Claude previously read back into context — without re-reading each file. Instead of 10 Read tool calls (10 × context cost), it's one bundle load.
+
+**Token savings**: For a session that read 20 files totaling 3000 lines, restoring from bundle costs ~200 tokens vs ~6000 tokens to re-read.
+
+### Bundle Location
+
+```bash
+ls ~/.claude/bundles/
+cat ~/.claude/bundles/<session_id>.json | python3 -m json.tool | head -50
+```
+
+---
+
+## 13. Auto-Hooks Ecosystem
+
+The PostToolUse hooks form an automation layer that fires background intelligence after every tool call. Here's what each actually does:
+
+### auto_error_analyzer.py (PostToolUse: Bash)
+
+Fires after every Bash tool call. If the exit code is non-zero:
+1. Reads the error output
+2. Identifies the error category (syntax, import, permission, network, etc.)
+3. Injects a brief diagnosis and suggested fix as `additionalContext`
+
+This means Claude sees "PermissionError: [Errno 13]" AND the diagnosis "File permission issue — check file ownership with `ls -la`" in the same turn.
+
+### auto_refine.py (PostToolUse: Write/Edit)
+
+Fires after every Write or Edit. Checks if the written content has obvious issues (syntax errors detectable without running code, incomplete implementations, TODO markers). If issues are found, injects a suggestion to run `/refine`.
+
+### auto_dependency_audit.py (PostToolUse: Write/Edit)
+
+Fires when `package.json`, `pyproject.toml`, `requirements.txt`, or similar dependency files are written/edited. Checks for:
+- Known vulnerable package versions
+- Outdated major versions
+- Missing security-relevant packages
+
+Timeout is 15s because it may call external APIs.
+
+### auto_cost_warnings.py (PostToolUse: *)
+
+Fires after every tool call. Reads the session cost from the environment/session state. If cumulative cost exceeds the configured threshold, injects a warning: "Session cost is $X.XX — consider compacting context."
+
+### auto_context_manager.py (PostToolUse: Bash/Write/Edit)
+
+Monitors context health (token usage as a percentage of the window). When usage exceeds a threshold:
+- Suggests specific files that can be dropped from context
+- Suggests running `/prime` to reload only what's needed
+- May trigger pre-compact preservation proactively
+
+### auto_voice_notifications.py (PostToolUse: Bash/Write/Edit)
+
+Fires on macOS via the `say` command (no-op on other platforms). Speaks an alert when:
+- A long-running operation completes (> configured threshold)
+- An error requires attention
+- A session milestone is reached
+
+Tuned to avoid false positives — only speaks for genuinely noteworthy events.
+
+---
+
+## 14. Commands Reference
+
+All 13 slash commands available after installation:
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `/prime` | Load project context with git-aware caching | Start of every session; instant on repeat calls |
+| `/orchestrate "goal"` | Multi-agent coordination via orchestrator agent (Opus) | Complex tasks with 5+ steps or multiple concerns |
+| `/research "topic"` | Delegate heavy research to sub-agent | Exploring unknown codebases, documentation lookup |
+| `/rlm` | Recursive Language Model controller | Infinite-scale codebase analysis without context rot |
+| `/fusion` | Best-of-N parallel agents, synthesized | Critical code where correctness matters most |
+| `/plan "feature"` | Engineering implementation planning | Before starting a new feature or refactor |
+| `/review` | Code review via code-review skill | After writing code; pre-PR quality check |
+| `/refine` | Auto-fix review findings | After `/review` identifies issues |
+| `/test` | Run or generate tests | TDD workflow; adding coverage to existing code |
+| `/commit` | Smart commit with conventional message | After completing a unit of work |
+| `/debug` | Diagnose and fix errors | When stuck on a failing test or error |
+| `/costs` | API usage and cost tracking | Budget monitoring |
+| `/loadbundle` | Restore agent intelligence from bundle | New session continuing previous work |
+
+### Command Implementation
+
+Each command is a Markdown file in `global-commands/` (symlinked to `~/.claude/commands/`). The file contains a system prompt that Claude follows when the command is invoked. Commands are not scripts — they're instructions.
+
+To add a custom command:
+1. Create `global-commands/my-command.md`
+2. Run `bash install.sh` to symlink it
+
+---
+
+## 15. Skills Reference
+
+Six skills available after installation (symlinked to `~/.claude/skills/`):
+
+| Skill | Invocation | Model | Purpose |
+|-------|-----------|-------|---------|
+| `code-review` | `/review` or `use code-review` | Sonnet | Bugs, security, performance, style |
+| `error-analyzer` | `/debug` or `use error-analyzer` | Sonnet | Root cause analysis for errors/exceptions |
+| `knowledge-db` | `use knowledge-db` | Haiku | Query/store persistent SQLite knowledge |
+| `refactoring-assistant` | `use refactoring-assistant` | Sonnet | Safe refactoring with incremental changes |
+| `security-scanner` | `use security-scanner` | Opus | Vulnerability detection, OWASP top 10 |
+| `test-generator` | `/test` or `use test-generator` | Sonnet | Comprehensive test suite generation |
+
+Skills are Markdown files with a system prompt. The Caddy classifier automatically suggests relevant skills based on the user's prompt.
+
+### Skills Integrity Verification
+
+At session start, `session_startup.py` verifies the SHA-256 hash of each skill file against a lock file. If a skill has been tampered with, it's flagged before being loaded. The lock file is generated by `scripts/generate_skills_lock.py`.
+
+---
+
+## 16. Observability Dashboard
+
+A Vue 3 + Bun app provides real-time visibility into hook execution, agent activity, and cost tracking.
+
+### Running the Dashboard
+
+```bash
+cd apps/observability
+bun install
+bun run dev
+```
+
+- **Frontend**: http://localhost:5173 (Vue 3, Vite)
+- **Backend**: http://localhost:4000 (Bun HTTP server)
+
+### What It Shows
+
+- **Hook Activity**: Live feed of every hook execution, its exit code, and any output
+- **Cost Tracking**: Per-session and cumulative API costs
+- **Agent Activity**: Which sub-agents have been spawned and their completion status
+- **Error Log**: Aggregated errors from all hook executions
+- **Context Health**: Token usage over time within a session
+
+### Data Source
+
+The observability backend reads from the same JSONL logs that the hooks write:
+- `~/.claude/logs/caddy/analyses.jsonl`
+- `~/.claude/logs/teams/*.jsonl`
+- `~/.claude/bundles/`
+
+---
+
+## 17. Status Line
+
+The framework includes a custom status line (`global-status-lines/mastery/v9/`) that replaces Claude Code's default status bar.
+
+### What It Shows
+
+```
+[main ✓] 3 agents | $0.42 | 47% ctx | 14:32
+```
+
+- **Git branch + status**: current branch, dirty/clean indicator
+- **Active agents**: count of sub-agents spawned this session
+- **Session cost**: cumulative API cost
+- **Context usage**: percentage of context window used
+- **Time**: current time
+
+### Configuration
+
+The status line is registered in `templates/settings.json.template`:
+```json
+"statusLine": {
+  "type": "command",
+  "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_custom.py",
+  "padding": 0
+}
+```
+
+It runs as a command and outputs a single line. Keep it fast (< 100ms) — it fires frequently.
+
+---
+
+## 18. Troubleshooting
 
 ### Hook is firing but doing nothing
 
@@ -577,7 +940,7 @@ global-hooks/
       auto_refine.py
       auto_review_team.py
       auto_team_review.py
-      repo_map.py           ← NEW: TreeSitter symbol index
+      repo_map.py           TreeSitter symbol index (≥200 files)
     caddy/                  UserPromptSubmit classifier
       analyze_request.py
       auto_delegate.py
