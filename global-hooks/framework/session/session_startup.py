@@ -106,7 +106,9 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
+        log("main() completed OK")
+    except Exception as _e:
+        log(f"main() raised: {type(_e).__name__}: {_e}")
         # Last-resort guard: always exit 0 with valid JSON
         try:
             sys.stdout.write("{}\n")

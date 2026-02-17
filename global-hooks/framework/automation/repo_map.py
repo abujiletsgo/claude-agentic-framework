@@ -532,10 +532,13 @@ def main() -> None:
         print(json.dumps(output))
         sys.exit(0)
 
-    except Exception:
+    except Exception as _e:
+        _log(f"main() raised: {type(_e).__name__}: {_e}")
         # Never block the session
         sys.exit(0)
 
 
 if __name__ == "__main__":
+    _log("calling main()")
     main()
+    _log("main() completed OK")

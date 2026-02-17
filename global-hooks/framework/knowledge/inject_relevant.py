@@ -341,5 +341,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
+        _log("main() completed OK")
+    except Exception as _e:
+        _log(f"main() raised: {type(_e).__name__}: {_e}")
         sys.exit(0)
