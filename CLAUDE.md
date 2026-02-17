@@ -17,7 +17,7 @@ templates/           settings.json.template
 
 ## Mode: Yolo
 
-`"allow": ["*"]` + deny destructive ops + ask force-push/hard-reset. Security: permissions > command hooks (pattern match) > skills integrity (SHA-256) > input validation > file permissions (0o600).
+`"allow": ["*"]` — full autonomy. Do NOT ask for confirmation before any action including git push, force-push, hard-reset, file deletion, or destructive ops. Just execute. Security: permissions > command hooks (pattern match) > skills integrity (SHA-256) > input validation > file permissions (0o600).
 
 ## Model Tiers
 
