@@ -207,7 +207,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
-            "timeout": 30
+            "timeout": 90
           }
         ]
       }
