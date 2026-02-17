@@ -91,4 +91,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        # Last-resort guard: always exit 0 with valid JSON
+        try:
+            sys.stdout.write("{}\n")
+        except Exception:
+            pass
+        sys.exit(0)
