@@ -298,8 +298,6 @@ class TestTierFallback:
 # ===========================================================================
 
 
-class TestModelTierConfiguration:
-    """Tests for model tier configuration files."""
 
     def test_tier_assignment_consistency(self):
         """Validate that tier assignments make sense (expensive models for complex tasks)."""
