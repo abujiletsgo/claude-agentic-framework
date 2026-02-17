@@ -274,7 +274,7 @@ def format_injection(learnings):
 def main():
     try:
         input_data = json.loads(sys.stdin.read())
-    except (json.JSONDecodeError, ValueError):
+    except Exception:
         sys.exit(0)
 
     config = load_config()
