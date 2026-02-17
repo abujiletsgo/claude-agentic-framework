@@ -68,22 +68,14 @@ def detect_task_completion(hook_input):
 def detect_error_or_attention(hook_input):
     """Detect if there's an error or attention needed."""
     tool_name = hook_input.get("tool_name", "")
-    tool_response = str(hook_input.get("tool_response", ""))
+    tool_response = hook_input.get("tool_response", {})
 
-    # Check for error indicators in tool response
-    error_indicators = [
-        "error",
-        "failed",
-        "exception",
-        "attention needed",
-        "critical"
-    ]
-
-    output_lower = tool_response.lower()
-
-    for indicator in error_indicators:
-        if indicator in output_lower:
-            return True, indicator
+    # Only alert on actual Bash failures (non-zero exit code)
+    if tool_name == "Bash":
+        if isinstance(tool_response, dict):
+            exit_code = tool_response.get("exit_code", 0)
+            if exit_code != 0:
+                return True, "bash_failure"
 
     return False, None
 
