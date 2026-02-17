@@ -183,7 +183,8 @@ def check_bash_command(command, config):
     for zero_path in zero_access_paths:
         if is_glob_pattern(zero_path):
             try:
-                if re.search(glob_to_regex(zero_path), command, re.IGNORECASE):
+                # Use (?!\w) to avoid false positives like *.key matching d.keys() or *.dump matching json.dumps
+                if re.search(glob_to_regex(zero_path) + r'(?!\w)', command, re.IGNORECASE):
                     return True, False, f"Blocked: zero-access pattern {zero_path} (no operations allowed)"
             except re.error:
                 continue

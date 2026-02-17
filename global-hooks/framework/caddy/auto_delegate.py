@@ -269,6 +269,7 @@ def main():
             classify_complexity,
             classify_task_type,
             classify_quality_need,
+            classify_codebase_scope,
             select_strategy,
             estimate_confidence,
             detect_skills,
@@ -277,8 +278,9 @@ def main():
         complexity = classify_complexity(prompt)
         task_type = classify_task_type(prompt)
         quality = classify_quality_need(prompt)
+        codebase_scope = classify_codebase_scope(prompt)
         skills = detect_skills(prompt)
-        base_strategy = select_strategy(complexity, task_type, quality)
+        base_strategy = select_strategy(complexity, task_type, quality, codebase_scope)
         confidence = estimate_confidence(
             complexity, task_type, quality, skills, len(prompt)
         )
@@ -307,47 +309,72 @@ def main():
             }
             f.write(json.dumps(log_entry) + "\n")
 
-        # Build output message
-        output_lines = []
+        # Only inject for non-direct strategies — direct tasks need no orchestration
+        if base_strategy == "direct":
+            sys.exit(0)
 
-        # Only show delegation plan for non-simple tasks
-        if base_strategy != "direct":
-            output_lines.append(
-                f"[Caddy Delegation] Strategy: {plan['strategy'].upper()}"
+        # Build mandatory orchestration instruction
+        STRATEGY_INSTRUCTIONS = {
+            "orchestrate": (
+                "MANDATORY AUTO-ORCHESTRATION: This task requires multi-agent coordination.\n"
+                "You MUST invoke the orchestrator as your FIRST action:\n"
+                "  → Use the Task tool with subagent_type='orchestrator'\n"
+                "  → Pass the complete user request to the orchestrator\n"
+                "  → Do NOT attempt direct execution — spawn the orchestrator first."
+            ),
+            "rlm": (
+                "MANDATORY RLM MODE: This task spans a large codebase and requires iterative exploration.\n"
+                "You MUST use the /rlm pattern as your FIRST action:\n"
+                "  → Use the Skill tool with skill='rlm'\n"
+                "  → RLM will search-isolate-delegate-synthesize across the codebase\n"
+                "  → Do NOT attempt direct reading of large files — delegate via RLM."
+            ),
+            "fusion": (
+                "MANDATORY FUSION MODE: This is a critical-quality task requiring best-of-N approach.\n"
+                "You MUST use the /fusion pattern as your FIRST action:\n"
+                "  → Use the Skill tool with skill='fusion'\n"
+                "  → Three parallel agents will independently solve, then fuse the best solution\n"
+                "  → Do NOT attempt direct execution for critical-quality tasks."
+            ),
+            "research": (
+                "MANDATORY RESEARCH DELEGATION: This task requires information gathering first.\n"
+                "You MUST delegate research as your FIRST action:\n"
+                "  → Use the Task tool with subagent_type='researcher'\n"
+                "  → Let the researcher explore and synthesize findings\n"
+                "  → Only proceed to implementation after research is complete."
+            ),
+            "brainstorm": (
+                "MANDATORY PLANNING PHASE: This task requires design exploration before implementation.\n"
+                "You MUST brainstorm before coding:\n"
+                "  → Use the Skill tool with skill='plan'\n"
+                "  → Present 2-3 design options with trade-offs to the user\n"
+                "  → Get user approval on the approach before writing any code."
+            ),
+        }
+
+        instruction = STRATEGY_INSTRUCTIONS.get(base_strategy)
+        if not instruction:
+            sys.exit(0)
+
+        context_lines = [
+            f"🤖 AUTO-ORCHESTRATION [{base_strategy.upper()}]",
+            f"Classification: {complexity} {task_type} | quality: {quality} | confidence: {round(confidence, 2):.0%}",
+            "",
+            instruction,
+        ]
+
+        if plan.get("skills_to_invoke"):
+            context_lines.append(
+                f"\nSkills pipeline: {' → '.join(plan['skills_to_invoke'])}"
             )
-            output_lines.append(
-                f"[Caddy Delegation] {plan['description']}"
-            )
 
-            if plan.get("command"):
-                output_lines.append(
-                    f"[Caddy Delegation] Suggested command: {plan['command']}"
-                )
-
-            if plan.get("skill"):
-                output_lines.append(
-                    f"[Caddy Delegation] Suggested skill: {plan['skill']}"
-                )
-
-            if plan.get("skills_to_invoke"):
-                output_lines.append(
-                    "[Caddy Delegation] Skills pipeline: "
-                    + " -> ".join(plan["skills_to_invoke"])
-                )
-
-            if plan["context_needed"].get("prime_project"):
-                output_lines.append(
-                    "[Caddy Delegation] Context: "
-                    "Prime project first (/prime)"
-                )
-
-        if output_lines:
-            output = {
-                "message": "\n".join(output_lines),
-                "caddy_delegation": plan,
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": "\n".join(context_lines),
             }
-            print(json.dumps(output))
-
+        }
+        print(json.dumps(output))
         sys.exit(0)
 
     except Exception:

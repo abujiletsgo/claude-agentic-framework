@@ -61,32 +61,30 @@ def get_cached_hash(cache_file):
     return None
 
 
-def load_context_silently(cache_file):
-    """Load cached context into internal understanding (no output).
-
-    This function would be called by Claude Code to inject the cached
-    context into the conversation context. For now, we just validate
-    the cache exists and is loadable.
-    """
+def load_cached_context(cache_file):
+    """Load cached context and return content if valid."""
     try:
         if not cache_file.exists():
-            return False
+            return None
 
-        # Validate file is readable and has content
+        # Read and validate content
         with open(cache_file, "r") as f:
             content = f.read()
 
         # Basic validation: should have git hash comment and content
         if "GIT_HASH:" in content and len(content) > 500:
-            return True
+            return content
     except Exception:
         pass
-    return False
+    return None
 
 
-def emit_and_exit():
+def emit_and_exit(message=None):
     """Output valid JSON and exit 0."""
-    print(json.dumps({"result": "continue"}))
+    result = {"result": "continue"}
+    if message:
+        result["message"] = message
+    print(json.dumps(result))
     sys.exit(0)
 
 
@@ -121,8 +119,11 @@ def main():
         if current_hash != cached_hash:
             emit_and_exit()
 
-        # Cache is valid - load silently
-        load_context_silently(cache_file)
+        # Cache is valid - load it
+        cached_content = load_cached_context(cache_file)
+        if cached_content:
+            # Emit the cached context as a message so Claude receives it
+            emit_and_exit(message=cached_content)
 
     except Exception as e:
         print(f"Auto prime error (non-blocking): {e}", file=sys.stderr)

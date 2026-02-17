@@ -660,10 +660,12 @@ def main():
                     f"[Caddy] Guidance: {strategy_guidance[strategy]}"
                 )
 
-            # Output as user-visible context injection
+            # Output using correct UserPromptSubmit format
             output = {
-                "message": "\n".join(suggestions),
-                "caddy": analysis["caddy_analysis"],
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": "\n".join(suggestions),
+                }
             }
             print(json.dumps(output))
 

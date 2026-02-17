@@ -74,12 +74,16 @@ def main():
             # Non-blocking - log but continue
             sys.stderr.write(f"Startup hook {hook_path} error: {e}\n")
 
-    # Build final result
-    result = {"result": "continue"}
+    # Build final result using correct SessionStart format
     if messages:
-        result["message"] = "\n".join(messages)
-
-    emit(result)
+        emit({
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": "\n".join(messages)
+            }
+        })
+    else:
+        emit({})
 
 
 if __name__ == "__main__":
