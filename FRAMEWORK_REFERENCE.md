@@ -131,7 +131,7 @@ All 22 hooks, their events, matchers, timeouts, and purposes.
 | `framework/automation/auto_error_analyzer.py` | Bash | 8s | Yes | Analyze Bash failures, suggest fixes |
 | `framework/automation/auto_refine.py` | Write\|Edit | 6s | Yes | Trigger `/refine` on new writes |
 | `framework/automation/auto_dependency_audit.py` | Write\|Edit | 15s | Yes | Check for vulnerable/outdated deps |
-| `framework/context/auto_context_manager.py` | Bash\|Write\|Edit | 5s | Yes | Monitor context health, trigger compaction |
+| `framework/context/auto_context_manager.py` | Bash\|Write\|Edit | 5s | Yes | At 70%+ context: detect cold completed tasks, write pre-computed summaries to disk |
 | `framework/notifications/auto_voice_notifications.py` | Bash\|Write\|Edit | 5s | Yes | macOS voice alerts on completion/errors |
 | `framework/automation/auto_team_review.py` | Write\|Edit | 5s | Yes | Spawn team review after significant writes |
 | `framework/knowledge/extract_learnings.py` | Bash\|Write\|Edit | 5s | Yes | Extract learnings from session for later storage |
@@ -148,7 +148,7 @@ All 22 hooks, their events, matchers, timeouts, and purposes.
 
 | Script | Timeout | Circuit Breaker | Purpose |
 |--------|---------|-----------------|---------|
-| `framework/context/pre_compact_preserve.py` | 10s | No | Preserve task list state, file paths, and decisions through context compaction |
+| `framework/context/pre_compact_preserve.py` | 10s | No | Inject tasks, files, decisions, errors, git diff, and pre-computed summaries into compaction prompt |
 
 ### UserPromptSubmit (2 hooks)
 
@@ -508,58 +508,97 @@ This is intentional: permission prompts interrupt flow. The hook system provides
 
 ## 10. Context Compaction
 
-Claude Code automatically compacts the conversation context when it approaches the context window limit. Without intervention, compaction causes the agent to "forget" what tasks are in progress, which files were modified, and what decisions were made. The `pre_compact_preserve.py` hook prevents this.
+Claude Code automatically compacts the conversation context when it approaches the context window limit (~95%). Without intervention, compaction causes the agent to lose task state, file history, decisions, and errors. Two hooks work together as a pipeline to prevent this.
 
-### How It Works
-
-The `PreCompact` hook fires before any compaction (auto or manual). The hook reads the live session transcript (JSONL file), extracts critical state, then injects that state as `additionalContext` so the compaction summary includes it.
+### Two-Hook Pipeline
 
 ```
-Context approaches limit
-       │
-       ▼
-PreCompact hook fires
-  └─ pre_compact_preserve.py reads transcript JSONL
-       ├─ Scans TaskCreate/TaskUpdate calls → finds in-progress tasks
-       ├─ Scans Write/Edit calls → finds modified files this session
-       ├─ Scans Bash calls → finds test commands run
-       └─ Extracts key decisions from assistant messages
-       │
-       ▼
-Injects preservation block into compaction prompt:
-  "PRESERVE ACROSS COMPACTION:
-   Active tasks: [task 1, task 2, ...]
-   Modified files: [src/auth.py, tests/test_auth.py, ...]
-   Last test command: pytest tests/ -v
-   Key decisions: ..."
-       │
-       ▼
-Claude Code compacts, but the summary retains the extracted state
-       │
-       ▼
-Work continues with no lost context
+[PostToolUse @ 70%+ context — every 10 assistant turns]
+  auto_context_manager.py fires
+    └─ Builds task registry (TaskCreate tool_use_id → tool_result correlation)
+    └─ Finds cold tasks: completed + not referenced in 20+ turns
+    └─ For each cold task: extracts files, commands, outcomes from transcript
+    └─ Writes structured summary to ~/.claude/data/compressed_context/{hash}.json
+    └─ Skips tasks already summarized (idempotent)
+
+          ... session continues ...
+
+[PreCompact @ ~95% context — when Claude Code triggers compaction]
+  pre_compact_preserve.py fires
+    └─ Reads transcript: extracts active tasks, modified files, test commands
+    └─ Extracts key decisions from assistant messages (decision-signal keywords)
+    └─ Extracts recent Bash errors (command + error snippet)
+    └─ Runs git diff --stat HEAD (actual on-disk change state)
+    └─ Loads pre-computed summaries written by auto_context_manager
+    └─ Injects structured preservation block into compaction prompt
 ```
 
-### What Gets Preserved
+### What Gets Preserved at Compaction
 
-| Item | Source | Example |
-|------|--------|---------|
-| Active tasks | TaskCreate/TaskUpdate tool calls | "Implement OAuth2 login [in_progress]" |
-| Modified files | Write/Edit tool calls | `src/auth.py`, `templates/login.html` |
-| Test commands | Bash tool calls matching `pytest/jest/npm test` | `pytest tests/test_auth.py -v` |
-| Key decisions | Assistant messages with decision language | "Decided to use JWT over sessions because..." |
+| Item | Source | Detail |
+|------|--------|--------|
+| Active/in-progress tasks | TaskCreate + TaskUpdate correlation | Proper ID→subject matching via tool_result parsing |
+| Modified files | Write/Edit tool calls | All paths touched this session (up to 20) |
+| Test commands | Bash calls matching pytest/jest/etc | Last 5 unique commands |
+| Key decisions | Assistant text messages | Bullet points + short messages with decision language |
+| Recent errors | Bash tool results | Last 8 failures with command + error snippet |
+| Git diff stat | `git diff --stat HEAD` | Actual staged/unstaged changes on disk |
+| Pre-computed summaries | `~/.claude/data/compressed_context/` | Structured summaries written at 70% for cold tasks |
 
-### Without This Hook
+### Pre-Computed Summary Format
 
-Without `pre_compact_preserve.py`, after compaction Claude would:
-- Ask "what are we working on?" (lost task list)
-- Re-read files it already read (wasted tokens)
-- Forget which tests were passing/failing
-- Make decisions inconsistent with earlier choices
+For each cold completed task, `auto_context_manager.py` writes:
+
+```json
+{
+  "session_id": "abc-123",
+  "task_id": "1",
+  "subject": "Implement OAuth2 login flow",
+  "start_turn": 5,
+  "end_turn": 18,
+  "files_modified": ["src/auth/oauth2.py", "src/middleware/auth.py"],
+  "commands_run": ["pytest tests/test_auth.py -v"],
+  "key_outcomes": ["decided to use PKCE flow for public clients"],
+  "errors_resolved": ["AssertionError: JWT signature invalid — fixed RS256→HS256"]
+}
+```
+
+When `pre_compact_preserve.py` finds these files, it injects them verbatim as `PRE-COMPUTED TASK SUMMARIES` in the compaction prompt. The compaction model uses them directly instead of reconstructing old history from memory.
+
+### Compaction Prompt Injection
+
+```
+═══ COMPACTION PRESERVATION INSTRUCTIONS ═══
+📋 ACTIVE / IN-PROGRESS TASKS:
+  • Fix context manager transcript key bug
+
+📝 FILES MODIFIED THIS SESSION:
+  • /src/auth/oauth2.py
+
+🧠 KEY DECISIONS MADE:
+  • decided to use PKCE flow for public clients
+
+⚠️ RECENT ERRORS:
+  • `pytest tests/` → FAILED tests/test_auth.py — AssertionError
+
+📦 GIT DIFF STAT:
+  src/auth/oauth2.py | 12 +++---
+
+📁 PRE-COMPUTED TASK SUMMARIES (use verbatim):
+  ▸ Task: Implement OAuth2 login flow
+    Files: src/auth/oauth2.py
+    → decided to use PKCE flow for public clients
+```
+
+### Limitations
+
+- **Cannot prevent hitting 95%** — hooks cannot modify the transcript. The pipeline makes compaction dramatically better, but still relies on Claude Code's compaction running at 95%.
+- **Summaries are hints, not guarantees** — the compaction model receives the preservation block as `additionalContext`. It is strongly guided but not forced.
+- **Best used with `/rlm` for very long sessions** — RLM mode keeps primary context thin by delegating to subagents, which is the most reliable way to avoid hitting the limit.
 
 ### Configuration
 
-The hook is non-configurable — it runs automatically on every `PreCompact` event and always exits 0 (never blocks compaction).
+Both hooks are non-configurable and always exit 0 (never block). The threshold (70%) and cold-turn window (20 turns) are constants in `auto_context_manager.py`.
 
 ---
 
@@ -739,10 +778,7 @@ Fires after every tool call. Reads the session cost from the environment/session
 
 ### auto_context_manager.py (PostToolUse: Bash/Write/Edit)
 
-Monitors context health (token usage as a percentage of the window). When usage exceeds a threshold:
-- Suggests specific files that can be dropped from context
-- Suggests running `/prime` to reload only what's needed
-- May trigger pre-compact preservation proactively
+Fires every 10 assistant turns. At 70%+ context usage, detects cold completed tasks (completed and not referenced in 20+ turns) and writes structured summaries to `~/.claude/data/compressed_context/`. Summaries capture files modified, commands run, key outcomes, and errors for each cold task. Each task is only summarized once (idempotent). These summaries are loaded by `pre_compact_preserve.py` when compaction fires, forming a two-hook pipeline that dramatically improves compaction quality.
 
 ### auto_voice_notifications.py (PostToolUse: Bash/Write/Edit)
 

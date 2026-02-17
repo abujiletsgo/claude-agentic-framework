@@ -117,14 +117,14 @@ See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
 | PostToolUse | auto_error_analyzer.py | Bash | Analyze Bash failures |
 | PostToolUse | auto_refine.py | Write\|Edit | Trigger refine on writes |
 | PostToolUse | auto_dependency_audit.py | Write\|Edit | Check deps |
-| PostToolUse | auto_context_manager.py | Bash\|Write\|Edit | Context health |
+| PostToolUse | auto_context_manager.py | Bash\|Write\|Edit | Pre-compress cold tasks to disk at 70%+ |
 | PostToolUse | auto_voice_notifications.py | Bash\|Write\|Edit | Voice alerts |
 | PostToolUse | auto_team_review.py | Write\|Edit | Team review after writes |
 | PostToolUse | extract_learnings.py | Bash\|Write\|Edit | Extract insights |
 | Stop | session_lock_manager.py | — | Cleanup all locks |
 | Stop | check_lthread_progress.py | — | Validate RLM state |
 | Stop | store_learnings.py | — | Persist knowledge to DB |
-| PreCompact | pre_compact_preserve.py | — | Preserve task state |
+| PreCompact | pre_compact_preserve.py | — | Inject tasks, decisions, errors, git diff + pre-computed summaries |
 
 ## Subsystems
 
