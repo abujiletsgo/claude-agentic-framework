@@ -29,7 +29,7 @@ def main():
     try:
         raw = sys.stdin.read()
         hook_input = json.loads(raw) if raw.strip() else {}
-    except json.JSONDecodeError:
+    except Exception:
         hook_input = {}
     hook_input_str = json.dumps(hook_input)
 
