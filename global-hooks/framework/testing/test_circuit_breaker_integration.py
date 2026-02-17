@@ -18,6 +18,8 @@ Run:
   uv run pytest test_circuit_breaker_integration.py -v
 """
 
+from __future__ import annotations
+
 import json
 import os
 import sys

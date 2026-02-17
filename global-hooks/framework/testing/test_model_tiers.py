@@ -17,6 +17,8 @@ Run:
   uv run pytest test_model_tiers.py -v
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re

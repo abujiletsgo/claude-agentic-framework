@@ -272,14 +272,15 @@ class TestRealSkillsDirectory:
             )
 
     def test_known_skills_present(self, real_skills):
-        """Check that key expected skills exist."""
+        """Check that key expected skills exist (v2.1.0 set)."""
         names = [s["dir_name"] for s in real_skills]
         expected_skills = [
-            "prime",
             "code-review",
             "test-generator",
-            "tdd-workflow",
             "knowledge-db",
+            "error-analyzer",
+            "security-scanner",
+            "refactoring-assistant",
         ]
         for skill_name in expected_skills:
             assert skill_name in names, f"Expected skill '{skill_name}' not found"
@@ -294,8 +295,8 @@ class TestRealSkillsDirectory:
         assert "Step" in body or "step" in body
 
     def test_skills_count_reasonable(self, real_skills):
-        """Should have a reasonable number of skills (not too few, not too many)."""
-        assert len(real_skills) >= 10, f"Only {len(real_skills)} skills found, expected >= 10"
+        """Should have a reasonable number of skills (v2.1.0 has 6 framework skills)."""
+        assert len(real_skills) >= 6, f"Only {len(real_skills)} skills found, expected >= 6"
         assert len(real_skills) <= 100, f"{len(real_skills)} skills found, seems too many"
 
 

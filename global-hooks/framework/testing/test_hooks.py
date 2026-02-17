@@ -37,6 +37,8 @@ Exit codes:
   2 = Configuration error
 """
 
+from __future__ import annotations
+
 import json
 import sys
 import os

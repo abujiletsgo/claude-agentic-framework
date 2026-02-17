@@ -148,6 +148,10 @@ COMPLEXITY_SIGNALS = {
     "moderate": [
         "add feature", "implement", "create endpoint", "add validation",
         "refactor", "update", "modify", "extend", "enhance",
+        "make tests", "write tests", "add tests", "all tests", "fix tests",
+        "every test", "each test", "all failing", "all errors",
+        "every subsystem", "each subsystem", "all subsystems",
+        "every feature", "each feature",
     ],
     "complex": [
         "authentication", "authorization", "redesign",
@@ -156,6 +160,9 @@ COMPLEXITY_SIGNALS = {
         "caching", "websocket", "middleware", "api with",
         "clean it up", "clean up", "go over", "go through",
         "working together", "for a reason",
+        "make tests for each", "make tests for every",
+        "tests for all", "tests for each and every",
+        "individually and complex", "and integrates all",
     ],
     "massive": [
         "entire codebase", "all files", "whole project", "everything",
@@ -229,6 +236,10 @@ SCOPE_SIGNALS = {
         "codebase", "all components", "every file", "entire", "across the",
         "all of", "complete", "comprehensive", "entire project",
         "the whole thing", "whole thing", "project folder",
+        "every subsystem", "each subsystem", "all subsystems",
+        "every component", "each component", "all components",
+        "each and everyone", "each and every",
+        "for each", "for every", "go over everything",
     ],
     "unknown": [
         "how does", "where is", "explore",
@@ -283,9 +294,26 @@ def detect_skills(text: str) -> list[dict]:
     return matches[:5]  # Top 5 matches
 
 
+def _detect_numeric_scale(text: str) -> bool:
+    """Return True if text mentions a large number (>10) of work items."""
+    import re
+    # Match patterns like "38 failing", "20 tests", "15 errors", "10+ files"
+    pattern = (
+        r'\b([1-9]\d+)\s*'
+        r'(?:failing|tests?|errors?|issues?|files?|items?|bugs?|fixes?|'
+        r'subsystems?|features?|functions?|components?|warnings?|failures?)\b'
+    )
+    matches = re.findall(pattern, text.lower())
+    return any(int(n) > 10 for n in matches)
+
+
 def classify_complexity(text: str) -> str:
     """Classify task complexity."""
-    return match_keywords(text, COMPLEXITY_SIGNALS)
+    base = match_keywords(text, COMPLEXITY_SIGNALS)
+    # Numeric scale bump: "38 failing tests", "20 files" etc. → at least moderate
+    if base == "simple" and _detect_numeric_scale(text):
+        return "moderate"
+    return base
 
 
 def classify_task_type(text: str) -> str:
@@ -562,7 +590,7 @@ def load_caddy_config() -> dict:
             "auto_invoke_threshold": 0.8,
             "always_suggest": True,
             "background_monitoring": True,
-            "haiku_fallback_threshold": 0.65,
+            "haiku_fallback_threshold": 0.80,
         }
     }
     config_path = Path.home() / ".claude" / "caddy_config.yaml"
@@ -621,7 +649,7 @@ def main():
         )
 
         # --- Haiku semantic fallback (fires when keyword confidence is low) ---
-        haiku_threshold = caddy_config.get("haiku_fallback_threshold", 0.65)
+        haiku_threshold = caddy_config.get("haiku_fallback_threshold", 0.80)
         classification_source = "keyword"
 
         haiku_confidence = None

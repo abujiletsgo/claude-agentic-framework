@@ -51,7 +51,7 @@ class TestLoadCaddyConfig(unittest.TestCase):
         with patch.object(Path, "exists", return_value=False):
             cfg = caddy.load_caddy_config()
         self.assertTrue(cfg["caddy"]["enabled"])
-        self.assertEqual(cfg["caddy"]["haiku_fallback_threshold"], 0.65)
+        self.assertEqual(cfg["caddy"]["haiku_fallback_threshold"], 0.80)
 
     def test_loads_valid_yaml(self):
         yaml_content = "caddy:\n  haiku_fallback_threshold: 0.5\n  always_suggest: false\n"
@@ -126,7 +126,7 @@ class TestLoadCaddyConfig(unittest.TestCase):
                 tmp.rename(expected)
                 cfg = caddy.load_caddy_config()
                 self.assertFalse(cfg["caddy"]["enabled"])         # overridden
-                self.assertEqual(cfg["caddy"]["haiku_fallback_threshold"], 0.65)  # default preserved
+                self.assertEqual(cfg["caddy"]["haiku_fallback_threshold"], 0.80)  # default preserved
         finally:
             if expected.exists():
                 expected.unlink()
@@ -384,7 +384,7 @@ class TestHookOutputFormat(unittest.TestCase):
                 "enabled": True,
                 "always_suggest": True,
                 "auto_invoke_threshold": 0.8,
-                "haiku_fallback_threshold": 0.65,
+                "haiku_fallback_threshold": 0.80,
             }
         }
         with patch("analyze_request.load_caddy_config", return_value=config), \

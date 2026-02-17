@@ -42,6 +42,7 @@ TEST_PATTERNS = [
     r'\bjest\b',
     r'\bmake\s+test\b',
     r'\buv\s+run\s+pytest\b',
+    r'\bbun\s+test\b',
 ]
 
 

@@ -292,10 +292,9 @@ class TestCircuitTransitions:
         # Record another failure
         state, changed = state_manager.record_failure("test_hook", "error_again")
 
-        # Circuit should remain open but not trigger state_changed
-        # (it was already open before half-open)
+        # Circuit transitions back to OPEN; HALF_OPEN → OPEN is a real state change
         assert state.state == CircuitState.OPEN.value
-        assert not changed  # No state change since circuit was already open
+        assert changed  # HALF_OPEN → OPEN transition is logged as state_changed
 
 
 class TestResetOperations:
