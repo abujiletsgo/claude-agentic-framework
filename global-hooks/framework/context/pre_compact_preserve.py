@@ -18,9 +18,12 @@ Exit: Always 0 (non-blocking)
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+SUMMARY_DIR = Path.home() / ".claude" / "data" / "compressed_context"
 
 
 def parse_transcript(transcript_path: str) -> list[dict]:
@@ -261,6 +264,25 @@ def extract_recent_errors(
     return errors[-8:]  # Keep last 8 errors
 
 
+def load_precomputed_summaries(session_id: str) -> list[dict]:
+    """
+    Load structured summaries written by auto_context_manager.py.
+    These are pre-computed for cold completed tasks and should be
+    injected verbatim into the compaction prompt.
+    """
+    if not session_id or not SUMMARY_DIR.exists():
+        return []
+    summaries = []
+    for p in SUMMARY_DIR.glob("*.json"):
+        try:
+            data = json.loads(p.read_text())
+            if data.get("session_id") == session_id:
+                summaries.append(data)
+        except Exception:
+            pass
+    return sorted(summaries, key=lambda x: x.get("end_turn") or 0)
+
+
 def get_git_diff_stat() -> str:
     """Run git diff --stat to capture what's actually changed on disk."""
     try:
@@ -285,7 +307,7 @@ def get_git_diff_stat() -> str:
         return ""
 
 
-def extract_key_context(messages: list[dict]) -> dict:
+def extract_key_context(messages: list[dict], session_id: str = "") -> dict:
     """Extract key context items from the transcript."""
     tool_calls = extract_tool_calls(messages)
     tool_results = extract_tool_results(messages)
@@ -349,6 +371,7 @@ def extract_key_context(messages: list[dict]) -> dict:
     key_decisions = extract_key_decisions(messages)
     recent_errors = extract_recent_errors(messages, tool_results)
     git_stat = get_git_diff_stat()
+    precomputed = load_precomputed_summaries(session_id)
 
     return {
         "active_tasks": ordered_tasks[-10:],
@@ -357,6 +380,7 @@ def extract_key_context(messages: list[dict]) -> dict:
         "key_decisions": key_decisions,
         "recent_errors": recent_errors,
         "git_diff_stat": git_stat,
+        "precomputed_summaries": precomputed,
     }
 
 
@@ -405,6 +429,20 @@ def build_preservation_instructions(context: dict, trigger: str) -> str:
             lines.append(f"  {line}")
         lines.append("")
 
+    if context.get("precomputed_summaries"):
+        lines.append("📁 PRE-COMPUTED TASK SUMMARIES (use these verbatim — already compressed):")
+        for s in context["precomputed_summaries"]:
+            lines.append(f"  ▸ Task: {s.get('subject', '?')}")
+            if s.get("files_modified"):
+                lines.append(f"    Files: {', '.join(s['files_modified'][:5])}")
+            if s.get("key_outcomes"):
+                for outcome in s["key_outcomes"][:3]:
+                    lines.append(f"    → {outcome}")
+            if s.get("errors_resolved"):
+                for err in s["errors_resolved"][:2]:
+                    lines.append(f"    ⚠ {err}")
+        lines.append("")
+
     lines += [
         "COMPACTION RULES:",
         "  1. Include ALL active/in-progress tasks with their current status",
@@ -412,8 +450,9 @@ def build_preservation_instructions(context: dict, trigger: str) -> str:
         "  3. Preserve all key decisions — these explain WHY things were done",
         "  4. Note any unresolved errors so work can resume correctly",
         "  5. Keep the git diff summary so the state of changes is clear",
-        "  6. Preserve next steps and in-progress work state",
-        "  7. Do NOT discard any pending/in-progress task context",
+        "  6. For PRE-COMPUTED SUMMARIES: use them verbatim, do not re-summarize",
+        "  7. Preserve next steps and in-progress work state",
+        "  8. Do NOT discard any pending/in-progress task context",
         "═══════════════════════════════════════════",
     ]
 
@@ -425,6 +464,7 @@ def main():
         input_data = json.load(sys.stdin)
         transcript_path = input_data.get("transcript_path", "")
         trigger = input_data.get("trigger", "auto")
+        session_id = input_data.get("session_id") or os.environ.get("CLAUDE_SESSION_ID", "")
 
         if not transcript_path:
             sys.exit(0)
@@ -433,7 +473,7 @@ def main():
         if not messages:
             sys.exit(0)
 
-        context = extract_key_context(messages)
+        context = extract_key_context(messages, session_id)
 
         has_content = any([
             context["active_tasks"],
@@ -442,6 +482,7 @@ def main():
             context["key_decisions"],
             context["recent_errors"],
             context["git_diff_stat"],
+            context["precomputed_summaries"],
         ])
 
         if not has_content:
