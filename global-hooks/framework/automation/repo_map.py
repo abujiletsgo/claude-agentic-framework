@@ -35,6 +35,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -495,6 +496,14 @@ def _log(msg):
         pass
 
 
+def _sigterm_handler(signum, frame):
+    _log("SIGTERM received -- killed by Claude Code timeout")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
 def main() -> None:
     _log("main() started")
     try:
@@ -503,7 +512,7 @@ def main() -> None:
 
         if file_count < THRESHOLD:
             # Small repo — silent exit, no overhead
-            sys.exit(0)
+            return
 
         git_hash = get_git_hash(root)
 
@@ -530,12 +539,10 @@ def main() -> None:
             }
         }
         print(json.dumps(output))
-        sys.exit(0)
 
     except Exception as _e:
         _log(f"main() raised: {type(_e).__name__}: {_e}")
         # Never block the session
-        sys.exit(0)
 
 
 if __name__ == "__main__":

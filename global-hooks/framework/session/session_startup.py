@@ -67,7 +67,7 @@ def main():
                 input=hook_input_str,
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=15
             )
 
             # Capture stderr warnings (like doc validation)

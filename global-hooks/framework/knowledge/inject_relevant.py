@@ -14,6 +14,7 @@ then injects them into the session via hookSpecificOutput.
 
 import json
 import os
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -281,23 +282,31 @@ def _log(msg):
         pass
 
 
+def _sigterm_handler(signum, frame):
+    _log("SIGTERM received -- killed by Claude Code timeout")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
 def main():
     _log("main() started")
     try:
         input_data = json.loads(sys.stdin.read())
     except Exception:
-        _log("stdin read failed, exiting 0")
-        sys.exit(0)
+        _log("stdin read failed, returning")
+        return
 
     config = load_config()
 
     if not config.get("enabled", True):
-        sys.exit(0)
+        return
 
     # Get database connection
     conn = get_db()
     if conn is None:
-        sys.exit(0)
+        return
 
     try:
         # Gather search context
@@ -313,13 +322,13 @@ def main():
         results = search_knowledge(conn, all_terms, config)
 
         if not results:
-            sys.exit(0)
+            return
 
         # Rank and filter
         top_learnings = rank_and_filter(results, config)
 
         if not top_learnings:
-            sys.exit(0)
+            return
 
         # Format as context injection
         injection_text = format_injection(top_learnings)
@@ -334,8 +343,6 @@ def main():
 
     finally:
         conn.close()
-
-    sys.exit(0)
 
 
 if __name__ == "__main__":
