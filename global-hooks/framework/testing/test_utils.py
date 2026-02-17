@@ -644,3 +644,156 @@ def _deep_merge_in_place(base: dict, override: dict) -> None:
             _deep_merge_in_place(base[key], value)
         else:
             base[key] = value
+
+
+# ---------------------------------------------------------------------------
+# Benchmarker — evidence-based threshold measurement
+# ---------------------------------------------------------------------------
+#
+# Philosophy: don't guess at timeouts, limits, or performance budgets.
+# Measure them. Use P99 as the reference point (captures realistic outliers
+# without being skewed by worst-case tail events). Multiply by a safety
+# margin to get a recommended threshold.
+#
+# Usage in tests:
+#
+#   from test_utils import Benchmarker
+#
+#   def test_my_function_is_fast():
+#       b = Benchmarker(lambda: my_function(arg1, arg2), runs=20)
+#       result = b.run()
+#       result.assert_p99_under(0.1)          # fail if P99 > 100ms
+#       print(result.report())                 # show full timing breakdown
+#
+#   def test_recommend_timeout():
+#       b = Benchmarker(lambda: subprocess.run(...), runs=10)
+#       result = b.run()
+#       print(result.recommended_limit(margin=2.0))  # P99 * 2.0
+#
+# ---------------------------------------------------------------------------
+
+import time as _time
+from statistics import mean as _mean, quantiles as _quantiles
+from typing import Callable
+from dataclasses import dataclass
+
+
+@dataclass
+class BenchmarkResult:
+    """Timing statistics from a Benchmarker run."""
+    label: str
+    runs: int
+    failures: int
+    min_s: float
+    max_s: float
+    mean_s: float
+    p50_s: float
+    p95_s: float
+    p99_s: float
+
+    # ---------- human-readable helpers ----------
+
+    def recommended_limit(self, margin: float = 2.0, min_limit: float = 0.005) -> float:
+        """
+        Return a recommended threshold using P99 * margin.
+
+        Args:
+            margin:    Multiplier on P99 (default 2.0 — breathing room without waste)
+            min_limit: Floor value in seconds (default 5ms)
+
+        Returns:
+            Recommended limit in seconds.
+        """
+        return max(min_limit, self.p99_s * margin)
+
+    def assert_p99_under(self, limit_s: float) -> None:
+        """
+        Assert P99 is under a threshold. Use only when you have a hard
+        performance contract (e.g., a user-visible latency SLA).
+        Prefer recommended_limit() for internal thresholds.
+        """
+        if self.p99_s > limit_s:
+            raise AssertionError(
+                f"{self.label}: P99 {self.p99_s*1000:.1f}ms exceeds limit "
+                f"{limit_s*1000:.1f}ms (margin: "
+                f"{(self.p99_s/limit_s - 1)*100:.0f}% over)"
+            )
+
+    def report(self) -> str:
+        """Return a formatted summary string."""
+        lines = [
+            f"Benchmark: {self.label}",
+            f"  Runs   : {self.runs} ({self.failures} failures)",
+            f"  Min    : {self.min_s*1000:.1f}ms",
+            f"  P50    : {self.p50_s*1000:.1f}ms",
+            f"  P95    : {self.p95_s*1000:.1f}ms",
+            f"  P99    : {self.p99_s*1000:.1f}ms",
+            f"  Max    : {self.max_s*1000:.1f}ms",
+            f"  Mean   : {self.mean_s*1000:.1f}ms",
+            f"  Rec.   : {self.recommended_limit()*1000:.1f}ms  (P99 × 2.0)",
+        ]
+        return "\n".join(lines)
+
+
+class Benchmarker:
+    """
+    Measure execution time of any callable and report evidence-based statistics.
+
+    Methodology:
+    - Runs the callable N times, discarding nothing (all samples count)
+    - Reports P50 / P95 / P99 — use P99 for threshold recommendations
+    - Exceptions are counted as failures; their timing is still recorded
+    - recommended_limit() = P99 * 2.0 (configurable margin)
+
+    Args:
+        fn:     Zero-argument callable to benchmark. Use lambda to bind args.
+        runs:   Number of samples (default 10; use 20+ for tighter P99)
+        label:  Display name for reports (defaults to fn.__name__ if available)
+
+    Example:
+        b = Benchmarker(lambda: db.query("SELECT 1"), runs=20, label="db_ping")
+        result = b.run()
+        print(result.report())
+        result.assert_p99_under(0.050)   # must complete in 50ms
+    """
+
+    def __init__(self, fn: Callable, runs: int = 10, label: Optional[str] = None):
+        self.fn = fn
+        self.runs = runs
+        self.label = label or getattr(fn, "__name__", "anonymous")
+
+    def run(self) -> BenchmarkResult:
+        """Execute the callable `runs` times and return BenchmarkResult."""
+        times: list[float] = []
+        failures = 0
+
+        for _ in range(self.runs):
+            t0 = _time.perf_counter()
+            try:
+                self.fn()
+            except Exception:
+                failures += 1
+            elapsed = _time.perf_counter() - t0
+            times.append(elapsed)
+
+        times.sort()
+
+        if len(times) >= 2:
+            qs = _quantiles(times, n=100)
+            p50 = qs[49]
+            p95 = qs[94]
+            p99 = qs[98]
+        else:
+            p50 = p95 = p99 = times[0] if times else 0.0
+
+        return BenchmarkResult(
+            label=self.label,
+            runs=self.runs,
+            failures=failures,
+            min_s=times[0] if times else 0.0,
+            max_s=times[-1] if times else 0.0,
+            mean_s=_mean(times) if times else 0.0,
+            p50_s=p50,
+            p95_s=p95,
+            p99_s=p99,
+        )

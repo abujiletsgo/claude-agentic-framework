@@ -179,7 +179,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       },
@@ -228,7 +228,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
-            "timeout": 3
+            "timeout": 5
           }
         ]
       }
