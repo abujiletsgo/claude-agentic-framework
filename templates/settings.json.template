@@ -207,7 +207,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/knowledge/inject_relevant.py",
-            "timeout": 8
+            "timeout": 30
           }
         ]
       },
@@ -216,7 +216,7 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
-            "timeout": 90
+            "timeout": 180
           }
         ]
       }

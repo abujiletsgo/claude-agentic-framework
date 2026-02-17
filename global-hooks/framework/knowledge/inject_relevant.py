@@ -100,7 +100,7 @@ def get_cwd_context():
     try:
         result = subprocess.run(
             ["git", "log", "--oneline", "-5", "--format=%s"],
-            capture_output=True, text=True, timeout=5, cwd=str(cwd)
+            capture_output=True, text=True, timeout=2, cwd=str(cwd)
         )
         if result.returncode == 0 and result.stdout.strip():
             for line in result.stdout.strip().split("\n"):
@@ -122,7 +122,7 @@ def get_recent_files_context():
         # Get recently modified files
         result = subprocess.run(
             ["git", "diff", "--name-only", "HEAD~5", "HEAD"],
-            capture_output=True, text=True, timeout=5, cwd=str(cwd)
+            capture_output=True, text=True, timeout=2, cwd=str(cwd)
         )
         if result.returncode == 0:
             for filepath in result.stdout.strip().split("\n")[:10]:
