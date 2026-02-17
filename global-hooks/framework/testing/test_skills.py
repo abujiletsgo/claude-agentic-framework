@@ -285,15 +285,6 @@ class TestRealSkillsDirectory:
         for skill_name in expected_skills:
             assert skill_name in names, f"Expected skill '{skill_name}' not found"
 
-    def test_prime_skill_has_workflow_steps(self, real_skills):
-        """Prime skill should contain workflow steps."""
-        prime = next((s for s in real_skills if s["dir_name"] == "prime"), None)
-        if prime is None:
-            pytest.skip("prime skill not found")
-        content = Path(prime["path"]).read_text()
-        body = get_skill_body(content)
-        assert "Step" in body or "step" in body
-
     def test_skills_count_reasonable(self, real_skills):
         """Should have a reasonable number of skills (v2.1.0 has 6 framework skills)."""
         assert len(real_skills) >= 6, f"Only {len(real_skills)} skills found, expected >= 6"

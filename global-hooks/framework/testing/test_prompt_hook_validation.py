@@ -376,15 +376,6 @@ class TestTemplateConsistency:
         content = template_path.read_text()
         assert len(content) > 0
 
-    def test_template_has_prompt_hooks(self):
-        # v2.1.0 removed LLM prompt hooks for token efficiency.
-        # Template uses command hooks only — skip this check.
-        pytest.skip("v2.1.0: LLM prompt hooks removed for token efficiency")
-
-    def test_template_has_arguments_placeholder(self):
-        # v2.1.0 removed LLM prompt hooks; $ARGUMENTS placeholder no longer in template.
-        pytest.skip("v2.1.0: LLM prompt hooks removed, $ARGUMENTS no longer used")
-
     def test_template_uses_ok_format(self):
         template_path = (
             Path(__file__).parent.parent.parent.parent / "templates" / "settings.json.template"

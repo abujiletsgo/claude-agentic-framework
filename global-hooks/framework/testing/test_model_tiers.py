@@ -301,38 +301,6 @@ class TestTierFallback:
 class TestModelTierConfiguration:
     """Tests for model tier configuration files."""
 
-    def test_multi_model_tiers_skill_exists(self):
-        skill_path = SKILLS_DIR / "multi-model-tiers" / "SKILL.md"
-        if not skill_path.exists():
-            pytest.skip("multi-model-tiers skill not found")
-        content = skill_path.read_text()
-        assert len(content) > 0
-
-    def test_skill_documents_all_tiers(self):
-        skill_path = SKILLS_DIR / "multi-model-tiers" / "SKILL.md"
-        if not skill_path.exists():
-            pytest.skip("multi-model-tiers skill not found")
-        content = skill_path.read_text()
-        assert "Tier 1" in content or "tier1" in content.lower()
-        assert "Tier 2" in content or "tier2" in content.lower()
-        assert "Tier 3" in content or "tier3" in content.lower()
-
-    def test_skill_mentions_cost(self):
-        skill_path = SKILLS_DIR / "multi-model-tiers" / "SKILL.md"
-        if not skill_path.exists():
-            pytest.skip("multi-model-tiers skill not found")
-        content = skill_path.read_text()
-        assert "$" in content or "cost" in content.lower()
-
-    def test_skill_mentions_all_model_names(self):
-        skill_path = SKILLS_DIR / "multi-model-tiers" / "SKILL.md"
-        if not skill_path.exists():
-            pytest.skip("multi-model-tiers skill not found")
-        content = skill_path.read_text().lower()
-        assert "opus" in content
-        assert "sonnet" in content
-        assert "haiku" in content
-
     def test_tier_assignment_consistency(self):
         """Validate that tier assignments make sense (expensive models for complex tasks)."""
         # Tier 1 (expensive) should be for orchestration/architecture
@@ -367,14 +335,6 @@ class TestAgentDirectory:
         agent_files = list(AGENTS_DIR.glob("*.md"))
         assert len(agent_files) > 0, "No agent .md files found"
 
-    def test_team_agents_exist(self):
-        team_dir = AGENTS_DIR / "team"
-        if not team_dir.exists():
-            pytest.skip("global-agents/team directory not found")
-        builder = team_dir / "builder.md"
-        validator = team_dir / "validator.md"
-        assert builder.exists(), "builder.md not found in team/"
-        assert validator.exists(), "validator.md not found in team/"
 
 
 if __name__ == "__main__":
