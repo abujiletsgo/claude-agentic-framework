@@ -48,12 +48,6 @@ ERROR_MESSAGES = [
     "Something needs your attention!"
 ]
 
-TEAM_UPDATE_MESSAGES = [
-    "Team update!",
-    "Agent finished!",
-    "Worker done!"
-]
-
 # ─── Detection Logic ─────────────────────────────────────────────────
 
 def detect_task_completion(hook_input):
@@ -92,21 +86,6 @@ def detect_error_or_attention(hook_input):
             return True, indicator
 
     return False, None
-
-def detect_team_update(hook_input):
-    """Detect team member completion."""
-    tool_name = hook_input.get("tool_name", "")
-    tool_input = hook_input.get("tool_input", {})
-
-    if tool_name == "SendMessage":
-        msg_type = tool_input.get("type", "")
-
-        if msg_type in ["message", "broadcast"]:
-            content = tool_input.get("content", "")
-            if "completed" in content.lower() or "done" in content.lower():
-                return True
-
-    return False
 
 # ─── TTS Playback ────────────────────────────────────────────────────
 
@@ -152,13 +131,6 @@ def main():
         if has_error:
             import random
             message = random.choice(ERROR_MESSAGES)
-            speak(message)
-            print(f"🔊 [Voice] {message}", file=sys.stderr)
-
-        # Check for team updates
-        if detect_team_update(hook_input):
-            import random
-            message = random.choice(TEAM_UPDATE_MESSAGES)
             speak(message)
             print(f"🔊 [Voice] {message}", file=sys.stderr)
 
