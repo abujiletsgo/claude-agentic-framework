@@ -18,6 +18,35 @@ You are executing the **Elite Context Engineering** priming workflow with intell
 
 ---
 
+## RepoMap Phase (Automatic)
+
+At session start, the `repo_map.py` hook automatically fires before `/prime` is invoked:
+
+- **Threshold**: If the project has **< 200 source files** (`.py`, `.js`, `.ts`, `.tsx`, `.rs`, `.go`, `.java`), the hook exits silently with zero overhead.
+- **Threshold met (≥ 200 files)**: Generates a ranked symbol index using tree-sitter parsing (with Python `ast` fallback). Injects it into the session context automatically.
+- **Cache**: Stored at `~/.claude/REPO_MAP.md`. Auto-invalidates when the git hash changes. Subsequent sessions load instantly from cache.
+
+Cache format:
+```
+<!-- GIT_HASH: abc123 -->
+<!-- FILES: 347 -->
+<!-- GENERATED: 2026-02-17T10:00:00Z -->
+
+## Repository Symbol Map (347 source files)
+
+### src/auth/session.py
+- `SessionManager` (class)
+- `SessionManager.create(user_id, ttl)` ★★★
+- `SessionManager.validate(token)` ★★
+...
+```
+
+Stars indicate reference frequency across the codebase: ★★★ = referenced 20+ times, ★★ = 10+, ★ = 5+.
+
+When the RepoMap is active, `/prime` can skip the Phase 3 Hook & Agent Discovery scan for large repos since the symbol index already provides structural context.
+
+---
+
 ## Phase 0: Cache Detection & Validation
 
 **ALWAYS START HERE** - Check for cached context before doing full analysis.

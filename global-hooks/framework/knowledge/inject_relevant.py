@@ -315,7 +315,7 @@ def main():
         if injection_text:
             output = {
                 "hookSpecificOutput": {
-                    "contextInjection": injection_text
+                    "additionalContext": injection_text
                 }
             }
             print(json.dumps(output))

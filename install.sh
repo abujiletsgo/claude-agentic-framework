@@ -74,17 +74,23 @@ echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ')
 
 # 5. Symlink agents (clean stale links first)
 echo "[5/7] Linking agents..."
-mkdir -p "$CLAUDE_DIR/agents" "$CLAUDE_DIR/agents/team"
+mkdir -p "$CLAUDE_DIR/agents"
+# Only create team subdir if source exists
+if [ -d "$REPO_DIR/global-agents/team" ]; then
+  mkdir -p "$CLAUDE_DIR/agents/team"
+fi
 find "$CLAUDE_DIR/agents" -maxdepth 2 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
 for f in "$REPO_DIR"/global-agents/*.md; do
   [ -f "$f" ] || continue
   ln -sf "$f" "$CLAUDE_DIR/agents/$(basename "$f")"
 done
-for f in "$REPO_DIR"/global-agents/team/*.md; do
-  [ -f "$f" ] || continue
-  ln -sf "$f" "$CLAUDE_DIR/agents/team/$(basename "$f")"
-done
-echo "  -> $(ls "$REPO_DIR"/global-agents/*.md "$REPO_DIR"/global-agents/team/*.md 2>/dev/null | wc -l | tr -d ' ') agents"
+if [ -d "$REPO_DIR/global-agents/team" ]; then
+  for f in "$REPO_DIR"/global-agents/team/*.md; do
+    [ -f "$f" ] || continue
+    ln -sf "$f" "$CLAUDE_DIR/agents/team/$(basename "$f")"
+  done
+fi
+echo "  -> $(ls "$REPO_DIR"/global-agents/*.md 2>/dev/null | wc -l | tr -d ' ') agents"
 
 # 6. Generate documentation from repo state
 echo "[6/7] Generating docs..."

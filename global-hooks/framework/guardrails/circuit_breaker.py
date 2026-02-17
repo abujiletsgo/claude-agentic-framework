@@ -193,7 +193,10 @@ class CircuitBreaker:
         Args:
             hook_cmd: The hook command string
         """
-        hook_state, state_changed = self.state_manager.record_success(hook_cmd)
+        hook_state, state_changed = self.state_manager.record_success(
+            hook_cmd,
+            success_threshold=self.config.circuit_breaker.success_threshold,
+        )
 
         if state_changed:
             self.logger.info(
@@ -218,7 +221,10 @@ class CircuitBreaker:
         """
         threshold = self.config.circuit_breaker.failure_threshold
         hook_state, state_changed = self.state_manager.record_failure(
-            hook_cmd, error, threshold
+            hook_cmd,
+            error,
+            failure_threshold=threshold,
+            cooldown_seconds=self.config.circuit_breaker.cooldown_seconds,
         )
 
         if state_changed:

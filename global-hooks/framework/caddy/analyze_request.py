@@ -1,6 +1,10 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
+# dependencies = [
+#   "anthropic>=0.40.0",
+#   "pyyaml>=6.0",
+# ]
 # ///
 """
 Caddy Request Analyzer - UserPromptSubmit Hook
@@ -478,31 +482,106 @@ def audit_detected_skills(detected_skills: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Haiku semantic classification
+# ---------------------------------------------------------------------------
+
+HAIKU_SYSTEM = """\
+You are a task classifier for an AI coding assistant. Classify the user's request.
+Respond with ONLY valid JSON — no markdown, no explanation, no other text.
+
+Output format:
+{
+  "complexity": "simple|moderate|complex|massive",
+  "task_type": "implement|fix|refactor|research|test|review|document|deploy|plan",
+  "quality": "standard|high|critical",
+  "scope": "focused|moderate|broad|unknown",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<one sentence>"
+}
+
+Definitions:
+- complexity: simple=tiny change/1 file, moderate=few files, complex=system/feature, massive=whole codebase/rewrite
+- task_type: what kind of work is being requested
+- quality: standard=normal, high=important/careful, critical=security/payments/prod data/irreversible
+- scope: focused=1 file, moderate=module/component, broad=whole project, unknown=exploratory/unclear
+- confidence: how certain you are about the classification (0=total guess, 1=obvious)
+"""
+
+
+def haiku_classify(prompt: str) -> dict | None:
+    """Use Haiku to semantically classify the prompt.
+
+    Returns classification dict or None if call fails/times out.
+    Intended as fallback when keyword confidence is low.
+    """
+    try:
+        import anthropic
+
+        client = anthropic.Anthropic()
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            timeout=5.0,
+            system=HAIKU_SYSTEM,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = message.content[0].text.strip()
+        result = json.loads(text)
+
+        # Validate required fields and allowed values
+        valid = {
+            "complexity": {"simple", "moderate", "complex", "massive"},
+            "task_type": {"implement", "fix", "refactor", "research", "test", "review", "document", "deploy", "plan"},
+            "quality": {"standard", "high", "critical"},
+            "scope": {"focused", "moderate", "broad", "unknown"},
+        }
+        for field, allowed in valid.items():
+            if result.get(field) not in allowed:
+                return None
+        if not isinstance(result.get("confidence"), (int, float)):
+            return None
+
+        return result
+
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def load_caddy_config() -> dict:
     """Load Caddy configuration from yaml file."""
+    defaults = {
+        "caddy": {
+            "enabled": True,
+            "auto_invoke_threshold": 0.8,
+            "always_suggest": True,
+            "background_monitoring": True,
+            "haiku_fallback_threshold": 0.65,
+        }
+    }
     config_path = Path.home() / ".claude" / "caddy_config.yaml"
     if not config_path.exists():
-        return {
-            "caddy": {
-                "enabled": True,
-                "auto_invoke_threshold": 0.8,
-                "always_suggest": True,
-                "background_monitoring": True,
-            }
-        }
+        return defaults
     try:
-        # Simple YAML-like parsing (avoid requiring pyyaml dependency)
-        config = {}
+        import yaml
         with open(config_path) as f:
-            content = f.read()
-        # Use json fallback for config if yaml not available
-        # The config file includes a JSON-compatible section
-        return config
+            config = yaml.safe_load(f)
+        if not config:
+            return defaults
+        # Deep merge loaded config over defaults
+        merged = defaults.copy()
+        for key, value in config.items():
+            if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+                merged[key] = {**merged[key], **value}
+            else:
+                merged[key] = value
+        return merged
     except Exception:
-        return {"caddy": {"enabled": True, "auto_invoke_threshold": 0.8}}
+        return defaults
 
 
 def main():
@@ -528,12 +607,31 @@ def main():
         if not caddy_config.get("enabled", True):
             sys.exit(0)
 
-        # Classify the request
+        # --- Keyword classification (instant, always runs) ---
         complexity = classify_complexity(prompt)
         task_type = classify_task_type(prompt)
         quality = classify_quality_need(prompt)
         codebase_scope = classify_codebase_scope(prompt)
         skills = detect_skills(prompt)
+
+        keyword_confidence = estimate_confidence(
+            complexity, task_type, quality, skills, len(prompt)
+        )
+
+        # --- Haiku semantic fallback (fires when keyword confidence is low) ---
+        haiku_threshold = caddy_config.get("haiku_fallback_threshold", 0.65)
+        classification_source = "keyword"
+
+        haiku_confidence = None
+        if keyword_confidence < haiku_threshold:
+            haiku_result = haiku_classify(prompt)
+            if haiku_result:
+                complexity = haiku_result["complexity"]
+                task_type = haiku_result["task_type"]
+                quality = haiku_result["quality"]
+                codebase_scope = haiku_result["scope"]
+                haiku_confidence = float(haiku_result["confidence"])
+                classification_source = "haiku"
 
         # Security audit: scan detected skills for dangerous patterns
         audit_results = audit_detected_skills(skills)
@@ -553,15 +651,15 @@ def main():
         ]
 
         strategy = select_strategy(complexity, task_type, quality, codebase_scope)
-        confidence = estimate_confidence(
-            complexity, task_type, quality, skills, len(prompt)
-        )
+        # Use Haiku's self-reported confidence when available, else keyword estimate
+        confidence = haiku_confidence if haiku_confidence is not None else keyword_confidence
 
         # Build analysis result
         analysis = {
             "caddy_analysis": {
                 "timestamp": datetime.now().isoformat(),
                 "session_id": session_id,
+                "classification_source": classification_source,
                 "classification": {
                     "complexity": complexity,
                     "task_type": task_type,
@@ -600,9 +698,10 @@ def main():
             # Build suggestion message
             suggestions = []
 
+            source_tag = " [haiku]" if classification_source == "haiku" else ""
             suggestions.append(
                 f"[Caddy] Task classified as: "
-                f"{complexity} {task_type} (quality: {quality}, scope: {codebase_scope})"
+                f"{complexity} {task_type} (quality: {quality}, scope: {codebase_scope}){source_tag}"
             )
             suggestions.append(
                 f"[Caddy] Recommended strategy: {strategy} "

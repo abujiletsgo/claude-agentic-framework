@@ -9,9 +9,10 @@ import json
 import os
 import tempfile
 import threading
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple
-from contextlib import contextmanager
 
 try:
     import fcntl
@@ -165,7 +166,7 @@ class HookStateManager:
             return HookState()
         return state.hooks[hook_cmd]
 
-    def record_success(self, hook_cmd: str) -> Tuple[HookState, bool]:
+    def record_success(self, hook_cmd: str, success_threshold: int = 2) -> Tuple[HookState, bool]:
         """
         Record a successful hook execution.
 
@@ -174,6 +175,7 @@ class HookStateManager:
 
         Args:
             hook_cmd: The hook command string
+            success_threshold: Consecutive successes needed to close circuit from HALF_OPEN
 
         Returns:
             Tuple of (updated hook state, state_changed flag)
@@ -192,9 +194,7 @@ class HookStateManager:
 
             state_changed = False
             if hook_state.state == CircuitState.HALF_OPEN.value:
-                # Check if we should close the circuit
-                # This would be configurable, but default to 2 successes
-                if hook_state.consecutive_successes >= 2:
+                if hook_state.consecutive_successes >= success_threshold:
                     hook_state.state = CircuitState.CLOSED.value
                     hook_state.failure_count = 0
                     hook_state.first_failure = None
@@ -217,7 +217,8 @@ class HookStateManager:
         self,
         hook_cmd: str,
         error: str,
-        failure_threshold: int = 3
+        failure_threshold: int = 3,
+        cooldown_seconds: int = 300,
     ) -> Tuple[HookState, bool]:
         """
         Record a failed hook execution.
@@ -228,6 +229,7 @@ class HookStateManager:
             hook_cmd: The hook command string
             error: Error message from the failure
             failure_threshold: Number of consecutive failures before opening circuit
+            cooldown_seconds: Seconds before a HALF_OPEN recovery test is allowed again
 
         Returns:
             Tuple of (updated hook state, state_changed flag)
@@ -250,23 +252,18 @@ class HookStateManager:
                 hook_state.first_failure = hook_state.last_failure
 
             state_changed = False
-            # Special case: any failure in HALF_OPEN immediately reopens circuit
-            # Note: state_changed = False because circuit was already open before HALF_OPEN
+            retry_time = datetime.now(timezone.utc) + timedelta(seconds=cooldown_seconds)
+
+            # Any failure in HALF_OPEN immediately reopens the circuit
             if hook_state.state == CircuitState.HALF_OPEN.value:
                 hook_state.state = CircuitState.OPEN.value
                 hook_state.disabled_at = get_current_timestamp()
-                # Calculate retry_after (5 minutes from now by default)
-                from datetime import datetime, timedelta, timezone
-                retry_time = datetime.now(timezone.utc) + timedelta(seconds=300)
                 hook_state.retry_after = retry_time.isoformat()
-                state_changed = False  # Circuit was already open, just tested recovery and failed
+                state_changed = True  # HALF_OPEN → OPEN is a real transition worth logging
             elif hook_state.consecutive_failures >= failure_threshold:
                 if hook_state.state != CircuitState.OPEN.value:
                     hook_state.state = CircuitState.OPEN.value
                     hook_state.disabled_at = get_current_timestamp()
-                    # Calculate retry_after (5 minutes from now by default)
-                    from datetime import datetime, timedelta, timezone
-                    retry_time = datetime.now(timezone.utc) + timedelta(seconds=300)
                     hook_state.retry_after = retry_time.isoformat()
                     state_changed = True
 
