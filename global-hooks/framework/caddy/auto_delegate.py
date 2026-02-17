@@ -313,6 +313,13 @@ def main():
         if base_strategy == "direct":
             sys.exit(0)
 
+        # Only inject mandatory instruction when confidence is high enough.
+        # Low-confidence classifications (conversational messages, ambiguous
+        # short prompts) should not trigger mandatory orchestration.
+        MANDATORY_CONFIDENCE_THRESHOLD = 0.80
+        if confidence < MANDATORY_CONFIDENCE_THRESHOLD:
+            sys.exit(0)
+
         # Build mandatory orchestration instruction
         STRATEGY_INSTRUCTIONS = {
             "orchestrate": (

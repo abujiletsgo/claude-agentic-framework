@@ -1,334 +1,227 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.8"
-# dependencies = ["anthropic"]
-# ///
 """
-Auto Context Manager - Rolling Window Compaction
+Auto Context Manager - Incremental Compaction Signal
 
-Monitors conversation every ~10 turns and proactively compresses "cold" segments
-before hitting context limits. Uses current Claude instance for compression.
+Monitors the conversation transcript every CHECK_FREQUENCY turns.
+When context usage exceeds CONTEXT_THRESHOLD and cold segments exist,
+injects an additionalContext message asking Claude to summarize proactively.
 
-Triggers:
-  - Context > 60% + cold segments exist → Queue for compression
-  - Context > 80% + very old segments → Archive to L3
+Cold segment = completed topic not referenced in 20+ turns.
 
 Exit codes:
   0 = Always (non-blocking hook)
 """
 
 import json
+import re
 import sys
 import os
-import re
 from pathlib import Path
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from datetime import datetime
 
 # ─── Configuration ───────────────────────────────────────────────────
 
-# Cold segment thresholds
-TURNS_UNTIL_COLD = 20  # Not mentioned in 20+ turns = cold
-CONTEXT_THRESHOLD = 60  # Start compressing at 60% context usage
-CHECK_FREQUENCY = 10    # Check every 10 turns
+TURNS_UNTIL_COLD = 20      # Not mentioned in 20+ turns = cold
+CONTEXT_THRESHOLD = 60     # Start signaling at 60% context usage
+CHECK_FREQUENCY = 10       # Check every 10 assistant turns
 
-# Archive thresholds
-ARCHIVE_THRESHOLD = 80  # Archive to L3 at 80% context
-ARCHIVE_AGE_DAYS = 30   # Prune archives older than 30 days
-
-# Token estimation (rough)
+# Token estimation (rough: Claude transcripts average ~0.25 tokens/char)
 AVG_TOKENS_PER_CHAR = 0.25
-MAX_CONTEXT_TOKENS = 200000
+MAX_CONTEXT_TOKENS = 200_000
 
-# Paths
-def get_context_queue_path():
-    """Get path to compression queue file"""
-    session_id = os.environ.get("CLAUDE_SESSION_ID", "unknown")
-    queue_dir = Path.home() / ".claude" / "data" / "context_queue"
-    queue_dir.mkdir(parents=True, exist_ok=True)
-    return queue_dir / f"{session_id}_pending.json"
+# ─── Transcript parsing ───────────────────────────────────────────────
 
-def get_archive_dir():
-    """Get path to L3 archive directory"""
-    session_id = os.environ.get("CLAUDE_SESSION_ID", "unknown")
-    archive_dir = Path.home() / ".claude" / "data" / "sessions" / session_id / "archived_context"
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    return archive_dir
+def parse_transcript(transcript_path: str) -> list[dict]:
+    """Read JSONL transcript — same format as pre_compact_preserve.py."""
+    messages = []
+    try:
+        path = Path(transcript_path)
+        if not path.exists():
+            return []
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    messages.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except Exception:
+        pass
+    return messages
 
-# ─── Conversation Analysis ───────────────────────────────────────────
 
-def estimate_context_usage(messages: List[Dict]) -> float:
-    """Estimate current context usage as percentage"""
-    total_chars = sum(
-        len(str(msg.get("content", "")))
-        for msg in messages
-    )
+# ─── Analysis ────────────────────────────────────────────────────────
+
+def estimate_context_pct(messages: list[dict]) -> float:
+    """Estimate context usage % from transcript character count."""
+    total_chars = sum(len(json.dumps(m)) for m in messages)
     estimated_tokens = total_chars * AVG_TOKENS_PER_CHAR
     return (estimated_tokens / MAX_CONTEXT_TOKENS) * 100
 
-def count_turns(messages: List[Dict]) -> int:
-    """Count conversation turns (user + assistant pairs)"""
-    return sum(1 for msg in messages if msg.get("role") == "assistant")
 
-def extract_segments(messages: List[Dict]) -> List[Dict[str, Any]]:
+def count_assistant_turns(messages: list[dict]) -> int:
+    return sum(1 for m in messages if m.get("role") == "assistant")
+
+
+def find_cold_completed_topics(messages: list[dict], current_turn: int) -> list[str]:
     """
-    Extract conversation segments based on task boundaries.
+    Identify topics from completed tasks that haven't been referenced recently.
 
-    A segment is a group of messages around a specific topic/task.
-    Boundaries detected by:
-    - Task completion markers
-    - Topic shift indicators
-    - Tool usage patterns
+    Scans TaskCreate/TaskUpdate tool calls to find completed subjects,
+    then checks whether they appear in the last TURNS_UNTIL_COLD turns.
     """
-    segments = []
-    current_segment = {
-        "messages": [],
-        "topic": None,
-        "start_turn": 0,
-        "end_turn": 0,
-        "completed": False,
-        "last_mentioned_turn": 0
-    }
+    # Collect all completed task subjects with the turn they completed
+    completed: dict[str, int] = {}  # subject -> turn number
+    turn = 0
 
-    turn_count = 0
-
-    for i, msg in enumerate(messages):
+    for msg in messages:
         if msg.get("role") == "assistant":
-            turn_count += 1
+            turn += 1
 
-        content = str(msg.get("content", ""))
+        # Look for tool calls in content blocks
+        content = msg.get("content", "")
+        if not isinstance(content, list):
+            content_str = str(content)
+            # Parse TaskUpdate completed from raw JSON text
+            for m in re.finditer(
+                r'"tool_name"\s*:\s*"TaskUpdate".*?"status"\s*:\s*"completed".*?"subject"\s*:\s*"([^"]+)"',
+                content_str,
+                re.DOTALL,
+            ):
+                completed[m.group(1)] = turn
+            continue
 
-        # Detect segment boundaries
-        is_boundary = (
-            "TaskUpdate" in content and "completed" in content or
-            re.search(r"(done|completed|finished|ready)", content, re.I) and "✅" in content or
-            i > 0 and len(current_segment["messages"]) > 5 and
-            re.search(r"(next|now let's|moving on)", content, re.I)
-        )
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") != "tool_use":
+                continue
+            name = block.get("name", "")
+            inp = block.get("input", {})
+            if name == "TaskUpdate" and inp.get("status") == "completed":
+                subject = inp.get("subject", "")
+                if subject:
+                    completed[subject] = turn
 
-        if is_boundary and current_segment["messages"]:
-            # Finalize current segment
-            current_segment["end_turn"] = turn_count
-            current_segment["last_mentioned_turn"] = turn_count
-            segments.append(current_segment.copy())
+    if not completed:
+        return []
 
-            # Start new segment
-            current_segment = {
-                "messages": [msg],
-                "topic": extract_topic(msg),
-                "start_turn": turn_count,
-                "end_turn": turn_count,
-                "completed": "completed" in content.lower(),
-                "last_mentioned_turn": turn_count
-            }
-        else:
-            current_segment["messages"].append(msg)
-            if not current_segment["topic"]:
-                current_segment["topic"] = extract_topic(msg)
+    # Collect text from the last TURNS_UNTIL_COLD assistant turns
+    recent_turns_text = []
+    recent_turn = 0
+    cutoff = max(0, current_turn - TURNS_UNTIL_COLD)
+    for msg in messages:
+        if msg.get("role") == "assistant":
+            recent_turn += 1
+        if recent_turn > cutoff:
+            recent_turns_text.append(json.dumps(msg).lower())
+    recent_text = " ".join(recent_turns_text)
 
-    # Add final segment
-    if current_segment["messages"]:
-        current_segment["end_turn"] = turn_count
-        segments.append(current_segment)
-
-    return segments
-
-def extract_topic(msg: Dict) -> Optional[str]:
-    """Extract topic from message (simplified)"""
-    content = str(msg.get("content", ""))
-
-    # Look for task subjects
-    task_match = re.search(r'"subject":\s*"([^"]+)"', content)
-    if task_match:
-        return task_match.group(1)
-
-    # Look for headings
-    heading_match = re.search(r'^#{1,3}\s+(.+)$', content, re.M)
-    if heading_match:
-        return heading_match.group(1).strip()
-
-    # Extract first sentence
-    sentences = re.split(r'[.!?]\s+', content)
-    if sentences:
-        first = sentences[0].strip()
-        if len(first) < 100:
-            return first
-
-    return None
-
-def identify_cold_segments(segments: List[Dict], current_turn: int) -> List[Dict]:
-    """Identify segments that are cold (not mentioned recently)"""
+    # A topic is cold if it completed before the cutoff and isn't in recent text
     cold = []
-    for segment in segments:
-        turns_since = current_turn - segment["last_mentioned_turn"]
+    for subject, completed_at_turn in completed.items():
+        if completed_at_turn <= cutoff:
+            if subject.lower() not in recent_text:
+                cold.append(subject)
 
-        # Segment is cold if:
-        # 1. Not mentioned in 20+ turns
-        # 2. Marked as completed
-        # 3. Has at least 5 messages (substantial content)
-        if (turns_since >= TURNS_UNTIL_COLD and
-            segment.get("completed", False) and
-            len(segment["messages"]) >= 5):
-            segment["turns_since_mention"] = turns_since
-            cold.append(segment)
+    return cold[:5]  # Cap at 5 to keep the message concise
 
-    return cold
 
-# ─── Queue Management ────────────────────────────────────────────────
+# ─── State file (track last check turn) ──────────────────────────────
 
-def load_queue() -> Dict:
-    """Load pending compression queue"""
-    queue_path = get_context_queue_path()
-    if queue_path.exists():
-        with open(queue_path, 'r') as f:
-            return json.load(f)
-    return {"pending": [], "compressed": [], "last_check_turn": 0}
+def get_state_path(session_id: str) -> Path:
+    state_dir = Path.home() / ".claude" / "data" / "context_queue"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    return state_dir / f"{session_id}_state.json"
 
-def save_queue(queue: Dict):
-    """Save pending compression queue"""
-    queue_path = get_context_queue_path()
-    with open(queue_path, 'w') as f:
-        json.dump(queue, f, indent=2)
 
-def queue_segments_for_compression(segments: List[Dict], current_turn: int):
-    """Add cold segments to compression queue"""
-    queue = load_queue()
+def load_state(session_id: str) -> dict:
+    p = get_state_path(session_id)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            pass
+    return {"last_check_turn": 0}
 
-    # Filter out already queued/compressed segments
-    existing_topics = {s["topic"] for s in queue["pending"]} | {s["topic"] for s in queue["compressed"]}
 
-    new_segments = [
-        {
-            "segment_id": f"seg_{current_turn}_{i}",
-            "topic": seg["topic"],
-            "start_turn": seg["start_turn"],
-            "end_turn": seg["end_turn"],
-            "message_count": len(seg["messages"]),
-            "turns_since_mention": seg["turns_since_mention"],
-            "queued_at_turn": current_turn,
-            "timestamp": datetime.now().isoformat()
-        }
-        for i, seg in enumerate(segments)
-        if seg["topic"] not in existing_topics
-    ]
-
-    queue["pending"].extend(new_segments)
-    queue["last_check_turn"] = current_turn
-    save_queue(queue)
-
-    return len(new_segments)
-
-# ─── Archive Management ──────────────────────────────────────────────
-
-def prune_old_archives():
-    """Remove archives older than ARCHIVE_AGE_DAYS"""
-    archive_dir = get_archive_dir()
-    cutoff = datetime.now() - timedelta(days=ARCHIVE_AGE_DAYS)
-
-    pruned = 0
-    for archive_file in archive_dir.glob("*.json"):
-        if archive_file.stat().st_mtime < cutoff.timestamp():
-            archive_file.unlink()
-            pruned += 1
-
-    return pruned
-
-# ─── Main Hook Logic ─────────────────────────────────────────────────
-
-def load_session_messages(session_id: str) -> List[Dict]:
-    """Load conversation messages from session file"""
-    session_file = Path.home() / ".claude" / "data" / "sessions" / f"{session_id}.json"
-
-    if not session_file.exists():
-        return []
-
+def save_state(session_id: str, state: dict):
     try:
-        with open(session_file, 'r') as f:
-            session_data = json.load(f)
-            return session_data.get("messages", [])
+        get_state_path(session_id).write_text(json.dumps(state))
     except Exception:
-        return []
+        pass
+
+
+# ─── Main ─────────────────────────────────────────────────────────────
 
 def main():
     try:
-        # Read hook input
         input_data = json.load(sys.stdin)
 
-        # Get session ID
+        transcript_path = input_data.get("transcript_path", "")
         session_id = input_data.get("session_id", os.environ.get("CLAUDE_SESSION_ID", "unknown"))
 
-        # Load conversation history from session file
-        messages = load_session_messages(session_id)
-
-        if not messages:
-            # No conversation history available, skip analysis
+        if not transcript_path:
             sys.exit(0)
 
-        # Count turns
-        current_turn = count_turns(messages)
+        messages = parse_transcript(transcript_path)
+        if not messages:
+            sys.exit(0)
 
-        # Load queue to check last check turn
-        queue = load_queue()
-        last_check = queue.get("last_check_turn", 0)
+        current_turn = count_assistant_turns(messages)
 
         # Only check every CHECK_FREQUENCY turns
+        state = load_state(session_id)
+        last_check = state.get("last_check_turn", 0)
         if current_turn - last_check < CHECK_FREQUENCY:
             sys.exit(0)
 
+        # Update check turn before analysis (avoid hammering on every call)
+        state["last_check_turn"] = current_turn
+        save_state(session_id, state)
+
         # Estimate context usage
-        context_pct = estimate_context_usage(messages)
+        context_pct = estimate_context_pct(messages)
+        if context_pct < CONTEXT_THRESHOLD:
+            sys.exit(0)
 
-        # Extract and analyze segments
-        segments = extract_segments(messages)
-        cold_segments = identify_cold_segments(segments, current_turn)
+        # Find cold completed topics
+        cold_topics = find_cold_completed_topics(messages, current_turn)
+        if not cold_topics:
+            sys.exit(0)
 
-        # Check if compression is needed
-        if context_pct > CONTEXT_THRESHOLD and cold_segments:
-            # Queue segments for compression
-            queued_count = queue_segments_for_compression(cold_segments, current_turn)
+        # Write flag for status line
+        flag_dir = Path("/tmp/claude")
+        flag_dir.mkdir(parents=True, exist_ok=True)
+        (flag_dir / "compacting_custom").write_text(json.dumps({
+            "queued": len(cold_topics),
+            "context_pct": round(context_pct),
+            "timestamp": datetime.now().isoformat(),
+        }))
 
-            if queued_count > 0:
-                # Write flag for status line
-                flag_dir = Path("/tmp/claude")
-                flag_dir.mkdir(parents=True, exist_ok=True)
-                (flag_dir / "compacting_custom").write_text(json.dumps({
-                    "queued": queued_count,
-                    "context_pct": round(context_pct),
-                    "cold_topics": len(cold_segments),
-                    "timestamp": datetime.now().isoformat()
-                }))
+        topic_list = ", ".join(f'"{t}"' for t in cold_topics)
 
-                # Build topic list for Claude
-                topics = [s.get("topic", "unknown")[:50] for s in cold_segments[:5]]
-                topic_list = ", ".join(t for t in topics if t)
-
-                # Output using correct PostToolUse format — triggers incremental compaction
-                result = {
-                    "hookSpecificOutput": {
-                        "hookEventName": "PostToolUse",
-                        "additionalContext": (
-                            f"INCREMENTAL COMPACTION NEEDED: Context at {context_pct:.0f}%. "
-                            f"{queued_count} cold segment(s) detected ({topic_list}). "
-                            f"Summarize completed work from these topics into 2-3 sentences each, "
-                            f"then continue. Do NOT wait until context limit — compact now incrementally."
-                        )
-                    }
-                }
-                print(json.dumps(result))
-                sys.exit(0)
-
-        # Periodic archive pruning (every 50 turns)
-        if current_turn % 50 == 0:
-            pruned = prune_old_archives()
-            if pruned > 0:
-                print(f"📦 CONTEXT_MANAGER: Pruned {pruned} old archives", file=sys.stderr)
+        result = {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": (
+                    f"INCREMENTAL COMPACTION: Context at {context_pct:.0f}%. "
+                    f"These completed topics are taking up space and haven't been referenced in {TURNS_UNTIL_COLD}+ turns: "
+                    f"{topic_list}. "
+                    f"Summarize each into 1-2 sentences, then continue. "
+                    f"Do NOT wait for the context limit — compact now."
+                ),
+            }
+        }
+        print(json.dumps(result))
 
     except Exception as e:
-        # Non-blocking: log error but don't fail
-        print(f"Context manager error (non-blocking): {e}", file=sys.stderr)
+        print(f"[auto_context_manager] error (non-blocking): {e}", file=sys.stderr)
 
-    # Always exit 0 (non-blocking)
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
