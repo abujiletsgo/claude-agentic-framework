@@ -486,7 +486,17 @@ def read_cache_content(cache_path: Path) -> str:
 # Main
 # ---------------------------------------------------------------------------
 
+def _log(msg):
+    try:
+        import datetime
+        with open("/tmp/claude_startup_debug.log", "a") as f:
+            f.write(f"{datetime.datetime.now().isoformat()} [repomap] {msg}\n")
+    except Exception:
+        pass
+
+
 def main() -> None:
+    _log("main() started")
     try:
         root = Path.cwd()
         file_count = count_source_files(root)

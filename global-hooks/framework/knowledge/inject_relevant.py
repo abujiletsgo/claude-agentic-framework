@@ -271,10 +271,22 @@ def format_injection(learnings):
 # Main
 # ---------------------------------------------------------------------------
 
+def _log(msg):
+    try:
+        from pathlib import Path
+        import datetime
+        with open("/tmp/claude_startup_debug.log", "a") as f:
+            f.write(f"{datetime.datetime.now().isoformat()} [inject] {msg}\n")
+    except Exception:
+        pass
+
+
 def main():
+    _log("main() started")
     try:
         input_data = json.loads(sys.stdin.read())
     except Exception:
+        _log("stdin read failed, exiting 0")
         sys.exit(0)
 
     config = load_config()

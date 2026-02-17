@@ -23,8 +23,21 @@ def emit(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
 
 
+_LOG = Path("/tmp/claude_startup_debug.log")
+
+
+def log(msg):
+    try:
+        with open(_LOG, "a") as f:
+            import datetime
+            f.write(f"{datetime.datetime.now().isoformat()} [startup] {msg}\n")
+    except Exception:
+        pass
+
+
 def main():
     """Run all startup hooks in sequence."""
+    log("main() started")
     # Read hook input once (sub-hooks use hook_event_name from JSON)
     try:
         raw = sys.stdin.read()
