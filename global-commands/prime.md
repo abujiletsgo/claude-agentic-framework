@@ -79,14 +79,23 @@ fi
 
 **Decision Tree**:
 - `CACHE_STATUS=VALID` → **Load cache internally and give brief confirmation** (instant, minimal output)
-- `CACHE_STATUS=STALE` → **Run Phase 1-7** (re-analyze changed files + update cache, then display full report)
-- `CACHE_STATUS=NONE` → **Run Phase 1-7** (full analysis + create cache, then display full report)
+- `CACHE_STATUS=STALE` → **Run Phase 1-6** → **MUST run Phase 7 (cache write) before Phase 8** → display full report
+- `CACHE_STATUS=NONE` → **Run Phase 1-6** → **MUST run Phase 7 (cache write) before Phase 8** → display full report
+
+> **⚠️ MANDATORY**: Phase 7 (cache write) is NEVER optional after a full analysis. Do not skip it or defer it. Write the cache BEFORE delivering the report in Phase 8.
 
 ### If CACHE_STATUS=VALID:
 
 Read `.claude/PROJECT_CONTEXT.md` **internally** (to load context into your understanding) but **do NOT dump it to the user**.
 
-Instead, extract key summary info and present this brief confirmation:
+Update the `<!-- GENERATED: ... -->` line in the cache file to the current date (this confirms it was verified without full re-analysis):
+```bash
+# In the Write tool: overwrite only the second comment line, keep everything else identical
+# Replace: <!-- GENERATED: old-date -->
+# With:    <!-- GENERATED: current-date -->
+```
+
+Then extract key summary info and present this brief confirmation:
 
 ```
 🚀 **Cached Context Loaded** (instant - no git changes)
@@ -100,7 +109,7 @@ Ready for instructions.
 
 **Total output: ~50-100 tokens maximum**
 
-**Then STOP** - Do not re-run Phase 1-7 (cache is valid). Do not show the full report.
+**Then STOP** - Do not re-run Phase 1-6 (cache is valid). Do not show the full report.
 
 ---
 
@@ -340,11 +349,11 @@ Confirm: "Agent primed. Context loaded. Ready for instructions."
 
 ---
 
-## Phase 7: Save Context Cache
+## Phase 7: Save Context Cache ← DO THIS BEFORE PHASE 8
 
-**CRITICAL: Always save context after completing analysis**
+**BLOCKING REQUIREMENT**: Do NOT proceed to Phase 8 until this file is written. The cache write is the most important step — it is what makes future sessions instant and what `auto_prime.py` loads at session start.
 
-After generating the report in Phase 6, save it to `.claude/PROJECT_CONTEXT.md` for future primes:
+After completing Phase 6 analysis, save the full report to `.claude/PROJECT_CONTEXT.md`:
 
 ```bash
 # Get current git commit hash
@@ -393,6 +402,14 @@ To force re-analysis: `rm .claude/PROJECT_CONTEXT.md && /prime`
 - Include all sections with complete information
 - Each update replaces the entire cache - keeps context fresh and up-to-date
 - File should be 1000-2000 lines for comprehensive context
+
+**After writing, verify**:
+```bash
+# Confirm file exists and is non-empty
+wc -l .claude/PROJECT_CONTEXT.md
+```
+
+Only proceed to Phase 8 once the file is confirmed written.
 
 ---
 
