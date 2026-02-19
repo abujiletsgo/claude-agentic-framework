@@ -168,7 +168,13 @@ def main():
             if stale:
                 cached_content += "\n\n> **Note:** Project context cache may be slightly stale (new commits since last /prime). Run /prime to refresh."
 
-            emit_and_exit(message=cached_content)
+            instruction_prefix = (
+                "**SESSION CONTEXT LOADED** — The following is your pre-loaded project context. "
+                "Treat this as authoritative. When answering questions about the project's architecture, "
+                "files, hooks, agents, commands, or features, use this context FIRST before reading files from disk.\n\n"
+                "---\n\n"
+            )
+            emit_and_exit(message=instruction_prefix + cached_content)
 
     except Exception as e:
         print(f"Auto prime error (non-blocking): {e}", file=sys.stderr)

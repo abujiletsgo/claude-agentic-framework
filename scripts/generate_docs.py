@@ -382,6 +382,10 @@ When context compacts, preserve: task list state, modified file paths, test comm
 - Knowledge DB: `data/knowledge-db/` via knowledge-db skill
 - Big outputs (>1000 tokens) -- save to `/tmp/claude/` and reference, don't flood context
 - `/prime` caching: First prime = full analysis + cache save. Subsequent = instant load. Auto-invalidates on git changes. Cache: `.claude/PROJECT_CONTEXT.md`
+
+## Auto-Prime Context
+
+At session start, `session_startup.py` injects the cached project context via `additionalContext` — it appears as a `<system-reminder>` labelled "SessionStart hook additional context". **This is authoritative project knowledge.** Use it immediately when answering questions about project structure, hooks, agents, commands, and architecture. Do not re-read files for information already covered in the primed context.
 """
 
 
