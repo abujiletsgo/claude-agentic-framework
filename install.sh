@@ -99,20 +99,20 @@ mkdir -p "$CLAUDE_DIR"
 echo "$SETTINGS_CONTENT" > "$CLAUDE_DIR/settings.json"
 echo "  -> $CLAUDE_DIR/settings.json"
 
-# 3. Symlink commands (clean stale links first)
+# 3. Symlink commands (remove ALL existing symlinks first for clean install)
 echo "[3/9] Linking commands..."
 mkdir -p "$CLAUDE_DIR/commands"
-find "$CLAUDE_DIR/commands" -maxdepth 1 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+find "$CLAUDE_DIR/commands" -maxdepth 1 -type l -delete 2>/dev/null || true
 for f in "$REPO_DIR"/global-commands/*.md; do
   [ -f "$f" ] || continue
   ln -sf "$f" "$CLAUDE_DIR/commands/$(basename "$f")"
 done
 echo "  -> $(ls "$REPO_DIR"/global-commands/*.md 2>/dev/null | wc -l | tr -d ' ') commands"
 
-# 4. Symlink skills (clean stale links first)
+# 4. Symlink skills (remove ALL existing symlinks first for clean install)
 echo "[4/9] Linking skills..."
 mkdir -p "$CLAUDE_DIR/skills"
-find "$CLAUDE_DIR/skills" -maxdepth 1 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+find "$CLAUDE_DIR/skills" -maxdepth 1 -type l -delete 2>/dev/null || true
 for skill_dir in "$REPO_DIR"/global-skills/*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
@@ -120,14 +120,14 @@ for skill_dir in "$REPO_DIR"/global-skills/*/; do
 done
 echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
 
-# 5. Symlink agents (clean stale links first)
+# 5. Symlink agents (remove ALL existing symlinks first for clean install)
 echo "[5/9] Linking agents..."
 mkdir -p "$CLAUDE_DIR/agents"
 # Only create team subdir if source exists
 if [ -d "$REPO_DIR/global-agents/team" ]; then
   mkdir -p "$CLAUDE_DIR/agents/team"
 fi
-find "$CLAUDE_DIR/agents" -maxdepth 2 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+find "$CLAUDE_DIR/agents" -maxdepth 2 -type l -delete 2>/dev/null || true
 for f in "$REPO_DIR"/global-agents/*.md; do
   [ -f "$f" ] || continue
   ln -sf "$f" "$CLAUDE_DIR/agents/$(basename "$f")"
