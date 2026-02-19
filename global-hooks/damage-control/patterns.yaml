@@ -527,7 +527,6 @@ readOnlyPaths:
   # SHELL CONFIG FILES
   # ---------------------------------------------------------------------------
   - ~/.bashrc
-  - ~/.zshrc
   - ~/.profile
   - ~/.bash_profile
 
