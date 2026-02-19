@@ -9,7 +9,7 @@ echo "Repo: $REPO_DIR"
 echo ""
 
 # 0. Ensure prerequisites are installed
-echo "[0/8] Checking prerequisites..."
+echo "[0/9] Checking prerequisites..."
 
 # uv — required for all hook execution (hooks use `uv run --script`)
 if ! command -v uv >/dev/null 2>&1; then
@@ -57,7 +57,7 @@ fi
 echo ""
 
 # 1. Validate all hook files exist before generating config
-echo "[1/8] Validating hook files..."
+echo "[1/9] Validating hook files..."
 ERRORS=0
 SETTINGS_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/templates/settings.json.template")
 HOOK_PATHS=$(echo "$SETTINGS_CONTENT" | python3 -c "
@@ -94,13 +94,13 @@ fi
 echo "  All hook files verified."
 
 # 2. Generate settings.json from template
-echo "[2/8] Generating settings.json..."
+echo "[2/9] Generating settings.json..."
 mkdir -p "$CLAUDE_DIR"
 echo "$SETTINGS_CONTENT" > "$CLAUDE_DIR/settings.json"
 echo "  -> $CLAUDE_DIR/settings.json"
 
 # 3. Symlink commands (clean stale links first)
-echo "[3/8] Linking commands..."
+echo "[3/9] Linking commands..."
 mkdir -p "$CLAUDE_DIR/commands"
 find "$CLAUDE_DIR/commands" -maxdepth 1 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
 for f in "$REPO_DIR"/global-commands/*.md; do
@@ -110,7 +110,7 @@ done
 echo "  -> $(ls "$REPO_DIR"/global-commands/*.md 2>/dev/null | wc -l | tr -d ' ') commands"
 
 # 4. Symlink skills (clean stale links first)
-echo "[4/8] Linking skills..."
+echo "[4/9] Linking skills..."
 mkdir -p "$CLAUDE_DIR/skills"
 find "$CLAUDE_DIR/skills" -maxdepth 1 -type l ! -exec test -e {} \; -delete 2>/dev/null || true
 for skill_dir in "$REPO_DIR"/global-skills/*/; do
@@ -121,7 +121,7 @@ done
 echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
 
 # 5. Symlink agents (clean stale links first)
-echo "[5/8] Linking agents..."
+echo "[5/9] Linking agents..."
 mkdir -p "$CLAUDE_DIR/agents"
 # Only create team subdir if source exists
 if [ -d "$REPO_DIR/global-agents/team" ]; then
@@ -141,11 +141,33 @@ fi
 echo "  -> $(ls "$REPO_DIR"/global-agents/*.md 2>/dev/null | wc -l | tr -d ' ') agents"
 
 # 6. Generate documentation from repo state
-echo "[6/8] Generating docs..."
+echo "[6/9] Generating docs..."
 uv run "$REPO_DIR/scripts/generate_docs.py"
 
-# 7. Install git hooks (auto-doc before push)
-echo "[7/8] Installing git hooks..."
+# 7. Write global CLAUDE.md with full-autonomy instructions
+echo "[7/9] Writing global CLAUDE.md..."
+GLOBAL_CLAUDE="$CLAUDE_DIR/CLAUDE.md"
+YOLO_MARKER="# Autonomy: Yolo"
+if [ -f "$GLOBAL_CLAUDE" ] && grep -q "$YOLO_MARKER" "$GLOBAL_CLAUDE"; then
+  echo "  -> Already present, skipping."
+else
+  cat >> "$GLOBAL_CLAUDE" <<'YOLO'
+
+# Autonomy: Yolo
+
+Full autonomy mode. Execute all actions immediately without asking for confirmation:
+- Read, write, edit any file
+- Run any bash command
+- Git operations including push, force-push, hard-reset, branch deletion
+- Install packages, modify configs, delete files
+
+Do NOT say "let me read X", "shall I proceed", or ask permission before any tool use. Just do it.
+YOLO
+  echo "  -> $GLOBAL_CLAUDE (appended yolo instructions)"
+fi
+
+# 8. Install git hooks (auto-doc before push)
+echo "[8/9] Installing git hooks..."
 if [ -d "$REPO_DIR/.git" ]; then
   cp "$REPO_DIR/scripts/pre-push-hook.sh" "$REPO_DIR/.git/hooks/pre-push"
   chmod +x "$REPO_DIR/.git/hooks/pre-push"
@@ -154,8 +176,8 @@ else
   echo "  Skipped: not a git repository"
 fi
 
-# 8. Final summary
-echo "[8/8] Installation complete."
+# 9. Final summary
+echo "[9/9] Installation complete."
 echo "  uv:      $(uv --version)"
 echo "  python3: $(python3 --version)"
 echo "  git:     $(git --version)"
