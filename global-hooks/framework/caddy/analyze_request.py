@@ -251,8 +251,8 @@ STRATEGY_MAP = {
     ("simple", "standard"): "direct",
     ("simple", "high"): "direct",
     ("simple", "critical"): "fusion",
-    ("moderate", "standard"): "orchestrate",
-    ("moderate", "high"): "orchestrate",
+    ("moderate", "standard"): "team",      # parallel builder+validator, lighter than orchestrate
+    ("moderate", "high"): "team",
     ("moderate", "critical"): "fusion",
     ("complex", "standard"): "orchestrate",
     ("complex", "high"): "orchestrate",
@@ -261,6 +261,14 @@ STRATEGY_MAP = {
     ("massive", "high"): "rlm",
     ("massive", "critical"): "rlm",
 }
+
+# Detects multiple parallel operations in a single request (e.g. "fix X and add Y")
+_MULTI_OP_RE = re.compile(
+    r"\b(?:and|also|plus|as well|additionally)\b\s+\w*"
+    r"(?:fix|add|create|update|build|write|refactor|remove|delete|rename|"
+    r"implement|generate|test|make|set up|configure|move|extract|check)",
+    re.I,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -360,19 +368,36 @@ def classify_codebase_scope(text: str) -> str:
     return "moderate"
 
 
+def has_parallel_ops(text: str) -> bool:
+    """Return True if the prompt contains multiple parallelizable operations.
+
+    Catches patterns like "fix X and add Y", "refactor A and write tests",
+    which benefit from a team (parallel agents) even when complexity is simple.
+    """
+    return bool(_MULTI_OP_RE.search(text))
+
+
 def select_strategy(
     complexity: str,
     task_type: str,
     quality: str,
     codebase_scope: str,
+    prompt: str = "",
 ) -> str:
     """Select execution strategy based on classification.
+
+    Strategy ladder (lightest → heaviest):
+      direct → team → orchestrate → rlm / fusion
 
     Auto-RLM Trigger Logic:
     - Unknown scope + research task → RLM (explore first, find scope)
     - Broad scope + review/research/audit → RLM (prevent context rot)
     - Massive complexity regardless → RLM (iterative approach needed)
     - Explicit broad keywords → RLM (forced exploration mode)
+
+    Team Trigger Logic:
+    - Moderate complexity → team (lighter than orchestrate, still parallel)
+    - Simple task with multiple parallel ops ("fix X and add Y") → team
     """
     # Auto-RLM Triggers
 
@@ -402,7 +427,13 @@ def select_strategy(
     if task_type == "plan":
         return "brainstorm"
 
+    # Team trigger: simple tasks with clearly multiple parallel operations
+    # e.g. "fix the bug and add tests" — cheap but benefits from parallelism
+    if complexity == "simple" and quality != "critical" and has_parallel_ops(prompt):
+        return "team"
+
     # Look up in strategy map (simple/moderate/complex with quality)
+    # moderate → team (via STRATEGY_MAP), complex → orchestrate
     return STRATEGY_MAP.get((complexity, quality), "orchestrate")
 
 
@@ -530,11 +561,14 @@ Output format:
 }
 
 Definitions:
-- complexity: simple=tiny change/1 file, moderate=few files, complex=system/feature, massive=whole codebase/rewrite
+- complexity: simple=tiny change/1 file, moderate=few files or multiple steps, complex=system/feature, massive=whole codebase/rewrite
 - task_type: what kind of work is being requested
 - quality: standard=normal, high=important/careful, critical=security/payments/prod data/irreversible
 - scope: focused=1 file, moderate=module/component, broad=whole project, unknown=exploratory/unclear
 - confidence: how certain you are about the classification (0=total guess, 1=obvious)
+
+Strategy ladder (lightest to heaviest — for your reasoning only, do NOT include in output):
+  direct (single agent) → team (builder+validator pair) → orchestrate (5+ agents) → rlm (iterative) / fusion (best-of-N)
 """
 
 
@@ -680,7 +714,7 @@ def main():
             if s["skill"] not in blocked_skills
         ]
 
-        strategy = select_strategy(complexity, task_type, quality, codebase_scope)
+        strategy = select_strategy(complexity, task_type, quality, codebase_scope, prompt)
         # Use Haiku's self-reported confidence when available, else keyword estimate
         confidence = haiku_confidence if haiku_confidence is not None else keyword_confidence
 
@@ -767,9 +801,13 @@ def main():
                 "direct": (
                     "Simple task - execute directly without orchestration overhead."
                 ),
+                "team": (
+                    "Multi-step task - spawn a builder (Sonnet) + validator (Haiku) pair "
+                    "in parallel. Faster and cheaper than full orchestration."
+                ),
                 "orchestrate": (
-                    "Multi-step task - consider using /orchestrate "
-                    "or spawning specialized sub-agents."
+                    "Complex multi-agent task - use /orchestrate "
+                    "to coordinate specialized sub-agents."
                 ),
                 "rlm": (
                     "Large codebase task - consider using /rlm "

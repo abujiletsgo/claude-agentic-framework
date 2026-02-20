@@ -18,7 +18,7 @@ User types prompt
        ▼
 UserPromptSubmit hooks fire
   └─ analyze_request.py   → classifies task, injects Caddy analysis into context
-  └─ auto_delegate.py     → routes to strategy (direct / orchestrate / rlm / fusion)
+  └─ auto_delegate.py     → routes to strategy (direct / team / orchestrate / rlm / fusion)
        │
        ▼
 Claude processes the prompt (with injected context)
@@ -103,7 +103,7 @@ Context compaction → PreCompact hook fires
 
 ## 2. Complete Hook Inventory
 
-All 22 hooks, their events, matchers, timeouts, and purposes.
+All 26 hooks, their events, matchers, timeouts, and purposes.
 
 ### SessionStart (3 hooks)
 
@@ -208,11 +208,19 @@ Output: additionalContext injected into Claude's session
 | Complexity | Quality | Scope | Task Type | Strategy |
 |------------|---------|-------|-----------|----------|
 | simple | standard/high | any | any | direct |
+| simple | standard | any | multi-op ("and [verb]") | team |
 | simple | critical | any | any | fusion |
-| moderate/complex | standard/high | any | any | orchestrate |
-| moderate/complex | critical | any | any | fusion |
+| moderate | standard/high | any | any | team |
+| moderate | critical | any | any | fusion |
+| complex | standard/high | any | any | orchestrate |
+| complex | critical | any | any | fusion |
 | massive | any | any | any | rlm |
 | any | any | broad | review/research | rlm |
+
+**Strategy ladder** (lightest → heaviest): `direct` → `team` → `orchestrate` → `rlm` / `fusion`
+
+- **team**: Builder (Sonnet) + Validator (Haiku) in parallel — best for moderate tasks or simple tasks with multiple parallel operations. Faster and cheaper than full orchestration.
+- **orchestrate**: Full 5+ agent coordination — reserved for complex multi-system tasks.
 | any | any | unknown | research | rlm |
 | any | any | broad | moderate/complex | rlm |
 | any | any | any | research | research |
@@ -809,7 +817,7 @@ Tuned to avoid false positives — only speaks for genuinely noteworthy events.
 
 ## 14. Commands Reference
 
-All 13 slash commands available after installation:
+All 14 slash commands available after installation:
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
@@ -826,6 +834,7 @@ All 13 slash commands available after installation:
 | `/debug` | Diagnose and fix errors | When stuck on a failing test or error |
 | `/costs` | API usage and cost tracking | Budget monitoring |
 | `/loadbundle` | Restore agent intelligence from bundle | New session continuing previous work |
+| `/kr` | Toggle Korean language mode (Haiku translates input, Claude responds in Korean) | Korean-language sessions |
 
 ### Command Implementation
 

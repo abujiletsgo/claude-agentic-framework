@@ -247,6 +247,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/korean/kr_mode.py",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_prime_inject.py",
             "timeout": 5
           }

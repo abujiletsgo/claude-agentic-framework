@@ -7,7 +7,7 @@ v2.1.0 | One repo, one install, one source of truth.
 ```
 global-hooks/        damage-control/ observability/ framework/
 global-agents/       8 agents (8 root + 0 team)
-global-commands/     13 commands
+global-commands/     14 commands
 global-skills/       6 skills
 global-status-lines/ mastery/v9 + observability/
 apps/observability/  Vue 3 + Bun (ports 4000/5173)
