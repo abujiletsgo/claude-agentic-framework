@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Routing & Caddy — Claude Agentic Framework</title>
+<title>라우팅 & Caddy — Claude Agentic Framework</title>
 <link rel="stylesheet" href="shared.css">
 <style>
   .strategy-card {
@@ -42,120 +42,120 @@
 
 <header class="site-header">
   <div class="eyebrow">Claude Agentic Framework</div>
-  <h1>Request <span class="accent">Routing</span></h1>
-  <p>Every message you send is analyzed before Claude responds. Caddy — the request classifier — decides the optimal strategy so you get the right depth of response without wasted effort.</p>
+  <h1>요청 <span class="accent">라우팅</span></h1>
+  <p>당신이 보내는 모든 메시지는 Claude가 응답하기 전에 분석됩니다. 요청 분류기인 Caddy가 최적의 전략을 결정하여, 불필요한 낭비 없이 적절한 깊이의 응답을 제공합니다.</p>
 </header>
 
 <nav class="site-nav">
-  <a href="index.html">Overview</a>
-  <a href="agents.html">Agents</a>
-  <a href="caddy.html" class="active">Routing</a>
-  <a href="skills.html">Skills</a>
-  <a href="hooks.html">Hooks</a>
-  <a href="memory-system.html">Memory</a>
+  <a href="index.html">개요</a>
+  <a href="agents.html">에이전트</a>
+  <a href="caddy.html" class="active">라우팅</a>
+  <a href="skills.html">스킬</a>
+  <a href="hooks.html">훅</a>
+  <a href="memory-system.html">메모리</a>
 </nav>
 
 <div class="container">
 
   <section>
-    <div class="eyebrow-sm">What is Caddy?</div>
-    <h2>Automatic Task Classification</h2>
-    <p class="section-desc">Caddy is a UserPromptSubmit hook that fires on every message you send. It classifies the request on multiple dimensions and injects a routing recommendation into Claude's context — all before Claude writes a single word.</p>
+    <div class="eyebrow-sm">Caddy란 무엇인가?</div>
+    <h2>자동 태스크 분류</h2>
+    <p class="section-desc">Caddy는 당신이 보내는 모든 메시지에 실행되는 UserPromptSubmit 훅입니다. 요청을 여러 차원으로 분류하고, Claude가 한 글자도 쓰기 전에 라우팅 권장사항을 컨텍스트에 주입합니다.</p>
 
     <div class="flow" style="margin-bottom:24px;">
-      <div class="flow-title">What happens when you send a message</div>
+      <div class="flow-title">메시지를 보낼 때 일어나는 일</div>
       <div class="flow-step">
         <div class="flow-icon">💬</div>
         <div class="flow-content">
-          <div class="flow-hook">You send a message</div>
-          <div class="flow-desc">UserPromptSubmit hooks fire before Claude processes the message.</div>
+          <div class="flow-hook">메시지를 보냅니다</div>
+          <div class="flow-desc">Claude가 메시지를 처리하기 전에 UserPromptSubmit 훅이 실행됩니다.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-icon" style="background:var(--accent-dim); border-color:#3d2010;">🔍</div>
         <div class="flow-content">
-          <div class="flow-hook">analyze_request.py — Caddy classifies the task</div>
-          <div class="flow-desc">Keyword matching + lightweight Haiku call. Classifies on: complexity (simple/moderate/massive), quality (standard/critical), scope (known/moderate/unknown), domain (implement/research/debug/etc). Also suggests relevant skills.</div>
+          <div class="flow-hook">analyze_request.py — Caddy가 태스크를 분류합니다</div>
+          <div class="flow-desc">키워드 매칭 + 경량 Haiku 호출. 복잡도(simple/moderate/massive), 품질(standard/critical), 범위(known/moderate/unknown), 도메인(implement/research/debug 등)을 분류합니다. 관련 스킬도 제안합니다.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-icon" style="background:var(--l3-bg); border-color:var(--l3-border);">📡</div>
         <div class="flow-content">
-          <div class="flow-hook">auto_delegate.py — injects routing recommendation</div>
-          <div class="flow-desc">Based on classification, injects into context: recommended strategy, confidence score, relevant skills, and guidance note. You see this as the [Caddy] system-reminder.</div>
+          <div class="flow-hook">auto_delegate.py — 라우팅 권장사항을 주입합니다</div>
+          <div class="flow-desc">분류 결과를 바탕으로 컨텍스트에 주입합니다: 권장 전략, 신뢰도 점수, 관련 스킬, 안내 메모. [Caddy] system-reminder로 표시됩니다.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-icon">🤖</div>
         <div class="flow-content">
-          <div class="flow-hook">Claude responds with appropriate strategy</div>
-          <div class="flow-desc">Claude reads the Caddy recommendation and uses it to decide: respond directly, spawn a builder+validator pair, invoke the orchestrator, or use RLM for large-scale analysis.</div>
+          <div class="flow-hook">Claude가 적절한 전략으로 응답합니다</div>
+          <div class="flow-desc">Claude는 Caddy 권장사항을 읽고 직접 응답할지, 빌더+검증자 쌍을 생성할지, 오케스트레이터를 호출할지, 대규모 분석을 위해 RLM을 사용할지 결정합니다.</div>
         </div>
       </div>
     </div>
 
     <div class="callout amber">
-      <strong>The Caddy recommendation is advisory, not mandatory.</strong> Claude always has final judgment. If you explicitly ask for a specific approach, that overrides Caddy. But for ambiguous requests, Caddy consistently picks the right strategy.
+      <strong>Caddy 권장사항은 참고용이지 강제가 아닙니다.</strong> Claude는 항상 최종 판단권을 가집니다. 특정 접근 방식을 명시적으로 요청하면 Caddy를 재정의합니다. 하지만 모호한 요청에서는 Caddy가 일관되게 올바른 전략을 선택합니다.
     </div>
   </section>
 
   <section>
-    <div class="eyebrow-sm">Strategies</div>
-    <h2>5 Execution Strategies</h2>
-    <p class="section-desc">Caddy selects one of these strategies based on complexity, scope, and quality requirements.</p>
+    <div class="eyebrow-sm">전략</div>
+    <h2>5가지 실행 전략</h2>
+    <p class="section-desc">Caddy는 복잡도, 범위, 품질 요구사항에 따라 다음 전략 중 하나를 선택합니다.</p>
 
     <div class="card-grid" style="margin-bottom:32px;">
 
       <div class="strategy-card direct">
-        <div class="strategy-name">direct <span class="tag" style="background:var(--l2-bg); color:var(--green); border:1px solid var(--l2-border);">fastest</span></div>
-        <div class="strategy-when">Simple, known-scope tasks. 1-2 files, clear requirements, no exploration needed.</div>
+        <div class="strategy-name">직접 (direct) <span class="tag" style="background:var(--l2-bg); color:var(--green); border:1px solid var(--l2-border);">가장 빠름</span></div>
+        <div class="strategy-when">간단하고 범위가 명확한 태스크. 파일 1-2개, 명확한 요구사항, 탐색 불필요.</div>
         <ul class="use-list" style="list-style:none; margin-bottom:0;">
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Fix a typo or variable name</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Add a console.log for debugging</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Update a single config value</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Explain what a function does</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 오타 또는 변수명 수정</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 디버깅용 console.log 추가</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 단일 설정값 변경</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 함수 동작 설명</li>
         </ul>
       </div>
 
       <div class="strategy-card team">
-        <div class="strategy-name">team <span class="tag" style="background:var(--accent-dim); color:var(--accent); border:1px solid #3d2010;">recommended most often</span></div>
-        <div class="strategy-when">Multi-step tasks with moderate complexity. Builder (Sonnet) implements + Validator (Haiku) verifies in parallel.</div>
+        <div class="strategy-name">팀 (team) <span class="tag" style="background:var(--accent-dim); color:var(--accent); border:1px solid #3d2010;">가장 자주 권장됨</span></div>
+        <div class="strategy-when">중간 복잡도의 다단계 태스크. 빌더(Sonnet)가 구현하고 검증자(Haiku)가 병렬로 검증합니다.</div>
         <ul class="use-list" style="list-style:none; margin-bottom:0;">
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Add a new API endpoint with validation</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Fix a bug that spans 3-4 files</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Update documentation across a module</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Refactor a service class</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 유효성 검사가 포함된 새 API 엔드포인트 추가</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 3-4개 파일에 걸친 버그 수정</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 모듈 전반의 문서 업데이트</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 서비스 클래스 리팩토링</li>
         </ul>
       </div>
 
       <div class="strategy-card orchestrate">
-        <div class="strategy-name">orchestrate</div>
-        <div class="strategy-when">Complex tasks requiring coordination across many files, unknown scope, or multiple specialist domains.</div>
+        <div class="strategy-name">오케스트레이트 (orchestrate)</div>
+        <div class="strategy-when">여러 파일에 걸쳐 조율이 필요하거나, 범위가 불명확하거나, 여러 전문 도메인이 필요한 복잡한 태스크.</div>
         <ul class="use-list" style="list-style:none; margin-bottom:0;">
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Implement a full auth system</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Security audit of the codebase</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Performance investigation with unknown cause</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Cross-cutting refactor (e.g., add observability)</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 전체 인증 시스템 구현</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 코드베이스 보안 감사</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 원인 불명의 성능 문제 조사</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 횡단 관심사 리팩토링 (예: 옵저버빌리티 추가)</li>
         </ul>
       </div>
 
       <div class="strategy-card rlm">
-        <div class="strategy-name">rlm</div>
-        <div class="strategy-when">Massive codebase tasks where even a single agent would hit context limits. Recursive sub-agents explore slices.</div>
+        <div class="strategy-name">RLM</div>
+        <div class="strategy-when">단일 에이전트도 컨텍스트 한계에 도달할 만큼 방대한 코드베이스 태스크. 재귀적 서브에이전트가 슬라이스 단위로 탐색합니다.</div>
         <ul class="use-list" style="list-style:none; margin-bottom:0;">
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Full codebase audit (200+ files)</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Dependency analysis across a monorepo</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> "Find all X across the entire project"</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 전체 코드베이스 감사 (200개 이상 파일)</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 모노레포 전체 의존성 분석</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> "프로젝트 전체에서 X를 모두 찾아줘"</li>
         </ul>
       </div>
 
       <div class="strategy-card fusion">
-        <div class="strategy-name">fusion <span class="tag" style="background:#0f1a18; color:var(--teal); border:1px solid #1e3d32;">best-of-N</span></div>
-        <div class="strategy-when">Critical code where quality matters more than speed. Runs N parallel attempts, picks the best output.</div>
+        <div class="strategy-name">퓨전 (fusion) <span class="tag" style="background:#0f1a18; color:var(--teal); border:1px solid #1e3d32;">최선 선택</span></div>
+        <div class="strategy-when">속도보다 품질이 중요한 중요 코드. N개의 병렬 시도를 실행하고 최선의 결과물을 선택합니다.</div>
         <ul class="use-list" style="list-style:none; margin-bottom:0;">
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Security-critical cryptographic functions</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Payment processing logic</li>
-          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Core algorithm implementations</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 보안이 중요한 암호화 함수</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 결제 처리 로직</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> 핵심 알고리즘 구현</li>
         </ul>
       </div>
 
@@ -163,64 +163,64 @@
   </section>
 
   <section>
-    <div class="eyebrow-sm">Real Examples</div>
-    <h2>How Prompts Get Classified</h2>
-    <p class="section-desc">Exact examples of what you'd type and what Caddy recommends.</p>
+    <div class="eyebrow-sm">실제 분류 사례</div>
+    <h2>프롬프트 분류 방식</h2>
+    <p class="section-desc">실제로 입력할 내용과 Caddy가 권장하는 전략의 정확한 예시입니다.</p>
 
     <div class="card">
       <table class="prompt-table">
         <thead>
           <tr>
-            <th style="width:45%">Your Message</th>
-            <th style="width:15%">Strategy</th>
-            <th>Why</th>
+            <th style="width:45%">메시지 내용</th>
+            <th style="width:15%">전략</th>
+            <th>이유</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="prompt-text">"fix the typo in the README"</td>
-            <td class="strategy-val val-direct">direct</td>
-            <td class="why">Single file, trivial change, known location</td>
+            <td class="prompt-text">"README의 오타를 고쳐줘"</td>
+            <td class="strategy-val val-direct">직접 (direct)</td>
+            <td class="why">단일 파일, 사소한 변경, 위치 명확</td>
           </tr>
           <tr>
-            <td class="prompt-text">"add input validation to the signup form"</td>
-            <td class="strategy-val val-team">team</td>
-            <td class="why">Multi-step: find form, add validation, test — but scope is known</td>
+            <td class="prompt-text">"회원가입 폼에 입력 유효성 검사를 추가해줘"</td>
+            <td class="strategy-val val-team">팀 (team)</td>
+            <td class="why">다단계: 폼 찾기, 유효성 추가, 테스트 — 범위는 명확</td>
           </tr>
           <tr>
-            <td class="prompt-text">"the login is broken"</td>
-            <td class="strategy-val val-team">team</td>
-            <td class="why">Debug + fix pattern, moderate scope, needs exploration</td>
+            <td class="prompt-text">"로그인이 안 돼"</td>
+            <td class="strategy-val val-team">팀 (team)</td>
+            <td class="why">디버그 + 수정 패턴, 중간 범위, 탐색 필요</td>
           </tr>
           <tr>
-            <td class="prompt-text">"add two-factor authentication"</td>
-            <td class="strategy-val val-orchestrate">orchestrate</td>
-            <td class="why">Complex feature, multiple files, unknown current auth structure</td>
+            <td class="prompt-text">"이중 인증을 추가해줘"</td>
+            <td class="strategy-val val-orchestrate">오케스트레이트 (orchestrate)</td>
+            <td class="why">복잡한 기능, 여러 파일, 현재 인증 구조 불명확</td>
           </tr>
           <tr>
-            <td class="prompt-text">"can you do a security audit?"</td>
-            <td class="strategy-val val-orchestrate">orchestrate</td>
-            <td class="why">Open-ended, multiple domains, high quality requirement</td>
+            <td class="prompt-text">"보안 감사를 해줄 수 있어?"</td>
+            <td class="strategy-val val-orchestrate">오케스트레이트 (orchestrate)</td>
+            <td class="why">개방형, 여러 도메인, 높은 품질 요구</td>
           </tr>
           <tr>
-            <td class="prompt-text">"find all places we handle errors in this codebase"</td>
-            <td class="strategy-val val-rlm">rlm</td>
-            <td class="why">Cross-cutting concern, entire codebase, context-limit risk</td>
+            <td class="prompt-text">"이 코드베이스에서 에러를 처리하는 곳을 모두 찾아줘"</td>
+            <td class="strategy-val val-rlm">RLM</td>
+            <td class="why">횡단 관심사, 전체 코드베이스, 컨텍스트 한계 위험</td>
           </tr>
           <tr>
-            <td class="prompt-text">"implement the payment charge function with best practices"</td>
-            <td class="strategy-val val-fusion">fusion</td>
-            <td class="why">Critical code path, quality over speed, financial logic</td>
+            <td class="prompt-text">"모범 사례를 적용해서 결제 청구 함수를 구현해줘"</td>
+            <td class="strategy-val val-fusion">퓨전 (fusion)</td>
+            <td class="why">중요 코드 경로, 속도보다 품질 우선, 금융 로직</td>
           </tr>
           <tr>
-            <td class="prompt-text">"what does the useAuth hook do?"</td>
-            <td class="strategy-val val-direct">direct</td>
-            <td class="why">Research/explain task, read 1-2 files, no implementation</td>
+            <td class="prompt-text">"useAuth 훅은 뭘 하는 거야?"</td>
+            <td class="strategy-val val-direct">직접 (direct)</td>
+            <td class="why">조사/설명 태스크, 파일 1-2개 읽기, 구현 없음</td>
           </tr>
           <tr>
-            <td class="prompt-text">"refactor the entire user module to use dependency injection"</td>
-            <td class="strategy-val val-orchestrate">orchestrate</td>
-            <td class="why">Large scope, unknown file count, architectural change</td>
+            <td class="prompt-text">"전체 사용자 모듈을 의존성 주입 방식으로 리팩토링해줘"</td>
+            <td class="strategy-val val-orchestrate">오케스트레이트 (orchestrate)</td>
+            <td class="why">대규모 범위, 파일 수 불명, 아키텍처 변경</td>
           </tr>
         </tbody>
       </table>
@@ -228,55 +228,55 @@
   </section>
 
   <section>
-    <div class="eyebrow-sm">Under the Hood</div>
-    <h2>How Caddy Works Technically</h2>
-    <p class="section-desc">Two hooks. One classifies, one recommends. Both fire before Claude reads your message.</p>
+    <div class="eyebrow-sm">분류 작동 원리</div>
+    <h2>Caddy의 기술적 동작 방식</h2>
+    <p class="section-desc">두 개의 훅. 하나는 분류하고, 하나는 권장합니다. 둘 다 Claude가 메시지를 읽기 전에 실행됩니다.</p>
 
     <div class="two-col">
       <div class="card">
         <h4>analyze_request.py</h4>
-        <p style="font-size:13px; margin-bottom:12px;">UserPromptSubmit hook. Reads the prompt text, applies keyword matching for fast classification, then optionally calls Haiku for ambiguous cases.</p>
-        <p style="font-size:13px; margin-bottom:12px;">Classification dimensions:</p>
+        <p style="font-size:13px; margin-bottom:12px;">UserPromptSubmit 훅. 프롬프트 텍스트를 읽고, 빠른 분류를 위해 키워드 매칭을 적용한 후, 모호한 경우에는 선택적으로 Haiku를 호출합니다.</p>
+        <p style="font-size:13px; margin-bottom:12px;">분류 차원:</p>
         <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8; font-family:var(--font-mono);">
-          <li>→ <strong style="color:var(--text)">complexity:</strong> simple / moderate / massive</li>
-          <li>→ <strong style="color:var(--text)">quality:</strong> standard / critical</li>
-          <li>→ <strong style="color:var(--text)">scope:</strong> known / moderate / unknown</li>
-          <li>→ <strong style="color:var(--text)">domain:</strong> implement / research / debug / document / review / explain</li>
+          <li>→ <strong style="color:var(--text)">complexity(복잡도):</strong> simple / moderate / massive</li>
+          <li>→ <strong style="color:var(--text)">quality(품질):</strong> standard / critical</li>
+          <li>→ <strong style="color:var(--text)">scope(범위):</strong> known / moderate / unknown</li>
+          <li>→ <strong style="color:var(--text)">domain(도메인):</strong> implement / research / debug / document / review / explain</li>
         </ul>
-        <p style="font-size:12px; color:var(--muted); margin-top:12px;">Config: <code>data/caddy_config.yaml</code></p>
+        <p style="font-size:12px; color:var(--muted); margin-top:12px;">설정 파일: <code>data/caddy_config.yaml</code></p>
       </div>
       <div class="card">
         <h4>auto_delegate.py</h4>
-        <p style="font-size:13px; margin-bottom:12px;">Second UserPromptSubmit hook. Reads the classification output from analyze_request and injects the recommendation into Claude's context as a system reminder.</p>
-        <p style="font-size:13px; margin-bottom:12px;">What gets injected:</p>
+        <p style="font-size:13px; margin-bottom:12px;">두 번째 UserPromptSubmit 훅. analyze_request의 분류 결과를 읽고, 권장사항을 시스템 리마인더로 Claude의 컨텍스트에 주입합니다.</p>
+        <p style="font-size:13px; margin-bottom:12px;">주입되는 내용:</p>
         <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8; font-family:var(--font-mono);">
-          <li>→ <strong style="color:var(--text)">strategy:</strong> direct / team / orchestrate / rlm / fusion</li>
-          <li>→ <strong style="color:var(--text)">confidence:</strong> 0–100%</li>
-          <li>→ <strong style="color:var(--text)">skills:</strong> relevant skill names</li>
-          <li>→ <strong style="color:var(--text)">guidance:</strong> one-line execution note</li>
+          <li>→ <strong style="color:var(--text)">strategy(전략):</strong> direct / team / orchestrate / rlm / fusion</li>
+          <li>→ <strong style="color:var(--text)">confidence(신뢰도):</strong> 0–100%</li>
+          <li>→ <strong style="color:var(--text)">skills(스킬):</strong> 관련 스킬 이름</li>
+          <li>→ <strong style="color:var(--text)">guidance(안내):</strong> 한 줄 실행 메모</li>
         </ul>
-        <p style="font-size:12px; color:var(--muted); margin-top:12px;">This is the <code>[Caddy]</code> line you see in session reminders.</p>
+        <p style="font-size:12px; color:var(--muted); margin-top:12px;">세션 리마인더에서 보이는 <code>[Caddy]</code> 줄이 바로 이것입니다.</p>
       </div>
     </div>
 
     <div class="callout green" style="margin-top:16px;">
-      <strong>Token cost:</strong> Caddy's analysis costs ~100 tokens per message (Haiku is cheap). The savings from routing correctly — avoiding an orchestrator spawn on a trivial task — far exceed this cost on any non-trivial session.
+      <strong>토큰 비용:</strong> Caddy의 분석은 메시지당 약 100토큰이 소요됩니다 (Haiku는 저렴합니다). 올바른 라우팅으로 절약되는 비용 — 사소한 태스크에 오케스트레이터를 불필요하게 실행하지 않는 것 — 은 어떤 비사소한 세션에서도 이 비용을 훨씬 초과합니다.
     </div>
   </section>
 
   <section>
-    <div class="eyebrow-sm">Customization</div>
-    <h2>Tuning the Classifier</h2>
-    <p class="section-desc">Caddy's keyword lists and thresholds are configurable. Edit <code>data/caddy_config.yaml</code> to add project-specific signals.</p>
+    <div class="eyebrow-sm">Caddy 커스터마이징</div>
+    <h2>분류기 튜닝</h2>
+    <p class="section-desc">Caddy의 키워드 목록과 임계값은 설정 가능합니다. <code>data/caddy_config.yaml</code>을 편집하여 프로젝트별 신호를 추가하세요.</p>
 
-    <pre><code># data/caddy_config.yaml — example customization
+    <pre><code># data/caddy_config.yaml — 커스터마이징 예시
 
 complexity_signals:
   massive:
     - "entire codebase"
     - "full audit"
     - "migrate everything"
-    - "your_project_specific_term"  # ← add your own
+    - "your_project_specific_term"  # ← 직접 추가
   simple:
     - "typo"
     - "comment"
@@ -288,9 +288,9 @@ quality_signals:
     - "auth"
     - "crypto"
     - "pci"
-    - "your_critical_module"  # ← add your critical paths
+    - "your_critical_module"  # ← 중요 경로 추가
 
-# Confidence thresholds
+# 신뢰도 임계값
 thresholds:
   direct_max_complexity: simple
   team_max_complexity: moderate
@@ -301,9 +301,9 @@ thresholds:
 </div>
 
 <footer>
-  <a href="agents.html">← Agents</a> &nbsp;·&nbsp;
+  <a href="agents.html">← 에이전트</a> &nbsp;·&nbsp;
   Claude Agentic Framework v2.1 &nbsp;·&nbsp;
-  <a href="skills.html">Skills →</a>
+  <a href="skills.html">스킬 →</a>
 </footer>
 
 </body>

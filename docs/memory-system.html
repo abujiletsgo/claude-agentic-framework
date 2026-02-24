@@ -6,20 +6,20 @@
 <title>Claude Agentic Framework — Memory System</title>
 <style>
   :root {
-    --l0: #6b7280;
-    --l1: #2563eb;
-    --l2: #059669;
-    --l3: #7c3aed;
+    --l0: #7a746e;
+    --l1: #c07a5a;
+    --l2: #6b9e74;
+    --l3: #c49a5a;
     --font: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: var(--sans);
-    background: #0f172a;
-    color: #f1f5f9;
+    background: #0e0e0d;
+    color: #ede8e1;
     min-height: 100vh;
     line-height: 1.6;
   }
@@ -27,20 +27,20 @@
   header {
     padding: 60px 40px 40px;
     text-align: center;
-    border-bottom: 1px solid #1e293b;
-    background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    border-bottom: 1px solid #2d2b29;
+    background: linear-gradient(180deg, #0e0e0d 0%, #1e190f 100%);
   }
 
   header .badge {
     display: inline-block;
-    background: #312e81;
-    color: #c4b5fd;
+    background: #1e190f;
+    color: #c49a5a;
     font-family: var(--font);
     font-size: 11px;
     letter-spacing: 2px;
     padding: 4px 12px;
     border-radius: 20px;
-    border: 1px solid #4c1d95;
+    border: 1px solid #c49a5a;
     margin-bottom: 16px;
     text-transform: uppercase;
   }
@@ -49,7 +49,7 @@
     font-size: clamp(24px, 5vw, 48px);
     font-weight: 700;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, #e2e8f0 0%, #a78bfa 50%, #38bdf8 100%);
+    background: linear-gradient(135deg, #ede8e1 0%, #c49a5a 50%, #5eb8a0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -57,7 +57,7 @@
   }
 
   header p {
-    color: #94a3b8;
+    color: #7a746e;
     font-size: 16px;
     max-width: 680px;
     margin: 0 auto;
@@ -68,9 +68,9 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(14, 14, 13, 0.96);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #2d2b29;
     padding: 0 24px;
     display: flex;
     gap: 0;
@@ -79,7 +79,7 @@
 
   nav a {
     text-decoration: none;
-    color: #64748b;
+    color: #7a746e;
     font-size: 12px;
     font-family: var(--font);
     padding: 14px 16px;
@@ -88,11 +88,11 @@
     transition: color 0.15s, border-color 0.15s;
   }
 
-  nav a:hover { color: #f1f5f9; border-bottom-color: #334155; }
+  nav a:hover { color: #ede8e1; border-bottom-color: #3d3a37; }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
-  section { padding: 60px 0; border-bottom: 1px solid #1e293b; }
+  section { padding: 60px 0; border-bottom: 1px solid #2d2b29; }
   section:last-child { border-bottom: none; }
 
   .section-label {
@@ -100,21 +100,21 @@
     font-size: 11px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #64748b;
+    color: #7a746e;
     margin-bottom: 8px;
   }
 
   h2 {
     font-size: 26px;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #ede8e1;
     margin-bottom: 8px;
     letter-spacing: -0.5px;
   }
 
   .section-sub {
     font-size: 14px;
-    color: #64748b;
+    color: #7a746e;
     margin-bottom: 32px;
     max-width: 600px;
   }
@@ -128,10 +128,10 @@
   }
 
   .layer-card {
-    background: #1e293b;
+    background: #1a1918;
     border-radius: 12px;
     padding: 24px;
-    border: 1px solid #334155;
+    border: 1px solid #2d2b29;
     position: relative;
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -146,10 +146,10 @@
     height: 3px;
   }
 
-  .layer-card.l3::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
-  .layer-card.l2::before { background: linear-gradient(90deg, #059669, #34d399); }
-  .layer-card.l1::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
-  .layer-card.l0::before { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+  .layer-card.l3::before { background: linear-gradient(90deg, #c49a5a, #e0b97a); }
+  .layer-card.l2::before { background: linear-gradient(90deg, #6b9e74, #8bc494); }
+  .layer-card.l1::before { background: linear-gradient(90deg, #c07a5a, #d8987a); }
+  .layer-card.l0::before { background: linear-gradient(90deg, #7a746e, #9a948e); }
 
   .layer-num {
     font-family: var(--font);
@@ -162,57 +162,57 @@
     gap: 8px;
   }
 
-  .layer-card.l3 .layer-num { color: #a78bfa; }
-  .layer-card.l2 .layer-num { color: #34d399; }
-  .layer-card.l1 .layer-num { color: #60a5fa; }
-  .layer-card.l0 .layer-num { color: #9ca3af; }
+  .layer-card.l3 .layer-num { color: #c49a5a; }
+  .layer-card.l2 .layer-num { color: #6b9e74; }
+  .layer-card.l1 .layer-num { color: #c07a5a; }
+  .layer-card.l0 .layer-num { color: #7a746e; }
 
   .layer-dot {
     width: 8px; height: 8px; border-radius: 50%;
     animation: pulse 2s infinite;
   }
-  .l3 .layer-dot { background: #a78bfa; }
-  .l2 .layer-dot { background: #34d399; }
-  .l1 .layer-dot { background: #60a5fa; }
-  .l0 .layer-dot { background: #9ca3af; animation: none; }
+  .l3 .layer-dot { background: #c49a5a; }
+  .l2 .layer-dot { background: #6b9e74; }
+  .l1 .layer-dot { background: #c07a5a; }
+  .l0 .layer-dot { background: #7a746e; animation: none; }
 
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }
 
-  .layer-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .layer-title { font-size: 18px; font-weight: 700; color: #ede8e1; margin-bottom: 4px; }
 
-  .layer-meta { font-size: 12px; color: #64748b; margin-bottom: 16px; font-family: var(--font); }
+  .layer-meta { font-size: 12px; color: #7a746e; margin-bottom: 16px; font-family: var(--font); }
 
   .layer-files { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 
   .layer-files li {
     font-family: var(--font);
     font-size: 12px;
-    color: #94a3b8;
+    color: #7a746e;
     display: flex;
     align-items: flex-start;
     gap: 8px;
     line-height: 1.4;
   }
 
-  .layer-files li::before { content: '→'; color: #475569; flex-shrink: 0; }
-  .layer-files li span { color: #e2e8f0; }
+  .layer-files li::before { content: '→'; color: #3d3a37; flex-shrink: 0; }
+  .layer-files li span { color: #ede8e1; }
 
   .token-budget {
-    background: #0f172a;
+    background: #0e0e0d;
     border-radius: 6px;
     padding: 8px 12px;
     font-family: var(--font);
     font-size: 11px;
-    color: #64748b;
+    color: #7a746e;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .token-budget .tok { color: #f59e0b; font-weight: 600; }
+  .token-budget .tok { color: #c49a5a; font-weight: 600; }
 
   /* ── Tag ── */
   .tag {
@@ -226,25 +226,25 @@
     vertical-align: middle;
     font-family: var(--font);
   }
-  .tag.l3 { background: #1e1b4b; color: #a78bfa; border: 1px solid #4c1d95; }
-  .tag.l2 { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
-  .tag.l1 { background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af; }
+  .tag.l3 { background: #1e190f; color: #c49a5a; border: 1px solid #c49a5a44; }
+  .tag.l2 { background: #0f1a10; color: #6b9e74; border: 1px solid #6b9e7444; }
+  .tag.l1 { background: #1e0f0a; color: #c07a5a; border: 1px solid #c07a5a44; }
   .tag.tok { background: #451a03; color: #fbbf24; border: 1px solid #92400e; }
-  .tag.auto { background: #1c1917; color: #d97706; border: 1px solid #78350f; }
-  .tag.demand { background: #0c4a6e; color: #38bdf8; border: 1px solid #075985; }
+  .tag.auto { background: #1a1918; color: #d97706; border: 1px solid #78350f; }
+  .tag.demand { background: #0d1e1c; color: #5eb8a0; border: 1px solid #5eb8a044; }
 
   /* ── Flow ── */
   .flow {
-    background: #1e293b;
+    background: #1a1918;
     border-radius: 16px;
     padding: 32px;
-    border: 1px solid #334155;
+    border: 1px solid #2d2b29;
     font-family: var(--font);
   }
 
   .flow-title {
     font-size: 11px;
-    color: #64748b;
+    color: #7a746e;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 24px;
@@ -264,7 +264,7 @@
     top: 40px;
     bottom: -12px;
     width: 2px;
-    background: linear-gradient(180deg, #334155 0%, transparent 100%);
+    background: linear-gradient(180deg, #2d2b29 0%, transparent 100%);
   }
 
   .flow-step + .flow-step { margin-top: 12px; }
@@ -275,24 +275,24 @@
     font-size: 18px; flex-shrink: 0; border: 1px solid;
   }
 
-  .flow-icon.l3 { background: #1e1b4b; border-color: #4c1d95; }
-  .flow-icon.l2 { background: #064e3b; border-color: #065f46; }
-  .flow-icon.l1 { background: #1e3a8a; border-color: #1e40af; }
+  .flow-icon.l3 { background: #1e190f; border-color: #c49a5a; }
+  .flow-icon.l2 { background: #0f1a10; border-color: #6b9e74; }
+  .flow-icon.l1 { background: #1e0f0a; border-color: #c07a5a; }
   .flow-icon.trigger { background: #292524; border-color: #78716c; }
-  .flow-icon.demand { background: #0c4a6e; border-color: #075985; }
+  .flow-icon.demand { background: #0d1e1c; border-color: #5eb8a0; }
 
   .flow-content { flex: 1; padding: 10px 0; }
-  .flow-hook { font-size: 12px; color: #f8fafc; font-weight: 600; margin-bottom: 3px; }
-  .flow-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+  .flow-hook { font-size: 12px; color: #ede8e1; font-weight: 600; margin-bottom: 3px; }
+  .flow-desc { font-size: 11px; color: #7a746e; line-height: 1.5; }
 
   /* ── Budget bars ── */
   .budget-row {
     display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
   }
-  .budget-label { font-family: var(--font); font-size: 12px; color: #94a3b8; min-width: 260px; }
-  .budget-bar-wrap { flex: 1; background: #1e293b; border-radius: 4px; height: 8px; overflow: hidden; }
+  .budget-label { font-family: var(--font); font-size: 12px; color: #7a746e; min-width: 260px; }
+  .budget-bar-wrap { flex: 1; background: #2d2b29; border-radius: 4px; height: 8px; overflow: hidden; }
   .budget-bar { height: 100%; border-radius: 4px; }
-  .budget-tok { font-family: var(--font); font-size: 11px; color: #f59e0b; min-width: 70px; text-align: right; }
+  .budget-tok { font-family: var(--font); font-size: 11px; color: #c49a5a; min-width: 70px; text-align: right; }
 
   /* ── Lifecycle grid ── */
   .lifecycle {
@@ -302,10 +302,10 @@
   }
 
   .lifecycle-phase {
-    background: #1e293b;
+    background: #1a1918;
     border-radius: 12px;
     padding: 24px;
-    border: 1px solid #334155;
+    border: 1px solid #2d2b29;
   }
 
   .phase-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
@@ -313,71 +313,71 @@
   .phase-icon {
     width: 36px; height: 36px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; background: #0f172a; border: 1px solid #334155;
+    font-size: 16px; background: #0e0e0d; border: 1px solid #2d2b29;
   }
 
-  .phase-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
-  .phase-trigger { font-family: var(--font); font-size: 10px; color: #64748b; }
+  .phase-name { font-size: 13px; font-weight: 700; color: #ede8e1; }
+  .phase-trigger { font-family: var(--font); font-size: 10px; color: #7a746e; }
 
   .event-list { list-style: none; }
   .event-list li {
     display: flex; gap: 8px; align-items: flex-start;
-    padding: 6px 0; border-bottom: 1px solid #0f172a;
+    padding: 6px 0; border-bottom: 1px solid #0e0e0d;
     font-size: 12px; font-family: var(--font);
   }
   .event-list li:last-child { border-bottom: none; }
-  .event-hook { color: #f8fafc; font-weight: 600; min-width: 0; flex: 1; }
-  .event-arrow { color: #475569; flex-shrink: 0; }
-  .event-target { color: #64748b; text-align: right; flex-shrink: 0; }
-  .event-target.l2 { color: #34d399; }
-  .event-target.l1 { color: #60a5fa; }
-  .event-target.demand { color: #38bdf8; }
+  .event-hook { color: #ede8e1; font-weight: 600; min-width: 0; flex: 1; }
+  .event-arrow { color: #3d3a37; flex-shrink: 0; }
+  .event-target { color: #7a746e; text-align: right; flex-shrink: 0; }
+  .event-target.l2 { color: #6b9e74; }
+  .event-target.l1 { color: #c07a5a; }
+  .event-target.demand { color: #5eb8a0; }
 
   /* ── Global / Local grid ── */
   .gl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 640px) { .gl-grid { grid-template-columns: 1fr; } }
 
-  .gl-card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; }
+  .gl-card { background: #1a1918; border-radius: 12px; padding: 24px; border: 1px solid #2d2b29; }
   .gl-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .gl-card.global h3 { color: #a78bfa; }
-  .gl-card.local h3 { color: #34d399; }
+  .gl-card.global h3 { color: #c49a5a; }
+  .gl-card.local h3 { color: #6b9e74; }
 
   .gl-path {
-    font-family: var(--font); font-size: 11px; color: #64748b;
-    background: #0f172a; padding: 4px 8px; border-radius: 4px;
+    font-family: var(--font); font-size: 11px; color: #7a746e;
+    background: #0e0e0d; padding: 4px 8px; border-radius: 4px;
     margin-bottom: 12px; display: block;
   }
 
   .gl-item {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid #0f172a; font-size: 12px;
+    padding: 8px 0; border-bottom: 1px solid #0e0e0d; font-size: 12px;
   }
   .gl-item:last-child { border-bottom: none; }
-  .gl-item-name { font-family: var(--font); color: #e2e8f0; font-weight: 600; min-width: 160px; }
-  .gl-item-desc { color: #64748b; }
-  .gl-arrow { text-align: center; padding: 12px; font-size: 12px; color: #475569; font-family: var(--font); }
+  .gl-item-name { font-family: var(--font); color: #ede8e1; font-weight: 600; min-width: 160px; }
+  .gl-item-desc { color: #7a746e; }
+  .gl-arrow { text-align: center; padding: 12px; font-size: 12px; color: #3d3a37; font-family: var(--font); }
 
   /* ── Trust chain ── */
   .trust-chain {
-    background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155;
+    background: #1a1918; border-radius: 12px; overflow: hidden; border: 1px solid #2d2b29;
   }
   .trust-row {
     display: flex; align-items: center; padding: 14px 20px;
-    border-bottom: 1px solid #0f172a; gap: 16px; transition: background 0.15s;
+    border-bottom: 1px solid #0e0e0d; gap: 16px; transition: background 0.15s;
   }
   .trust-row:last-child { border-bottom: none; }
-  .trust-row:hover { background: #253347; }
+  .trust-row:hover { background: #222120; }
   .trust-rank { font-family: var(--font); font-size: 20px; font-weight: 900; min-width: 32px; text-align: center; }
   .trust-row:nth-child(1) .trust-rank { color: #fbbf24; }
-  .trust-row:nth-child(2) .trust-rank { color: #94a3b8; }
+  .trust-row:nth-child(2) .trust-rank { color: #7a746e; }
   .trust-row:nth-child(3) .trust-rank { color: #d97706; }
-  .trust-row:nth-child(4) .trust-rank { color: #475569; }
-  .trust-source { font-family: var(--font); font-size: 13px; font-weight: 600; color: #e2e8f0; flex: 1; }
-  .trust-why { font-size: 12px; color: #64748b; flex: 2; }
+  .trust-row:nth-child(4) .trust-rank { color: #3d3a37; }
+  .trust-source { font-family: var(--font); font-size: 13px; font-weight: 600; color: #ede8e1; flex: 1; }
+  .trust-why { font-size: 12px; color: #7a746e; flex: 2; }
 
   /* ── Resolution diagram ── */
   .resolution-diagram {
-    background: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155;
+    background: #1a1918; border-radius: 12px; padding: 28px; border: 1px solid #2d2b29;
     font-family: var(--font);
   }
 
@@ -387,44 +387,44 @@
   }
 
   .res-box {
-    background: #0f172a; border-radius: 8px; padding: 12px;
-    text-align: center; border: 1px solid #334155;
+    background: #0e0e0d; border-radius: 8px; padding: 12px;
+    text-align: center; border: 1px solid #2d2b29;
     font-size: 11px;
   }
-  .res-box.local { border-color: #065f46; background: #022c22; }
-  .res-box.global { border-color: #4c1d95; background: #1e1b4b; }
-  .res-box.wins { border-color: #f59e0b; background: #1c1408; }
+  .res-box.local { border-color: #6b9e74; background: #0f1a10; }
+  .res-box.global { border-color: #c49a5a; background: #1e190f; }
+  .res-box.wins { border-color: #c49a5a; background: #1e1208; }
 
   .res-box .name { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
-  .res-box.local .name { color: #34d399; }
-  .res-box.global .name { color: #a78bfa; }
+  .res-box.local .name { color: #6b9e74; }
+  .res-box.global .name { color: #c49a5a; }
   .res-box.wins .name { color: #fbbf24; }
 
-  .res-box .detail { color: #475569; font-size: 10px; }
+  .res-box .detail { color: #3d3a37; font-size: 10px; }
 
-  .res-op { text-align: center; color: #475569; font-size: 14px; }
-  .res-op.beats { color: #22c55e; }
+  .res-op { text-align: center; color: #3d3a37; font-size: 14px; }
+  .res-op.beats { color: #6b9e74; }
 
   /* ── Pill steps ── */
   .step-chain {
     display: flex; gap: 0; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
   }
   .step-pill {
-    background: #1e293b; border-radius: 6px; padding: 8px 14px;
-    font-family: var(--font); font-size: 11px; color: #94a3b8;
-    border: 1px solid #334155;
+    background: #1a1918; border-radius: 6px; padding: 8px 14px;
+    font-family: var(--font); font-size: 11px; color: #7a746e;
+    border: 1px solid #2d2b29;
   }
-  .step-pill.active { background: #064e3b; color: #34d399; border-color: #065f46; }
-  .step-pill.trigger { background: #1e1b4b; color: #a78bfa; border-color: #4c1d95; }
-  .step-pill.note { background: #0c4a6e; color: #38bdf8; border-color: #075985; }
-  .step-arrow { padding: 0 8px; color: #334155; font-size: 14px; }
+  .step-pill.active { background: #0f1a10; color: #6b9e74; border-color: #6b9e74; }
+  .step-pill.trigger { background: #1e190f; color: #c49a5a; border-color: #c49a5a; }
+  .step-pill.note { background: #0d1e1c; color: #5eb8a0; border-color: #5eb8a0; }
+  .step-arrow { padding: 0 8px; color: #2d2b29; font-size: 14px; }
 
   /* ── Note box ── */
   .note-box {
-    background: #0c4a6e22; border: 1px solid #0c4a6e; border-radius: 8px;
-    padding: 12px 16px; font-size: 13px; color: #7dd3fc; margin-top: 16px;
+    background: #5eb8a011; border: 1px solid #5eb8a044; border-radius: 8px;
+    padding: 12px 16px; font-size: 13px; color: #5eb8a0; margin-top: 16px;
   }
-  .note-box strong { color: #38bdf8; }
+  .note-box strong { color: #5eb8a0; }
 
   /* ── Animations ── */
   @keyframes fadeInUp {
@@ -442,30 +442,30 @@
   .layer-card:nth-child(4) { animation-delay: 0.20s; }
 
   footer {
-    padding: 40px; text-align: center; color: #334155;
+    padding: 40px; text-align: center; color: #3d3a37;
     font-size: 12px; font-family: var(--font);
   }
-  footer a { color: #475569; text-decoration: none; }
-  footer a:hover { color: #64748b; }
+  footer a { color: #3d3a37; text-decoration: none; }
+  footer a:hover { color: #7a746e; }
 
   code {
-    background: #1e293b; padding: 2px 6px; border-radius: 4px;
+    background: #222120; padding: 2px 6px; border-radius: 4px;
     font-family: var(--font); font-size: 11px;
   }
 
-  hr { border: none; border-top: 1px solid #1e293b; margin: 24px 0; }
+  hr { border: none; border-top: 1px solid #2d2b29; margin: 24px 0; }
 </style>
 </head>
 <body>
 
-<div style="background:rgba(15,23,42,0.98);border-bottom:1px solid #1e293b;padding:0 24px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;">
-  <a href="index.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;letter-spacing:0.3px;">← Overview</a>
-  <a href="agents.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Agents</a>
-  <a href="caddy.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Routing</a>
-  <a href="skills.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Skills</a>
-  <a href="hooks.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Hooks</a>
+<div style="background:rgba(14,14,13,0.98);border-bottom:1px solid #2d2b29;padding:0 24px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;">
+  <a href="index.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;letter-spacing:0.3px;">← Overview</a>
+  <a href="agents.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Agents</a>
+  <a href="caddy.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Routing</a>
+  <a href="skills.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Skills</a>
+  <a href="hooks.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">Hooks</a>
   <a href="memory-system.html" style="text-decoration:none;color:#e07b54;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid #e07b54;">Memory</a>
-  <a href="memory-system-ko.html" style="text-decoration:none;color:#64748b;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">KO</a>
+  <a href="memory-system-ko.html" style="text-decoration:none;color:#7a746e;font-size:11px;font-family:var(--font);padding:10px 14px;white-space:nowrap;border-bottom:2px solid transparent;">KO</a>
 </div>
 
 <header>
@@ -500,7 +500,7 @@
       <div class="layer-card l3">
         <div class="layer-num"><div class="layer-dot"></div>Layer 3</div>
         <div class="layer-title">Semantic</div>
-        <div class="layer-meta">global · indefinite · <strong style="color:#a78bfa">always injected</strong></div>
+        <div class="layer-meta">global · indefinite · <strong style="color:#c49a5a">always injected</strong></div>
         <ul class="layer-files">
           <li><span>~/.claude/CLAUDE.md</span> — system instructions</li>
           <li><span>~/.claude/memory/MEMORY.md</span> — global rules</li>
@@ -519,8 +519,8 @@
         <div class="layer-meta">per-project · project lifetime · partially on-demand</div>
         <ul class="layer-files">
           <li><span>.claude/PROJECT_CONTEXT.md</span> — auto-injected ✓</li>
-          <li><span>.claude/FACTS.md</span> — <em style="color:#38bdf8">on-demand</em></li>
-          <li><span>.claude/MEMORY.md</span> — <em style="color:#38bdf8">on-demand</em></li>
+          <li><span>.claude/FACTS.md</span> — <em style="color:#5eb8a0">on-demand</em></li>
+          <li><span>.claude/MEMORY.md</span> — <em style="color:#5eb8a0">on-demand</em></li>
           <li><span>.claude/agents/</span> — local agent overrides</li>
           <li><span>.claude/skills/</span> — local skill overrides</li>
         </ul>
@@ -566,39 +566,39 @@
 
     <!-- Token budget bars -->
     <div>
-      <div style="font-size:11px; color:#64748b; margin-bottom:16px; font-family:var(--font); letter-spacing:2px; text-transform:uppercase;">Session Start Injection Budget</div>
+      <div style="font-size:11px; color:#7a746e; margin-bottom:16px; font-family:var(--font); letter-spacing:2px; text-transform:uppercase;">Session Start Injection Budget</div>
 
       <div class="budget-row">
         <div class="budget-label">L3 · CLAUDE.md + MEMORY.md (global rules)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#c49a5a,#c49a5a);"></div></div>
         <div class="budget-tok">~800 tok</div>
       </div>
       <div class="budget-row">
         <div class="budget-label">L2 · PROJECT_CONTEXT.md (architecture) <span class="tag auto">auto</span></div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:57%; background:linear-gradient(90deg,#059669,#34d399);"></div></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:57%; background:linear-gradient(90deg,#6b9e74,#6b9e74);"></div></div>
         <div class="budget-tok">~2000 tok</div>
       </div>
       <div class="budget-row">
         <div class="budget-label">L2 · FACTS.md <span class="tag demand">on-demand</span></div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:42%; background:linear-gradient(90deg,#059669,#34d399); opacity:0.3;"></div></div>
-        <div class="budget-tok" style="color:#64748b;">~1500 tok*</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:42%; background:linear-gradient(90deg,#6b9e74,#6b9e74); opacity:0.3;"></div></div>
+        <div class="budget-tok" style="color:#7a746e;">~1500 tok*</div>
       </div>
       <div class="budget-row">
         <div class="budget-label">L2 · MEMORY.md <span class="tag demand">on-demand</span></div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#059669,#34d399); opacity:0.3;"></div></div>
-        <div class="budget-tok" style="color:#64748b;">~800 tok*</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#6b9e74,#6b9e74); opacity:0.3;"></div></div>
+        <div class="budget-tok" style="color:#7a746e;">~800 tok*</div>
       </div>
       <div class="budget-row">
         <div class="budget-label">L2 · REPO_MAP (large repos ≥200 files) <span class="tag auto">auto</span></div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:28%; background:linear-gradient(90deg,#0284c7,#38bdf8); opacity:0.5;"></div></div>
-        <div class="budget-tok" style="color:#94a3b8;">~1000 tok</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:28%; background:linear-gradient(90deg,#5eb8a0,#5eb8a0); opacity:0.5;"></div></div>
+        <div class="budget-tok" style="color:#7a746e;">~1000 tok</div>
       </div>
 
-      <div style="margin-top:16px; padding:12px 16px; background:#1e293b; border-radius:8px; font-family:var(--font); font-size:12px; display:flex; justify-content:space-between; border:1px solid #334155;">
-        <span style="color:#64748b;">Always-on context before first message</span>
+      <div style="margin-top:16px; padding:12px 16px; background:#1a1918; border-radius:8px; font-family:var(--font); font-size:12px; display:flex; justify-content:space-between; border:1px solid #2d2b29;">
+        <span style="color:#7a746e;">Always-on context before first message</span>
         <span style="color:#fbbf24; font-weight:700;">~2800 tokens</span>
       </div>
-      <p style="font-size:11px; color:#475569; margin-top:8px; font-family:var(--font);">* on-demand only — consumed when Claude reads the file during the session, not at startup</p>
+      <p style="font-size:11px; color:#3d3a37; margin-top:8px; font-family:var(--font);">* on-demand only — consumed when Claude reads the file during the session, not at startup</p>
     </div>
   </section>
 
@@ -738,7 +738,7 @@
             <span class="event-arrow">→</span>
             <span class="event-target l2">FACTS.md</span>
           </li>
-          <li style="font-size:11px; color:#475569; padding:4px 0;">
+          <li style="font-size:11px; color:#3d3a37; padding:4px 0;">
             Success + known pattern → CONFIRMED<br>
             Failure + error pattern → GOTCHA<br>
             No LLM calls — pure pattern matching
@@ -760,7 +760,7 @@
             <span class="event-arrow">→</span>
             <span class="event-target l2">FACTS.md</span>
           </li>
-          <li style="font-size:11px; color:#475569; padding:4px 0;">
+          <li style="font-size:11px; color:#3d3a37; padding:4px 0;">
             Key path written → PATHS fact<br>
             Tracks: .claude/, templates/, global-hooks/, docs/, scripts/, config files
           </li>
@@ -786,7 +786,7 @@
             <span class="event-arrow">→</span>
             <span class="event-target l2">prune FACTS.md</span>
           </li>
-          <li style="font-size:11px; color:#475569; padding:4px 0;">
+          <li style="font-size:11px; color:#3d3a37; padding:4px 0;">
             MEMORY: git diff + commit message.<br>
             Only writes if something actually changed.<br>
             FACTS: prunes entries older than 90 days.
@@ -974,7 +974,7 @@
             <span class="event-arrow">→</span>
             <span class="event-target l1">preserve L1</span>
           </li>
-          <li style="color:#64748b; font-size:11px; padding:8px 0;">
+          <li style="color:#7a746e; font-size:11px; padding:8px 0;">
             Reads compressed cold-task summaries + active tasks + modified files + key decisions + git diff stat → injects as preservation instructions into compaction prompt
           </li>
         </ul>
@@ -994,7 +994,7 @@
       <div class="gl-card global">
         <h3>🌐 Global Agents</h3>
         <code class="gl-path">~/.claude/agents/ (symlinked by install.sh)</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Available in every project. Installed once, used everywhere.</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:16px;">Available in every project. Installed once, used everywhere.</div>
 
         <div class="gl-item">
           <div class="gl-item-name">orchestrator.md</div>
@@ -1033,7 +1033,7 @@
       <div class="gl-card local">
         <h3>📁 Local Agents</h3>
         <code class="gl-path">.claude/agents/ (project directory)</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Project-specific. <strong style="color:#34d399;">Overrides global with same name.</strong></div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:16px;">Project-specific. <strong style="color:#6b9e74;">Overrides global with same name.</strong></div>
 
         <div class="gl-item">
           <div class="gl-item-name">domain-specialist.md</div>
@@ -1045,10 +1045,10 @@
         </div>
         <div class="gl-item">
           <div class="gl-item-name">orchestrator.md</div>
-          <div class="gl-item-desc" style="color:#34d399;">← Overrides global orchestrator</div>
+          <div class="gl-item-desc" style="color:#6b9e74;">← Overrides global orchestrator</div>
         </div>
-        <div style="margin-top:16px; background:#0f172a; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#64748b;">
-          <div style="color:#34d399; margin-bottom:8px; font-weight:700;">How to create:</div>
+        <div style="margin-top:16px; background:#0e0e0d; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#7a746e;">
+          <div style="color:#6b9e74; margin-bottom:8px; font-weight:700;">How to create:</div>
           Write <code>.claude/agents/my-agent.md</code><br>
           Frontmatter: name, description, model, tools<br>
           No install needed — Claude Code auto-discovers
@@ -1062,7 +1062,7 @@
       <div class="gl-card global">
         <h3>🌐 Global Skills</h3>
         <code class="gl-path">~/.claude/skills/ (symlinked by install.sh)</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">7 framework skills. Available in all projects.</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:16px;">7 framework skills. Available in all projects.</div>
 
         <div class="gl-item">
           <div class="gl-item-name">code-review</div>
@@ -1097,7 +1097,7 @@
       <div class="gl-card local">
         <h3>📁 Local Skills</h3>
         <code class="gl-path">.claude/skills/ (project directory)</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Project-specific. <strong style="color:#34d399;">Overrides global with same name.</strong></div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:16px;">Project-specific. <strong style="color:#6b9e74;">Overrides global with same name.</strong></div>
 
         <div class="gl-item">
           <div class="gl-item-name">deploy.md</div>
@@ -1111,8 +1111,8 @@
           <div class="gl-item-name">db-migrate.md</div>
           <div class="gl-item-desc">Database migration skill</div>
         </div>
-        <div style="margin-top:16px; background:#0f172a; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#64748b;">
-          <div style="color:#34d399; margin-bottom:8px; font-weight:700;">How to create:</div>
+        <div style="margin-top:16px; background:#0e0e0d; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#7a746e;">
+          <div style="color:#6b9e74; margin-bottom:8px; font-weight:700;">How to create:</div>
           Write <code>.claude/skills/my-skill.md</code><br>
           Include: description, when to use, commands<br>
           Activate with <code>/my-skill</code> in Claude Code
@@ -1130,7 +1130,7 @@
 
     <div class="resolution-diagram">
 
-      <div style="font-size:11px; color:#64748b; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px;">Resolution order (top = highest priority)</div>
+      <div style="font-size:11px; color:#7a746e; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px;">Resolution order (top = highest priority)</div>
 
       <div class="res-row">
         <div class="res-box local">
@@ -1185,12 +1185,12 @@
 
       <hr>
 
-      <div style="font-size:11px; color:#64748b; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; margin-top:16px;">When to create project-local agents/skills</div>
+      <div style="font-size:11px; color:#7a746e; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; margin-top:16px;">When to create project-local agents/skills</div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div style="background:#064e3b22; border:1px solid #065f46; border-radius:8px; padding:14px; font-size:12px;">
-          <div style="color:#34d399; font-weight:700; margin-bottom:8px; font-family:var(--font);">✓ Create local when…</div>
-          <ul style="list-style:none; color:#94a3b8; line-height:1.8;">
+        <div style="background:#0f1a1022; border:1px solid #6b9e7433; border-radius:8px; padding:14px; font-size:12px;">
+          <div style="color:#6b9e74; font-weight:700; margin-bottom:8px; font-family:var(--font);">✓ Create local when…</div>
+          <ul style="list-style:none; color:#7a746e; line-height:1.8;">
             <li>→ Project has unique deploy / test workflow</li>
             <li>→ Domain expertise needed (payments, auth, ML)</li>
             <li>→ Need to override a global agent's behavior</li>
@@ -1198,9 +1198,9 @@
             <li>→ Custom commands for this project's toolchain</li>
           </ul>
         </div>
-        <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:14px; font-size:12px;">
-          <div style="color:#64748b; font-weight:700; margin-bottom:8px; font-family:var(--font);">✗ Don't create local when…</div>
-          <ul style="list-style:none; color:#64748b; line-height:1.8;">
+        <div style="background:#1a1918; border:1px solid #2d2b29; border-radius:8px; padding:14px; font-size:12px;">
+          <div style="color:#7a746e; font-weight:700; margin-bottom:8px; font-family:var(--font);">✗ Don't create local when…</div>
+          <ul style="list-style:none; color:#7a746e; line-height:1.8;">
             <li>→ Global agent already handles the task</li>
             <li>→ Behavior would be identical to global</li>
             <li>→ Task is one-off (just use the global)</li>
@@ -1287,71 +1287,71 @@
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:32px;">
 
-      <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #22c55e;">
-        <div style="font-family:var(--font); font-size:12px; color:#22c55e; margin-bottom:8px; font-weight:700;">✓ CONFIRMED</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Verified by execution. Trust fully.</div>
-        <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 1.0</div>
+      <div style="background:#1a1918; border-radius:10px; padding:18px; border:1px solid #2d2b29; border-top:3px solid #6b9e74;">
+        <div style="font-family:var(--font); font-size:12px; color:#6b9e74; margin-bottom:8px; font-weight:700;">✓ CONFIRMED</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:8px;">Verified by execution. Trust fully.</div>
+        <div style="font-family:var(--font); font-size:11px; color:#7a746e; background:#0e0e0d; padding:6px 8px; border-radius:4px;">confidence: 1.0</div>
       </div>
 
-      <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #f59e0b;">
+      <div style="background:#1a1918; border-radius:10px; padding:18px; border:1px solid #2d2b29; border-top:3px solid #c49a5a;">
         <div style="font-family:var(--font); font-size:12px; color:#f59e0b; margin-bottom:8px; font-weight:700;">⚠ GOTCHAS</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Known failure modes. Read before acting.</div>
-        <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 0.9</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:8px;">Known failure modes. Read before acting.</div>
+        <div style="font-family:var(--font); font-size:11px; color:#7a746e; background:#0e0e0d; padding:6px 8px; border-radius:4px;">confidence: 0.9</div>
       </div>
 
-      <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #38bdf8;">
-        <div style="font-family:var(--font); font-size:12px; color:#38bdf8; margin-bottom:8px; font-weight:700;">📁 PATHS</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Key file locations. Check before exploring.</div>
-        <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 0.85</div>
+      <div style="background:#1a1918; border-radius:10px; padding:18px; border:1px solid #2d2b29; border-top:3px solid #5eb8a0;">
+        <div style="font-family:var(--font); font-size:12px; color:#5eb8a0; margin-bottom:8px; font-weight:700;">📁 PATHS</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:8px;">Key file locations. Check before exploring.</div>
+        <div style="font-family:var(--font); font-size:11px; color:#7a746e; background:#0e0e0d; padding:6px 8px; border-radius:4px;">confidence: 0.85</div>
       </div>
 
-      <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #a78bfa;">
-        <div style="font-family:var(--font); font-size:12px; color:#a78bfa; margin-bottom:8px; font-weight:700;">→ PATTERNS</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Working command sequences.</div>
-        <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 0.8</div>
+      <div style="background:#1a1918; border-radius:10px; padding:18px; border:1px solid #2d2b29; border-top:3px solid #c49a5a;">
+        <div style="font-family:var(--font); font-size:12px; color:#c49a5a; margin-bottom:8px; font-weight:700;">→ PATTERNS</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:8px;">Working command sequences.</div>
+        <div style="font-family:var(--font); font-size:11px; color:#7a746e; background:#0e0e0d; padding:6px 8px; border-radius:4px;">confidence: 0.8</div>
       </div>
 
-      <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #475569; opacity:0.6;">
-        <div style="font-family:var(--font); font-size:12px; color:#6b7280; margin-bottom:8px; font-weight:700;">✗ STALE</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Contradicted. Never injected.</div>
-        <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 0.0</div>
+      <div style="background:#1a1918; border-radius:10px; padding:18px; border:1px solid #2d2b29; border-top:3px solid #3d3a37; opacity:0.6;">
+        <div style="font-family:var(--font); font-size:12px; color:#7a746e; margin-bottom:8px; font-weight:700;">✗ STALE</div>
+        <div style="font-size:12px; color:#7a746e; margin-bottom:8px;">Contradicted. Never injected.</div>
+        <div style="font-family:var(--font); font-size:11px; color:#7a746e; background:#0e0e0d; padding:6px 8px; border-radius:4px;">confidence: 0.0</div>
       </div>
 
     </div>
 
-    <div style="background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; font-family:var(--font); font-size:12px;">
-      <div style="color:#64748b; letter-spacing:2px; text-transform:uppercase; font-size:10px; margin-bottom:20px;">AUTO-MAINTENANCE PIPELINE (zero manual effort)</div>
+    <div style="background:#1a1918; border-radius:12px; padding:24px; border:1px solid #2d2b29; font-family:var(--font); font-size:12px;">
+      <div style="color:#7a746e; letter-spacing:2px; text-transform:uppercase; font-size:10px; margin-bottom:20px;">AUTO-MAINTENANCE PIPELINE (zero manual effort)</div>
 
       <!-- Bash success → CONFIRMED -->
       <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Bash success</div>
-          <div style="color:#475569; font-size:10px;">uv run, bash install…</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#c07a5a; font-weight:700; margin-bottom:4px;">Bash success</div>
+          <div style="color:#3d3a37; font-size:10px;">uv run, bash install…</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
-          <div style="color:#475569; font-size:10px;">pattern match (no LLM)</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#7a746e; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
+          <div style="color:#3d3a37; font-size:10px;">pattern match (no LLM)</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#064e3b; border-radius:8px; text-align:center; border:1px solid #065f46;">
-          <div style="color:#34d399; font-weight:700; margin-bottom:4px;">✓ CONFIRMED</div>
-          <div style="color:#065f46; font-size:10px;">written to FACTS.md</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f1a10; border-radius:8px; text-align:center; border:1px solid #6b9e7433;">
+          <div style="color:#6b9e74; font-weight:700; margin-bottom:4px;">✓ CONFIRMED</div>
+          <div style="color:#6b9e7433; font-size:10px;">written to FACTS.md</div>
         </div>
       </div>
 
       <!-- Bash failure → GOTCHA -->
       <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
           <div style="color:#f87171; font-weight:700; margin-bottom:4px;">Bash failure</div>
-          <div style="color:#475569; font-size:10px;">exit code ≠ 0</div>
+          <div style="color:#3d3a37; font-size:10px;">exit code ≠ 0</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
-          <div style="color:#475569; font-size:10px;">error pattern match</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#7a746e; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
+          <div style="color:#3d3a37; font-size:10px;">error pattern match</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
         <div style="flex:1; min-width:130px; padding:10px; background:#451a03; border-radius:8px; text-align:center; border:1px solid #92400e;">
           <div style="color:#fbbf24; font-weight:700; margin-bottom:4px;">⚠ GOTCHA</div>
           <div style="color:#92400e; font-size:10px;">written to FACTS.md</div>
@@ -1360,37 +1360,37 @@
 
       <!-- Write key file → PATHS -->
       <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Write key file</div>
-          <div style="color:#475569; font-size:10px;">.claude/, templates/, docs/…</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#c07a5a; font-weight:700; margin-bottom:4px;">Write key file</div>
+          <div style="color:#3d3a37; font-size:10px;">.claude/, templates/, docs/…</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
-          <div style="color:#475569; font-size:10px;">path pattern match</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#7a746e; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
+          <div style="color:#3d3a37; font-size:10px;">path pattern match</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#0c3547; border-radius:8px; text-align:center; border:1px solid #075985;">
-          <div style="color:#38bdf8; font-weight:700; margin-bottom:4px;">📁 PATHS</div>
-          <div style="color:#075985; font-size:10px;">written to FACTS.md</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0d1e1c; border-radius:8px; text-align:center; border:1px solid #5eb8a033;">
+          <div style="color:#5eb8a0; font-weight:700; margin-bottom:4px;">📁 PATHS</div>
+          <div style="color:#5eb8a033; font-size:10px;">written to FACTS.md</div>
         </div>
       </div>
 
       <!-- Session end → prune -->
       <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap;">
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Session ends</div>
-          <div style="color:#475569; font-size:10px;">Stop hook fires</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#c07a5a; font-weight:700; margin-bottom:4px;">Session ends</div>
+          <div style="color:#3d3a37; font-size:10px;">Stop hook fires</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
-          <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">validate_facts</div>
-          <div style="color:#475569; font-size:10px;">prune 90-day stale</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0e0e0d; border-radius:8px; text-align:center;">
+          <div style="color:#7a746e; font-weight:700; margin-bottom:4px;">validate_facts</div>
+          <div style="color:#3d3a37; font-size:10px;">prune 90-day stale</div>
         </div>
-        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:130px; padding:10px; background:#1e293b; border-radius:8px; text-align:center; border:1px solid #334155;">
-          <div style="color:#e2e8f0; font-weight:700; margin-bottom:4px;">FACTS.md pruned</div>
-          <div style="color:#475569; font-size:10px;">old stale removed</div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#2d2b29;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#1a1918; border-radius:8px; text-align:center; border:1px solid #2d2b29;">
+          <div style="color:#ede8e1; font-weight:700; margin-bottom:4px;">FACTS.md pruned</div>
+          <div style="color:#3d3a37; font-size:10px;">old stale removed</div>
         </div>
       </div>
     </div>
@@ -1428,15 +1428,15 @@
         <div class="tag l2">Layer 2</div>
       </div>
       <div class="trust-row">
-        <div class="trust-rank" style="color:#475569;">5</div>
-        <div class="trust-source" style="color:#64748b;">Model inference / reasoning</div>
-        <div class="trust-why" style="color:#475569;">Never trusted over the above. Always verify by execution.</div>
-        <div class="tag" style="background:#1c1917; color:#9ca3af; border:1px solid #374151;">inference</div>
+        <div class="trust-rank" style="color:#3d3a37;">5</div>
+        <div class="trust-source" style="color:#7a746e;">Model inference / reasoning</div>
+        <div class="trust-why" style="color:#3d3a37;">Never trusted over the above. Always verify by execution.</div>
+        <div class="tag" style="background:#1a1918; color:#7a746e; border:1px solid #2d2b29;">inference</div>
       </div>
     </div>
 
-    <div style="margin-top:16px; padding:16px 20px; background:#1e293b; border-radius:8px; border:1px solid #334155; font-size:13px; color:#94a3b8;">
-      <strong style="color:#f1f5f9;">Key rule:</strong> Never say "fixed" without running a test or script that confirms the actual output. Reading the code is not verification — <em>execute it.</em>
+    <div style="margin-top:16px; padding:16px 20px; background:#1a1918; border-radius:8px; border:1px solid #2d2b29; font-size:13px; color:#7a746e;">
+      <strong style="color:#ede8e1;">Key rule:</strong> Never say "fixed" without running a test or script that confirms the actual output. Reading the code is not verification — <em>execute it.</em>
     </div>
   </section>
 
