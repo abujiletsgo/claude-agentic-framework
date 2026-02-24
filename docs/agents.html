@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agents — Claude Agentic Framework</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .agent-card:hover { background: var(--surface2); }
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .agent-card.opus::before   { background: #c084fc; }
+  .agent-card.sonnet::before { background: var(--accent); }
+  .agent-card.haiku::before  { background: var(--green); }
+
+  .agent-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+
+  .agent-name { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .agent-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+
+  .use-list { list-style: none; margin-bottom: 12px; }
+  .use-list li { font-size: 12px; color: var(--muted); padding: 3px 0; display: flex; gap: 8px; }
+  .use-list li::before { content: '→'; color: var(--faint); flex-shrink: 0; }
+
+  .tier-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 48px; }
+  .tier-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+  .tier-name { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .tier-card.opus .tier-name   { color: #c084fc; }
+  .tier-card.sonnet .tier-name { color: var(--accent); }
+  .tier-card.haiku .tier-name  { color: var(--green); }
+  .tier-model { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 12px; }
+  .tier-agents { font-size: 12px; color: var(--muted); line-height: 1.8; }
+
+  @media (max-width: 540px) { .tier-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">Claude Agentic Framework</div>
+  <h1>Agent <span class="accent">System</span></h1>
+  <p>8 specialized agents across 3 model tiers. Each agent is purpose-built for a specific type of thinking — from deep architecture review to lightweight documentation tasks.</p>
+</header>
+
+<nav class="site-nav">
+  <a href="index.html">Overview</a>
+  <a href="agents.html" class="active">Agents</a>
+  <a href="caddy.html">Routing</a>
+  <a href="skills.html">Skills</a>
+  <a href="hooks.html">Hooks</a>
+  <a href="memory-system.html">Memory</a>
+</nav>
+
+<div class="container">
+
+  <section>
+    <div class="eyebrow-sm">Model Tiers</div>
+    <h2>Right Model for the Right Task</h2>
+    <p class="section-desc">Using Opus for everything wastes money. Using Haiku for architecture decisions wastes quality. The tier system routes tasks to the right model automatically — saving 50–60% on API costs.</p>
+
+    <div class="tier-row">
+      <div class="tier-card opus">
+        <div class="tier-name">Opus</div>
+        <div class="tier-model">claude-opus-4-6</div>
+        <div class="tier-agents">orchestrator<br>project-architect<br>critical-analyst</div>
+        <div style="margin-top:12px; font-size:11px; color:var(--muted); font-family:var(--font-mono);">Deep reasoning · Architecture · Strategy</div>
+      </div>
+      <div class="tier-card sonnet">
+        <div class="tier-name">Sonnet</div>
+        <div class="tier-model">claude-sonnet-4-6</div>
+        <div class="tier-agents">researcher<br>meta-agent<br>scout-report-suggest<br>rlm-root</div>
+        <div style="margin-top:12px; font-size:11px; color:var(--muted); font-family:var(--font-mono);">Exploration · Generation · Analysis</div>
+      </div>
+      <div class="tier-card haiku">
+        <div class="tier-name">Haiku</div>
+        <div class="tier-model">claude-haiku-4-5</div>
+        <div class="tier-agents">docs-scraper</div>
+        <div style="margin-top:12px; font-size:11px; color:var(--muted); font-family:var(--font-mono);">Speed · Cost · Simple tasks</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Global Agents</div>
+    <h2>The 8 Framework Agents</h2>
+    <p class="section-desc">Installed globally at <code>~/.claude/agents/</code> via <code>bash install.sh</code>. Available in every project without any per-project setup.</p>
+
+    <div class="agent-grid">
+
+      <div class="agent-card opus">
+        <div class="agent-name">orchestrator <span class="tag opus">Opus</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Primary multi-agent coordinator. Analyzes complex tasks, selects optimal execution strategy, and coordinates specialized teams. The entry point for anything involving 4+ files or 5+ steps.</div>
+        <ul class="use-list">
+          <li>OAuth2 implementation from scratch</li>
+          <li>Security audit of the full codebase</li>
+          <li>Large-scale refactoring across multiple modules</li>
+          <li>Performance investigation with unknown root cause</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Invoke</div>
+          <div class="example-prompt">/orchestrate "implement user authentication with JWT"</div>
+          <div class="example-result">Orchestrator analyzes → spawns project-architect (design) + researcher (explore) + builder (implement) in parallel</div>
+        </div>
+      </div>
+
+      <div class="agent-card opus">
+        <div class="agent-name">project-architect <span class="tag opus">Opus</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Architecture oversight and design decisions. Reviews structural choices, identifies patterns, flags anti-patterns, and proposes system-level improvements. Uses Opus for the reasoning depth architecture requires.</div>
+        <ul class="use-list">
+          <li>Reviewing a proposed data model before building</li>
+          <li>Deciding between microservices vs monolith</li>
+          <li>Designing the API surface for a new feature</li>
+          <li>Identifying coupling and dependency issues</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Invoke via orchestrator or Task tool</div>
+          <div class="example-prompt">Task: project-architect, "review the current auth module structure"</div>
+          <div class="example-result">Returns: 2-3 sentence architectural assessment with specific concerns and recommendations</div>
+        </div>
+      </div>
+
+      <div class="agent-card opus">
+        <div class="agent-name">critical-analyst <span class="tag opus">Opus</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Questions everything. Used during planning and decision-making to stress-test assumptions, identify blind spots, and challenge proposed approaches. Intentionally contrarian to surface problems early.</div>
+        <ul class="use-list">
+          <li>Reviewing an implementation plan before starting</li>
+          <li>Validating that a "fix" actually solves the problem</li>
+          <li>Checking security assumptions in new code</li>
+          <li>Pre-mortem analysis on a risky deployment</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Example output style</div>
+          <div class="example-result">Why are you storing JWTs in localStorage? That exposes you to XSS.</div>
+          <div class="example-result">This migration assumes zero downtime but the table has no index on the WHERE clause.</div>
+        </div>
+      </div>
+
+      <div class="agent-card sonnet">
+        <div class="agent-name">researcher <span class="tag sonnet">Sonnet</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Deep codebase exploration specialist. Reads many files, searches patterns, synthesizes findings. Designed to run in isolation — it does the heavy reading so your primary context doesn't fill up.</div>
+        <ul class="use-list">
+          <li>Finding all usages of a deprecated function</li>
+          <li>Understanding how an unfamiliar module works</li>
+          <li>Mapping data flow across 10+ files</li>
+          <li>Answering "where does X happen in this codebase?"</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Invoke</div>
+          <div class="example-prompt">/research "how does the session management work in this app?"</div>
+          <div class="example-result">Agent reads auth/, middleware/, session files → returns 2-3 sentence finding with key file paths</div>
+        </div>
+      </div>
+
+      <div class="agent-card sonnet">
+        <div class="agent-name">meta-agent <span class="tag sonnet">Sonnet</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Generates new Claude Code agent configuration files. Give it a description of what you need and it produces a complete, ready-to-use agent definition. Uses project context to make agents project-aware.</div>
+        <ul class="use-list">
+          <li>Creating a domain-specialist agent for your project</li>
+          <li>Generating a custom reviewer with project-specific rules</li>
+          <li>Building a deployment agent tailored to your stack</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">"create an agent specialized in our GraphQL schema validation"</div>
+          <div class="example-result">Produces .claude/agents/graphql-validator.md ready to use</div>
+        </div>
+      </div>
+
+      <div class="agent-card sonnet">
+        <div class="agent-name">scout-report-suggest <span class="tag sonnet">Sonnet</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Targeted analysis and reporting. Read-only specialist — scouts for issues, identifies problem locations, and suggests resolutions without making changes. Returns concise reports.</div>
+        <ul class="use-list">
+          <li>Finding all places a bug could originate</li>
+          <li>Scanning for security anti-patterns in a module</li>
+          <li>Identifying performance bottlenecks before optimizing</li>
+          <li>Pre-check before a refactoring session</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Output format</div>
+          <div class="example-result">Problem: N+1 query in UserService.getWithPosts() (line 47)</div>
+          <div class="example-result">Location: src/services/user.service.ts:47</div>
+          <div class="example-result">Suggestion: Use include: { posts: true } in the Prisma query</div>
+        </div>
+      </div>
+
+      <div class="agent-card sonnet">
+        <div class="agent-name">rlm-root <span class="tag sonnet">Sonnet</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Recursive Language Model controller. Handles infinite-scale codebase analysis by spawning child agents recursively. Each agent reads a slice, summarizes, and reports up. No context rot regardless of codebase size.</div>
+        <ul class="use-list">
+          <li>Full codebase audit (500+ files)</li>
+          <li>Cross-cutting concern analysis (e.g., "find all error handling")</li>
+          <li>Dependency graph construction for large monorepos</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Invoke</div>
+          <div class="example-prompt">/rlm "find all places we handle authentication across the codebase"</div>
+          <div class="example-result">Spawns recursive sub-agents, each reads a subtree → consolidated report with no single agent hitting context limits</div>
+        </div>
+      </div>
+
+      <div class="agent-card haiku">
+        <div class="agent-name">docs-scraper <span class="tag haiku">Haiku</span> <span class="tag global">global</span></div>
+        <div class="agent-desc">Documentation fetching specialist. Fast and cheap — uses Haiku for speed. Scrapes URLs, converts to markdown, saves structured output. Best for bulk documentation tasks.</div>
+        <ul class="use-list">
+          <li>Fetching API documentation for a library</li>
+          <li>Saving reference docs locally for offline use</li>
+          <li>Bulk-scraping changelog pages</li>
+        </ul>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">fetch and save the Prisma query API documentation</div>
+          <div class="example-result">Scrapes docs, saves to docs/prisma-query-api.md with proper formatting</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Global vs Local</div>
+    <h2>Layered Agent Architecture</h2>
+    <p class="section-desc">Global agents are always available. Local agents live in your project and override globals with the same name — letting you customize behavior per project without touching the framework.</p>
+
+    <div class="two-col" style="margin-bottom:24px;">
+      <div class="card">
+        <h4 style="color:var(--amber);">🌐 Global Agents</h4>
+        <code style="display:block; margin:8px 0; color:var(--muted);">~/.claude/agents/</code>
+        <p style="font-size:13px; margin-bottom:12px;">Installed by <code>bash install.sh</code>. Available in every Claude Code session, every project, every directory.</p>
+        <div class="callout green" style="margin-top:0;">
+          <strong>Best for:</strong> General-purpose tasks that apply across projects — research, orchestration, architecture review.
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--green);">📁 Local Agents</h4>
+        <code style="display:block; margin:8px 0; color:var(--muted);">.claude/agents/</code>
+        <p style="font-size:13px; margin-bottom:12px;">Project-scoped. Claude Code loads these <strong style="color:var(--text)">first</strong> — if a local agent has the same name as a global one, local wins.</p>
+        <div class="callout green" style="margin-top:0;">
+          <strong>Best for:</strong> Domain expertise, project-specific workflows, overriding global agent behavior.
+        </div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">Resolution order — Claude Code agent lookup</div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--l2-bg); border-color:var(--l2-border);">📁</div>
+        <div class="flow-content">
+          <div class="flow-hook">.claude/agents/ checked first</div>
+          <div class="flow-desc">If a matching agent exists locally, it's used — regardless of what's global. Local always overrides. This is how you customize orchestrator behavior for a specific project without touching the global file.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--l3-bg); border-color:var(--l3-border);">🌐</div>
+        <div class="flow-content">
+          <div class="flow-hook">~/.claude/agents/ fallback</div>
+          <div class="flow-desc">If no local agent matches, the global is used. No config needed — it just works.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Custom Agents</div>
+    <h2>Creating a Local Agent</h2>
+    <p class="section-desc">Any <code>.md</code> file in <code>.claude/agents/</code> becomes an agent. Claude Code auto-discovers them — no install, no restart needed.</p>
+
+    <pre><code>---
+name: payments-specialist
+description: >
+  Expert in Stripe integration, webhook handling, and PCI compliance
+  for this project. Use for any payment-related code, error handling,
+  or security review of billing flows.
+model: claude-sonnet-4-6
+tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+---
+
+# Payments Specialist
+
+You are a payments domain expert for this project. You know:
+- Our Stripe integration is in `src/payments/` using Stripe Node SDK v14
+- Webhooks are handled in `src/api/webhooks/stripe.ts`
+- Test mode keys are in `.env.test`, never in source
+- All payment amounts are stored in cents (integer), never floats
+
+## Rules
+- Always validate webhook signatures before processing
+- Never log full card numbers or CVV — last 4 digits only
+- Amount validation: check for negative values and overflow
+- Use idempotency keys on all charge attempts
+</code></pre>
+
+    <div class="callout green" style="margin-top:16px;">
+      <strong>Pro tip:</strong> Include your project's actual file paths, conventions, and gotchas in the agent definition. An agent that knows <code>src/payments/stripe.ts</code> exists is far more useful than a generic payments expert.
+    </div>
+
+    <div class="callout amber" style="margin-top:12px;">
+      <strong>Override example:</strong> Create <code>.claude/agents/orchestrator.md</code> to give the orchestrator project-specific routing rules — e.g., always use the payments-specialist for anything in <code>src/payments/</code>.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Spawning Agents</div>
+    <h2>How Agents Call Each Other</h2>
+    <p class="section-desc">Agents are spawned using the <code>Task</code> tool. They run in isolation — their context is separate from the parent, preventing context rot on long tasks.</p>
+
+    <div class="flow">
+      <div class="flow-title">Example: orchestrator spawning a team</div>
+      <div class="flow-step">
+        <div class="flow-icon">💬</div>
+        <div class="flow-content">
+          <div class="flow-hook">User: "add two-factor authentication"</div>
+          <div class="flow-desc">Caddy classifies as: complex implement, scope: unknown. Routes to orchestrator.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--accent-dim); border-color:#3d2010;">🎯</div>
+        <div class="flow-content">
+          <div class="flow-hook">orchestrator (Opus) — analyzes and plans</div>
+          <div class="flow-desc">Reads PROJECT_CONTEXT.md, FACTS.md, identifies existing auth code. Decides: need to explore current auth, design 2FA flow, implement, validate.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--l3-bg);">⚡</div>
+        <div class="flow-content">
+          <div class="flow-hook">Spawns 2 agents in parallel</div>
+          <div class="flow-desc">
+            <strong style="color:var(--text)">researcher (Sonnet)</strong>: "explore current auth module, return: file paths, current session strategy, existing middleware"<br>
+            <strong style="color:var(--text)">project-architect (Opus)</strong>: "design 2FA integration points given our current auth approach"
+          </div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">📋</div>
+        <div class="flow-content">
+          <div class="flow-hook">Synthesizes findings → implements</div>
+          <div class="flow-desc">Both agents return 2-3 sentence findings. Orchestrator combines them into an implementation plan, then either executes directly or spawns a builder agent.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout amber" style="margin-top:16px;">
+      <strong>Key rule:</strong> Sub-agents return <em>findings</em>, not raw code dumps. "Auth is in src/auth/session.ts using express-session with Redis" — not 200 lines of file contents. Keeps the parent context clean.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <a href="index.html">← Overview</a> &nbsp;·&nbsp;
+  Claude Agentic Framework v2.1 &nbsp;·&nbsp;
+  <a href="caddy.html">Routing →</a>
+</footer>
+
+</body>
+</html>

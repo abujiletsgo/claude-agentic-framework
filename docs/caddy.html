@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Routing & Caddy — Claude Agentic Framework</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .strategy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    transition: background 0.2s;
+    border-top: 2px solid transparent;
+  }
+  .strategy-card:hover { background: var(--surface2); }
+  .strategy-card.direct  { border-top-color: var(--green); }
+  .strategy-card.team    { border-top-color: var(--accent); }
+  .strategy-card.orchestrate { border-top-color: #c084fc; }
+  .strategy-card.rlm     { border-top-color: var(--amber); }
+  .strategy-card.fusion  { border-top-color: var(--teal); }
+
+  .strategy-name { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .strategy-when { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+
+  .prompt-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
+  .prompt-table th { text-align: left; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
+  .prompt-table td { padding: 10px 12px; border-bottom: 1px solid var(--bg); vertical-align: top; }
+  .prompt-table tr:last-child td { border-bottom: none; }
+  .prompt-table .prompt-text { color: var(--text); }
+  .prompt-table .strategy-val { font-weight: 700; }
+  .val-direct     { color: var(--green); }
+  .val-team       { color: var(--accent); }
+  .val-orchestrate{ color: #c084fc; }
+  .val-rlm        { color: var(--amber); }
+  .val-fusion     { color: var(--teal); }
+  .prompt-table .why { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">Claude Agentic Framework</div>
+  <h1>Request <span class="accent">Routing</span></h1>
+  <p>Every message you send is analyzed before Claude responds. Caddy — the request classifier — decides the optimal strategy so you get the right depth of response without wasted effort.</p>
+</header>
+
+<nav class="site-nav">
+  <a href="index.html">Overview</a>
+  <a href="agents.html">Agents</a>
+  <a href="caddy.html" class="active">Routing</a>
+  <a href="skills.html">Skills</a>
+  <a href="hooks.html">Hooks</a>
+  <a href="memory-system.html">Memory</a>
+</nav>
+
+<div class="container">
+
+  <section>
+    <div class="eyebrow-sm">What is Caddy?</div>
+    <h2>Automatic Task Classification</h2>
+    <p class="section-desc">Caddy is a UserPromptSubmit hook that fires on every message you send. It classifies the request on multiple dimensions and injects a routing recommendation into Claude's context — all before Claude writes a single word.</p>
+
+    <div class="flow" style="margin-bottom:24px;">
+      <div class="flow-title">What happens when you send a message</div>
+      <div class="flow-step">
+        <div class="flow-icon">💬</div>
+        <div class="flow-content">
+          <div class="flow-hook">You send a message</div>
+          <div class="flow-desc">UserPromptSubmit hooks fire before Claude processes the message.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--accent-dim); border-color:#3d2010;">🔍</div>
+        <div class="flow-content">
+          <div class="flow-hook">analyze_request.py — Caddy classifies the task</div>
+          <div class="flow-desc">Keyword matching + lightweight Haiku call. Classifies on: complexity (simple/moderate/massive), quality (standard/critical), scope (known/moderate/unknown), domain (implement/research/debug/etc). Also suggests relevant skills.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--l3-bg); border-color:var(--l3-border);">📡</div>
+        <div class="flow-content">
+          <div class="flow-hook">auto_delegate.py — injects routing recommendation</div>
+          <div class="flow-desc">Based on classification, injects into context: recommended strategy, confidence score, relevant skills, and guidance note. You see this as the [Caddy] system-reminder.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">🤖</div>
+        <div class="flow-content">
+          <div class="flow-hook">Claude responds with appropriate strategy</div>
+          <div class="flow-desc">Claude reads the Caddy recommendation and uses it to decide: respond directly, spawn a builder+validator pair, invoke the orchestrator, or use RLM for large-scale analysis.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <strong>The Caddy recommendation is advisory, not mandatory.</strong> Claude always has final judgment. If you explicitly ask for a specific approach, that overrides Caddy. But for ambiguous requests, Caddy consistently picks the right strategy.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Strategies</div>
+    <h2>5 Execution Strategies</h2>
+    <p class="section-desc">Caddy selects one of these strategies based on complexity, scope, and quality requirements.</p>
+
+    <div class="card-grid" style="margin-bottom:32px;">
+
+      <div class="strategy-card direct">
+        <div class="strategy-name">direct <span class="tag" style="background:var(--l2-bg); color:var(--green); border:1px solid var(--l2-border);">fastest</span></div>
+        <div class="strategy-when">Simple, known-scope tasks. 1-2 files, clear requirements, no exploration needed.</div>
+        <ul class="use-list" style="list-style:none; margin-bottom:0;">
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Fix a typo or variable name</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Add a console.log for debugging</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Update a single config value</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Explain what a function does</li>
+        </ul>
+      </div>
+
+      <div class="strategy-card team">
+        <div class="strategy-name">team <span class="tag" style="background:var(--accent-dim); color:var(--accent); border:1px solid #3d2010;">recommended most often</span></div>
+        <div class="strategy-when">Multi-step tasks with moderate complexity. Builder (Sonnet) implements + Validator (Haiku) verifies in parallel.</div>
+        <ul class="use-list" style="list-style:none; margin-bottom:0;">
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Add a new API endpoint with validation</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Fix a bug that spans 3-4 files</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Update documentation across a module</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Refactor a service class</li>
+        </ul>
+      </div>
+
+      <div class="strategy-card orchestrate">
+        <div class="strategy-name">orchestrate</div>
+        <div class="strategy-when">Complex tasks requiring coordination across many files, unknown scope, or multiple specialist domains.</div>
+        <ul class="use-list" style="list-style:none; margin-bottom:0;">
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Implement a full auth system</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Security audit of the codebase</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Performance investigation with unknown cause</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Cross-cutting refactor (e.g., add observability)</li>
+        </ul>
+      </div>
+
+      <div class="strategy-card rlm">
+        <div class="strategy-name">rlm</div>
+        <div class="strategy-when">Massive codebase tasks where even a single agent would hit context limits. Recursive sub-agents explore slices.</div>
+        <ul class="use-list" style="list-style:none; margin-bottom:0;">
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Full codebase audit (200+ files)</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Dependency analysis across a monorepo</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> "Find all X across the entire project"</li>
+        </ul>
+      </div>
+
+      <div class="strategy-card fusion">
+        <div class="strategy-name">fusion <span class="tag" style="background:#0f1a18; color:var(--teal); border:1px solid #1e3d32;">best-of-N</span></div>
+        <div class="strategy-when">Critical code where quality matters more than speed. Runs N parallel attempts, picks the best output.</div>
+        <ul class="use-list" style="list-style:none; margin-bottom:0;">
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Security-critical cryptographic functions</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Payment processing logic</li>
+          <li style="font-size:12px; color:var(--muted); padding:3px 0; display:flex; gap:8px;"><span style="color:var(--faint);">→</span> Core algorithm implementations</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Real Examples</div>
+    <h2>How Prompts Get Classified</h2>
+    <p class="section-desc">Exact examples of what you'd type and what Caddy recommends.</p>
+
+    <div class="card">
+      <table class="prompt-table">
+        <thead>
+          <tr>
+            <th style="width:45%">Your Message</th>
+            <th style="width:15%">Strategy</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="prompt-text">"fix the typo in the README"</td>
+            <td class="strategy-val val-direct">direct</td>
+            <td class="why">Single file, trivial change, known location</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"add input validation to the signup form"</td>
+            <td class="strategy-val val-team">team</td>
+            <td class="why">Multi-step: find form, add validation, test — but scope is known</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"the login is broken"</td>
+            <td class="strategy-val val-team">team</td>
+            <td class="why">Debug + fix pattern, moderate scope, needs exploration</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"add two-factor authentication"</td>
+            <td class="strategy-val val-orchestrate">orchestrate</td>
+            <td class="why">Complex feature, multiple files, unknown current auth structure</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"can you do a security audit?"</td>
+            <td class="strategy-val val-orchestrate">orchestrate</td>
+            <td class="why">Open-ended, multiple domains, high quality requirement</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"find all places we handle errors in this codebase"</td>
+            <td class="strategy-val val-rlm">rlm</td>
+            <td class="why">Cross-cutting concern, entire codebase, context-limit risk</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"implement the payment charge function with best practices"</td>
+            <td class="strategy-val val-fusion">fusion</td>
+            <td class="why">Critical code path, quality over speed, financial logic</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"what does the useAuth hook do?"</td>
+            <td class="strategy-val val-direct">direct</td>
+            <td class="why">Research/explain task, read 1-2 files, no implementation</td>
+          </tr>
+          <tr>
+            <td class="prompt-text">"refactor the entire user module to use dependency injection"</td>
+            <td class="strategy-val val-orchestrate">orchestrate</td>
+            <td class="why">Large scope, unknown file count, architectural change</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Under the Hood</div>
+    <h2>How Caddy Works Technically</h2>
+    <p class="section-desc">Two hooks. One classifies, one recommends. Both fire before Claude reads your message.</p>
+
+    <div class="two-col">
+      <div class="card">
+        <h4>analyze_request.py</h4>
+        <p style="font-size:13px; margin-bottom:12px;">UserPromptSubmit hook. Reads the prompt text, applies keyword matching for fast classification, then optionally calls Haiku for ambiguous cases.</p>
+        <p style="font-size:13px; margin-bottom:12px;">Classification dimensions:</p>
+        <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8; font-family:var(--font-mono);">
+          <li>→ <strong style="color:var(--text)">complexity:</strong> simple / moderate / massive</li>
+          <li>→ <strong style="color:var(--text)">quality:</strong> standard / critical</li>
+          <li>→ <strong style="color:var(--text)">scope:</strong> known / moderate / unknown</li>
+          <li>→ <strong style="color:var(--text)">domain:</strong> implement / research / debug / document / review / explain</li>
+        </ul>
+        <p style="font-size:12px; color:var(--muted); margin-top:12px;">Config: <code>data/caddy_config.yaml</code></p>
+      </div>
+      <div class="card">
+        <h4>auto_delegate.py</h4>
+        <p style="font-size:13px; margin-bottom:12px;">Second UserPromptSubmit hook. Reads the classification output from analyze_request and injects the recommendation into Claude's context as a system reminder.</p>
+        <p style="font-size:13px; margin-bottom:12px;">What gets injected:</p>
+        <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8; font-family:var(--font-mono);">
+          <li>→ <strong style="color:var(--text)">strategy:</strong> direct / team / orchestrate / rlm / fusion</li>
+          <li>→ <strong style="color:var(--text)">confidence:</strong> 0–100%</li>
+          <li>→ <strong style="color:var(--text)">skills:</strong> relevant skill names</li>
+          <li>→ <strong style="color:var(--text)">guidance:</strong> one-line execution note</li>
+        </ul>
+        <p style="font-size:12px; color:var(--muted); margin-top:12px;">This is the <code>[Caddy]</code> line you see in session reminders.</p>
+      </div>
+    </div>
+
+    <div class="callout green" style="margin-top:16px;">
+      <strong>Token cost:</strong> Caddy's analysis costs ~100 tokens per message (Haiku is cheap). The savings from routing correctly — avoiding an orchestrator spawn on a trivial task — far exceed this cost on any non-trivial session.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Customization</div>
+    <h2>Tuning the Classifier</h2>
+    <p class="section-desc">Caddy's keyword lists and thresholds are configurable. Edit <code>data/caddy_config.yaml</code> to add project-specific signals.</p>
+
+    <pre><code># data/caddy_config.yaml — example customization
+
+complexity_signals:
+  massive:
+    - "entire codebase"
+    - "full audit"
+    - "migrate everything"
+    - "your_project_specific_term"  # ← add your own
+  simple:
+    - "typo"
+    - "comment"
+    - "rename"
+
+quality_signals:
+  critical:
+    - "payment"
+    - "auth"
+    - "crypto"
+    - "pci"
+    - "your_critical_module"  # ← add your critical paths
+
+# Confidence thresholds
+thresholds:
+  direct_max_complexity: simple
+  team_max_complexity: moderate
+  orchestrate_min_complexity: massive
+</code></pre>
+  </section>
+
+</div>
+
+<footer>
+  <a href="agents.html">← Agents</a> &nbsp;·&nbsp;
+  Claude Agentic Framework v2.1 &nbsp;·&nbsp;
+  <a href="skills.html">Skills →</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skills — Claude Agentic Framework</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .skill-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    transition: background 0.2s;
+  }
+  .skill-card:hover { background: var(--surface2); }
+  .skill-name { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .skill-invoke { font-family: var(--font-mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; }
+  .skill-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">Claude Agentic Framework</div>
+  <h1>Skills <span class="accent">&amp; Tools</span></h1>
+  <p>Skills are reusable, slash-command-invocable workflows. 7 framework skills for the full engineering lifecycle, plus the ability to create project-specific skills that override globals.</p>
+</header>
+
+<nav class="site-nav">
+  <a href="index.html">Overview</a>
+  <a href="agents.html">Agents</a>
+  <a href="caddy.html">Routing</a>
+  <a href="skills.html" class="active">Skills</a>
+  <a href="hooks.html">Hooks</a>
+  <a href="memory-system.html">Memory</a>
+</nav>
+
+<div class="container">
+
+  <section>
+    <div class="eyebrow-sm">What are Skills?</div>
+    <h2>Skills vs Agents</h2>
+    <p class="section-desc">Skills and agents solve different problems. Knowing which to use prevents over-engineering.</p>
+
+    <div class="two-col" style="margin-bottom:24px;">
+      <div class="card">
+        <h4 style="color:var(--accent);">Skills /slash-command</h4>
+        <p style="font-size:13px; margin-bottom:12px; color:var(--muted);">A <strong style="color:var(--text)">prompt template</strong> that executes in the current Claude session. No separate context, no agent spawning. Think of it as a "macro" that loads a specific set of instructions and executes.</p>
+        <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8;">
+          <li>&#x2713; Runs inline &mdash; no context overhead</li>
+          <li>&#x2713; Has access to current conversation history</li>
+          <li>&#x2713; Invoked with <code>/skill-name</code></li>
+          <li>&#x2713; Best for: focused tasks with a known workflow</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color:#c084fc;">Agents Task tool</h4>
+        <p style="font-size:13px; margin-bottom:12px; color:var(--muted);">A <strong style="color:var(--text)">subprocess</strong> with its own isolated context. Spawned via the Task tool. Runs independently, returns a result. The parent doesn't accumulate the agent's exploration in context.</p>
+        <ul style="list-style:none; font-size:12px; color:var(--muted); line-height:1.8;">
+          <li>&#x2713; Isolated context &mdash; no context rot</li>
+          <li>&#x2713; Can run in parallel with other agents</li>
+          <li>&#x2713; Best for: heavy exploration, parallel work</li>
+          <li>&#x2713; Returns findings, not file contents</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <strong>Rule of thumb:</strong> Use a skill when you know exactly what needs to happen. Use an agent when you need to explore first.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Framework Skills</div>
+    <h2>The 7 Global Skills</h2>
+    <p class="section-desc">Installed at <code>~/.claude/skills/</code> by <code>bash install.sh</code>. Available in every project.</p>
+
+    <div class="card-grid">
+
+      <div class="skill-card">
+        <div class="skill-name">code-review</div>
+        <div class="skill-invoke">/code-review [file or PR]</div>
+        <div class="skill-desc">PR-level code review. Checks for bugs, security issues, performance problems, and style violations. Returns structured findings by severity: critical &rarr; major &rarr; minor &rarr; suggestion.</div>
+        <div class="example">
+          <div class="example-label">Examples</div>
+          <div class="example-prompt">/code-review src/auth/session.ts</div>
+          <div class="example-result">Checks: SQL injection, insecure JWT config, missing input validation, race conditions</div>
+          <div class="example-prompt">/code-review &mdash; review the last 3 changed files</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">error-analyzer</div>
+        <div class="skill-invoke">/error-analyzer [paste error or describe]</div>
+        <div class="skill-desc">Root cause analysis for errors, exceptions, and crashes. Reads the stack trace, identifies the origin, and suggests a concrete fix. Cross-references FACTS.md GOTCHAS automatically.</div>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">/error-analyzer</div>
+          <div class="example-result">Then paste the stack trace &rarr; returns: root cause, affected file:line, suggested fix, how to verify</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">facts <span class="tag new">new</span></div>
+        <div class="skill-invoke">/facts [subcommand]</div>
+        <div class="skill-desc">Manages your project's FACTS.md &mdash; the living fact sheet that prevents hallucination. Subcommands: <code>list</code>, <code>add CATEGORY "text"</code>, <code>stale "pattern"</code>, <code>summary</code>, <code>purge-stale</code>.</div>
+        <div class="example">
+          <div class="example-label">Common uses</div>
+          <div class="example-prompt">/facts list</div>
+          <div class="example-result">Shows all facts by category with dates and authors</div>
+          <div class="example-prompt">/facts add CONFIRMED "deploy command is: npm run deploy:prod"</div>
+          <div class="example-result">Adds verified fact with today's date + your git username</div>
+          <div class="example-prompt">/facts stale "webpack"</div>
+          <div class="example-result">Moves any webpack-related fact to STALE (e.g., after migrating to Vite)</div>
+        </div>
+        <div class="callout green" style="margin-top:12px; font-size:12px;">
+          <strong>Why this matters:</strong> Facts only get deleted from the STALE junk pile (after 90 days). Your CONFIRMED/GOTCHAS/PATHS facts persist indefinitely &mdash; a project working fine for 2 years keeps all its knowledge.
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">refactoring-assistant</div>
+        <div class="skill-invoke">/refactoring-assistant [target]</div>
+        <div class="skill-desc">Safe, incremental refactoring. Analyzes the target, identifies what can change, proposes a sequence of small safe steps, and executes with testing between each step.</div>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">/refactoring-assistant UserService class</div>
+          <div class="example-result">Step 1: extract interface &rarr; Step 2: split into UserService + UserRepository &rarr; Step 3: update callers &rarr; validates each step</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">security-scanner</div>
+        <div class="skill-invoke">/security-scanner [path or scope]</div>
+        <div class="skill-desc">Vulnerability audit against OWASP Top 10 and common patterns. Checks: injection, broken auth, XSS, insecure deserialization, misconfiguration. Returns findings with severity and remediation.</div>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">/security-scanner src/api/</div>
+          <div class="example-result">CRITICAL: SQL injection in search endpoint (line 47) &mdash; unsanitized user input in raw query</div>
+          <div class="example-result">MAJOR: JWT secret hardcoded in config.ts &mdash; move to environment variable</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">test-generator</div>
+        <div class="skill-invoke">/test-generator [file or function]</div>
+        <div class="skill-desc">Generates comprehensive test suites. Reads the target code, identifies edge cases, error paths, and happy paths. Writes tests in your project's existing test framework (Jest, Vitest, pytest, etc.).</div>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">/test-generator src/utils/price.ts</div>
+          <div class="example-result">Generates: unit tests for formatPrice(), edge cases (null, negative, overflow), locale tests, snapshot for currency display</div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-name">knowledge-db</div>
+        <div class="skill-invoke">/knowledge-db [subcommand]</div>
+        <div class="skill-desc">SQLite FTS5 knowledge database for cross-session learnings. Store and retrieve decisions, patterns, and solutions that span multiple projects. Separate from FACTS.md &mdash; this is for cross-project knowledge.</div>
+        <div class="example">
+          <div class="example-label">Example</div>
+          <div class="example-prompt">/knowledge-db search "prisma connection pooling"</div>
+          <div class="example-result">Returns: past learnings about Prisma setup from other projects you worked on</div>
+          <div class="example-prompt">/knowledge-db store "always set connectionLimit: 5 in Prisma for Lambda"</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Global vs Local</div>
+    <h2>Layered Skill Architecture</h2>
+    <p class="section-desc">Global skills work everywhere. Local skills are project-specific &mdash; and they win over globals with the same name.</p>
+
+    <div class="two-col" style="margin-bottom:24px;">
+      <div class="card">
+        <h4 style="color:var(--amber);">Global Skills</h4>
+        <code style="display:block; margin:8px 0; color:var(--muted);">~/.claude/skills/ (symlinked by install.sh)</code>
+        <p style="font-size:13px; color:var(--muted);">7 framework skills. Available in all projects. Invoked with their name: <code>/code-review</code>, <code>/facts</code>, etc.</p>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--green);">Local Skills</h4>
+        <code style="display:block; margin:8px 0; color:var(--muted);">.claude/skills/ (project directory)</code>
+        <p style="font-size:13px; color:var(--muted);">Project-specific. Overrides global with same name. A local <code>code-review</code> skill adds project-specific rules on top of the global one.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:16px;">Creating a Local Skill</h3>
+
+    <pre><code># .claude/skills/deploy.md
+---
+name: deploy
+description: &gt;
+  Deploy this application to production. Handles environment-specific
+  config, database migrations, and health checks.
+---
+
+# Deploy
+
+Run the production deployment sequence for this project:
+
+1. Run tests: `npm run test:ci`
+2. Build: `npm run build`
+3. Run migrations: `npx prisma migrate deploy`
+4. Deploy to Fly.io: `fly deploy --config fly.production.toml`
+5. Verify health: `curl https://api.ourapp.com/health`
+
+If any step fails, stop and report the error. Do not proceed to the next step.
+
+After successful deploy, add a CONFIRMED fact: "Last deploy: [date]"
+</code></pre>
+
+    <div class="callout green" style="margin-top:16px;">
+      Invoke with <code>/deploy</code> &mdash; Claude loads the skill and executes the exact sequence above. No memorizing commands, no config hunting. The skill <em>is</em> the runbook.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Advanced</div>
+    <h2>Skills for Team Workflows</h2>
+    <p class="section-desc">Local skills are the best way to encode team conventions. Everyone on the team gets the same workflow by default.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>PR checklist skill</h4>
+        <pre style="margin-top:8px;"><code># .claude/skills/pr-check.md
+Before creating a PR, verify:
+- Tests pass: npm test
+- No console.log statements in src/
+- API changes documented in docs/api.md
+- Migration has a down() function
+- New env vars added to env.example
+</code></pre>
+      </div>
+      <div class="card">
+        <h4>Environment setup skill</h4>
+        <pre style="margin-top:8px;"><code># .claude/skills/setup.md
+Set up local development:
+1. Copy env.example to env file
+2. docker compose up -d postgres redis
+3. npm install
+4. npx prisma migrate dev
+5. npm run seed
+6. npm run dev (port 3000)
+</code></pre>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <a href="caddy.html">&larr; Routing</a> &nbsp;&middot;&nbsp;
+  Claude Agentic Framework v2.1 &nbsp;&middot;&nbsp;
+  <a href="hooks.html">Hooks &rarr;</a>
+</footer>
+
+</body>
+</html>

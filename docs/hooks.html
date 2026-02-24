@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooks — Claude Agentic Framework</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .hook-row { display: grid; grid-template-columns: 200px 120px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bg); font-size: 12px; align-items: start; }
+  .hook-row:last-child { border-bottom: none; }
+  .hook-row:hover { background: var(--surface2); }
+  .hook-name { font-family: var(--font-mono); color: var(--text); font-weight: 500; word-break: break-word; }
+  .hook-matcher { font-family: var(--font-mono); color: var(--muted); word-break: break-word; }
+  .hook-desc { color: var(--muted); line-height: 1.5; }
+  .hook-section-header { background: var(--bg); padding: 8px 16px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .hook-count { background: var(--surface2); border-radius: 10px; padding: 2px 8px; color: var(--text); }
+  .event-color-ss { color: var(--green); }
+  .event-color-ups { color: var(--accent); }
+  .event-color-ptu { color: #c084fc; }
+  .event-color-potu { color: var(--amber); }
+  .event-color-stop { color: var(--teal); }
+  .event-color-pc { color: var(--muted); }
+  @media (max-width: 600px) { .hook-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">Claude Agentic Framework</div>
+  <h1>Hook <span class="accent">Reference</span></h1>
+  <p>26 hooks across 6 event types. Every hook fires automatically &mdash; no invocation needed. Hooks write to disk and inject context, forming the automation backbone of the framework.</p>
+</header>
+
+<nav class="site-nav">
+  <a href="index.html">Overview</a>
+  <a href="agents.html">Agents</a>
+  <a href="caddy.html">Routing</a>
+  <a href="skills.html">Skills</a>
+  <a href="hooks.html" class="active">Hooks</a>
+  <a href="memory-system.html">Memory</a>
+</nav>
+
+<div class="container">
+
+  <section>
+    <div class="eyebrow-sm">Design</div>
+    <h2>Hook Architecture</h2>
+    <p class="section-desc">Hooks are Python scripts that run as subprocesses in response to Claude Code events. They can read context, write files, and inject content &mdash; but they don't consume Claude API tokens unless they return <code>additionalContext</code>.</p>
+
+    <div class="two-col" style="margin-bottom:24px;">
+      <div class="card">
+        <h4>Zero-token hooks (majority)</h4>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px;">Most hooks write to disk and return <code>{}</code>. They have no token cost. Examples: auto_fact_extractor (writes FACTS.md), auto_memory_writer (writes MEMORY.md), session_lock_manager (updates lock state).</p>
+        <pre style="margin-top:12px; font-size:11px;"><code># Example: zero-token hook output
+print(json.dumps({}))  # &larr; no additionalContext
+sys.exit(0)</code></pre>
+      </div>
+      <div class="card">
+        <h4>Context-injecting hooks</h4>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px;">Hooks that return <code>additionalContext</code> inject text into Claude's session. These cost tokens but provide authoritative information. Examples: auto_prime_inject (PROJECT_CONTEXT.md), auto_error_analyzer (error diagnosis).</p>
+        <pre style="margin-top:12px; font-size:11px;"><code># Example: context-injecting hook output
+print(json.dumps({
+  "additionalContext": "## Context\n..."
+}))
+sys.exit(0)</code></pre>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <strong>Circuit breakers protect PostToolUse hooks.</strong> If a hook fails 3 times, it auto-disables for 60 seconds. State stored in <code>~/.claude/circuit_breakers/</code>. Delete the state file to reset a stuck hook manually.
+    </div>
+
+    <div class="callout green" style="margin-top:12px;">
+      <strong>Key rule:</strong> Never delete a hook file that live <code>settings.json</code> references. The Stop hook errors infinitely if the file is missing. Instead: replace the file with a no-op stub, then run <code>bash install.sh</code> in the next session to regenerate config cleanly.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Full Reference</div>
+    <h2>All 26 Hooks</h2>
+
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+
+      <div class="hook-section-header">
+        <span class="event-color-ss">SessionStart</span>
+        <span class="hook-count">2 hooks</span>
+        <span style="color:var(--faint);">&mdash; fires once when Claude Code session opens</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">session_startup.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">SHA-256 integrity check on all 7 skill files. Initializes session locks. Detects tampered skills and warns. Runs first &mdash; acts as security gate for the session.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">repo_map.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Generates a TreeSitter symbol index for the project. Only fires if project has &ge;200 tracked files. Produces a ranked symbol index at <code>~/.claude/REPO_MAP.md</code>. Prevents blind file exploration in large codebases.</div>
+      </div>
+
+      <div class="hook-section-header">
+        <span class="event-color-ups">UserPromptSubmit</span>
+        <span class="hook-count">4 hooks</span>
+        <span style="color:var(--faint);">&mdash; fires before Claude processes each message</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">kr_mode.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Korean language mode. If activated via <code>/kr</code>, translates the incoming prompt to English using Haiku, then Claude responds in Korean. Toggle with <code>/kr</code> skill.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_prime_inject.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Injects PROJECT_CONTEXT.md into session as authoritative project knowledge. If no cache exists, forces a <code>/prime</code> run. If git hash changed since last prime, marks context as potentially stale.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">analyze_request.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Caddy classifier. Analyzes prompt complexity, quality requirement, scope, and domain. Uses keyword matching + optional Haiku call. Writes classification to temp file for auto_delegate to read.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_delegate.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Reads Caddy classification and injects routing recommendation into context. Returns: strategy (direct/team/orchestrate/rlm/fusion), confidence %, relevant skills, guidance note.</div>
+      </div>
+
+      <div class="hook-section-header">
+        <span class="event-color-ptu">PreToolUse</span>
+        <span class="hook-count">3 hooks</span>
+        <span style="color:var(--faint);">&mdash; fires before each tool call executes</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">session_lock_manager.py</div>
+        <div class="hook-matcher">Read|Edit|Write</div>
+        <div class="hook-desc">File conflict detection. Acquires a lock before file operations. If another session holds the lock, returns a block with details. Prevents two parallel Claude sessions from corrupting the same file.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">unified-damage-control.py</div>
+        <div class="hook-matcher">Bash|Edit|Write</div>
+        <div class="hook-desc">The safety layer. Blocks dangerous commands matching a YAML pattern file. Protects: force-push to main, dropping production databases, editing <code>~/.ssh</code>, writing to system paths. Edit the patterns file to customize.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_review_team.py</div>
+        <div class="hook-matcher">Bash</div>
+        <div class="hook-desc">Team coordination hook for risky Bash commands. Before high-risk commands execute, triggers a lightweight review. Only fires for commands above a risk threshold &mdash; not every Bash call.</div>
+      </div>
+
+      <div class="hook-section-header">
+        <span class="event-color-potu">PostToolUse</span>
+        <span class="hook-count">11 hooks</span>
+        <span style="color:var(--faint);">&mdash; fires after each tool call completes</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">session_lock_manager.py</div>
+        <div class="hook-matcher">*</div>
+        <div class="hook-desc">Releases file locks acquired by PreToolUse. Runs after every tool call to ensure locks don't persist if a tool errors out.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">context-bundle-logger.py</div>
+        <div class="hook-matcher">Bash|Write|Edit</div>
+        <div class="hook-desc">Save-game system. Snapshots session state (modified files, active tasks, key decisions) after meaningful tool calls. Enables session restore via <code>/loadbundle</code>.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_cost_warnings.py</div>
+        <div class="hook-matcher">*</div>
+        <div class="hook-desc">Tracks cumulative API cost in the session. Injects warnings at configurable thresholds (e.g., $1, $5, $10). Prevents surprise bills on long autonomous sessions.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_error_analyzer.py</div>
+        <div class="hook-matcher">Bash</div>
+        <div class="hook-desc">Only fires when a Bash command fails (exit code &ne; 0). Analyzes the error output, identifies root cause pattern, and injects a diagnosis into context. Claude gets the diagnosis alongside the raw error.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_refine.py</div>
+        <div class="hook-matcher">Write|Edit</div>
+        <div class="hook-desc">Triggers a refinement pass after writes. Checks the written file for obvious issues (syntax, missing imports, incomplete implementations) and prompts Claude to fix them before moving on.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_dependency_audit.py</div>
+        <div class="hook-matcher">Write|Edit</div>
+        <div class="hook-desc">After file changes, checks if new dependencies were introduced and whether they're installed. Catches the common case of writing code that imports a package not in package.json / requirements.txt.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_context_manager.py</div>
+        <div class="hook-matcher">Bash|Write|Edit</div>
+        <div class="hook-desc">Context health monitor. Every 10 turns, checks context usage. At 70%+, scans for "cold" tasks (not mentioned in 20+ turns) and writes compressed summaries to <code>~/.claude/data/compressed_context/</code>. Prevents context death on long sessions.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_voice_notifications.py</div>
+        <div class="hook-matcher">Bash|Write|Edit</div>
+        <div class="hook-desc">Audio notifications for key events (task complete, error, waiting for input). Uses macOS <code>say</code> command. Works best when running long autonomous tasks &mdash; you can step away and get notified.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_team_review.py</div>
+        <div class="hook-matcher">Write|Edit</div>
+        <div class="hook-desc">Post-write review trigger. After significant file changes, checks if the changes warrant a team review cycle. Part of the builder+validator pattern for team mode tasks.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_fact_extractor.py</div>
+        <div class="hook-matcher">Bash|Write</div>
+        <div class="hook-desc"><strong style="color:var(--text)">Memory write hook.</strong> Zero LLM calls &mdash; pure pattern matching. Bash success + known pattern &rarr; CONFIRMED fact. Bash failure &rarr; GOTCHA. Write to key path &rarr; PATHS fact. Tags each entry with date + git author. Writes to <code>.claude/FACTS.md</code>.</div>
+      </div>
+      <div class="hook-row" style="background:var(--l2-bg);">
+        <div class="hook-name" style="color:var(--green);">+ 1 more (circuit_breaker_wrapper)</div>
+        <div class="hook-matcher">wraps above</div>
+        <div class="hook-desc" style="color:var(--muted);">All PostToolUse hooks except session_lock_manager are wrapped by circuit_breaker_wrapper.py. If a hook fails 3 times, it's disabled for 60s. Prevents a broken hook from blocking every tool call.</div>
+      </div>
+
+      <div class="hook-section-header">
+        <span class="event-color-stop">Stop</span>
+        <span class="hook-count">5 hooks</span>
+        <span style="color:var(--faint);">&mdash; fires when Claude finishes responding</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">session_lock_manager.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Final cleanup &mdash; releases all locks held by this session. Runs first in Stop to unblock any waiting sessions.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">check_lthread_progress.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Validates RLM (recursive agent) state. If an RLM job was in progress, checks whether it completed or stalled. Reports incomplete l-threads to prevent silent failures.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">auto_memory_writer.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc"><strong style="color:var(--text)">Memory write hook.</strong> Checks git diff &mdash; if files changed, writes a dated session summary to <code>.claude/MEMORY.md</code>. Entry includes: date + <code>@author</code>, commit message, changed files, completed task summaries. Only writes if something actually happened &mdash; idle sessions produce no entry.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">validate_facts.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">FACTS.md maintenance. Prunes entries in the STALE section that are older than 90 days. <strong style="color:var(--green);">Active facts (CONFIRMED/GOTCHAS/PATHS/PATTERNS) are never auto-deleted</strong> &mdash; they persist indefinitely. Only the junk pile gets cleaned.</div>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">voice_done.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Audio "done" notification when the session ends. Useful for long autonomous tasks &mdash; signals that Claude has finished and is waiting.</div>
+      </div>
+
+      <div class="hook-section-header">
+        <span class="event-color-pc">PreCompact</span>
+        <span class="hook-count">1 hook</span>
+        <span style="color:var(--faint);">&mdash; fires when Claude Code is about to compact the context</span>
+      </div>
+      <div class="hook-row">
+        <div class="hook-name">pre_compact_preserve.py</div>
+        <div class="hook-matcher">&mdash;</div>
+        <div class="hook-desc">Context preservation. Before compaction, reads: compressed task summaries from <code>~/.claude/data/compressed_context/</code>, active TaskList items, recently modified files, key decisions, and git diff stat. Injects all of this as preservation instructions into the compaction prompt &mdash; so Claude knows what to keep when summarizing.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow-sm">Configuration</div>
+    <h2>Managing Hooks</h2>
+    <p class="section-desc">All hooks are defined in <code>templates/settings.json.template</code>. Never edit <code>~/.claude/settings.json</code> directly &mdash; it gets overwritten on install.</p>
+
+    <div class="two-col">
+      <div class="card">
+        <h4>Adding a hook</h4>
+        <pre style="margin-top:8px; font-size:11px;"><code># 1. Create the hook script
+global-hooks/framework/my-hook.py
+
+# 2. Add to template
+# templates/settings.json.template
+{
+  "matcher": "Bash",
+  "hooks": [{
+    "type": "command",
+    "command": "uv run __REPO_DIR__/global-hooks/framework/my-hook.py",
+    "timeout": 5
+  }]
+}
+
+# 3. Apply
+bash install.sh</code></pre>
+      </div>
+      <div class="card">
+        <h4>Removing a hook safely</h4>
+        <pre style="margin-top:8px; font-size:11px;"><code># WRONG: deleting the file immediately causes
+# the Stop hook to error on every response.
+#
+# RIGHT: stub it first
+# Replace file contents with a no-op script,
+# remove from template, run bash install.sh,
+# then delete the file safely.</code></pre>
+      </div>
+    </div>
+
+    <div class="callout rust" style="margin-top:16px;">
+      <strong>If a hook is stuck:</strong> Circuit breaker disabled it. Delete <code>~/.claude/circuit_breakers/[hookname].json</code> to reset. Or wait 60 seconds &mdash; it auto-recovers.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <a href="skills.html">&larr; Skills</a> &nbsp;&middot;&nbsp;
+  Claude Agentic Framework v2.1 &nbsp;&middot;&nbsp;
+  <a href="memory-system.html">Memory &rarr;</a>
+</footer>
+
+</body>
+</html>
