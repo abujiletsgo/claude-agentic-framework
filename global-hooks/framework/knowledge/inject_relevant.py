@@ -236,6 +236,65 @@ def rank_and_filter(results, config):
     return scored[:max_injections]
 
 
+def load_facts_text(cwd: str) -> str:
+    """Read .claude/FACTS.md for the current project. Returns empty string if missing."""
+    try:
+        facts_file = Path(cwd) / ".claude" / "FACTS.md"
+        if facts_file.exists():
+            return facts_file.read_text()
+    except Exception:
+        pass
+    return ""
+
+
+def _words(text: str) -> set:
+    import re
+    return set(re.findall(r"[a-zA-Z0-9_-]+", text.lower()))
+
+
+def filter_facts_duplicates(learnings: list, cwd: str, threshold: float = 0.60) -> list:
+    """
+    Remove knowledge DB entries whose content is already captured in FACTS.md.
+    Uses word-overlap dedup at the same threshold as fact_manager.py (60%).
+    Returns only entries not already represented in the project's fact sheet.
+    """
+    facts_text = load_facts_text(cwd)
+    if not facts_text:
+        return learnings  # No FACTS.md — nothing to dedup against
+
+    # Build word sets for each fact line in FACTS.md
+    fact_lines = [
+        line for line in facts_text.splitlines()
+        if line.strip().startswith("- ")
+    ]
+    fact_word_sets = [_words(line) for line in fact_lines if _words(line)]
+
+    filtered = []
+    for entry in learnings:
+        content = entry.get("content", "")
+        if not content:
+            filtered.append(entry)
+            continue
+
+        entry_words = _words(content)
+        if not entry_words:
+            filtered.append(entry)
+            continue
+
+        # Check if any FACTS.md line has >= threshold word overlap
+        is_dup = False
+        for fact_words in fact_word_sets:
+            overlap = len(entry_words & fact_words) / max(len(entry_words), len(fact_words))
+            if overlap >= threshold:
+                is_dup = True
+                break
+
+        if not is_dup:
+            filtered.append(entry)
+
+    return filtered
+
+
 def format_injection(learnings):
     """Format learnings as a context injection string."""
     if not learnings:
@@ -326,6 +385,13 @@ def main():
 
         # Rank and filter
         top_learnings = rank_and_filter(results, config)
+
+        if not top_learnings:
+            return
+
+        # Dedup against FACTS.md — skip entries already captured in the project fact sheet
+        cwd = input_data.get("cwd", str(Path.cwd()))
+        top_learnings = filter_facts_duplicates(top_learnings, cwd)
 
         if not top_learnings:
             return

@@ -154,12 +154,13 @@
         ]
       },
       {
-        "matcher": "Bash|Write|Edit",
+        "matcher": "Bash|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/knowledge/extract_learnings.py",
-            "timeout": 5
+            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/facts/auto_fact_extractor.py",
+            "timeout": 5,
+            "_comment": "Layer 2: extract verified facts to FACTS.md (episodic memory)"
           }
         ]
       }
@@ -187,8 +188,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/knowledge/store_learnings.py",
-            "timeout": 5
+            "command": "uv run __REPO_DIR__/global-hooks/framework/memory/auto_memory_writer.py",
+            "timeout": 10,
+            "_comment": "Layer 2: write session summary to .claude/MEMORY.md (project mid-term memory)"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
+            "timeout": 5,
+            "_comment": "Layer 2: prune stale facts from FACTS.md (episodic memory maintenance)"
           }
         ]
       },
@@ -209,15 +221,6 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
             "timeout": 60
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/knowledge/inject_relevant.py",
-            "timeout": 30
           }
         ]
       },

@@ -11,7 +11,7 @@ SQLite FTS5-backed knowledge store for cross-session learning.
 Provides BM25-ranked full-text search, tag filtering, and JSONL
 append-only logging for durability.
 
-Database: ~/.claude/knowledge.db
+Database: ~/.claude/data/knowledge-db/knowledge.db
 Log:      ~/.claude/knowledge.jsonl
 
 Tags: LEARNED, DECISION, FACT, PATTERN, INVESTIGATION
@@ -29,9 +29,9 @@ from typing import Optional
 # Paths
 # ---------------------------------------------------------------------------
 
-DB_DIR = Path.home() / ".claude"
+DB_DIR = Path.home() / ".claude" / "data" / "knowledge-db"
 DB_PATH = DB_DIR / "knowledge.db"
-JSONL_PATH = DB_DIR / "knowledge.jsonl"
+JSONL_PATH = Path.home() / ".claude" / "knowledge.jsonl"
 
 VALID_TAGS = {"LEARNED", "DECISION", "FACT", "PATTERN", "INVESTIGATION"}
 
