@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude 에이전트 프레임워크 — 메모리 시스템</title>
+<style>
+  :root {
+    --bg: #0e0e0d;
+    --surface: #1a1918;
+    --surface2: #222120;
+    --border: #2d2b29;
+    --text: #ede8e1;
+    --muted: #7a746e;
+    --faint: #3d3a37;
+    --l3: #c49a5a;
+    --l3-bg: #1e190f;
+    --l3-border: #3d3118;
+    --l2: #6b9e74;
+    --l2-bg: #0f1a10;
+    --l2-border: #1e3d22;
+    --l1: #c07a5a;
+    --l1-bg: #1e1008;
+    --l1-border: #3d2218;
+    --l0: #7a746e;
+    --l0-bg: #181715;
+    --l0-border: #2d2b29;
+    --accent: #e07b54;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.65; font-size: 15px; }
+
+  /* ── Header ── */
+  header {
+    padding: 72px 40px 52px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  header h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.1;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto; line-height: 1.7; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14, 14, 13, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; gap: 0; overflow-x: auto;
+  }
+
+  nav a {
+    text-decoration: none; color: var(--muted);
+    font-size: 12px; font-family: var(--font-mono);
+    padding: 13px 14px; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav a:hover { color: var(--text); border-bottom-color: var(--faint); }
+
+  /* ── Layout ── */
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  .eyebrow-sm {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); margin-bottom: 8px; }
+
+  .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 36px; max-width: 560px; line-height: 1.7; }
+
+  /* ── Layer cards ── */
+  .layers-grid { display: flex; flex-direction: column; gap: 0; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 48px; }
+
+  .layer-card { background: var(--surface); padding: 28px 24px; position: relative; transition: background 0.2s; border-bottom: 1px solid var(--border); }
+  .layer-card:last-child { border-bottom: none; }
+  .layer-card:hover { background: var(--surface2); }
+
+  .layer-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .layer-card.l3::before { background: var(--l3); }
+  .layer-card.l2::before { background: var(--l2); }
+  .layer-card.l1::before { background: var(--l1); }
+  .layer-card.l0::before { background: var(--l0); }
+
+  .layer-num { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .l3 .layer-num { color: var(--l3); }
+  .l2 .layer-num { color: var(--l2); }
+  .l1 .layer-num { color: var(--l1); }
+  .l0 .layer-num { color: var(--l0); }
+
+  .layer-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .l3 .layer-dot { background: var(--l3); }
+  .l2 .layer-dot { background: var(--l2); }
+  .l1 .layer-dot { background: var(--l1); }
+  .l0 .layer-dot { background: var(--l0); opacity: 0.5; }
+
+  .layer-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .layer-meta { font-size: 12px; color: var(--muted); margin-bottom: 18px; font-family: var(--font-mono); }
+
+  .layer-files { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .layer-files li { font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+  .layer-files li::before { content: '─'; color: var(--faint); flex-shrink: 0; }
+  .layer-files li span { color: var(--text); }
+  .layer-files li em { font-style: normal; color: var(--l2); }
+
+  .tok-row { background: var(--bg); border-radius: 6px; padding: 8px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+  .tok-row .val { color: var(--l3); font-weight: 600; }
+
+  /* ── Budget bars ── */
+  .budget-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .budget-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .budget-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 240px; }
+  .budget-bar-wrap { flex: 1; background: var(--border); border-radius: 3px; height: 6px; overflow: hidden; }
+  .budget-bar { height: 100%; border-radius: 3px; }
+  .budget-tok { font-family: var(--font-mono); font-size: 11px; color: var(--l3); min-width: 65px; text-align: right; }
+  .budget-tok.dim { color: var(--faint); }
+
+  /* ── Tags ── */
+  .tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; letter-spacing: 0.3px; font-family: var(--font-mono); vertical-align: middle; margin-left: 5px; }
+  .tag.l3 { background: var(--l3-bg); color: var(--l3); border: 1px solid var(--l3-border); }
+  .tag.l2 { background: var(--l2-bg); color: var(--l2); border: 1px solid var(--l2-border); }
+  .tag.l1 { background: var(--l1-bg); color: var(--l1); border: 1px solid var(--l1-border); }
+  .tag.auto { background: #1a1208; color: var(--l3); border: 1px solid #3d2e10; }
+  .tag.demand { background: #0f1a18; color: var(--l2); border: 1px solid #1e3d32; }
+  .tag.tok { background: #1a1208; color: var(--l3); border: 1px solid #3d2e10; }
+
+  /* ── Flow ── */
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+  .flow-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+
+  .flow-step { display: flex; gap: 14px; align-items: flex-start; position: relative; }
+  .flow-step:not(:last-child)::after { content: ''; position: absolute; left: 17px; top: 36px; bottom: -10px; width: 1px; background: linear-gradient(180deg, var(--border) 0%, transparent 100%); }
+  .flow-step + .flow-step { margin-top: 10px; }
+
+  .flow-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; border: 1px solid var(--border); background: var(--bg); }
+  .flow-icon.l3 { background: var(--l3-bg); border-color: var(--l3-border); }
+  .flow-icon.l2 { background: var(--l2-bg); border-color: var(--l2-border); }
+  .flow-icon.l1 { background: var(--l1-bg); border-color: var(--l1-border); }
+  .flow-icon.demand { background: #0f1a18; border-color: #1e3d32; }
+
+  .flow-content { flex: 1; padding: 8px 0; }
+  .flow-hook { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 3px; font-family: var(--font-mono); }
+  .flow-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Lifecycle ── */
+  .lifecycle { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .phase { background: var(--surface); padding: 22px; }
+  .phase:hover { background: var(--surface2); }
+  .phase-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .phase-icon { width: 32px; height: 32px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--bg); border: 1px solid var(--border); }
+  .phase-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .phase-trigger { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+  .ev-list { list-style: none; }
+  .ev-list li { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid var(--bg); font-size: 11px; font-family: var(--font-mono); }
+  .ev-list li:last-child { border-bottom: none; }
+  .ev-hook { color: var(--text); font-weight: 500; flex: 1; }
+  .ev-arr { color: var(--faint); flex-shrink: 0; }
+  .ev-target { color: var(--muted); text-align: right; flex-shrink: 0; }
+  .ev-target.l2 { color: var(--l2); }
+  .ev-target.l1 { color: var(--l1); }
+  .ev-target.demand { color: var(--l2); }
+
+  /* ── GL cards ── */
+  .gl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .gl-grid { grid-template-columns: 1fr; } }
+
+  .gl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; }
+  .gl-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .gl-card.global h3 { color: var(--l3); }
+  .gl-card.local h3 { color: var(--l2); }
+
+  .gl-path { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--bg); padding: 4px 8px; border-radius: 4px; margin-bottom: 12px; display: block; border: 1px solid var(--border); }
+
+  .gl-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--bg); font-size: 12px; }
+  .gl-item:last-child { border-bottom: none; }
+  .gl-item-name { font-family: var(--font-mono); color: var(--text); font-weight: 500; min-width: 150px; }
+  .gl-item-desc { color: var(--muted); }
+
+  /* ── Resolution ── */
+  .res-row { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .res-box { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; text-align: center; font-family: var(--font-mono); font-size: 11px; }
+  .res-box.local { border-color: var(--l2-border); background: var(--l2-bg); }
+  .res-box.global { border-color: var(--l3-border); background: var(--l3-bg); }
+  .res-box.wins { border-color: var(--accent); background: #1a0e08; }
+  .res-box .name { font-weight: 700; font-size: 11px; margin-bottom: 3px; }
+  .res-box.local .name { color: var(--l2); }
+  .res-box.global .name { color: var(--l3); }
+  .res-box.wins .name { color: var(--accent); }
+  .res-box .detail { color: var(--faint); font-size: 10px; }
+  .res-op { text-align: center; color: var(--faint); font-size: 12px; }
+  .res-op.beats { color: var(--l2); }
+
+  /* ── FACTS pipeline ── */
+  .pipe-row { display: flex; gap: 0; align-items: stretch; flex-wrap: wrap; margin-bottom: 10px; }
+  .pipe-box { flex: 1; min-width: 120px; padding: 10px 12px; background: var(--bg); border-radius: 6px; text-align: center; font-family: var(--font-mono); font-size: 11px; }
+  .pipe-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--faint); font-size: 13px; }
+  .pipe-box .pname { font-weight: 700; margin-bottom: 3px; }
+  .pipe-box .pdesc { color: var(--muted); font-size: 10px; }
+  .pipe-box.confirmed { background: var(--l2-bg); border: 1px solid var(--l2-border); }
+  .pipe-box.confirmed .pname { color: var(--l2); }
+  .pipe-box.gotcha { background: var(--l1-bg); border: 1px solid var(--l1-border); }
+  .pipe-box.gotcha .pname { color: var(--l1); }
+  .pipe-box.paths { background: #0f1a18; border: 1px solid #1e3d32; }
+  .pipe-box.paths .pname { color: #5eb8a0; }
+  .pipe-box.pruned { background: var(--surface); border: 1px solid var(--border); }
+  .pipe-box.pruned .pname { color: var(--text); }
+
+  /* ── Trust ── */
+  .trust-chain { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .trust-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--bg); gap: 16px; transition: background 0.15s; }
+  .trust-row:last-child { border-bottom: none; }
+  .trust-row:hover { background: var(--surface2); }
+  .trust-rank { font-family: var(--font-mono); font-size: 22px; font-weight: 900; min-width: 30px; text-align: center; }
+  .trust-row:nth-child(1) .trust-rank { color: var(--l3); }
+  .trust-row:nth-child(2) .trust-rank { color: var(--l2); }
+  .trust-row:nth-child(3) .trust-rank { color: var(--l1); }
+  .trust-row:nth-child(4) .trust-rank { color: var(--muted); }
+  .trust-row:nth-child(5) .trust-rank { color: var(--faint); }
+  .trust-source { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .trust-why { font-size: 13px; color: var(--muted); flex: 2; }
+
+  /* ── Callout ── */
+  .callout { background: var(--l2-bg); border: 1px solid var(--l2-border); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 16px; line-height: 1.7; }
+  .callout strong { color: var(--l2); }
+
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+  .info-box strong { color: var(--text); }
+
+  code { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--text); word-break: break-all; }
+
+  /* text wrapping fixes */
+  .gl-item-name { word-break: break-word; }
+  .flow-hook { word-break: break-word; }
+  .flow-desc { word-break: break-word; }
+  .ev-hook { word-break: break-word; min-width: 0; }
+  .budget-label { word-break: break-word; min-width: 0; flex: 1; }
+  .layer-files li { word-break: break-word; }
+  .trust-source { word-break: break-word; }
+  .trust-why { word-break: break-word; }
+  .phase-name { word-break: break-word; }
+  .res-box .detail { word-break: break-all; }
+
+  @media (max-width: 760px) {
+    .budget-row { flex-wrap: wrap; }
+    .budget-bar-wrap { min-width: 100px; }
+    .res-row { grid-template-columns: 1fr 16px 1fr 16px 1fr; font-size: 10px; }
+    .gl-item { flex-wrap: wrap; }
+    .gl-item-name { min-width: 0; }
+  }
+
+  footer { padding: 48px 40px; text-align: center; color: var(--faint); font-size: 12px; font-family: var(--font-mono); border-top: 1px solid var(--border); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .layer-card { animation: fadeIn 0.35s ease both; }
+  .layer-card:nth-child(1) { animation-delay: 0.04s; }
+  .layer-card:nth-child(2) { animation-delay: 0.08s; }
+  .layer-card:nth-child(3) { animation-delay: 0.12s; }
+  .layer-card:nth-child(4) { animation-delay: 0.16s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Claude Agentic Framework v2.1</div>
+  <h1>레이어드 <span>메모리</span> 시스템</h1>
+  <p>4개의 인지 메모리 레이어 — 일시적인 도구 출력부터 영구적인 글로벌 지식까지. Claude가 프로젝트 전반에 걸쳐 맥락을 유지하고 환각을 방지합니다.</p>
+</header>
+
+<nav>
+  <a href="#layers">레이어</a>
+  <a href="#session-start">세션 시작</a>
+  <a href="#memory-recall">메모리 호출</a>
+  <a href="#memory-save">메모리 저장</a>
+  <a href="#lifecycle">라이프사이클</a>
+  <a href="#agents-skills">에이전트 &amp; 스킬</a>
+  <a href="#resolution">글로벌 vs 로컬</a>
+  <a href="#request-flow">전체 요청 흐름</a>
+  <a href="#facts-pipeline">FACTS.md</a>
+  <a href="#trust">신뢰 계층</a>
+</nav>
+
+<div class="container">
+
+  <!-- ── 1. 레이어 ── -->
+  <section id="layers">
+    <div class="eyebrow-sm">아키텍처</div>
+    <h2>4개의 메모리 레이어</h2>
+    <p class="section-desc">각 레이어는 범위, 수명, 접근 방식이 다릅니다. Layer 3 + Layer 2 아키텍처만 자동 주입됩니다. 에피소딕 메모리는 필요시에만 호출됩니다.</p>
+
+    <div class="layers-grid">
+      <div class="layer-card l3">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 3</div>
+        <div class="layer-title">시맨틱 (의미론적)</div>
+        <div class="layer-meta">글로벌 · 무기한 · <strong style="color:var(--l3)">항상 주입</strong></div>
+        <ul class="layer-files">
+          <li><span>~/.claude/CLAUDE.md</span> — 시스템 지침</li>
+          <li><span>~/.claude/memory/MEMORY.md</span> — 글로벌 규칙</li>
+          <li><span>~/.claude/agents/</span> — 글로벌 에이전트 8개</li>
+          <li><span>~/.claude/skills/</span> — 글로벌 스킬 7개</li>
+        </ul>
+        <div class="tok-row"><span>세션 시작 자동 주입</span><span class="val">~800 토큰</span></div>
+      </div>
+
+      <div class="layer-card l2">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 2</div>
+        <div class="layer-title">에피소딕 (프로젝트)</div>
+        <div class="layer-meta">프로젝트별 · 프로젝트 수명 · 부분 자동 주입</div>
+        <ul class="layer-files">
+          <li><span>.claude/PROJECT_CONTEXT.md</span> — <em>자동 주입 ✓</em></li>
+          <li><span>.claude/FACTS.md</span> — <em style="color:var(--muted)">필요시 호출</em></li>
+          <li><span>.claude/MEMORY.md</span> — <em style="color:var(--muted)">필요시 호출</em></li>
+          <li><span>.claude/agents/</span> — 로컬 에이전트 오버라이드</li>
+          <li><span>.claude/skills/</span> — 로컬 스킬 오버라이드</li>
+        </ul>
+        <div class="tok-row"><span>PROJECT_CONTEXT 자동 주입</span><span class="val">~2000 토큰</span></div>
+      </div>
+
+      <div class="layer-card l1">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 1</div>
+        <div class="layer-title">워킹 (세션)</div>
+        <div class="layer-meta">세션 범위 · 일시적 · 컴팩션 이후에도 유지</div>
+        <ul class="layer-files">
+          <li><span>TaskList</span> — 현재 작업 상태 (컨텍스트 내)</li>
+          <li><span>compressed_context/</span> — 냉각 작업 요약</li>
+          <li><span>수정된 파일 경로</span> — pre_compact가 추적</li>
+          <li><span>핵심 결정 사항</span> — 컴팩션 시 보존</li>
+        </ul>
+        <div class="tok-row"><span>런타임</span><span class="val">~1000 토큰</span></div>
+      </div>
+
+      <div class="layer-card l0">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 0</div>
+        <div class="layer-title">감각 (현재 턴)</div>
+        <div class="layer-meta">턴별 · 일시적 · 영속성 없음</div>
+        <ul class="layer-files">
+          <li><span>도구 출력</span> — Bash, Read, Write 결과</li>
+          <li><span>파일 내용</span> — 현재 읽은 파일</li>
+          <li><span>웹 결과</span> — 가져온 콘텐츠</li>
+          <li>각 응답 후 사라짐</li>
+        </ul>
+        <div class="tok-row"><span>비용</span><span class="val">무제한 / 턴</span></div>
+      </div>
+    </div>
+
+    <!-- 토큰 예산 바 -->
+    <div class="budget-section">
+      <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:20px;">세션 시작 주입 예산</div>
+
+      <div class="budget-row">
+        <div class="budget-label">L3 · CLAUDE.md + MEMORY.md (글로벌 규칙)</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:var(--l3);"></div></div>
+        <div class="budget-tok">~800</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 · PROJECT_CONTEXT.md (아키텍처) <span class="tag auto">자동</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:57%; background:var(--l2);"></div></div>
+        <div class="budget-tok">~2000</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 · FACTS.md <span class="tag demand">필요시</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:42%; background:var(--l2); opacity:0.25;"></div></div>
+        <div class="budget-tok dim">~1500*</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 · MEMORY.md <span class="tag demand">필요시</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:var(--l2); opacity:0.25;"></div></div>
+        <div class="budget-tok dim">~800*</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 · REPO_MAP (파일 ≥200개) <span class="tag auto">자동</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:28%; background:var(--l0);"></div></div>
+        <div class="budget-tok" style="color:var(--muted);">~1000</div>
+      </div>
+
+      <div style="margin-top:16px; background:var(--bg); border-radius:7px; padding:12px 16px; display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:12px; border:1px solid var(--border);">
+        <span style="color:var(--muted);">첫 메시지 전 자동 주입 컨텍스트</span>
+        <span style="color:var(--l3); font-weight:700;">~2800 토큰</span>
+      </div>
+      <p style="font-size:11px; color:var(--faint); margin-top:8px; font-family:var(--font-mono);">* 필요시만 소비 — 세션 시작 시 자동 주입 아님</p>
+    </div>
+  </section>
+
+  <!-- ── 2. 세션 시작 ── -->
+  <section id="session-start">
+    <div class="eyebrow-sm">데이터 흐름</div>
+    <h2>세션 시작 — 자동 실행 항목</h2>
+    <p class="section-desc">최소화 설계: 프로젝트 아키텍처만 자동 주입. 훅 2개, 최소 오버헤드.</p>
+
+    <div class="flow">
+      <div class="flow-title">SessionStart 훅 → 첫 메시지 전에 컨텍스트 구성</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l3">🌐</div>
+        <div class="flow-content">
+          <div class="flow-hook">~/.claude/CLAUDE.md + MEMORY.md <span class="tag l3">L3 · 항상</span> <span class="tag tok">~800 tok</span></div>
+          <div class="flow-desc">글로벌 행동 규칙 및 크로스 프로젝트 학습. 항상 존재. 프로젝트 설정으로 재정의 불가. 최고 우선순위 지침.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">🔒</div>
+        <div class="flow-content">
+          <div class="flow-hook">session_startup.py <span class="tag l2">SessionStart</span></div>
+          <div class="flow-desc">모든 스킬 7개에 SHA-256 무결성 검사. 변조 시 경고. 세션 잠금 초기화. 가장 먼저 실행되는 게이트.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">🏗</div>
+        <div class="flow-content">
+          <div class="flow-hook">auto_prime_inject.py → PROJECT_CONTEXT.md <span class="tag l2">L2 · 자동</span> <span class="tag tok">~2000 tok</span></div>
+          <div class="flow-desc"><code>.claude/PROJECT_CONTEXT.md</code> 로드 — 전체 아키텍처 개요: 에이전트, 명령어, 훅, 구조, 핵심 파일. Git 해시로 검증. 해시 변경 시 오래된 것으로 표시 → /prime으로 갱신.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">🗺</div>
+        <div class="flow-content">
+          <div class="flow-hook">repo_map.py <span class="tag l2">L2 · 대형 저장소만</span> <span class="tag tok">~1000 tok</span></div>
+          <div class="flow-desc">프로젝트 파일 ≥200개일 때만 실행. TreeSitter 심볼 인덱스 생성 — 맹목적 파일 탐색 방지. 소형 프로젝트는 건너뜀.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>FACTS.md와 MEMORY.md를 자동 주입하지 않는 이유?</strong><br>
+      이 파일들은 필요시에만 읽힙니다. 프로젝트별 작업 시작 시 Claude가 읽는 것이지, 모든 세션에서 무조건 소비되지 않습니다. 필요 없는 세션에서 ~2300 토큰을 절약합니다.
+    </div>
+  </section>
+
+  <!-- ── 3. 메모리 호출 ── -->
+  <section id="memory-recall">
+    <div class="eyebrow-sm">필요시 접근</div>
+    <h2>메모리 호출 — 언제 &amp; 어떻게</h2>
+    <p class="section-desc">에피소딕 메모리는 관련성이 있을 때 읽힙니다. Claude가 작업 컨텍스트를 기반으로 판단합니다.</p>
+
+    <div class="flow" style="margin-bottom:16px;">
+      <div class="flow-title">FACTS.MD 호출 흐름</div>
+      <div class="flow-step">
+        <div class="flow-icon">💬</div>
+        <div class="flow-content">
+          <div class="flow-hook">이 프로젝트의 코드, 설정, 알려진 패턴 관련 작업</div>
+          <div class="flow-desc">트리거: 프로젝트별 지식이 필요한 작업 (버그 수정, 기능 추가, 명령어 실행, 훅 수정).</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon demand">📋</div>
+        <div class="flow-content">
+          <div class="flow-hook">Read <code>.claude/FACTS.md</code> <span class="tag demand">필요시</span></div>
+          <div class="flow-desc">Claude가 Read 도구로 FACTS.md 읽음. 주입 카테고리: CONFIRMED, GOTCHAS, PATHS, PATTERNS. STALE 섹션은 자동 제외.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon l2">✅</div>
+        <div class="flow-content">
+          <div class="flow-hook">신뢰 계층 적용</div>
+          <div class="flow-desc">CONFIRMED 항목이 추론을 재정의. 명령어 실행 전 GOTCHAS 확인. 파일 탐색 전 PATHS 참조. PATTERNS는 검증된 시퀀스에 사용.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">MEMORY.MD 호출 흐름</div>
+      <div class="flow-step">
+        <div class="flow-icon">🔄</div>
+        <div class="flow-content">
+          <div class="flow-hook">공백 후 작업 재개 (다른 세션, 기능 계속)</div>
+          <div class="flow-desc">트리거: 이전 작업 계속의 맥락 — 부분적으로 수정된 버그, 진행 중인 기능, 최근 변경 사항 불확실.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon demand">📖</div>
+        <div class="flow-content">
+          <div class="flow-hook">Read <code>.claude/MEMORY.md</code> <span class="tag demand">필요시</span></div>
+          <div class="flow-desc">MEMORY.md 읽기: 롤링 세션 기록 (최대 30개). 각 항목: 날짜, 커밋 메시지, 변경된 파일, 완료된 작업. Git diff 기반 — 요약이 아닌 실제 데이터.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon l2">🎯</div>
+        <div class="flow-content">
+          <div class="flow-hook">컨텍스트 정립: 무엇이 변경됐는지, 무엇이 수정됐는지, 어떤 결정이 내려졌는지</div>
+          <div class="flow-desc">최근 항목으로 프로젝트 상태 파악. 항목은 사실적 (git diff + 커밋). 30 세션 후 가장 오래된 항목 자동 삭제.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. 메모리 저장 ── -->
+  <section id="memory-save">
+    <div class="eyebrow-sm">자동 저장</div>
+    <h2>메모리 저장 — 완전 자동</h2>
+    <p class="section-desc">수동 작업 없음. 훅이 모든 관련 도구 호출 후와 세션 종료 시 백그라운드에서 FACTS.md와 MEMORY.md에 씁니다.</p>
+
+    <div class="lifecycle">
+      <div class="phase">
+        <div class="phase-head">
+          <div class="phase-icon">⚡</div>
+          <div>
+            <div class="phase-name">모든 Bash 호출 후</div>
+            <div class="phase-trigger">PostToolUse: Bash</div>
+          </div>
+        </div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">auto_fact_extractor.py</span><span class="ev-arr">→</span><span class="ev-target l2">FACTS.md</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            성공 + 알려진 패턴 → CONFIRMED<br>
+            실패 + 오류 패턴 → GOTCHA<br>
+            LLM 호출 없음 — 순수 패턴 매칭
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head">
+          <div class="phase-icon">📝</div>
+          <div>
+            <div class="phase-name">모든 Write 후</div>
+            <div class="phase-trigger">PostToolUse: Write</div>
+          </div>
+        </div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">auto_fact_extractor.py</span><span class="ev-arr">→</span><span class="ev-target l2">FACTS.md</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            핵심 경로 작성 → PATHS 사실<br>
+            추적: .claude/, templates/, global-hooks/, docs/, scripts/, 설정 파일
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head">
+          <div class="phase-icon">🏁</div>
+          <div>
+            <div class="phase-name">세션 종료</div>
+            <div class="phase-trigger">Stop 훅</div>
+          </div>
+        </div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">auto_memory_writer.py</span><span class="ev-arr">→</span><span class="ev-target l2">MEMORY.md</span></li>
+          <li><span class="ev-hook">validate_facts.py</span><span class="ev-arr">→</span><span class="ev-target l2">FACTS.md 정리</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            MEMORY: git diff + 커밋 메시지.<br>
+            변경 사항 없으면 저장 안 함.<br>
+            FACTS: 90일 이상 항목 삭제.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. 라이프사이클 ── -->
+  <section id="lifecycle">
+    <div class="eyebrow-sm">런타임</div>
+    <h2>전체 세션 라이프사이클</h2>
+    <p class="section-desc">실행되는 모든 훅, 터치되는 모든 메모리, 순서대로.</p>
+
+    <div class="lifecycle">
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">🚀</div><div><div class="phase-name">세션 시작</div><div class="phase-trigger">SessionStart 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_startup.py</span><span class="ev-arr">→</span><span class="ev-target">무결성 검사</span></li>
+          <li><span class="ev-hook">auto_prime_inject.py</span><span class="ev-arr">→</span><span class="ev-target l2">PROJECT_CONTEXT</span></li>
+          <li><span class="ev-hook">repo_map.py</span><span class="ev-arr">→</span><span class="ev-target l2">파일 ≥200개 시</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">💬</div><div><div class="phase-name">사용자 메시지</div><div class="phase-trigger">UserPromptSubmit 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">kr_mode.py</span><span class="ev-arr">→</span><span class="ev-target">한국어 모드</span></li>
+          <li><span class="ev-hook">auto_prime_inject.py</span><span class="ev-arr">→</span><span class="ev-target">캐시 없으면 /prime</span></li>
+          <li><span class="ev-hook">analyze_request.py</span><span class="ev-arr">→</span><span class="ev-target">Caddy 분류</span></li>
+          <li><span class="ev-hook">auto_delegate.py</span><span class="ev-arr">→</span><span class="ev-target">복잡 시 라우팅</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">🔧</div><div><div class="phase-name">도구 호출</div><div class="phase-trigger">PreToolUse 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">→</span><span class="ev-target">동시성 방지</span></li>
+          <li><span class="ev-hook">unified-damage-control.py</span><span class="ev-arr">→</span><span class="ev-target">위험 차단</span></li>
+          <li><span class="ev-hook">auto_review_team.py</span><span class="ev-arr">→</span><span class="ev-target">위험 Bash 검토</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">📤</div><div><div class="phase-name">도구 결과</div><div class="phase-trigger">PostToolUse 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">auto_fact_extractor.py</span><span class="ev-arr">→</span><span class="ev-target l2">FACTS.md</span></li>
+          <li><span class="ev-hook">auto_context_manager.py</span><span class="ev-arr">→</span><span class="ev-target l1">70% 시 압축</span></li>
+          <li><span class="ev-hook">auto_error_analyzer.py</span><span class="ev-arr">→</span><span class="ev-target">오류 분석</span></li>
+          <li><span class="ev-hook">auto_cost_warnings.py</span><span class="ev-arr">→</span><span class="ev-target">예산 경고</span></li>
+          <li><span class="ev-hook">auto_refine.py</span><span class="ev-arr">→</span><span class="ev-target">코드 개선</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">🏁</div><div><div class="phase-name">세션 종료</div><div class="phase-trigger">Stop 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">→</span><span class="ev-target">잠금 해제</span></li>
+          <li><span class="ev-hook">auto_memory_writer.py</span><span class="ev-arr">→</span><span class="ev-target l2">MEMORY.md</span></li>
+          <li><span class="ev-hook">validate_facts.py</span><span class="ev-arr">→</span><span class="ev-target l2">FACTS.md 정리</span></li>
+          <li><span class="ev-hook">voice_done.py</span><span class="ev-arr">→</span><span class="ev-target">음성 알림</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">🗜</div><div><div class="phase-name">컴팩션</div><div class="phase-trigger">PreCompact 훅</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">pre_compact_preserve.py</span><span class="ev-arr">→</span><span class="ev-target l1">L1 보존</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            압축된 냉각 작업 요약 + 활성 작업 + 수정된 파일 + 핵심 결정 + git diff 통계 → 컴팩션 프롬프트에 보존 지침으로 주입
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6. 에이전트 & 스킬 ── -->
+  <section id="agents-skills">
+    <div class="eyebrow-sm">범위</div>
+    <h2>에이전트, 스킬 &amp; 도구 — 글로벌 vs 로컬</h2>
+    <p class="section-desc">모든 것에 두 계층. 글로벌 = 모든 곳에서 사용 가능. 로컬 = 프로젝트별, 항상 우선.</p>
+
+    <div class="gl-grid" style="margin-bottom:12px;">
+      <div class="gl-card global">
+        <h3>🌐 글로벌 에이전트</h3>
+        <code class="gl-path">~/.claude/agents/ (install.sh로 심링크)</code>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:14px;">모든 프로젝트에서 사용 가능. 한 번 설치, 어디서나 사용.</div>
+        <div class="gl-item"><div class="gl-item-name">orchestrator.md</div><div class="gl-item-desc">메인 코디네이터 (Opus)</div></div>
+        <div class="gl-item"><div class="gl-item-name">project-architect.md</div><div class="gl-item-desc">아키텍처 감독 (Opus)</div></div>
+        <div class="gl-item"><div class="gl-item-name">critical-analyst.md</div><div class="gl-item-desc">심층 분석 (Opus)</div></div>
+        <div class="gl-item"><div class="gl-item-name">researcher.md</div><div class="gl-item-desc">코드베이스 탐색 (Sonnet)</div></div>
+        <div class="gl-item"><div class="gl-item-name">meta-agent.md</div><div class="gl-item-desc">에이전트 생성기 (Sonnet)</div></div>
+        <div class="gl-item"><div class="gl-item-name">scout-report-suggest.md</div><div class="gl-item-desc">타겟 분석 (Sonnet)</div></div>
+        <div class="gl-item"><div class="gl-item-name">rlm-root.md</div><div class="gl-item-desc">무한 컨텍스트 (Sonnet)</div></div>
+        <div class="gl-item"><div class="gl-item-name">docs-scraper.md</div><div class="gl-item-desc">문서 작업 (Haiku)</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>📁 로컬 에이전트</h3>
+        <code class="gl-path">.claude/agents/ (프로젝트 디렉토리)</code>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:14px;">프로젝트별. <strong style="color:var(--l2)">같은 이름이면 글로벌 재정의.</strong></div>
+        <div class="gl-item"><div class="gl-item-name">domain-specialist.md</div><div class="gl-item-desc">예: 인증, 결제 전문가</div></div>
+        <div class="gl-item"><div class="gl-item-name">custom-reviewer.md</div><div class="gl-item-desc">프로젝트별 리뷰 규칙</div></div>
+        <div class="gl-item"><div class="gl-item-name" style="color:var(--l2);">orchestrator.md</div><div class="gl-item-desc" style="color:var(--l2);">← 글로벌 재정의</div></div>
+        <div style="margin-top:14px; background:var(--bg); border-radius:7px; padding:12px; font-family:var(--font-mono); font-size:11px; color:var(--muted); border:1px solid var(--border);">
+          <div style="color:var(--l2); margin-bottom:8px; font-weight:700;">생성 방법:</div>
+          <code>.claude/agents/my-agent.md</code> 작성<br>
+          프론트매터: name, description, model, tools<br>
+          설치 불필요 — Claude Code가 자동 감지
+        </div>
+      </div>
+    </div>
+
+    <div class="gl-grid">
+      <div class="gl-card global">
+        <h3>🌐 글로벌 스킬</h3>
+        <code class="gl-path">~/.claude/skills/ (install.sh로 심링크)</code>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:14px;">프레임워크 스킬 7개. 모든 프로젝트에서 사용.</div>
+        <div class="gl-item"><div class="gl-item-name">code-review</div><div class="gl-item-desc">PR 수준 코드 리뷰</div></div>
+        <div class="gl-item"><div class="gl-item-name">error-analyzer</div><div class="gl-item-desc">근본 원인 분석</div></div>
+        <div class="gl-item"><div class="gl-item-name">facts</div><div class="gl-item-desc">FACTS.md 관리</div></div>
+        <div class="gl-item"><div class="gl-item-name">refactoring-assistant</div><div class="gl-item-desc">안전한 리팩토링</div></div>
+        <div class="gl-item"><div class="gl-item-name">security-scanner</div><div class="gl-item-desc">취약점 감사</div></div>
+        <div class="gl-item"><div class="gl-item-name">test-generator</div><div class="gl-item-desc">테스트 스위트 생성</div></div>
+        <div class="gl-item"><div class="gl-item-name">knowledge-db</div><div class="gl-item-desc">SQLite FTS5 지식베이스</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>📁 로컬 스킬</h3>
+        <code class="gl-path">.claude/skills/ (프로젝트 디렉토리)</code>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:14px;">프로젝트별. <strong style="color:var(--l2)">같은 이름이면 글로벌 재정의.</strong></div>
+        <div class="gl-item"><div class="gl-item-name">deploy.md</div><div class="gl-item-desc">프로젝트 배포 시퀀스</div></div>
+        <div class="gl-item"><div class="gl-item-name">test-runner.md</div><div class="gl-item-desc">프로젝트별 테스트 명령</div></div>
+        <div class="gl-item"><div class="gl-item-name">db-migrate.md</div><div class="gl-item-desc">DB 마이그레이션 스킬</div></div>
+        <div style="margin-top:14px; background:var(--bg); border-radius:7px; padding:12px; font-family:var(--font-mono); font-size:11px; color:var(--muted); border:1px solid var(--border);">
+          <div style="color:var(--l2); margin-bottom:8px; font-weight:700;">생성 방법:</div>
+          <code>.claude/skills/my-skill.md</code> 작성<br>
+          포함: 설명, 사용 시기, 명령어<br>
+          Claude Code에서 <code>/my-skill</code>로 활성화
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 7. 글로벌 vs 로컬 ── -->
+  <section id="resolution">
+    <div class="eyebrow-sm">우선순위 규칙</div>
+    <h2>글로벌 vs 로컬 — 해결 순서</h2>
+    <p class="section-desc">글로벌과 로컬이 같은 이름을 가지면 로컬이 항상 우선. Claude Code는 프로젝트 로컬 디렉토리를 먼저 로드합니다.</p>
+
+    <div class="flow" style="padding:24px;">
+      <div class="flow-title">우선순위 순서 (위 = 최고 우선순위)</div>
+
+      <div class="res-row">
+        <div class="res-box local"><div class="name">로컬 에이전트</div><div class="detail">.claude/agents/orchestrator.md</div></div>
+        <div class="res-op beats">▶</div>
+        <div class="res-box global"><div class="name">글로벌 에이전트</div><div class="detail">~/.claude/agents/orchestrator.md</div></div>
+        <div class="res-op beats">→</div>
+        <div class="res-box wins"><div class="name">로컬 우선</div><div class="detail">프로젝트별 동작</div></div>
+      </div>
+
+      <div class="res-row">
+        <div class="res-box local"><div class="name">로컬 스킬</div><div class="detail">.claude/skills/deploy.md</div></div>
+        <div class="res-op beats">▶</div>
+        <div class="res-box global" style="opacity:0.35;"><div class="name">글로벌 없음</div><div class="detail">전역으로 존재 안 함</div></div>
+        <div class="res-op">→</div>
+        <div class="res-box wins"><div class="name">로컬만</div><div class="detail">프로젝트 범위 스킬</div></div>
+      </div>
+
+      <div class="res-row">
+        <div class="res-box local" style="opacity:0.35;"><div class="name">로컬 없음</div><div class="detail">프로젝트별 없음</div></div>
+        <div class="res-op">→</div>
+        <div class="res-box global"><div class="name">글로벌 에이전트</div><div class="detail">~/.claude/agents/researcher.md</div></div>
+        <div class="res-op">→</div>
+        <div class="res-box wins"><div class="name">글로벌 사용</div><div class="detail">폴백으로 글로벌 사용</div></div>
+      </div>
+
+      <div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;">
+        <div style="background:var(--l2-bg); border:1px solid var(--l2-border); border-radius:7px; padding:14px;">
+          <div style="color:var(--l2); font-weight:700; margin-bottom:8px; font-family:var(--font-mono);">✓ 로컬 생성 시기</div>
+          <ul style="list-style:none; color:var(--muted); line-height:1.9;">
+            <li>→ 프로젝트 고유 배포/테스트 워크플로</li>
+            <li>→ 도메인 전문 지식 필요 (결제, 인증, ML)</li>
+            <li>→ 글로벌 에이전트 동작 재정의 필요</li>
+            <li>→ 프로젝트별 코드 리뷰 규칙</li>
+          </ul>
+        </div>
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:7px; padding:14px;">
+          <div style="color:var(--muted); font-weight:700; margin-bottom:8px; font-family:var(--font-mono);">✗ 로컬 생성 불필요 시기</div>
+          <ul style="list-style:none; color:var(--faint); line-height:1.9;">
+            <li>→ 글로벌 에이전트가 이미 처리</li>
+            <li>→ 글로벌과 동일한 동작</li>
+            <li>→ 일회성 작업 (글로벌 사용)</li>
+            <li>→ 모든 프로젝트에서 원하는 경우</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 8. 전체 요청 흐름 ── -->
+  <section id="request-flow">
+    <div class="eyebrow-sm">End-to-End</div>
+    <h2>전체 요청 라이프사이클</h2>
+    <p class="section-desc">사용자 메시지부터 도구 실행, 메모리 영속화까지 — 모든 터치포인트.</p>
+
+    <div class="flow">
+      <div class="flow-title">사용자 메시지 → 도구 호출 → 메모리 영속화</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">1️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">사용자 메시지 전송</div>
+          <div class="flow-desc">UserPromptSubmit 실행: <strong>kr_mode</strong> (한국어?), <strong>auto_prime_inject</strong> (캐시 없으면 /prime 강제), <strong>analyze_request</strong> (Caddy 분류: direct/orchestrate/rlm/fusion), <strong>auto_delegate</strong> (복잡하면 라우팅).</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon demand">2️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">필요시 에피소딕 메모리 읽기 <span class="tag demand">필요시</span></div>
+          <div class="flow-desc">프로젝트별 작업? → <code>.claude/FACTS.md</code> 읽기 (검증된 사실, 함정, 알려진 경로). 이전 작업 재개? → <code>.claude/MEMORY.md</code> 읽기 (최근 세션 변경 사항). 두 파일 모두 Read 도구로 읽기 — 필요시만 소비.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l3">3️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">에이전트 및 스킬 선택</div>
+          <div class="flow-desc">Claude 해결: 로컬 <code>.claude/agents/</code> 먼저 확인 → 글로벌 <code>~/.claude/agents/</code> 폴백. 스킬도 동일. Caddy 권고 참고. 복잡한 작업 → orchestrator가 팀 소환. 단순 작업 → 직접 실행.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon">4️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">PreToolUse가 모든 도구 호출 게이팅</div>
+          <div class="flow-desc"><strong>session_lock_manager</strong>: 동시 파일 쓰기 방지. <strong>unified-damage-control</strong>: 파괴적 패턴 차단. <strong>auto_review_team</strong>: 실행 전 위험 Bash 검토.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">5️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">도구 실행</div>
+          <div class="flow-desc">Bash / Read / Write / Edit 실행. 도구 출력이 Layer 0 (감각)에 착지 — 이번 턴에만 가시.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">6️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">PostToolUse: 메모리 + 관측성 <span class="tag tok">토큰 0</span></div>
+          <div class="flow-desc"><strong>auto_fact_extractor</strong>: FACTS.md에 CONFIRMED/GOTCHA/PATHS 사실 기록. <strong>auto_context_manager</strong>: 70% 컨텍스트에서 냉각 작업 압축. <strong>auto_error_analyzer</strong>: Bash 실패 시 진단 주입. 모두 디스크에 씀 — 토큰 비용 없음.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">7️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">세션 종료 → Stop 훅이 메모리 영속화</div>
+          <div class="flow-desc"><strong>auto_memory_writer</strong>: git diff → 세션 요약을 <code>.claude/MEMORY.md</code>에 기록. <strong>validate_facts</strong>: 90일 이상 오래된 사실 삭제. <strong>voice_done</strong>: 오디오 알림. 다음 세션을 위한 메모리 파일 준비.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 9. FACTS.md 파이프라인 ── -->
+  <section id="facts-pipeline">
+    <div class="eyebrow-sm">Layer 2 상세</div>
+    <h2>FACTS.md — 살아있는 프로젝트 사실 파일</h2>
+    <p class="section-desc">실제 도구 호출에서 자동 추출. 신뢰도 순위. 필요시 주입. 수동 작업 없음.</p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:24px;">
+      <div style="background:var(--surface); padding:18px; border-top:2px solid var(--l2);">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--l2); margin-bottom:8px; font-weight:700;">✓ CONFIRMED</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">실행으로 검증. 완전 신뢰.</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--faint); background:var(--bg); padding:5px 8px; border-radius:4px;">신뢰도: 1.0</div>
+      </div>
+      <div style="background:var(--surface); padding:18px; border-top:2px solid var(--l1);">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--l1); margin-bottom:8px; font-weight:700;">⚠ GOTCHAS</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">알려진 실패 패턴. 실행 전 확인.</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--faint); background:var(--bg); padding:5px 8px; border-radius:4px;">신뢰도: 0.9</div>
+      </div>
+      <div style="background:var(--surface); padding:18px; border-top:2px solid #5eb8a0;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:#5eb8a0; margin-bottom:8px; font-weight:700;">📁 PATHS</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">핵심 파일 위치. 탐색 전 확인.</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--faint); background:var(--bg); padding:5px 8px; border-radius:4px;">신뢰도: 0.85</div>
+      </div>
+      <div style="background:var(--surface); padding:18px; border-top:2px solid var(--l3);">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--l3); margin-bottom:8px; font-weight:700;">→ PATTERNS</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">작동하는 명령 시퀀스.</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--faint); background:var(--bg); padding:5px 8px; border-radius:4px;">신뢰도: 0.8</div>
+      </div>
+      <div style="background:var(--surface); padding:18px; border-top:2px solid var(--faint); opacity:0.55;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:700;">✗ STALE</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">모순됨. 주입 안 됨.</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--faint); background:var(--bg); padding:5px 8px; border-radius:4px;">신뢰도: 0.0</div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">자동 유지 파이프라인 (수동 작업 없음)</div>
+
+      <div class="pipe-row">
+        <div class="pipe-box"><div class="pname" style="color:var(--l1);">Bash 성공</div><div class="pdesc">uv run, bash install…</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box"><div class="pname" style="color:var(--muted);">auto_fact_extractor</div><div class="pdesc">패턴 매칭 (LLM 없음)</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box confirmed"><div class="pname">✓ CONFIRMED</div><div class="pdesc">FACTS.md에 기록</div></div>
+      </div>
+
+      <div class="pipe-row">
+        <div class="pipe-box"><div class="pname" style="color:var(--l1);">Bash 실패</div><div class="pdesc">종료 코드 ≠ 0</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box"><div class="pname" style="color:var(--muted);">auto_fact_extractor</div><div class="pdesc">오류 패턴 매칭</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box gotcha"><div class="pname">⚠ GOTCHA</div><div class="pdesc">FACTS.md에 기록</div></div>
+      </div>
+
+      <div class="pipe-row">
+        <div class="pipe-box"><div class="pname" style="color:var(--l1);">핵심 파일 작성</div><div class="pdesc">.claude/, templates/…</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box"><div class="pname" style="color:var(--muted);">auto_fact_extractor</div><div class="pdesc">경로 패턴 매칭</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box paths"><div class="pname">📁 PATHS</div><div class="pdesc">FACTS.md에 기록</div></div>
+      </div>
+
+      <div class="pipe-row">
+        <div class="pipe-box"><div class="pname" style="color:var(--muted);">세션 종료</div><div class="pdesc">Stop 훅 실행</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box"><div class="pname" style="color:var(--muted);">validate_facts</div><div class="pdesc">90일 이상 정리</div></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box pruned"><div class="pname">정리 완료</div><div class="pdesc">오래된 STALE 삭제</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 10. 신뢰 계층 ── -->
+  <section id="trust">
+    <div class="eyebrow-sm">환각 방지</div>
+    <h2>신뢰 계층</h2>
+    <p class="section-desc">Claude가 신뢰해야 하는 것의 순서. 추론이 실행 검증된 사실을 재정의하도록 허용하지 마세요.</p>
+
+    <div class="trust-chain">
+      <div class="trust-row">
+        <div class="trust-rank">1</div>
+        <div class="trust-source">FACTS.md — CONFIRMED 항목</div>
+        <div class="trust-why">이 프로젝트에서 실제 실행으로 검증됨. 절대적 실제 데이터.</div>
+        <div class="tag l2">Layer 2</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">2</div>
+        <div class="trust-source">FACTS.md — GOTCHAS 항목</div>
+        <div class="trust-why">실제로 실패한 것들. 반복 실수 방지.</div>
+        <div class="tag l2">Layer 2</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">3</div>
+        <div class="trust-source">CLAUDE.md + ~/.claude/memory/MEMORY.md</div>
+        <div class="trust-why">영구 행동 규칙. 크로스 프로젝트 검증 패턴.</div>
+        <div class="tag l3">Layer 3</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">4</div>
+        <div class="trust-source">PROJECT_CONTEXT.md + MEMORY.md (세션 기록)</div>
+        <div class="trust-why">아키텍처 개요 + 최근 변경 사항. 마지막 실행 시 정확.</div>
+        <div class="tag l2">Layer 2</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank" style="color:var(--faint);">5</div>
+        <div class="trust-source" style="color:var(--muted);">모델 추론</div>
+        <div class="trust-why" style="color:var(--faint);">위의 것들보다 신뢰하지 않음. 항상 실행으로 검증.</div>
+        <div class="tag" style="background:var(--bg); color:var(--muted); border:1px solid var(--border);">추론</div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:14px;">
+      <strong>핵심 규칙:</strong> 실제 출력을 확인하는 테스트나 스크립트를 실행하지 않고 "수정됨"이라고 말하지 마세요. 코드를 읽는 것은 검증이 아닙니다 — <em>실행하세요.</em>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Claude Agentic Framework v2.1 · docs/memory-system-ko.html · 훅 26개, 이벤트 타입 6개
+</footer>
+
+</body>
+</html>

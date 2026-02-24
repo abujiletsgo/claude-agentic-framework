@@ -94,10 +94,12 @@ def _is_duplicate(entry: str, section_text: str) -> bool:
     return False
 
 
-def add(path: Path, category: str, entry: str, project: str = "unknown") -> bool:
+def add(path: Path, category: str, entry: str, project: str = "unknown", author: str = "") -> bool:
     """
     Add a fact to the specified category.
     Returns True if added, False if duplicate or error.
+
+    author: git user.name to tag the entry with (e.g. "tomkwon"). Empty = no tag.
     """
     content = read(path)
     if not content:
@@ -125,7 +127,8 @@ def add(path: Path, category: str, entry: str, project: str = "unknown") -> bool
         return False
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    new_entry = f"- {entry} [{today}]"
+    tag = f"[{today} @{author}]" if author else f"[{today}]"
+    new_entry = f"- {entry} {tag}"
 
     new_section = section.rstrip() + f"\n{new_entry}\n"
     new_content = (

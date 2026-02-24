@@ -28,6 +28,7 @@ Exit: always 0 (never blocks)
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -182,6 +183,28 @@ def get_project_name(cwd: str) -> str:
     return Path(cwd).resolve().name
 
 
+def get_git_author(cwd: str) -> str:
+    """Get git user.name for attribution tagging. Falls back to email username."""
+    try:
+        r = subprocess.run(
+            ["git", "config", "user.name"],
+            capture_output=True, text=True, cwd=cwd, timeout=3
+        )
+        name = r.stdout.strip()
+        if name:
+            return name
+        r2 = subprocess.run(
+            ["git", "config", "user.email"],
+            capture_output=True, text=True, cwd=cwd, timeout=3
+        )
+        email = r2.stdout.strip()
+        if email:
+            return email.split("@")[0]
+    except Exception:
+        pass
+    return ""
+
+
 def main():
     try:
         data = json.loads(sys.stdin.read())
@@ -192,6 +215,7 @@ def main():
 
         project = get_project_name(cwd)
         path = facts_path(cwd)
+        author = get_git_author(cwd)
 
         facts: list[tuple[str, str]] = []
 
@@ -211,7 +235,7 @@ def main():
                 facts = extract_from_write(file_path, cwd)
 
         for category, entry in facts:
-            add(path, category, entry, project)
+            add(path, category, entry, project, author)
 
     except Exception as e:
         print(f"auto_fact_extractor error: {e}", file=sys.stderr)

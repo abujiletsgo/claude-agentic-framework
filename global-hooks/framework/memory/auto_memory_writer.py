@@ -59,7 +59,16 @@ def get_git_changes(cwd: str) -> list[str]:
 
 
 def get_last_commit(cwd: str) -> str:
-    return run(["git", "log", "-1", "--format=%s (%h)"], cwd)
+    return run(["git", "log", "-1", "--format=%s (%h) by %an"], cwd)
+
+
+def get_git_author(cwd: str) -> str:
+    """Current git user for this session."""
+    name = run(["git", "config", "user.name"], cwd)
+    if name:
+        return name
+    email = run(["git", "config", "user.email"], cwd)
+    return email.split("@")[0] if email else ""
 
 
 def get_compressed_summaries(session_id: str) -> list[str]:
@@ -93,12 +102,16 @@ def build_entry(cwd: str, session_id: str) -> str | None:
     git_changes = get_git_changes(cwd)
     last_commit = get_last_commit(cwd)
     task_summaries = get_compressed_summaries(session_id)
+    author = get_git_author(cwd)
 
     # Only write if something happened
     if not git_changes and not task_summaries:
         return None
 
-    lines.append(f"## {today} ({time_str})")
+    header = f"## {today} ({time_str})"
+    if author:
+        header += f" · @{author}"
+    lines.append(header)
 
     if last_commit:
         lines.append(f"**Commit:** {last_commit}")
