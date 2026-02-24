@@ -195,28 +195,31 @@ See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
 
 | Event | Hook | Matcher | Purpose |
 |-------|------|---------|---------|
-| SessionStart | session_startup.py | — | Init locks, verify skills, load prime cache |
-| SessionStart | inject_relevant.py | — | Inject past learnings from SQLite |
+| SessionStart | session_startup.py | — | SHA-256 skill integrity check, init locks |
 | SessionStart | repo_map.py | — | Symbol index for repos ≥200 source files |
-| UserPromptSubmit | analyze_request.py | — | Classify task; suggest skills + strategy |
+| UserPromptSubmit | kr_mode.py | — | Korean language mode |
+| UserPromptSubmit | auto_prime_inject.py | — | Inject PROJECT_CONTEXT.md; force /prime if missing |
+| UserPromptSubmit | analyze_request.py | — | Caddy: classify task (direct/orchestrate/rlm/fusion) |
 | UserPromptSubmit | auto_delegate.py | — | Inject delegation recommendation |
 | PreToolUse | session_lock_manager.py | Read\\|Edit\\|Write | File conflict detection |
 | PreToolUse | unified-damage-control.py | Bash\\|Edit\\|Write | Block destructive commands |
-| PreToolUse | auto_review_team.py | Bash | Team coordination |
+| PreToolUse | auto_review_team.py | Bash | Team coordination for risky commands |
 | PostToolUse | session_lock_manager.py | (any) | Release file locks |
 | PostToolUse | context-bundle-logger.py | Bash\\|Write\\|Edit | Snapshot session state |
 | PostToolUse | auto_cost_warnings.py | * | Budget alerts |
 | PostToolUse | auto_error_analyzer.py | Bash | Analyze Bash failures |
 | PostToolUse | auto_refine.py | Write\\|Edit | Trigger refine on writes |
-| PostToolUse | auto_dependency_audit.py | Write\\|Edit | Check deps |
-| PostToolUse | auto_context_manager.py | Bash\\|Write\\|Edit | Context health |
+| PostToolUse | auto_dependency_audit.py | Write\\|Edit | Check deps on file changes |
+| PostToolUse | auto_context_manager.py | Bash\\|Write\\|Edit | Compress cold tasks at 70% context |
 | PostToolUse | auto_voice_notifications.py | Bash\\|Write\\|Edit | Voice alerts |
 | PostToolUse | auto_team_review.py | Write\\|Edit | Team review after writes |
-| PostToolUse | extract_learnings.py | Bash\\|Write\\|Edit | Extract insights |
+| PostToolUse | auto_fact_extractor.py | Bash\\|Write | Extract verified facts → .claude/FACTS.md |
 | Stop | session_lock_manager.py | — | Cleanup all locks |
 | Stop | check_lthread_progress.py | — | Validate RLM state |
-| Stop | store_learnings.py | — | Persist knowledge to DB |
-| PreCompact | pre_compact_preserve.py | — | Preserve task state |
+| Stop | auto_memory_writer.py | — | Write session summary → .claude/MEMORY.md |
+| Stop | validate_facts.py | — | Prune 90-day stale entries from FACTS.md |
+| Stop | voice_done.py | — | Audio notification on session end |
+| PreCompact | pre_compact_preserve.py | — | Preserve task state into compaction prompt |
 
 ## Subsystems
 

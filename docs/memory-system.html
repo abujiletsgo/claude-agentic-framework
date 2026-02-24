@@ -7,21 +7,9 @@
 <style>
   :root {
     --l0: #6b7280;
-    --l0-bg: #f9fafb;
-    --l0-border: #e5e7eb;
     --l1: #2563eb;
-    --l1-bg: #eff6ff;
-    --l1-border: #bfdbfe;
     --l2: #059669;
-    --l2-bg: #ecfdf5;
-    --l2-border: #a7f3d0;
     --l3: #7c3aed;
-    --l3-bg: #f5f3ff;
-    --l3-border: #ddd6fe;
-    --dark: #111827;
-    --muted: #6b7280;
-    --surface: #ffffff;
-    --border: #e5e7eb;
     --font: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   }
@@ -36,7 +24,6 @@
     line-height: 1.6;
   }
 
-  /* ── Header ── */
   header {
     padding: 60px 40px 40px;
     text-align: center;
@@ -72,11 +59,37 @@
   header p {
     color: #94a3b8;
     font-size: 16px;
-    max-width: 600px;
+    max-width: 680px;
     margin: 0 auto;
   }
 
-  /* ── Layout ── */
+  /* ── Nav ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #1e293b;
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  nav a {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 12px;
+    font-family: var(--font);
+    padding: 14px 16px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav a:hover { color: #f1f5f9; border-bottom-color: #334155; }
+
   .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
   section { padding: 60px 0; border-bottom: 1px solid #1e293b; }
@@ -95,11 +108,18 @@
     font-size: 26px;
     font-weight: 700;
     color: #f1f5f9;
-    margin-bottom: 32px;
+    margin-bottom: 8px;
     letter-spacing: -0.5px;
   }
 
-  /* ── Layer Cards ── */
+  .section-sub {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 32px;
+    max-width: 600px;
+  }
+
+  /* ── Cards ── */
   .layers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -117,10 +137,7 @@
     transition: transform 0.2s, box-shadow 0.2s;
   }
 
-  .layer-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
+  .layer-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 
   .layer-card::before {
     content: '';
@@ -164,27 +181,11 @@
     50% { opacity: 0.4; }
   }
 
-  .layer-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin-bottom: 4px;
-  }
+  .layer-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
 
-  .layer-meta {
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 16px;
-    font-family: var(--font);
-  }
+  .layer-meta { font-size: 12px; color: #64748b; margin-bottom: 16px; font-family: var(--font); }
 
-  .layer-files {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
-  }
+  .layer-files { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 
   .layer-files li {
     font-family: var(--font);
@@ -196,15 +197,8 @@
     line-height: 1.4;
   }
 
-  .layer-files li::before {
-    content: '→';
-    color: #475569;
-    flex-shrink: 0;
-  }
-
-  .layer-files li span {
-    color: #e2e8f0;
-  }
+  .layer-files li::before { content: '→'; color: #475569; flex-shrink: 0; }
+  .layer-files li span { color: #e2e8f0; }
 
   .token-budget {
     background: #0f172a;
@@ -218,12 +212,28 @@
     align-items: center;
   }
 
-  .token-budget .tok {
-    color: #f59e0b;
-    font-weight: 600;
-  }
+  .token-budget .tok { color: #f59e0b; font-weight: 600; }
 
-  /* ── Flow Diagram ── */
+  /* ── Tag ── */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: var(--font);
+  }
+  .tag.l3 { background: #1e1b4b; color: #a78bfa; border: 1px solid #4c1d95; }
+  .tag.l2 { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
+  .tag.l1 { background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af; }
+  .tag.tok { background: #451a03; color: #fbbf24; border: 1px solid #92400e; }
+  .tag.auto { background: #1c1917; color: #d97706; border: 1px solid #78350f; }
+  .tag.demand { background: #0c4a6e; color: #38bdf8; border: 1px solid #075985; }
+
+  /* ── Flow ── */
   .flow {
     background: #1e293b;
     border-radius: 16px;
@@ -233,7 +243,7 @@
   }
 
   .flow-title {
-    font-size: 13px;
+    font-size: 11px;
     color: #64748b;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -244,7 +254,6 @@
     display: flex;
     gap: 16px;
     align-items: flex-start;
-    margin-bottom: 0;
     position: relative;
   }
 
@@ -261,124 +270,34 @@
   .flow-step + .flow-step { margin-top: 12px; }
 
   .flow-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-    border: 1px solid;
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; border: 1px solid;
   }
 
   .flow-icon.l3 { background: #1e1b4b; border-color: #4c1d95; }
   .flow-icon.l2 { background: #064e3b; border-color: #065f46; }
   .flow-icon.l1 { background: #1e3a8a; border-color: #1e40af; }
   .flow-icon.trigger { background: #292524; border-color: #78716c; }
+  .flow-icon.demand { background: #0c4a6e; border-color: #075985; }
 
   .flow-content { flex: 1; padding: 10px 0; }
+  .flow-hook { font-size: 12px; color: #f8fafc; font-weight: 600; margin-bottom: 3px; }
+  .flow-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
 
-  .flow-hook {
-    font-size: 12px;
-    color: #f8fafc;
-    font-weight: 600;
-    margin-bottom: 3px;
+  /* ── Budget bars ── */
+  .budget-row {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
   }
+  .budget-label { font-family: var(--font); font-size: 12px; color: #94a3b8; min-width: 260px; }
+  .budget-bar-wrap { flex: 1; background: #1e293b; border-radius: 4px; height: 8px; overflow: hidden; }
+  .budget-bar { height: 100%; border-radius: 4px; }
+  .budget-tok { font-family: var(--font); font-size: 11px; color: #f59e0b; min-width: 70px; text-align: right; }
 
-  .flow-desc {
-    font-size: 11px;
-    color: #64748b;
-    line-height: 1.5;
-  }
-
-  .flow-tag {
-    display: inline-block;
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-left: 6px;
-    vertical-align: middle;
-  }
-
-  .flow-tag.l3 { background: #1e1b4b; color: #a78bfa; border: 1px solid #4c1d95; }
-  .flow-tag.l2 { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
-  .flow-tag.l1 { background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af; }
-  .flow-tag.tok { background: #451a03; color: #fbbf24; border: 1px solid #92400e; }
-
-  /* ── Global vs Local ── */
-  .gl-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  @media (max-width: 640px) { .gl-grid { grid-template-columns: 1fr; } }
-
-  .gl-card {
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid #334155;
-  }
-
-  .gl-card h3 {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .gl-card.global h3 { color: #a78bfa; }
-  .gl-card.local h3 { color: #34d399; }
-
-  .gl-path {
-    font-family: var(--font);
-    font-size: 11px;
-    color: #64748b;
-    background: #0f172a;
-    padding: 4px 8px;
-    border-radius: 4px;
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .gl-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid #0f172a;
-    font-size: 12px;
-  }
-
-  .gl-item:last-child { border-bottom: none; }
-
-  .gl-item-name {
-    font-family: var(--font);
-    color: #e2e8f0;
-    font-weight: 600;
-    min-width: 160px;
-  }
-
-  .gl-item-desc { color: #64748b; }
-
-  .gl-arrow {
-    text-align: center;
-    padding: 12px;
-    font-size: 12px;
-    color: #475569;
-    font-family: var(--font);
-  }
-
-  /* ── Lifecycle ── */
+  /* ── Lifecycle grid ── */
   .lifecycle {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
   }
 
@@ -389,178 +308,123 @@
     border: 1px solid #334155;
   }
 
-  .phase-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
+  .phase-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 
   .phase-icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    background: #0f172a;
-    border: 1px solid #334155;
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; background: #0f172a; border: 1px solid #334155;
   }
 
-  .phase-name {
-    font-size: 13px;
-    font-weight: 700;
-    color: #f1f5f9;
-  }
-
-  .phase-trigger {
-    font-family: var(--font);
-    font-size: 10px;
-    color: #64748b;
-  }
+  .phase-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+  .phase-trigger { font-family: var(--font); font-size: 10px; color: #64748b; }
 
   .event-list { list-style: none; }
-
   .event-list li {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    padding: 6px 0;
-    border-bottom: 1px solid #0f172a;
-    font-size: 12px;
-    font-family: var(--font);
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 6px 0; border-bottom: 1px solid #0f172a;
+    font-size: 12px; font-family: var(--font);
   }
-
   .event-list li:last-child { border-bottom: none; }
-
-  .event-hook {
-    color: #f8fafc;
-    font-weight: 600;
-    min-width: 0;
-    flex: 1;
-  }
-
+  .event-hook { color: #f8fafc; font-weight: 600; min-width: 0; flex: 1; }
   .event-arrow { color: #475569; flex-shrink: 0; }
-
-  .event-target {
-    color: #64748b;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .event-target.l3 { color: #a78bfa; }
+  .event-target { color: #64748b; text-align: right; flex-shrink: 0; }
   .event-target.l2 { color: #34d399; }
   .event-target.l1 { color: #60a5fa; }
+  .event-target.demand { color: #38bdf8; }
 
-  /* ── Budget Bar ── */
-  .budget-section { }
+  /* ── Global / Local grid ── */
+  .gl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .gl-grid { grid-template-columns: 1fr; } }
 
-  .budget-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 12px;
+  .gl-card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; }
+  .gl-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .gl-card.global h3 { color: #a78bfa; }
+  .gl-card.local h3 { color: #34d399; }
+
+  .gl-path {
+    font-family: var(--font); font-size: 11px; color: #64748b;
+    background: #0f172a; padding: 4px 8px; border-radius: 4px;
+    margin-bottom: 12px; display: block;
   }
 
-  .budget-label {
-    font-family: var(--font);
-    font-size: 12px;
-    color: #94a3b8;
-    min-width: 240px;
+  .gl-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid #0f172a; font-size: 12px;
   }
+  .gl-item:last-child { border-bottom: none; }
+  .gl-item-name { font-family: var(--font); color: #e2e8f0; font-weight: 600; min-width: 160px; }
+  .gl-item-desc { color: #64748b; }
+  .gl-arrow { text-align: center; padding: 12px; font-size: 12px; color: #475569; font-family: var(--font); }
 
-  .budget-bar-wrap {
-    flex: 1;
-    background: #1e293b;
-    border-radius: 4px;
-    height: 8px;
-    overflow: hidden;
-  }
-
-  .budget-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 1s ease;
-  }
-
-  .budget-tok {
-    font-family: var(--font);
-    font-size: 11px;
-    color: #f59e0b;
-    min-width: 70px;
-    text-align: right;
-  }
-
-  /* ── Trust Hierarchy ── */
+  /* ── Trust chain ── */
   .trust-chain {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: #1e293b;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #334155;
+    background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155;
   }
-
   .trust-row {
-    display: flex;
-    align-items: center;
-    padding: 14px 20px;
-    border-bottom: 1px solid #0f172a;
-    gap: 16px;
-    transition: background 0.15s;
+    display: flex; align-items: center; padding: 14px 20px;
+    border-bottom: 1px solid #0f172a; gap: 16px; transition: background 0.15s;
   }
-
   .trust-row:last-child { border-bottom: none; }
   .trust-row:hover { background: #253347; }
-
-  .trust-rank {
-    font-family: var(--font);
-    font-size: 20px;
-    font-weight: 900;
-    min-width: 32px;
-    text-align: center;
-  }
-
+  .trust-rank { font-family: var(--font); font-size: 20px; font-weight: 900; min-width: 32px; text-align: center; }
   .trust-row:nth-child(1) .trust-rank { color: #fbbf24; }
   .trust-row:nth-child(2) .trust-rank { color: #94a3b8; }
   .trust-row:nth-child(3) .trust-rank { color: #d97706; }
   .trust-row:nth-child(4) .trust-rank { color: #475569; }
-
-  .trust-source {
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-    color: #e2e8f0;
-    flex: 1;
-  }
-
+  .trust-source { font-family: var(--font); font-size: 13px; font-weight: 600; color: #e2e8f0; flex: 1; }
   .trust-why { font-size: 12px; color: #64748b; flex: 2; }
 
-  .trust-tag {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-family: var(--font);
-    font-weight: 600;
-  }
-
-  .trust-tag.l3 { background: #1e1b4b; color: #a78bfa; border: 1px solid #4c1d95; }
-  .trust-tag.l2 { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
-  .trust-tag.l1 { background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af; }
-  .trust-tag.l0 { background: #1c1917; color: #9ca3af; border: 1px solid #374151; }
-
-  /* ── Footer ── */
-  footer {
-    padding: 40px;
-    text-align: center;
-    color: #334155;
-    font-size: 12px;
+  /* ── Resolution diagram ── */
+  .resolution-diagram {
+    background: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155;
     font-family: var(--font);
   }
 
-  footer a { color: #475569; text-decoration: none; }
-  footer a:hover { color: #64748b; }
+  .res-row {
+    display: grid; grid-template-columns: 1fr 32px 1fr 32px 1fr; align-items: center;
+    gap: 8px; margin-bottom: 12px;
+  }
+
+  .res-box {
+    background: #0f172a; border-radius: 8px; padding: 12px;
+    text-align: center; border: 1px solid #334155;
+    font-size: 11px;
+  }
+  .res-box.local { border-color: #065f46; background: #022c22; }
+  .res-box.global { border-color: #4c1d95; background: #1e1b4b; }
+  .res-box.wins { border-color: #f59e0b; background: #1c1408; }
+
+  .res-box .name { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .res-box.local .name { color: #34d399; }
+  .res-box.global .name { color: #a78bfa; }
+  .res-box.wins .name { color: #fbbf24; }
+
+  .res-box .detail { color: #475569; font-size: 10px; }
+
+  .res-op { text-align: center; color: #475569; font-size: 14px; }
+  .res-op.beats { color: #22c55e; }
+
+  /* ── Pill steps ── */
+  .step-chain {
+    display: flex; gap: 0; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .step-pill {
+    background: #1e293b; border-radius: 6px; padding: 8px 14px;
+    font-family: var(--font); font-size: 11px; color: #94a3b8;
+    border: 1px solid #334155;
+  }
+  .step-pill.active { background: #064e3b; color: #34d399; border-color: #065f46; }
+  .step-pill.trigger { background: #1e1b4b; color: #a78bfa; border-color: #4c1d95; }
+  .step-pill.note { background: #0c4a6e; color: #38bdf8; border-color: #075985; }
+  .step-arrow { padding: 0 8px; color: #334155; font-size: 14px; }
+
+  /* ── Note box ── */
+  .note-box {
+    background: #0c4a6e22; border: 1px solid #0c4a6e; border-radius: 8px;
+    padding: 12px 16px; font-size: 13px; color: #7dd3fc; margin-top: 16px;
+  }
+  .note-box strong { color: #38bdf8; }
 
   /* ── Animations ── */
   @keyframes fadeInUp {
@@ -568,7 +432,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .layer-card, .flow, .lifecycle-phase, .gl-card, .trust-chain {
+  .layer-card, .flow, .lifecycle-phase, .gl-card, .trust-chain, .resolution-diagram {
     animation: fadeInUp 0.4s ease both;
   }
 
@@ -576,6 +440,20 @@
   .layer-card:nth-child(2) { animation-delay: 0.10s; }
   .layer-card:nth-child(3) { animation-delay: 0.15s; }
   .layer-card:nth-child(4) { animation-delay: 0.20s; }
+
+  footer {
+    padding: 40px; text-align: center; color: #334155;
+    font-size: 12px; font-family: var(--font);
+  }
+  footer a { color: #475569; text-decoration: none; }
+  footer a:hover { color: #64748b; }
+
+  code {
+    background: #1e293b; padding: 2px 6px; border-radius: 4px;
+    font-family: var(--font); font-size: 11px;
+  }
+
+  hr { border: none; border-top: 1px solid #1e293b; margin: 24px 0; }
 </style>
 </head>
 <body>
@@ -583,31 +461,44 @@
 <header>
   <div class="badge">Claude Agentic Framework v2.1</div>
   <h1>Layered Memory System</h1>
-  <p>Four cognitive memory layers — from ephemeral tool output to permanent global knowledge — keeping Claude grounded, context-efficient, and hallucination-free.</p>
+  <p>Four cognitive memory layers with on-demand recall — keeping Claude grounded, context-efficient, and hallucination-free across every session.</p>
 </header>
+
+<nav>
+  <a href="#layers">Layers</a>
+  <a href="#session-start">Session Start</a>
+  <a href="#memory-recall">Memory Recall</a>
+  <a href="#memory-save">Memory Save</a>
+  <a href="#lifecycle">Lifecycle</a>
+  <a href="#agents-skills">Agents &amp; Skills</a>
+  <a href="#resolution">Global vs Local</a>
+  <a href="#request-flow">Full Request Flow</a>
+  <a href="#facts-pipeline">FACTS.md Pipeline</a>
+  <a href="#trust">Trust Hierarchy</a>
+</nav>
 
 <div class="container">
 
-  <!-- ── Layers ── -->
-  <section>
+  <!-- ══ 1. LAYERS ══ -->
+  <section id="layers">
     <div class="section-label">Architecture</div>
     <h2>The 4 Memory Layers</h2>
+    <p class="section-sub">Each layer has a distinct scope, lifetime, and access pattern. Only Layer 3 + Layer 2 architecture are auto-injected. Episodic memory is on-demand.</p>
 
     <div class="layers-grid">
 
       <div class="layer-card l3">
         <div class="layer-num"><div class="layer-dot"></div>Layer 3</div>
         <div class="layer-title">Semantic</div>
-        <div class="layer-meta">global · indefinite · always injected</div>
+        <div class="layer-meta">global · indefinite · <strong style="color:#a78bfa">always injected</strong></div>
         <ul class="layer-files">
           <li><span>~/.claude/CLAUDE.md</span> — system instructions</li>
           <li><span>~/.claude/memory/MEMORY.md</span> — global rules</li>
-          <li><span>~/.claude/memory/GLOBAL_LEARNINGS.md</span> — patterns</li>
           <li><span>~/.claude/agents/</span> — 8 global agents</li>
           <li><span>~/.claude/skills/</span> — 7 global skills</li>
         </ul>
         <div class="token-budget">
-          <span>Session start cost</span>
+          <span>Auto-injected at start</span>
           <span class="tok">~800 tok</span>
         </div>
       </div>
@@ -615,17 +506,17 @@
       <div class="layer-card l2">
         <div class="layer-num"><div class="layer-dot"></div>Layer 2</div>
         <div class="layer-title">Episodic</div>
-        <div class="layer-meta">per-project · project lifetime · auto-maintained</div>
+        <div class="layer-meta">per-project · project lifetime · partially on-demand</div>
         <ul class="layer-files">
-          <li><span>.claude/PROJECT_CONTEXT.md</span> — architecture cache</li>
-          <li><span>.claude/FACTS.md</span> — verified project facts</li>
-          <li><span>.claude/MEMORY.md</span> — rolling session history</li>
+          <li><span>.claude/PROJECT_CONTEXT.md</span> — auto-injected ✓</li>
+          <li><span>.claude/FACTS.md</span> — <em style="color:#38bdf8">on-demand</em></li>
+          <li><span>.claude/MEMORY.md</span> — <em style="color:#38bdf8">on-demand</em></li>
           <li><span>.claude/agents/</span> — local agent overrides</li>
           <li><span>.claude/skills/</span> — local skill overrides</li>
         </ul>
         <div class="token-budget">
-          <span>Session start cost</span>
-          <span class="tok">~4300 tok</span>
+          <span>PROJECT_CONTEXT auto-injected</span>
+          <span class="tok">~2000 tok</span>
         </div>
       </div>
 
@@ -640,7 +531,7 @@
           <li><span>Key decisions</span> — preserved on compaction</li>
         </ul>
         <div class="token-budget">
-          <span>Runtime cost</span>
+          <span>Runtime</span>
           <span class="tok">~1000 tok</span>
         </div>
       </div>
@@ -663,99 +554,273 @@
 
     </div>
 
-    <!-- Token budget visual -->
-    <div class="budget-section">
-      <div style="font-size:13px; color:#64748b; margin-bottom:16px; font-family:var(--font);">SESSION START INJECTION BUDGET</div>
+    <!-- Token budget bars -->
+    <div>
+      <div style="font-size:11px; color:#64748b; margin-bottom:16px; font-family:var(--font); letter-spacing:2px; text-transform:uppercase;">Session Start Injection Budget</div>
 
       <div class="budget-row">
         <div class="budget-label">L3 · CLAUDE.md + MEMORY.md (global rules)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:13%; background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div></div>
         <div class="budget-tok">~800 tok</div>
       </div>
       <div class="budget-row">
-        <div class="budget-label">L2 · PROJECT_CONTEXT.md (architecture)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:33%; background:linear-gradient(90deg,#059669,#34d399);"></div></div>
+        <div class="budget-label">L2 · PROJECT_CONTEXT.md (architecture) <span class="tag auto">auto</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:57%; background:linear-gradient(90deg,#059669,#34d399);"></div></div>
         <div class="budget-tok">~2000 tok</div>
       </div>
       <div class="budget-row">
-        <div class="budget-label">L2 · FACTS.md (verified project facts)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:25%; background:linear-gradient(90deg,#059669,#34d399);"></div></div>
-        <div class="budget-tok">~1500 tok</div>
+        <div class="budget-label">L2 · FACTS.md <span class="tag demand">on-demand</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:42%; background:linear-gradient(90deg,#059669,#34d399); opacity:0.3;"></div></div>
+        <div class="budget-tok" style="color:#64748b;">~1500 tok*</div>
       </div>
       <div class="budget-row">
-        <div class="budget-label">L2 · MEMORY.md (session history × 5)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:13%; background:linear-gradient(90deg,#059669,#34d399);"></div></div>
-        <div class="budget-tok">~800 tok</div>
+        <div class="budget-label">L2 · MEMORY.md <span class="tag demand">on-demand</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:linear-gradient(90deg,#059669,#34d399); opacity:0.3;"></div></div>
+        <div class="budget-tok" style="color:#64748b;">~800 tok*</div>
       </div>
       <div class="budget-row">
-        <div class="budget-label">L2 · REPO_MAP.md (large repos ≥200 files)</div>
-        <div class="budget-bar-wrap"><div class="budget-bar" style="width:16%; background:linear-gradient(90deg,#0284c7,#38bdf8); opacity:0.5;"></div></div>
+        <div class="budget-label">L2 · REPO_MAP (large repos ≥200 files) <span class="tag auto">auto</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:28%; background:linear-gradient(90deg,#0284c7,#38bdf8); opacity:0.5;"></div></div>
         <div class="budget-tok" style="color:#94a3b8;">~1000 tok</div>
       </div>
 
-      <div style="margin-top:12px; padding:12px 16px; background:#1e293b; border-radius:8px; font-family:var(--font); font-size:12px; display:flex; justify-content:space-between; border:1px solid #334155;">
-        <span style="color:#64748b;">Total grounded context before your first message</span>
-        <span style="color:#fbbf24; font-weight:700;">~5100–6100 tokens</span>
+      <div style="margin-top:16px; padding:12px 16px; background:#1e293b; border-radius:8px; font-family:var(--font); font-size:12px; display:flex; justify-content:space-between; border:1px solid #334155;">
+        <span style="color:#64748b;">Always-on context before first message</span>
+        <span style="color:#fbbf24; font-weight:700;">~2800 tokens</span>
       </div>
+      <p style="font-size:11px; color:#475569; margin-top:8px; font-family:var(--font);">* on-demand only — consumed when Claude reads the file during the session, not at startup</p>
     </div>
   </section>
 
-  <!-- ── Session Start Flow ── -->
-  <section>
+  <!-- ══ 2. SESSION START ══ -->
+  <section id="session-start">
     <div class="section-label">Data Flow</div>
-    <h2>Session Start — Injection Order</h2>
+    <h2>Session Start — What Auto-Fires</h2>
+    <p class="section-sub">Lean by design: only project architecture is injected automatically. Two hooks, minimal overhead.</p>
 
     <div class="flow">
-      <div class="flow-title">HOOKS FIRE IN SEQUENCE → CONTEXT BUILT UP BEFORE FIRST MESSAGE</div>
+      <div class="flow-title">SessionStart hooks → context built before first message</div>
 
       <div class="flow-step">
         <div class="flow-icon l3">🌐</div>
         <div class="flow-content">
-          <div class="flow-hook">CLAUDE.md system-reminder <span class="flow-tag l3">L3</span> <span class="flow-tag tok">~800 tok</span></div>
-          <div class="flow-desc">~/.claude/memory/MEMORY.md global rules always present. Highest-level behavioral instructions. Cannot be overridden by project config.</div>
+          <div class="flow-hook">~/.claude/CLAUDE.md + MEMORY.md <span class="tag l3">L3 · always</span> <span class="tag tok">~800 tok</span></div>
+          <div class="flow-desc">Global behavioral rules and cross-project learnings. Always present. Cannot be overridden by project config. Highest-priority behavioral instructions.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">🔒</div>
+        <div class="flow-content">
+          <div class="flow-hook">session_startup.py <span class="tag l2">SessionStart</span></div>
+          <div class="flow-desc">SHA-256 integrity check on all 7 skills. Warns if tampered. Initializes session locks. Runs first — gate for everything else.</div>
         </div>
       </div>
 
       <div class="flow-step">
         <div class="flow-icon l2">🏗</div>
         <div class="flow-content">
-          <div class="flow-hook">session_startup.py → auto_prime.py <span class="flow-tag l2">L2</span> <span class="flow-tag tok">~2000 tok</span></div>
-          <div class="flow-desc">Loads .claude/PROJECT_CONTEXT.md — architecture overview, agents, commands, hooks. Git-hash validated, auto-stale on new commits. Run /prime to regenerate.</div>
-        </div>
-      </div>
-
-      <div class="flow-step">
-        <div class="flow-icon l2">✅</div>
-        <div class="flow-content">
-          <div class="flow-hook">inject_facts.py <span class="flow-tag l2">L2</span> <span class="flow-tag tok">~1500 tok</span></div>
-          <div class="flow-desc">Loads .claude/FACTS.md — verified project facts (CONFIRMED, GOTCHAS, PATHS, PATTERNS). Auto-created on first session, auto-populated by hooks. Excludes STALE section.</div>
-        </div>
-      </div>
-
-      <div class="flow-step">
-        <div class="flow-icon l2">📋</div>
-        <div class="flow-content">
-          <div class="flow-hook">inject_memory.py <span class="flow-tag l2">L2</span> <span class="flow-tag tok">~800 tok</span></div>
-          <div class="flow-desc">Loads .claude/MEMORY.md — last 5 session summaries. What changed, what was fixed, what was committed. Written by auto_memory_writer at session end.</div>
+          <div class="flow-hook">auto_prime_inject.py → PROJECT_CONTEXT.md <span class="tag l2">L2 · auto</span> <span class="tag tok">~2000 tok</span></div>
+          <div class="flow-desc">Loads <code>.claude/PROJECT_CONTEXT.md</code> — full architecture overview: agents, commands, hooks, structure, key files. Git-hash validated. Stale if git hash changed → run /prime to refresh.</div>
         </div>
       </div>
 
       <div class="flow-step">
         <div class="flow-icon l2">🗺</div>
         <div class="flow-content">
-          <div class="flow-hook">repo_map.py <span class="flow-tag l2">L2</span> <span class="flow-tag tok">~1000 tok</span></div>
-          <div class="flow-desc">Only fires if project has ≥200 tracked files. Generates a TreeSitter symbol index ranked by importance — prevents blind file exploration in large codebases.</div>
+          <div class="flow-hook">repo_map.py <span class="tag l2">L2 · large repos only</span> <span class="tag tok">~1000 tok</span></div>
+          <div class="flow-desc">Only fires if project has ≥200 tracked files. Generates a TreeSitter symbol index ranked by importance — prevents blind file exploration. Skipped for small projects.</div>
         </div>
       </div>
+
+    </div>
+
+    <div class="note-box">
+      <strong>Why not auto-inject FACTS.md and MEMORY.md?</strong>
+      These files are read on-demand — Claude reads them when starting project-specific work, not unconditionally every session. This saves ~2300 tokens on sessions where they're not needed (research tasks, new files, quick questions).
     </div>
   </section>
 
-  <!-- ── During Session ── -->
-  <section>
-    <div class="section-label">Runtime</div>
-    <h2>Session Lifecycle</h2>
+  <!-- ══ 3. MEMORY RECALL (ON-DEMAND) ══ -->
+  <section id="memory-recall">
+    <div class="section-label">On-Demand Access</div>
+    <h2>Memory Recall — When &amp; How</h2>
+    <p class="section-sub">Episodic memory is read when relevant, not burned at every session start. Claude decides based on task context.</p>
+
+    <div class="flow" style="margin-bottom:24px;">
+      <div class="flow-title">FACTS.MD RECALL FLOW</div>
+
+      <div class="flow-step">
+        <div class="flow-icon trigger">💬</div>
+        <div class="flow-content">
+          <div class="flow-hook">Task involves this project's code, configuration, or known patterns</div>
+          <div class="flow-desc">Trigger: any task that requires project-specific knowledge (fixing a bug, adding a feature, running commands, modifying hooks).</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon demand">📋</div>
+        <div class="flow-content">
+          <div class="flow-hook">Read <code>.claude/FACTS.md</code> <span class="tag demand">on-demand</span></div>
+          <div class="flow-desc">Claude reads FACTS.md using the Read tool. Categories injected: CONFIRMED, GOTCHAS, PATHS, PATTERNS. STALE section excluded automatically by auto_fact_extractor.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">✅</div>
+        <div class="flow-content">
+          <div class="flow-hook">Trust hierarchy applied</div>
+          <div class="flow-desc">CONFIRMED entries override inference. GOTCHAS checked before running commands. PATHS consulted before file exploration. PATTERNS used for known-good sequences.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">MEMORY.MD RECALL FLOW</div>
+
+      <div class="flow-step">
+        <div class="flow-icon trigger">🔄</div>
+        <div class="flow-content">
+          <div class="flow-hook">Resuming work after a gap (different session, continuing a feature)</div>
+          <div class="flow-desc">Trigger: when context suggests continuing previous work — bug that was partially fixed, feature in progress, or unclear what changed recently.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon demand">📖</div>
+        <div class="flow-content">
+          <div class="flow-hook">Read <code>.claude/MEMORY.md</code> <span class="tag demand">on-demand</span></div>
+          <div class="flow-desc">Claude reads MEMORY.md: rolling session history (last 30 entries max). Each entry: date, commit message, files changed, tasks completed. Git-diff based — ground truth not summaries.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">🎯</div>
+        <div class="flow-content">
+          <div class="flow-hook">Context oriented: what changed, what was fixed, what decisions were made</div>
+          <div class="flow-desc">Use recent entries to understand project state. Entries are factual (git diff + commit) not subjective. Oldest entries auto-pruned after 30 sessions.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 4. MEMORY SAVE ══ -->
+  <section id="memory-save">
+    <div class="section-label">Automatic Writes</div>
+    <h2>Memory Save — Fully Automatic</h2>
+    <p class="section-sub">Zero manual effort. Hooks write to FACTS.md and MEMORY.md in the background after every relevant tool call and at session end.</p>
 
     <div class="lifecycle">
+
+      <div class="lifecycle-phase">
+        <div class="phase-header">
+          <div class="phase-icon">⚡</div>
+          <div>
+            <div class="phase-name">After Every Bash Call</div>
+            <div class="phase-trigger">PostToolUse: Bash</div>
+          </div>
+        </div>
+        <ul class="event-list">
+          <li>
+            <span class="event-hook">auto_fact_extractor.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">FACTS.md</span>
+          </li>
+          <li style="font-size:11px; color:#475569; padding:4px 0;">
+            Success + known pattern → CONFIRMED<br>
+            Failure + error pattern → GOTCHA<br>
+            No LLM calls — pure pattern matching
+          </li>
+        </ul>
+      </div>
+
+      <div class="lifecycle-phase">
+        <div class="phase-header">
+          <div class="phase-icon">📝</div>
+          <div>
+            <div class="phase-name">After Every Write</div>
+            <div class="phase-trigger">PostToolUse: Write</div>
+          </div>
+        </div>
+        <ul class="event-list">
+          <li>
+            <span class="event-hook">auto_fact_extractor.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">FACTS.md</span>
+          </li>
+          <li style="font-size:11px; color:#475569; padding:4px 0;">
+            Key path written → PATHS fact<br>
+            Tracks: .claude/, templates/, global-hooks/, docs/, scripts/, config files
+          </li>
+        </ul>
+      </div>
+
+      <div class="lifecycle-phase">
+        <div class="phase-header">
+          <div class="phase-icon">🏁</div>
+          <div>
+            <div class="phase-name">Session End</div>
+            <div class="phase-trigger">Stop hooks</div>
+          </div>
+        </div>
+        <ul class="event-list">
+          <li>
+            <span class="event-hook">auto_memory_writer.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">MEMORY.md</span>
+          </li>
+          <li>
+            <span class="event-hook">validate_facts.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">prune FACTS.md</span>
+          </li>
+          <li style="font-size:11px; color:#475569; padding:4px 0;">
+            MEMORY: git diff + commit message.<br>
+            Only writes if something actually changed.<br>
+            FACTS: prunes entries older than 90 days.
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 5. FULL LIFECYCLE ══ -->
+  <section id="lifecycle">
+    <div class="section-label">Runtime</div>
+    <h2>Full Session Lifecycle</h2>
+    <p class="section-sub">Every hook that fires, every memory that's touched, in order.</p>
+
+    <div class="lifecycle">
+
+      <div class="lifecycle-phase">
+        <div class="phase-header">
+          <div class="phase-icon">🚀</div>
+          <div>
+            <div class="phase-name">Session Start</div>
+            <div class="phase-trigger">SessionStart hooks</div>
+          </div>
+        </div>
+        <ul class="event-list">
+          <li>
+            <span class="event-hook">session_startup.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target">integrity check</span>
+          </li>
+          <li>
+            <span class="event-hook">auto_prime_inject.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">PROJECT_CONTEXT.md</span>
+          </li>
+          <li>
+            <span class="event-hook">repo_map.py</span>
+            <span class="event-arrow">→</span>
+            <span class="event-target l2">if ≥200 files</span>
+          </li>
+        </ul>
+      </div>
 
       <div class="lifecycle-phase">
         <div class="phase-header">
@@ -806,7 +871,7 @@
           <li>
             <span class="event-hook">unified-damage-control.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target">block dangerous patterns</span>
+            <span class="event-target">block dangerous</span>
           </li>
           <li>
             <span class="event-hook">auto_review_team.py</span>
@@ -828,12 +893,12 @@
           <li>
             <span class="event-hook">auto_fact_extractor.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target l2">FACTS.md L2</span>
+            <span class="event-target l2">FACTS.md</span>
           </li>
           <li>
             <span class="event-hook">auto_context_manager.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target l1">compress @ 70% L1</span>
+            <span class="event-target l1">compress @ 70%</span>
           </li>
           <li>
             <span class="event-hook">auto_error_analyzer.py</span>
@@ -843,7 +908,7 @@
           <li>
             <span class="event-hook">auto_cost_warnings.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target">warn at thresholds</span>
+            <span class="event-target">budget alerts</span>
           </li>
           <li>
             <span class="event-hook">auto_refine.py</span>
@@ -870,17 +935,17 @@
           <li>
             <span class="event-hook">auto_memory_writer.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target l2">MEMORY.md L2</span>
+            <span class="event-target l2">MEMORY.md</span>
           </li>
           <li>
             <span class="event-hook">validate_facts.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target l2">prune FACTS.md L2</span>
+            <span class="event-target l2">prune FACTS.md</span>
           </li>
           <li>
             <span class="event-hook">voice_done.py</span>
             <span class="event-arrow">→</span>
-            <span class="event-target">audio notification</span>
+            <span class="event-target">audio alert</span>
           </li>
         </ul>
       </div>
@@ -900,7 +965,7 @@
             <span class="event-target l1">preserve L1</span>
           </li>
           <li style="color:#64748b; font-size:11px; padding:8px 0;">
-            Reads compressed cold-task summaries, active tasks, modified files, key decisions, git diff → injects as preservation instructions into compaction prompt
+            Reads compressed cold-task summaries + active tasks + modified files + key decisions + git diff stat → injects as preservation instructions into compaction prompt
           </li>
         </ul>
       </div>
@@ -908,17 +973,18 @@
     </div>
   </section>
 
-  <!-- ── Global vs Local ── -->
-  <section>
+  <!-- ══ 6. AGENTS & SKILLS ══ -->
+  <section id="agents-skills">
     <div class="section-label">Scope</div>
-    <h2>Global vs Local — Skills &amp; Agents</h2>
+    <h2>Agents, Skills &amp; Tools — Global vs Local</h2>
+    <p class="section-sub">Two tiers for everything. Global = available everywhere. Local = project-specific, always wins.</p>
 
-    <div class="gl-grid">
+    <div class="gl-grid" style="margin-bottom:32px;">
 
       <div class="gl-card global">
-        <h3>🌐 Global</h3>
-        <code class="gl-path">~/.claude/agents/ · ~/.claude/skills/</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Available in every project. Installed by <code style="background:#0f172a; padding:2px 6px; border-radius:3px; font-size:11px;">bash install.sh</code></div>
+        <h3>🌐 Global Agents</h3>
+        <code class="gl-path">~/.claude/agents/ (symlinked by install.sh)</code>
+        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Available in every project. Installed once, used everywhere.</div>
 
         <div class="gl-item">
           <div class="gl-item-name">orchestrator.md</div>
@@ -929,55 +995,285 @@
           <div class="gl-item-desc">Architecture oversight (Opus)</div>
         </div>
         <div class="gl-item">
+          <div class="gl-item-name">critical-analyst.md</div>
+          <div class="gl-item-desc">Deep analysis + critique (Opus)</div>
+        </div>
+        <div class="gl-item">
           <div class="gl-item-name">researcher.md</div>
-          <div class="gl-item-desc">Deep codebase exploration (Sonnet)</div>
+          <div class="gl-item-desc">Codebase exploration (Sonnet)</div>
         </div>
         <div class="gl-item">
-          <div class="gl-item-name">facts.md (skill)</div>
-          <div class="gl-item-desc">Manage FACTS.md</div>
+          <div class="gl-item-name">meta-agent.md</div>
+          <div class="gl-item-desc">Agent generator (Sonnet)</div>
         </div>
         <div class="gl-item">
-          <div class="gl-item-name">code-review.md (skill)</div>
-          <div class="gl-item-desc">PR-level code review</div>
+          <div class="gl-item-name">scout-report-suggest.md</div>
+          <div class="gl-item-desc">Targeted analysis (Sonnet)</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">rlm-root.md</div>
+          <div class="gl-item-desc">Infinite context (Sonnet)</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">docs-scraper.md</div>
+          <div class="gl-item-desc">Documentation tasks (Haiku)</div>
         </div>
       </div>
 
       <div class="gl-card local">
-        <h3>📁 Local (project-specific)</h3>
-        <code class="gl-path">.claude/agents/ · .claude/skills/</code>
-        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Project-scoped. <strong style="color:#34d399;">Overrides global</strong> with same name. Create manually or auto-generate.</div>
+        <h3>📁 Local Agents</h3>
+        <code class="gl-path">.claude/agents/ (project directory)</code>
+        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Project-specific. <strong style="color:#34d399;">Overrides global with same name.</strong></div>
 
         <div class="gl-item">
           <div class="gl-item-name">domain-specialist.md</div>
-          <div class="gl-item-desc">e.g. auth, payments expert</div>
+          <div class="gl-item-desc">e.g., auth, payments expert for this project</div>
         </div>
         <div class="gl-item">
           <div class="gl-item-name">custom-reviewer.md</div>
           <div class="gl-item-desc">Project-specific review rules</div>
         </div>
         <div class="gl-item">
-          <div class="gl-item-name">deploy.md (skill)</div>
-          <div class="gl-item-desc">Project deploy sequence</div>
-        </div>
-        <div class="gl-item">
-          <div class="gl-item-name">test-runner.md (skill)</div>
-          <div class="gl-item-desc">Project-specific test command</div>
-        </div>
-        <div class="gl-item" style="color:#475569; font-style:italic;">
           <div class="gl-item-name">orchestrator.md</div>
-          <div class="gl-item-desc">Overrides global orchestrator</div>
+          <div class="gl-item-desc" style="color:#34d399;">← Overrides global orchestrator</div>
+        </div>
+        <div style="margin-top:16px; background:#0f172a; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#64748b;">
+          <div style="color:#34d399; margin-bottom:8px; font-weight:700;">How to create:</div>
+          Write <code>.claude/agents/my-agent.md</code><br>
+          Frontmatter: name, description, model, tools<br>
+          No install needed — Claude Code auto-discovers
         </div>
       </div>
 
     </div>
 
-    <div class="gl-arrow">Local agents/skills take priority → Claude loads <code style="background:#1e293b; padding:2px 8px; border-radius:4px; font-size:11px;">.claude/agents/</code> before <code style="background:#1e293b; padding:2px 8px; border-radius:4px; font-size:11px;">~/.claude/agents/</code></div>
+    <div class="gl-grid">
+
+      <div class="gl-card global">
+        <h3>🌐 Global Skills</h3>
+        <code class="gl-path">~/.claude/skills/ (symlinked by install.sh)</code>
+        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">7 framework skills. Available in all projects.</div>
+
+        <div class="gl-item">
+          <div class="gl-item-name">code-review</div>
+          <div class="gl-item-desc">PR-level review</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">error-analyzer</div>
+          <div class="gl-item-desc">Root cause analysis</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">facts</div>
+          <div class="gl-item-desc">Manage FACTS.md</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">refactoring-assistant</div>
+          <div class="gl-item-desc">Safe refactoring</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">security-scanner</div>
+          <div class="gl-item-desc">Vulnerability audit</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">test-generator</div>
+          <div class="gl-item-desc">Test suite generation</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">knowledge-db</div>
+          <div class="gl-item-desc">SQLite FTS5 knowledge</div>
+        </div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>📁 Local Skills</h3>
+        <code class="gl-path">.claude/skills/ (project directory)</code>
+        <div style="font-size:12px; color:#64748b; margin-bottom:16px;">Project-specific. <strong style="color:#34d399;">Overrides global with same name.</strong></div>
+
+        <div class="gl-item">
+          <div class="gl-item-name">deploy.md</div>
+          <div class="gl-item-desc">Project deploy sequence</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">test-runner.md</div>
+          <div class="gl-item-desc">Project-specific test command</div>
+        </div>
+        <div class="gl-item">
+          <div class="gl-item-name">db-migrate.md</div>
+          <div class="gl-item-desc">Database migration skill</div>
+        </div>
+        <div style="margin-top:16px; background:#0f172a; border-radius:8px; padding:12px; font-family:var(--font); font-size:11px; color:#64748b;">
+          <div style="color:#34d399; margin-bottom:8px; font-weight:700;">How to create:</div>
+          Write <code>.claude/skills/my-skill.md</code><br>
+          Include: description, when to use, commands<br>
+          Activate with <code>/my-skill</code> in Claude Code
+        </div>
+      </div>
+
+    </div>
   </section>
 
-  <!-- ── FACTS.md categories ── -->
-  <section>
+  <!-- ══ 7. RESOLUTION ══ -->
+  <section id="resolution">
+    <div class="section-label">Priority Rules</div>
+    <h2>Global vs Local — Resolution Order</h2>
+    <p class="section-sub">When global and local have the same name, local always wins. Claude Code loads project-local directory first.</p>
+
+    <div class="resolution-diagram">
+
+      <div style="font-size:11px; color:#64748b; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px;">Resolution order (top = highest priority)</div>
+
+      <div class="res-row">
+        <div class="res-box local">
+          <div class="name">Local Agent</div>
+          <div class="detail">.claude/agents/orchestrator.md</div>
+        </div>
+        <div class="res-op beats">▶</div>
+        <div class="res-box global">
+          <div class="name">Global Agent</div>
+          <div class="detail">~/.claude/agents/orchestrator.md</div>
+        </div>
+        <div class="res-op beats">→</div>
+        <div class="res-box wins">
+          <div class="name">Local Wins</div>
+          <div class="detail">project-specific behavior</div>
+        </div>
+      </div>
+
+      <div class="res-row">
+        <div class="res-box local">
+          <div class="name">Local Skill</div>
+          <div class="detail">.claude/skills/deploy.md</div>
+        </div>
+        <div class="res-op beats">▶</div>
+        <div class="res-box global" style="opacity:0.4;">
+          <div class="name">No Global</div>
+          <div class="detail">doesn't exist globally</div>
+        </div>
+        <div class="res-op">→</div>
+        <div class="res-box wins">
+          <div class="name">Local Only</div>
+          <div class="detail">project-scoped skill</div>
+        </div>
+      </div>
+
+      <div class="res-row">
+        <div class="res-box local" style="opacity:0.4;">
+          <div class="name">No Local</div>
+          <div class="detail">not project-specific</div>
+        </div>
+        <div class="res-op">→</div>
+        <div class="res-box global">
+          <div class="name">Global Agent</div>
+          <div class="detail">~/.claude/agents/researcher.md</div>
+        </div>
+        <div class="res-op">→</div>
+        <div class="res-box wins">
+          <div class="name">Global Used</div>
+          <div class="detail">fallback to global</div>
+        </div>
+      </div>
+
+      <hr>
+
+      <div style="font-size:11px; color:#64748b; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; margin-top:16px;">When to create project-local agents/skills</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="background:#064e3b22; border:1px solid #065f46; border-radius:8px; padding:14px; font-size:12px;">
+          <div style="color:#34d399; font-weight:700; margin-bottom:8px; font-family:var(--font);">✓ Create local when…</div>
+          <ul style="list-style:none; color:#94a3b8; line-height:1.8;">
+            <li>→ Project has unique deploy / test workflow</li>
+            <li>→ Domain expertise needed (payments, auth, ML)</li>
+            <li>→ Need to override a global agent's behavior</li>
+            <li>→ Project-specific code review rules</li>
+            <li>→ Custom commands for this project's toolchain</li>
+          </ul>
+        </div>
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:14px; font-size:12px;">
+          <div style="color:#64748b; font-weight:700; margin-bottom:8px; font-family:var(--font);">✗ Don't create local when…</div>
+          <ul style="list-style:none; color:#64748b; line-height:1.8;">
+            <li>→ Global agent already handles the task</li>
+            <li>→ Behavior would be identical to global</li>
+            <li>→ Task is one-off (just use the global)</li>
+            <li>→ You'd want it in all projects (add to global-skills/ instead)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 8. FULL REQUEST FLOW ══ -->
+  <section id="request-flow">
+    <div class="section-label">End-to-End</div>
+    <h2>Full Request Lifecycle</h2>
+    <p class="section-sub">From user message to tool execution to memory persistence — every touchpoint.</p>
+
+    <div class="flow">
+      <div class="flow-title">USER MESSAGE → TOOL CALLS → MEMORY PERSISTENCE</div>
+
+      <div class="flow-step">
+        <div class="flow-icon trigger">1️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">User sends message</div>
+          <div class="flow-desc">UserPromptSubmit fires: <strong>kr_mode</strong> (Korean?), <strong>auto_prime_inject</strong> (force /prime if no cache), <strong>analyze_request</strong> (Caddy classifies: direct/orchestrate/rlm/fusion), <strong>auto_delegate</strong> (route if complex).</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon demand">2️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">Claude reads episodic memory if task needs it <span class="tag demand">on-demand</span></div>
+          <div class="flow-desc">Project-specific task? → Read <code>.claude/FACTS.md</code> (verified facts, gotchas, known paths). Resuming work? → Read <code>.claude/MEMORY.md</code> (what changed in recent sessions). Both read using the Read tool — only consumed when needed.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l3">3️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">Agents and skills selected</div>
+          <div class="flow-desc">Claude resolves: local <code>.claude/agents/</code> checked first → global <code>~/.claude/agents/</code> fallback. Same for skills. Caddy recommendation considered. Complex tasks → orchestrator spawns team. Simple tasks → direct execution.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon trigger">4️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">PreToolUse gates every tool call</div>
+          <div class="flow-desc"><strong>session_lock_manager</strong>: prevent concurrent file writes. <strong>unified-damage-control</strong>: block destructive patterns (rm -rf, force-push, etc.). <strong>auto_review_team</strong>: review risky Bash before execution.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">5️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">Tool executes</div>
+          <div class="flow-desc">Bash / Read / Write / Edit runs. Tool output lands in Layer 0 (sensory) — visible this turn only.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">6️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">PostToolUse: memory + observability <span class="tag tok">zero tokens</span></div>
+          <div class="flow-desc"><strong>auto_fact_extractor</strong>: writes CONFIRMED/GOTCHA/PATHS facts to FACTS.md. <strong>auto_context_manager</strong>: compress cold tasks at 70% context. <strong>auto_error_analyzer</strong>: if Bash failed, inject diagnosis. <strong>auto_cost_warnings</strong>: budget alerts. All write to disk — no token cost.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">7️⃣</div>
+        <div class="flow-content">
+          <div class="flow-hook">Session ends → Stop hooks persist memory</div>
+          <div class="flow-desc"><strong>auto_memory_writer</strong>: git diff → session summary written to <code>.claude/MEMORY.md</code>. <strong>validate_facts</strong>: prune 90-day stale facts. <strong>voice_done</strong>: audio notification. Memory files ready for next session.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 9. FACTS.md PIPELINE ══ -->
+  <section id="facts-pipeline">
     <div class="section-label">Layer 2 Detail</div>
     <h2>FACTS.md — Living Project Fact Sheet</h2>
+    <p class="section-sub">Auto-extracted from real tool calls. Confidence-ranked. On-demand injected. Zero manual effort.</p>
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:32px;">
 
@@ -1007,65 +1303,82 @@
 
       <div style="background:#1e293b; border-radius:10px; padding:18px; border:1px solid #334155; border-top:3px solid #475569; opacity:0.6;">
         <div style="font-family:var(--font); font-size:12px; color:#6b7280; margin-bottom:8px; font-weight:700;">✗ STALE</div>
-        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Contradicted. Excluded from injection.</div>
+        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">Contradicted. Never injected.</div>
         <div style="font-family:var(--font); font-size:11px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px;">confidence: 0.0</div>
       </div>
 
     </div>
 
     <div style="background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; font-family:var(--font); font-size:12px;">
-      <div style="color:#64748b; letter-spacing:2px; text-transform:uppercase; font-size:10px; margin-bottom:16px;">AUTO-MAINTENANCE PIPELINE</div>
+      <div style="color:#64748b; letter-spacing:2px; text-transform:uppercase; font-size:10px; margin-bottom:20px;">AUTO-MAINTENANCE PIPELINE (zero manual effort)</div>
 
-      <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap;">
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+      <!-- Bash success → CONFIRMED -->
+      <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Bash success</div>
           <div style="color:#475569; font-size:10px;">uv run, bash install…</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
-          <div style="color:#475569; font-size:10px;">PostToolUse hook</div>
+          <div style="color:#475569; font-size:10px;">pattern match (no LLM)</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#064e3b; border-radius:8px; text-align:center; border:1px solid #065f46;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#064e3b; border-radius:8px; text-align:center; border:1px solid #065f46;">
           <div style="color:#34d399; font-weight:700; margin-bottom:4px;">✓ CONFIRMED</div>
           <div style="color:#065f46; font-size:10px;">written to FACTS.md</div>
         </div>
       </div>
 
-      <div style="height:12px;"></div>
-
-      <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap;">
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+      <!-- Bash failure → GOTCHA -->
+      <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#f87171; font-weight:700; margin-bottom:4px;">Bash failure</div>
           <div style="color:#475569; font-size:10px;">exit code ≠ 0</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
-          <div style="color:#475569; font-size:10px;">PostToolUse hook</div>
+          <div style="color:#475569; font-size:10px;">error pattern match</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#451a03; border-radius:8px; text-align:center; border:1px solid #92400e;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#451a03; border-radius:8px; text-align:center; border:1px solid #92400e;">
           <div style="color:#fbbf24; font-weight:700; margin-bottom:4px;">⚠ GOTCHA</div>
           <div style="color:#92400e; font-size:10px;">written to FACTS.md</div>
         </div>
       </div>
 
-      <div style="height:12px;"></div>
+      <!-- Write key file → PATHS -->
+      <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
+          <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Write key file</div>
+          <div style="color:#475569; font-size:10px;">.claude/, templates/, docs/…</div>
+        </div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
+          <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">auto_fact_extractor</div>
+          <div style="color:#475569; font-size:10px;">path pattern match</div>
+        </div>
+        <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
+        <div style="flex:1; min-width:130px; padding:10px; background:#0c3547; border-radius:8px; text-align:center; border:1px solid #075985;">
+          <div style="color:#38bdf8; font-weight:700; margin-bottom:4px;">📁 PATHS</div>
+          <div style="color:#075985; font-size:10px;">written to FACTS.md</div>
+        </div>
+      </div>
 
+      <!-- Session end → prune -->
       <div style="display:flex; gap:0; align-items:stretch; flex-wrap:wrap;">
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">Session ends</div>
           <div style="color:#475569; font-size:10px;">Stop hook fires</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#0f172a; border-radius:8px; text-align:center;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#0f172a; border-radius:8px; text-align:center;">
           <div style="color:#94a3b8; font-weight:700; margin-bottom:4px;">validate_facts</div>
-          <div style="color:#475569; font-size:10px;">prunes 90-day stale</div>
+          <div style="color:#475569; font-size:10px;">prune 90-day stale</div>
         </div>
         <div style="display:flex; align-items:center; padding:0 8px; color:#334155;">→</div>
-        <div style="flex:1; min-width:140px; padding:12px; background:#1e293b; border-radius:8px; text-align:center; border:1px solid #334155;">
+        <div style="flex:1; min-width:130px; padding:10px; background:#1e293b; border-radius:8px; text-align:center; border:1px solid #334155;">
           <div style="color:#e2e8f0; font-weight:700; margin-bottom:4px;">FACTS.md pruned</div>
           <div style="color:#475569; font-size:10px;">old stale removed</div>
         </div>
@@ -1073,41 +1386,42 @@
     </div>
   </section>
 
-  <!-- ── Trust hierarchy ── -->
-  <section>
+  <!-- ══ 10. TRUST ══ -->
+  <section id="trust">
     <div class="section-label">Anti-Hallucination</div>
     <h2>Trust Hierarchy</h2>
+    <p class="section-sub">What Claude should trust, in order. Never let inference override execution-verified facts.</p>
 
     <div class="trust-chain">
       <div class="trust-row">
         <div class="trust-rank">1</div>
         <div class="trust-source">FACTS.md — CONFIRMED entries</div>
-        <div class="trust-why">Verified by actual execution in this project. Ground truth.</div>
-        <div class="trust-tag l2">Layer 2</div>
+        <div class="trust-why">Verified by actual execution in this project. Absolute ground truth.</div>
+        <div class="tag l2">Layer 2</div>
       </div>
       <div class="trust-row">
         <div class="trust-rank">2</div>
         <div class="trust-source">FACTS.md — GOTCHAS entries</div>
-        <div class="trust-why">Things that have actually failed. Prevents repeated mistakes.</div>
-        <div class="trust-tag l2">Layer 2</div>
+        <div class="trust-why">Things that have actually failed here. Prevents repeated mistakes.</div>
+        <div class="tag l2">Layer 2</div>
       </div>
       <div class="trust-row">
         <div class="trust-rank">3</div>
-        <div class="trust-source">CLAUDE.md + MEMORY.md rules</div>
+        <div class="trust-source">CLAUDE.md + ~/.claude/memory/MEMORY.md</div>
         <div class="trust-why">Permanent behavioral rules. Cross-project verified patterns.</div>
-        <div class="trust-tag l3">Layer 3</div>
+        <div class="tag l3">Layer 3</div>
       </div>
       <div class="trust-row">
         <div class="trust-rank">4</div>
-        <div class="trust-source">PROJECT_CONTEXT.md</div>
-        <div class="trust-why">Architecture overview. Accurate at last /prime run.</div>
-        <div class="trust-tag l2">Layer 2</div>
+        <div class="trust-source">PROJECT_CONTEXT.md + MEMORY.md (session history)</div>
+        <div class="trust-why">Architecture overview + what changed recently. Accurate at last run.</div>
+        <div class="tag l2">Layer 2</div>
       </div>
       <div class="trust-row">
         <div class="trust-rank" style="color:#475569;">5</div>
         <div class="trust-source" style="color:#64748b;">Model inference / reasoning</div>
-        <div class="trust-why" style="color:#475569;">Never trusted over the above layers. Always verify by execution.</div>
-        <div class="trust-tag l0">inference</div>
+        <div class="trust-why" style="color:#475569;">Never trusted over the above. Always verify by execution.</div>
+        <div class="tag" style="background:#1c1917; color:#9ca3af; border:1px solid #374151;">inference</div>
       </div>
     </div>
 
@@ -1119,7 +1433,7 @@
 </div>
 
 <footer>
-  <p>Claude Agentic Framework v2.1 · <a href="https://github.com">github.com</a> · docs/memory-system.html</p>
+  <p>Claude Agentic Framework v2.1 · docs/memory-system.html · 26 hooks across 6 event types</p>
 </footer>
 
 </body>

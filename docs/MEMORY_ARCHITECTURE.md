@@ -4,7 +4,9 @@
 
 ## Overview
 
-The framework implements a **4-layer cognitive memory system** inspired by MemGPT, ACT-R, and Generative Agent architectures. Each layer has a distinct scope, lifetime, token budget, and maintenance strategy.
+The framework implements a **4-layer cognitive memory system** inspired by MemGPT, ACT-R, and Generative Agent architectures. Each layer has a distinct scope, lifetime, and maintenance strategy.
+
+**Design principle: lean session start.** Only the project architecture snapshot (PROJECT_CONTEXT.md) is auto-injected. Episodic memory (FACTS.md, MEMORY.md) is read **on-demand** — reducing per-session overhead while keeping facts always up-to-date on disk.
 
 ```mermaid
 graph TB
@@ -17,18 +19,19 @@ graph TB
     end
 
     subgraph L2["Layer 2 — EPISODIC (project)"]
-        S2[".claude/FACTS.md<br/>.claude/PROJECT_CONTEXT.md<br/>.claude/agents/ (local)<br/>.claude/skills/ (local)<br/>TTL: project lifetime | Budget: ~3000 tokens"]
+        S2[".claude/FACTS.md (on-demand)<br/>.claude/MEMORY.md (on-demand)<br/>.claude/PROJECT_CONTEXT.md (auto-injected)<br/>.claude/agents/ (local)<br/>.claude/skills/ (local)<br/>TTL: project lifetime"]
     end
 
     subgraph L3["Layer 3 — SEMANTIC (global)"]
-        S3["~/.claude/memory/MEMORY.md<br/>~/.claude/memory/GLOBAL_LEARNINGS.md<br/>~/.claude/data/knowledge-db/ (FTS5)<br/>~/.claude/agents/ (global)<br/>~/.claude/skills/ (global)<br/>TTL: indefinite | Budget: ~2000 tokens"]
+        S3["~/.claude/memory/MEMORY.md (always present)<br/>~/.claude/agents/ (global)<br/>~/.claude/skills/ (global)<br/>TTL: indefinite | Budget: ~800 tokens"]
     end
 
     L0 -->|"promotion on repeat (3+)"| L1
     L1 -->|"consolidation at session end"| L2
-    L2 -->|"reflection / cross-project pattern"| L3
-    L3 -->|"injected at session start"| L1
-    L2 -->|"injected at session start"| L1
+    L2 -->|"cross-project patterns"| L3
+    L3 -->|"always injected via CLAUDE.md"| L1
+    L2 -->|"auto_prime: PROJECT_CONTEXT.md"| L1
+    L2 -.->|"on-demand: Read FACTS.md / MEMORY.md"| L1
 ```
 
 ---
@@ -63,12 +66,11 @@ graph TB
 |---|---|
 | **Scope** | Single project |
 | **TTL** | Project lifetime |
-| **Token budget** | ~3,000 tokens (facts ~2000 + prime ~1000 summary) |
 | **Location** | `{project}/.claude/` |
-| **Managed by** | `inject_facts.py` (read) + `auto_fact_extractor.py` (write) + `validate_facts.py` (prune) |
-| **Contents** | FACTS.md (verified facts), PROJECT_CONTEXT.md (architecture), local agents, local skills |
+| **Contents** | FACTS.md (verified facts), MEMORY.md (session history), PROJECT_CONTEXT.md (architecture), local agents, local skills |
 | **Write mechanism** | Auto (hooks) + manual (`/facts add`) |
-| **Read mechanism** | Injected at `SessionStart` |
+| **Read — PROJECT_CONTEXT.md** | **Auto-injected** at `SessionStart` via `auto_prime_inject.py` (~2000 tok) |
+| **Read — FACTS.md / MEMORY.md** | **On-demand** — read explicitly when starting project-specific work |
 
 **FACTS.md categories (by confidence):**
 ```
@@ -79,44 +81,53 @@ graph TB
 ✗ STALE       — contradicted/superseded (not injected)   (confidence 0.0)
 ```
 
+**MEMORY.md format:**
+```
+## 2026-02-24 (13:14 UTC)
+**Commit:** feat: add something (abc1234)
+**Changed:** path/to/file | 10 ++
+**Tasks completed:** - Task: fixed X → worked
+```
+
 ### Layer 3 — SEMANTIC (global)
 | Property | Value |
 |---|---|
 | **Scope** | All projects |
 | **TTL** | Indefinite |
-| **Token budget** | ~2,000 tokens |
+| **Token budget** | ~800 tokens (CLAUDE.md system-reminder) |
 | **Location** | `~/.claude/` |
-| **Managed by** | `inject_relevant.py` (read) + `extract_learnings.py` + `store_learnings.py` (write) |
-| **Contents** | MEMORY.md, GLOBAL_LEARNINGS.md, cross-project knowledge DB, global agents, global skills |
-| **Write mechanism** | Auto (Stop hooks) + manual (knowledge-db skill) |
-| **Read mechanism** | Injected at `SessionStart` (FTS5 BM25 retrieval, top-5 relevant) |
+| **Contents** | `~/.claude/memory/MEMORY.md` (global rules), global agents, global skills |
+| **Write mechanism** | Manual (user maintains `~/.claude/memory/MEMORY.md`) |
+| **Read mechanism** | Always present via CLAUDE.md system-reminder |
 
 ---
 
-## Session Start Injection Order
+## Session Start — What Actually Fires
 
-At session start, memory layers are injected in priority order:
+At session start, hooks run in sequence. Only 2 events now:
 
 ```mermaid
 sequenceDiagram
     participant H as Claude Code (startup)
     participant L3g as Layer 3: MEMORY.md
-    participant L3k as Layer 3: Knowledge DB
     participant L2p as Layer 2: PROJECT_CONTEXT.md
-    participant L2f as Layer 2: FACTS.md
+    participant L2rm as Layer 2: RepoMap
+    participant L2od as Layer 2: FACTS.md / MEMORY.md
     participant L1 as Layer 1: Working Memory
     participant C as Claude
 
-    H->>L3g: Always injected via CLAUDE.md system-reminder (~800 tok)
-    H->>L2p: auto_prime.py reads .claude/PROJECT_CONTEXT.md (~2000 tok)
-    H->>L2f: inject_facts.py reads .claude/FACTS.md (~1500 tok)
-    H->>L3k: inject_relevant.py BM25 search, top-5 entries (~600 tok)
-    H->>L1: pre_compact_preserve.py (if compaction occurred)
-    Note over C: Session starts with ~5000 tokens of grounded context
-    C->>C: Trust CONFIRMED > architecture > knowledge DB
+    H->>L3g: Always present via CLAUDE.md (~800 tok)
+    H->>L2p: session_startup.py → auto_prime_inject.py (~2000 tok)
+    Note over L2p: Git-hash validated. Auto-stale on commits.
+    H->>L2rm: repo_map.py (large repos ≥200 files only)
+    Note over C: Session ready. ~2800 tokens grounded context.
+    C->>L2od: On-demand: Read .claude/FACTS.md when starting project work
+    C->>L2od: On-demand: Read .claude/MEMORY.md when resuming after gap
+    C->>C: Trust CONFIRMED > architecture > inference
 ```
 
-**Total session start budget: ~5,000–7,000 tokens** across all layers.
+**Total auto-injected context: ~2800 tokens** (vs ~5100+ in an always-inject design).
+Episodic memory is read when relevant — not burned on every session.
 
 ---
 
@@ -192,51 +203,49 @@ flowchart TD
     D --> E[PROJECT_CONTEXT.md created]
     B -->|Yes| F{FACTS.md exists?}
     E --> F
-    F -->|No| G[inject_facts.py: creates template]
-    G --> H[Injects initialization notice]
-    F -->|Yes| I[inject_facts.py: injects facts]
-    H --> J[Session ready — no facts yet, populate as you work]
-    I --> J
+    F -->|No| G[Initialized with template on first /facts or auto_fact_extractor write]
+    F -->|Yes| H[Ready — read FACTS.md before starting project work]
+    G --> I[Facts accumulate automatically as you work]
+    H --> I
 ```
 
 **Actions:**
 1. Run `/prime` to create architecture cache
-2. FACTS.md auto-created on first session
-3. Facts accumulate automatically as you work
+2. Read `.claude/FACTS.md` at session start if starting project-specific work
+3. Facts accumulate automatically as you work (no manual intervention needed)
 
 ### Scenario B: Resuming Ongoing Project
 
 ```mermaid
 flowchart TD
-    A[Session starts] --> B[auto_prime.py: loads PROJECT_CONTEXT.md]
-    B --> C[inject_facts.py: injects FACTS.md]
-    C --> D[inject_relevant.py: BM25 retrieves top-5 knowledge DB entries]
-    D --> E[Session ready with full context]
-    E --> F{Git hash changed?}
-    F -->|Yes| G[PROJECT_CONTEXT.md marked stale — run /prime to refresh]
-    F -->|No| H[Context is current — proceed]
+    A[Session starts] --> B[auto_prime.py: loads PROJECT_CONTEXT.md ~2000 tok]
+    B --> C{Git hash changed?}
+    C -->|Yes| D[PROJECT_CONTEXT.md marked stale — run /prime to refresh]
+    C -->|No| E[Context is current — proceed]
+    D --> E
+    E --> F[Read .claude/FACTS.md for verified project facts]
+    F --> G[Read .claude/MEMORY.md for recent session history]
+    G --> H[Session ready with full episodic context]
 ```
 
 **Actions:**
-1. Read injected context before doing anything
-2. CONFIRMED facts override your assumptions
-3. GOTCHAS prevent known failure modes
-4. Run `/prime` if context feels stale
+1. Rely on auto-injected PROJECT_CONTEXT.md for architecture overview
+2. Read `.claude/FACTS.md` → CONFIRMED facts override your assumptions
+3. Read `.claude/MEMORY.md` → what was changed/fixed in recent sessions
+4. Run `/prime` if project context feels stale
 
 ### Scenario C: Small Project (<50 files)
 
 - Direct mode preferred (1-2 files, read directly)
 - RepoMap NOT generated (< 200 file threshold)
 - FACTS.md will be sparse initially — grows as you work
-- Knowledge DB may have no project-specific entries yet
-- Token budget mostly available for working context
+- Low token overhead — mostly working context budget available
 
 ### Scenario D: Large Project (≥200 files)
 
 - Delegated mode required (5+ files = spawn sub-agents)
 - RepoMap generated by `repo_map.py` — use it for navigation
 - FACTS.md critical: check PATHS before exploring file system
-- Knowledge DB heavily used for cross-session pattern recall
 - Sub-agents return 2-3 sentence findings, NOT raw code dumps
 
 ### Scenario E: Long Session (context approaching limit)
@@ -266,28 +275,29 @@ flowchart TD
 ```mermaid
 graph LR
     subgraph SESSION["During Session"]
-        T1[Tool call] -->|PostToolUse| E1[auto_fact_extractor.py]
-        E1 -->|"new fact"| F[FACTS.md]
-        T1 -->|PostToolUse| E2[extract_learnings.py]
-        E2 -->|"learning"| K[knowledge DB]
+        T1[Tool call: Bash/Write] -->|PostToolUse| E1[auto_fact_extractor.py]
+        E1 -->|"new fact extracted"| F[".claude/FACTS.md"]
     end
 
     subgraph END["Session End"]
         S1[Stop hook] --> V[validate_facts.py]
-        V -->|"prune old stale"| F
-        S1 --> SL[store_learnings.py]
-        SL -->|"persist"| K
+        V -->|"prune 90-day stale"| F
+        S1 --> MW[auto_memory_writer.py]
+        MW -->|"git diff + commit → session summary"| M[".claude/MEMORY.md"]
+        MW -.->|"only writes if git changes exist"| M
     end
 
     subgraph START["Next Session"]
-        SS[SessionStart] --> IF[inject_facts.py]
-        IF -->|"inject"| C[Claude context]
-        SS --> IR[inject_relevant.py]
-        IR -->|"BM25 top-5"| C
-        SS --> AP[auto_prime.py]
-        AP -->|"project arch"| C
+        SS[SessionStart] --> AP[auto_prime.py]
+        AP -->|"project architecture"| C[Claude context]
+        SS --> RM[repo_map.py]
+        RM -.->|"if ≥200 files"| C
+        C -.->|"on-demand when needed"| F
+        C -.->|"on-demand when resuming"| M
     end
 ```
+
+**Write side is fully automatic.** Read side is on-demand — Claude reads FACTS.md / MEMORY.md when starting project-specific work, not unconditionally at every session.
 
 ---
 
@@ -296,24 +306,8 @@ graph LR
 These behavioral guardrails enforce grounded execution:
 
 1. **Never say "fixed" without executing** — reading code ≠ verification
-2. **Check FACTS.md PATHS before reading files** — avoid redundant exploration
+2. **Read FACTS.md before starting project work** — don't rely on memory for verified facts
 3. **Trust CONFIRMED over inference** — execution-verified beats reasoning
 4. **GOTCHAS override assumptions** — if it's in GOTCHAS, you've hit it before
 5. **Search before read** — Grep/Glob first, never open files blind
 6. **Sub-agents return findings, not raw content** — 2-3 sentences max
-
----
-
-## Knowledge DB Pipeline Status
-
-```
-OBSERVE  → observe_patterns.py   [PostToolUse — NOT WIRED ⚠]
-ANALYZE  → analyze_session.py    [Stop — NOT WIRED ⚠]
-LEARN    → store_learnings.py    [Stop — WIRED ✓]
-EVOLVE   → inject_relevant.py    [SessionStart — WIRED ✓]
-
-Parallel: extract_learnings.py   [PostToolUse — WIRED ✓ but split-brain bug ⚠]
-```
-
-**Split-brain bug:** `extract_learnings.py` writes to `~/.claude/knowledge.db` (via `knowledge_db.py`)
-but `inject_relevant.py` reads from `~/.claude/data/knowledge-db/knowledge.db`. Fix: update `knowledge_db.py` DB_PATH.
