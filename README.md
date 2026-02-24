@@ -200,6 +200,19 @@ The installer:
 | `guides/` | 15 engineering guides (context, multi-agent, RLM, etc.) |
 | `docs/` | 11 reference documents |
 
+## HTML Docs
+
+Interactive documentation (Korean):
+
+| Page | Description |
+|------|-------------|
+| [`docs/index.html`](docs/index.html) | Overview — request lifecycle, features, quick install |
+| [`docs/agents.html`](docs/agents.html) | Agents — 8 agents, model tiers, global/local, custom agents |
+| [`docs/caddy.html`](docs/caddy.html) | Routing — Caddy classifier, 5 strategies, classification examples |
+| [`docs/skills.html`](docs/skills.html) | Skills — 7 skills, creating custom skills, team workflows |
+| [`docs/hooks.html`](docs/hooks.html) | Hooks — full 26-hook reference, circuit breakers, damage control |
+| [`docs/memory-system-ko.html`](docs/memory-system-ko.html) | Memory system — 4-layer architecture, FACTS.md, team attribution |
+
 ## Guides
 
 See `guides/` for 15 comprehensive engineering guides and `docs/` for 11 reference documents.
