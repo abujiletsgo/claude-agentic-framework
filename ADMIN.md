@@ -96,6 +96,46 @@ Active hooks (from `templates/settings.json.template`):
 
 Never delete a hook file while a session references it.
 
+## Moving the Framework Directory
+
+`~/.claude/settings.json` contains hardcoded absolute paths to this repository. If you move or rename the framework folder, **all Claude Code tools (Bash, Read, Edit, Write) will be blocked immediately** — hooks will fail to spawn and Claude Code becomes unusable until the paths are fixed.
+
+### Safe procedure
+
+```bash
+# 1. Update settings.json FIRST (before moving anything)
+NEW_PATH="/path/to/new/location/claude-agentic-framework"
+OLD_PATH=$(pwd)
+sed -i '' "s|$OLD_PATH|$NEW_PATH|g" ~/.claude/settings.json
+
+# 2. Move the directory
+mv "$OLD_PATH" "$NEW_PATH"
+
+# 3. Fix the absolute symlinks inside global-skills
+cd "$NEW_PATH/global-skills"
+for dir in */; do
+  dir="${dir%/}"
+  if [ -L "$dir/$dir" ]; then
+    rm "$dir/$dir"
+    ln -s "$NEW_PATH/global-skills/$dir/" "$dir/$dir"
+  fi
+done
+
+# 4. Re-run install to regenerate settings.json cleanly
+cd "$NEW_PATH" && ./install.sh
+```
+
+### Emergency recovery (if already moved without fixing paths)
+
+If tools are already blocked, you must fix `settings.json` **outside** Claude Code:
+
+```bash
+# Run in a separate Terminal window (not through Claude Code)
+sed -i '' 's|/old/path/claude-agentic-framework/|/new/path/claude-agentic-framework/|g' ~/.claude/settings.json
+```
+
+Claude Code's Bash, Read, Edit, and Write tools are all blocked when PreToolUse hooks fail to spawn. Only Glob and Grep remain available. The fix must be applied from a plain terminal session.
+
 ## Auto-Documentation
 
 The framework auto-generates README.md and CLAUDE.md from live repo state.
@@ -136,3 +176,4 @@ find ~/.claude/logs -name "*.jsonl" -mtime +30 -exec gzip {} +
 | Wrong counts in README | Run `uv run scripts/generate_docs.py` |
 | Cost data empty | PostToolUse hook must be active (check settings.json) |
 | Agent not found | Check symlink in `~/.claude/agents/` and model_tiers.yaml |
+| **All tools blocked (Bash/Read/Edit/Write fail simultaneously)** | Framework directory was moved — `settings.json` has stale paths. From a plain Terminal (not Claude Code): `sed -i '' 's\|/old/path/\|/new/path/\|g' ~/.claude/settings.json`. See "Moving the Framework Directory" above. |
