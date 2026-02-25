@@ -32,6 +32,10 @@
 - Caddy classifier config: `data/caddy_config.yaml` [2026-02-24]
 - Key file: `global-hooks/framework/memory/inject_memory.py` [2026-02-24]
 - Key file: `docs/memory-system.html` [2026-02-24]
+- Key file: `docs/MEMORY_ARCHITECTURE.md` [2026-02-24]
+- Key file: `docs/memory-system-ko.html` [2026-02-24]
+- Key file: `docs/shared.css` [2026-02-24 @Tom Kwon]
+- Key file: `docs/index.html` [2026-02-24 @Tom Kwon]
 
 ## → PATTERNS (confirmed working sequences)
 - Template change: edit `templates/settings.json.template` → `bash install.sh` → restart session → verify [2026-02-24]
