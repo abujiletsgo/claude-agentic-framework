@@ -31,12 +31,12 @@ The framework implements defense-in-depth with multiple overlapping security lay
 ```
 Layer 1: Permissions (settings.json allow/deny rules)
 Layer 2: Command Hooks (pattern-matching, ~50ms)
-Layer 3: Prompt Hooks (LLM semantic validation, ~2-5s)
-Layer 4: Skills Integrity (SHA-256 hash verification on session start)
-Layer 5: Skill Auditing (Caddy automatic security scanning)
-Layer 6: Input Validation (per-skill validation at runtime)
-Layer 7: File Permissions (0o600 on sensitive data files)
+Layer 3: Skills Integrity (SHA-256 hash verification on session start)
+Layer 4: Input Validation (per-skill validation at runtime)
+Layer 5: File Permissions (0o600 on sensitive data files)
 ```
+
+> **v2.1.0 Note**: Prompt hooks (Layer 3 in earlier versions) and dedicated skill-auditing agents have been removed for token efficiency. The security model now relies on the 5 layers above.
 
 Each layer is independent. A bypass at one layer is caught by another.
 
@@ -92,11 +92,11 @@ just skills-verify
 
 ## Automatic Skill Auditing
 
-The Caddy meta-orchestrator automatically audits skills for security issues before recommending them to users.
+Skills are audited for security issues via the SHA-256 integrity system at session start. The patterns below describe what the integrity check and manual review process look for.
+
+> **v2.1.0 Note**: The `SkillAuditor` and `caddy/skill_auditor.py` were removed in v2.1.0. Skill security is now handled by the SHA-256 lock file (`skills.lock`) verified at session start by `session_startup.py`.
 
 ### What Gets Checked
-
-The `SkillAuditor` (in `global-hooks/framework/caddy/skill_auditor.py`) scans skill files for:
 
 | Category | Patterns Detected |
 |----------|-------------------|
@@ -544,6 +544,5 @@ When creating a new skill, verify the following:
 
 - [SKILLS_INTEGRITY.md](SKILLS_INTEGRITY.md) -- Detailed skills.lock documentation
 - [2026_UPGRADE_GUIDE.md](2026_UPGRADE_GUIDE.md) -- Full upgrade guide with security improvements
-- `global-hooks/prompt-hooks/README.md` -- LLM semantic validation hooks
-- `global-hooks/framework/ANTI_LOOP_GUARDRAILS.md` -- Anti-loop protection
-- `global-agents/caddy.md` -- Caddy meta-orchestrator with skill auditing
+- `global-hooks/damage-control/patterns.yaml` -- Blocked command patterns (edit to customize)
+- `global-hooks/damage-control/unified-damage-control.py` -- PreToolUse pattern-matching hook

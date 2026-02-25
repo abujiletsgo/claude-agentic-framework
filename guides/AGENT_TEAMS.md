@@ -1,6 +1,6 @@
 # Agent Teams - The Executive Shift
 
-> **2026 Update**: Agent teams now include Builder (Sonnet), Validator (Haiku), and Project Skill Generator (Sonnet) with 8 guardrail agents. Multi-model tiers assign the right model to each agent. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+> **2026 Update (v2.1.0)**: The framework has 8 named agents — no dedicated Builder, Validator, PSG, or guardrail agents. These roles are fulfilled by general-purpose sub-agents at runtime. The orchestration patterns in this guide remain valid. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
 
 ## What Are Agent Teams?
 

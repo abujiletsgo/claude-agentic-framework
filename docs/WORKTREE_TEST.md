@@ -1,9 +1,11 @@
 # Git Worktree Test Report
 
+> **⚠️ DEPRECATED (v2.1.0)**: The worktree skill (`worktree-manager-skill`), worktree commands (`/create-worktree`, `/remove-worktree`), and the dedicated builder agent referenced in this report were removed in v2.1.0. This document is kept for historical reference only. Claude Code's built-in `/worktree` command supersedes this implementation.
+
 **Date**: 2026-02-11
 **Project**: claude-agentic-framework
 **Tester**: Builder agent (Task #29)
-**Status**: ALL TESTS PASSED
+**Status**: ALL TESTS PASSED (historical)
 
 ---
 

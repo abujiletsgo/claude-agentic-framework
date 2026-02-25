@@ -1,6 +1,6 @@
 # Step 13: Mission Control - Multi-Agent Observability
 
-> **2026 Update**: Mission Control now tracks model tier usage per agent and integrates with the continuous review system. Dashboard at apps/observability/. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+> **2026 Update (v2.1.0)**: Mission Control (observability dashboard) tracks model tier usage per agent and integrates with the continuous review system. Dashboard at `apps/observability/` (ports 4000/5173). No dedicated "Builder" agent exists — the builder role is fulfilled by general-purpose sub-agents. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
 
 ## The Real-Time Command Center
 

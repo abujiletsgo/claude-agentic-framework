@@ -6,7 +6,7 @@
 
 From "beginner with bloated context" to "elite engineer with automated agent fleets".
 
-> **2026 Update**: The framework now includes 23 skills, 33 agents across 3 model tiers, persistent knowledge database, continuous review, prompt hooks, and worktree management. See [docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md) for full details.
+> **2026 Update (v2.1.0)**: The framework has 7 skills, 8 agents across 3 model tiers, persistent knowledge database, continuous review, and context compaction. Prompt hooks, worktree commands, guardrail agents, and the mastery system have been removed for token efficiency. See [docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md) for full details.
 
 ---
 
@@ -212,7 +212,6 @@ From "beginner with bloated context" to "elite engineer with automated agent fle
 
 # Planning
 /plan "goal"              # Structured planning
-/plan_w_team "goal"       # Plan with builder + validator team
 /quick-plan "goal"        # Fast lightweight planning
 
 # Development
@@ -252,36 +251,36 @@ Source of truth is the repo. The installer symlinks into `~/.claude/`.
 
 ```
 Repo: ~/Documents/claude-agentic-framework/
-├── global-agents/                     # 33 agents (15 root + team + guardrails + agbot)
+├── global-agents/                     # 8 agents (3 Opus + 4 Sonnet + 1 Haiku)
 │   ├── orchestrator.md                # Lead coordinator (Opus)
+│   ├── project-architect.md           # System design (Opus)
+│   ├── critical-analyst.md            # Risk analysis (Opus)
 │   ├── researcher.md                  # Research specialist (Sonnet)
-│   ├── rlm-root.md                    # Root controller (Opus)
-│   ├── project-architect.md           # Project analysis (Opus)
-│   ├── critical-analyst.md            # Critical thinking (Opus)
-│   ├── team/builder.md                # Implementation (Sonnet)
-│   ├── team/validator.md              # Verification (Haiku)
-│   └── team/guardrails/               # 8 guardrail agents
+│   ├── meta-agent.md                  # Agent generation (Sonnet)
+│   ├── scout-report-suggest.md        # Read-only analysis (Sonnet)
+│   ├── rlm-root.md                    # Recursive controller (Sonnet)
+│   └── docs-scraper.md                # Documentation fetching (Haiku)
 │
-├── global-commands/                   # 25+ slash commands
-│   ├── prime.md, research.md, search.md, analyze.md
+├── global-commands/                   # 14 slash commands
+│   ├── prime.md, research.md
 │   ├── orchestrate.md, fusion.md, rlm.md
-│   ├── plan.md, plan_w_team.md, quick-plan.md
-│   ├── build.md, refine.md, question.md, sentient.md
-│   └── create-worktree.md, list-worktrees.md, remove-worktree.md
+│   ├── plan.md, refine.md, review.md
+│   ├── commit.md, costs.md, debug.md
+│   └── kr.md, loadbundle.md, test.md
 │
-├── global-skills/                     # 23 auto-discoverable skills
-│   ├── prime/, knowledge-db/, multi-model-tiers/
-│   ├── code-review/, test-generator/, tdd-workflow/
-│   ├── security-scanner/, dependency-audit/
-│   ├── worktree-manager-skill/, create-worktree-skill/
-│   └── meta-skill/ (+ 13 more)
+├── global-skills/                     # 7 auto-discoverable skills
+│   ├── code-review/, test-generator/
+│   ├── security-scanner/, error-analyzer/
+│   ├── refactoring-assistant/, knowledge-db/
+│   └── facts/
 │
-├── global-hooks/                      # 5 hook namespaces
-│   ├── damage-control/                # Pattern-matching security
-│   ├── mastery/                       # Lifecycle tracking
-│   ├── observability/                 # Monitoring & metrics
-│   ├── framework/                     # Knowledge, review, guardrails, testing
-│   └── prompt-hooks/                  # LLM semantic validation docs
+├── global-hooks/                      # 26 hooks across 6 event types
+│   ├── damage-control/                # Pattern-matching security (PreToolUse)
+│   ├── framework/automation/          # Session start, error analysis, costs
+│   ├── framework/caddy/               # Caddy classifier (UserPromptSubmit)
+│   ├── framework/context/             # Context compaction pipeline
+│   ├── framework/knowledge/           # Knowledge pipeline (SQLite FTS5)
+│   └── framework/session/             # Session lock, startup
 │
 ├── data/                              # Runtime data
 │   ├── knowledge-db/                  # SQLite knowledge database
@@ -547,14 +546,14 @@ You are now an **Elite Agentic Engineer**:
 │  ✅ F-Threads (Best of N, ~95% optimal)         │
 │  ✅ RLM (infinite context, 99% attention)       │
 │  ✅ Ralph Loops (zero rot, stateless retry)     │
-│  ✅ 23 Skills (full engineering lifecycle)       │
+│  ✅ 7 Skills (full engineering lifecycle)        │
 │  ✅ Knowledge DB (persistent cross-session)     │
 │  ✅ Continuous Review (post-commit analysis)    │
 │  ✅ Multi-Model Tiers (50-60% cost savings)     │
-│  ✅ Prompt Hooks (hybrid LLM security)          │
-│  ✅ Strategic Agents (architect + analyst)       │
-│  ✅ Git Worktrees (parallel development)        │
-│  ✅ Anti-Loop Guardrails (agent safety)         │
+│  ✅ Context Compaction (70% threshold pipeline) │
+│  ✅ Strategic Agents (architect + analyst)      │
+│  ✅ Caddy Classifier (auto task routing)        │
+│  ✅ Damage Control (pattern-match security)     │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -563,13 +562,11 @@ You are now an **Elite Agentic Engineer**:
 ## Next Steps
 
 ### Immediate Actions
-1. **Enable Agent Teams**: Add `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` to shell config
-2. **Test Orchestrator**: Run `/orchestrate "implement OAuth2 authentication"` to test
-3. **Package Plugin**: Copy assets to `/tmp/claude/elite-agentic-engineering-plugin/`
-4. **Publish Plugin**: Push to GitHub for team distribution
-5. **Test Z-Thread**: Run `/z-thread implement-feature "Add OAuth2"` to test zero touch
-6. **Start Mission Control**: Run `./scripts/start-system.sh` in observability repo
-7. **Test L-Thread**: Run `claude -p "~/.claude/templates/long-migration.md" --max-turns 50` for loop-safe execution
+1. **Test Orchestrator**: Run `/orchestrate "implement OAuth2 authentication"` to test multi-agent coordination
+2. **Start Observability Dashboard**: Run `cd apps/observability && bun run dev` (ports 4000/5173)
+3. **Test RLM**: Run `/rlm "find all authentication handling in the codebase"` to test recursive exploration
+4. **Test Knowledge Pipeline**: Run a session, then `/knowledge-db search "your topic"` to verify persistence
+5. **Test Fusion**: Run `/fusion "implement a critical feature"` for best-of-N quality
 
 ### Advanced Patterns
 1. **Living Software**: Set up always-on agents (refactorer, tester, documenter, performance, security)
