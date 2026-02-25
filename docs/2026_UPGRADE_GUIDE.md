@@ -11,12 +11,12 @@ This document summarizes the current state of the Claude Agentic Framework after
 
 | Area | Count | Details |
 |------|-------|---------|
-| Agents | 11 | 8 root + 3 team, across 3 tiers |
+| Agents | 8 | 8 root + 0 team, across 3 tiers |
 | Commands | 14 | Delegation, orchestration, review, testing, debugging |
-| Skills | 6 | code-review, error-analyzer, knowledge-db, refactoring-assistant, security-scanner, test-generator |
-| Hooks | 5 | Across 4 event types (PreToolUse, PostToolUse, Stop, SessionStart) |
+| Skills | 7 | code-review, error-analyzer, facts, knowledge-db, refactoring-assistant, security-scanner, test-generator |
+| Hooks | 26 | Across 6 event types (PreToolUse, PostToolUse, Stop, SessionStart, PreCompact, UserPromptSubmit) |
 | Guides | 15 | Context engineering, multi-agent patterns, orchestration |
-| Docs | 9 | Reference documentation |
+| Docs | 11 | Reference documentation |
 
 Note: These counts are maintained automatically by `scripts/generate_docs.py`.
 Run `uv run scripts/generate_docs.py` to verify against live repo state.
@@ -27,9 +27,9 @@ Run `uv run scripts/generate_docs.py` to verify against live repo state.
 
 | Tier | Agents | Use For |
 |------|--------|---------|
-| Opus (4) | orchestrator, project-architect, critical-analyst, rlm-root | Planning, architecture, security, complex reasoning |
-| Sonnet (5) | researcher, meta-agent, scout-report-suggest, builder, project-skill-generator | Implementation, research, analysis, skill generation |
-| Haiku (2) | docs-scraper, validator | Validation, scraping, read-only ops |
+| Opus (3) | orchestrator, project-architect, critical-analyst | Planning, architecture, security, complex reasoning |
+| Sonnet (4) | researcher, meta-agent, scout-report-suggest, rlm-root | Implementation, research, analysis, recursive exploration |
+| Haiku (1) | docs-scraper | Scraping, read-only ops, fast cheap tasks |
 
 Config: `data/model_tiers.yaml`
 
@@ -39,10 +39,10 @@ Config: `data/model_tiers.yaml`
 
 | Area | v1 (2025) | v2.1.0 (2026) |
 |------|-----------|---------------|
-| Agents | 3 root | 8 root + 3 team |
+| Agents | 3 root | 8 root + 0 team |
 | Commands | 8 | 14 |
-| Skills | 2 | 6 |
-| Hooks | 3 events | 4 events, 5 hooks total |
+| Skills | 2 | 7 |
+| Hooks | 3 events | 6 events, 26 hooks total |
 | Knowledge | None | SQLite FTS5 persistent memory |
 | Review | None | Continuous post-commit review |
 | Model Tiers | Single model | 3-tier (Opus/Sonnet/Haiku) |
@@ -105,10 +105,10 @@ Edit templates, then run `./install.sh` to apply.
 
 ## Breaking Changes from v2.0.0 to v2.1.0
 
-1. **Reduced from 52 hooks to 5** -- prompt hooks and mastery hooks removed for token efficiency
-2. **Reduced from 25 agents to 11** -- guardrails agents and duplicates consolidated
+1. **Reduced from 52 hooks to 26** -- prompt hooks and mastery hooks removed for token efficiency
+2. **Reduced from 25 agents to 8** -- guardrails agents, team agents, and duplicates consolidated
 3. **Reduced from 24 commands to 14** -- worktree, crypto, and redundant commands archived
-4. **Skills reduced from 23 to 6** -- planning, scaffolding, and niche skills archived
+4. **Skills reduced from 23 to 7** -- planning, scaffolding, and niche skills archived
 5. **No LLM prompt hooks** -- removed for token efficiency
 6. **No mastery logging hooks** -- observability send_event only
 

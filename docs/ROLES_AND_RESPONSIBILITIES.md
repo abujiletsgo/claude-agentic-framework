@@ -27,30 +27,23 @@ This document defines the complete organizational structure, responsibilities, c
 graph TD
     User[User] --> Orchestrator[Orchestrator<br/>Primary Coordinator<br/>Opus]
 
-    Orchestrator --> CaddyAssist[Caddy-Assistant<br/>Support Services<br/>Haiku]
-    Orchestrator --> RLM[RLM Root<br/>Recursive Controller<br/>Opus]
+    Orchestrator --> RLM[RLM Root<br/>Recursive Controller<br/>Sonnet]
     Orchestrator --> ProjectArch[Project Architect<br/>System Designer<br/>Opus]
     Orchestrator --> Analyst[Critical Analyst<br/>Risk Analysis<br/>Opus]
-
-    Orchestrator --> Builder[Builder<br/>Implementation<br/>Sonnet]
     Orchestrator --> Researcher[Researcher<br/>Information Gathering<br/>Sonnet]
-    Orchestrator --> PSG[Project Skill Generator<br/>Custom Automation<br/>Sonnet]
-    Orchestrator --> ContextMgr[Context Manager<br/>Context Optimization<br/>Sonnet]
-
-    Builder --> Validator[Validator<br/>Verification<br/>Haiku]
-    Researcher --> Validator
+    Orchestrator --> MetaAgent[Meta-Agent<br/>Agent Generation<br/>Sonnet]
+    Orchestrator --> Scout[Scout-Report-Suggest<br/>Read-Only Analysis<br/>Sonnet]
+    Orchestrator --> DocsScraper[Docs Scraper<br/>Documentation<br/>Haiku]
 
     style User fill:#e1f5ff,stroke:#333
     style Orchestrator fill:#9b59b6,color:#fff
-    style CaddyAssist fill:#2ecc71,color:#fff
-    style RLM fill:#9b59b6,color:#fff
+    style RLM fill:#3498db,color:#fff
     style ProjectArch fill:#9b59b6,color:#fff
     style Analyst fill:#9b59b6,color:#fff
-    style Builder fill:#3498db,color:#fff
     style Researcher fill:#3498db,color:#fff
-    style PSG fill:#3498db,color:#fff
-    style Validator fill:#2ecc71,color:#fff
-    style ContextMgr fill:#3498db,color:#fff
+    style MetaAgent fill:#3498db,color:#fff
+    style Scout fill:#3498db,color:#fff
+    style DocsScraper fill:#2ecc71,color:#fff
 ```
 
 ### Tier Breakdown
@@ -69,23 +62,17 @@ TIER 1: Primary Coordinator (Opus)
 └── Reports completion
 
 TIER 2: Strategic Agents (Opus)
-├── RLM Root (Recursive Control)
 ├── Project Architect (Design)
 └── Critical Analyst (Risk Analysis)
 
 TIER 3: Execution Agents (Sonnet)
-├── Builder (Implementation)
+├── RLM Root (Recursive Codebase Exploration)
 ├── Researcher (Information Gathering)
-├── Project Skill Generator (Automation)
-├── Context Manager (Context Optimization)
-└── Meta-Agent (Agent Generation)
+├── Meta-Agent (Agent Generation)
+└── Scout-Report-Suggest (Read-Only Analysis)
 
 TIER 4: Support Agents (Haiku)
-├── Caddy-Assistant (Skill Auditing + Triage)
-├── Validator (Verification)
-├── Create Worktree Subagent
-├── Docs Scraper
-└── Hello World Agent
+└── Docs Scraper (Documentation fetching)
 ```
 
 ---
@@ -123,7 +110,7 @@ TIER 4: Support Agents (Haiku)
 
 **Communication**:
 - **Receives from**: User
-- **Sends to**: Caddy-Assistant, RLM Root, Project Architect, Critical Analyst, Builder, Researcher, Validator, PSG, Meta-Agent, Context Manager
+- **Sends to**: RLM Root, Project Architect, Critical Analyst, Researcher, Meta-Agent, Scout-Report-Suggest, Docs Scraper
 - **Reports to**: User
 
 ---
@@ -150,9 +137,9 @@ TIER 4: Support Agents (Haiku)
 - Granularity of delegation
 
 **Communication**:
-- **Receives from**: Caddy
-- **Sends to**: Researcher, Builder (for targeted analysis)
-- **Reports to**: Caddy
+- **Receives from**: Orchestrator, User (via /rlm command)
+- **Sends to**: general-purpose sub-agents (for targeted analysis)
+- **Reports to**: Orchestrator or User
 
 **Pattern**: Search → Peek → Delegate → Synthesize → Repeat (if needed) → Report
 
@@ -205,41 +192,6 @@ TIER 4: Support Agents (Haiku)
 
 ### Tier 3: Execution Agents
 
-#### Builder
-
-**Role**: Implementation specialist
-
-| Responsibility | Input | Output | Tools | When to Delegate |
-|---|---|---|---|---|
-| **Implement features** | Task description + context | Code implementation | Read, Write, Edit, Bash | Never (implementation is core) |
-| **Create files** | File specifications | New files | Write | Never (creation is core) |
-| **Modify code** | Change requirements | Updated code | Edit | Never (modification is core) |
-| **Run validation** | Code changes | Test/lint results | Bash | Never (validation is immediate) |
-| **Update task status** | Task completion | Task marked completed | TaskUpdate | Never (status tracking is core) |
-
-**Decision Authority**:
-- Implementation approach (within task scope)
-- File organization
-- Code structure
-- When task is complete
-
-**Communication**:
-- **Receives from**: Orchestrator, Caddy (direct assignment)
-- **Sends to**: Validator (via Orchestrator)
-- **Reports to**: Orchestrator or Caddy
-
-**Post-tool validation** (automatic hooks):
-- Ruff validator (on Write/Edit)
-- Ty validator (on Write/Edit)
-
-**Non-Responsibilities**:
-- ❌ Planning or coordination
-- ❌ Spawning other agents
-- ❌ Expanding scope beyond task
-- ❌ Multiple tasks simultaneously
-
----
-
 #### Researcher
 
 **Role**: Information gathering specialist
@@ -262,52 +214,6 @@ TIER 4: Support Agents (Haiku)
 - **Reports to**: Orchestrator, Caddy, or RLM Root
 
 **Token budget**: 20-50k tokens (isolated context)
-
----
-
-#### Project Skill Generator
-
-**Role**: Project-specific automation creator
-
-| Responsibility | Input | Output | Tools | When to Delegate |
-|---|---|---|---|---|
-| **Analyze project patterns** | Project structure | Pattern analysis | Read, Grep, Glob | Never (analysis is core) |
-| **Generate custom skills** | Requirements | Skill files (SKILL.md + scripts) | Write | Never (generation is core) |
-| **Create commands** | Workflow needs | Command files (.md) | Write | Never (creation is core) |
-| **Design agents** | Project needs | Agent system prompts (.md) | Write | Never (design is core) |
-
-**Decision Authority**:
-- Skill/command/agent design
-- File structure and organization
-- Trigger phrase selection
-
-**Communication**:
-- **Receives from**: Orchestrator, Project Architect
-- **Sends to**: Validator (for verification)
-- **Reports to**: Orchestrator or Project Architect
-
----
-
-#### Context Manager
-
-**Role**: Context optimization specialist
-
-| Responsibility | Input | Output | Tools | When to Delegate |
-|---|---|---|---|---|
-| **Analyze context usage** | Session history | Context report | Read, Grep | Never (analysis is core) |
-| **Recommend optimizations** | Context patterns | Optimization strategies | None | Never (recommendations are core) |
-| **Generate context bundles** | Session state | Bundle files | Write | Never (bundle creation is core) |
-| **Restore context** | Bundle ID | Restored session state | Read | Never (restoration is core) |
-
-**Decision Authority**:
-- Context loading strategies
-- Bundle granularity
-- Optimization recommendations
-
-**Communication**:
-- **Receives from**: Caddy, Orchestrator
-- **Sends to**: Any agent (via Orchestrator)
-- **Reports to**: Caddy or Orchestrator
 
 ---
 
@@ -336,76 +242,24 @@ TIER 4: Support Agents (Haiku)
 
 ### Tier 4: Support Agents
 
-#### Caddy-Assistant
+#### Docs Scraper
 
-**Role**: Support assistant for skill auditing and rapid triage
-
-| Responsibility | Input | Output | Tools | When to Delegate |
-|---|---|---|---|---|
-| **Quick classification** | User request | Initial task categorization | Read, Glob | Always (to Orchestrator for strategy) |
-| **Context summarization** | File list | Brief context summary | Read, Grep | Always (to Orchestrator for analysis) |
-| **Skill matching** | User intent signals | Preliminary skill list | None | Always (to Orchestrator for approval) |
-| **Audit skills for security** | Skill name | Security report (critical/warning/info) | Bash (calls audit script) | Never (security service) |
-| **Maintain skill registry** | Skill catalog | Updated registry | Read, Write | Never (registry maintenance) |
-
-**Decision Authority**:
-- None (advisory only)
-- All recommendations reviewed by Orchestrator
-
-**Communication**:
-- **Receives from**: Orchestrator
-- **Sends to**: Orchestrator (findings only)
-- **Reports to**: Orchestrator
-
----
-
-#### Validator
-
-**Role**: Read-only verification specialist
+**Role**: Documentation fetching specialist
 
 | Responsibility | Input | Output | Tools | When to Delegate |
 |---|---|---|---|---|
-| **Inspect work** | Task ID + acceptance criteria | Validation report | Read, Bash (read-only) | Never (inspection is core) |
-| **Verify changes** | Expected changes | Pass/fail status | Read, Grep | Never (verification is core) |
-| **Run tests** | Test commands | Test results | Bash | Never (testing is immediate) |
-| **Check acceptance criteria** | Task requirements | Criteria checklist | Read | Never (checking is core) |
+| **Fetch documentation** | URL | Markdown file | WebFetch, Write | Never (fetching is core) |
+| **Convert and save** | Raw HTML | Structured .md file | Write | Never (conversion is core) |
+| **Bulk scraping** | URL list | Multiple .md files | WebFetch, Write | Never (mechanical task) |
 
 **Decision Authority**:
-- Pass/fail determination
-- Severity of issues found
+- Output file structure
+- Markdown formatting
 
 **Communication**:
-- **Receives from**: Orchestrator, Builder (indirectly)
+- **Receives from**: Orchestrator, User (direct)
 - **Sends to**: None
-- **Reports to**: Orchestrator
-
-**Disallowed Tools**: Write, Edit, NotebookEdit (read-only enforcement)
-
-**Non-Responsibilities**:
-- ❌ Modifying any files
-- ❌ Fixing issues found
-- ❌ Implementation work
-
----
-
-#### Create Worktree Subagent
-
-**Role**: Git worktree creation specialist
-
-| Responsibility | Input | Output | Tools | When to Delegate |
-|---|---|---|---|---|
-| **Create worktrees** | Feature name, branch | New worktree path | Bash | Never (creation is core) |
-| **Validate names** | Feature name | Validated name | Bash (validation script) | Never (validation is immediate) |
-| **Report status** | Worktree creation | Status report | None | Never (reporting is core) |
-
-**Decision Authority**:
-- Worktree directory structure
-- Branch naming conventions
-
-**Communication**:
-- **Receives from**: Caddy, Orchestrator (via worktree-manager-skill)
-- **Sends to**: None
-- **Reports to**: Caller
+- **Reports to**: Orchestrator or User
 
 ---
 
@@ -417,34 +271,22 @@ TIER 4: Support Agents (Haiku)
 graph LR
     User --> Orchestrator
 
-    Orchestrator --> CaddyAssist
     Orchestrator --> RLM
     Orchestrator --> ProjectArch
     Orchestrator --> Analyst
-    Orchestrator --> Builder
     Orchestrator --> Researcher
-    Orchestrator --> ContextMgr
-    Orchestrator --> PSG
     Orchestrator --> MetaAgent
-    Orchestrator --> Validator
+    Orchestrator --> Scout
+    Orchestrator --> DocsScraper
 
-    RLM --> Researcher
-    RLM --> Builder
+    RLM --> SubAgents[general-purpose sub-agents]
 
-    ProjectArch --> PSG
-
-    Builder --> Validator
-    Researcher --> Validator
-
-    CaddyAssist --> Orchestrator
     Analyst --> Orchestrator
     RLM --> Orchestrator
     ProjectArch --> Orchestrator
-    Builder --> Orchestrator
     Researcher --> Orchestrator
-    ContextMgr --> Orchestrator
-    PSG --> Orchestrator
-    Validator --> Orchestrator
+    MetaAgent --> Orchestrator
+    Scout --> Orchestrator
 
     Orchestrator --> User
 ```
@@ -452,9 +294,9 @@ graph LR
 ### Escalation Paths
 
 ```
-Level 1: Execution Agent (Builder, Researcher, Validator)
+Level 1: Execution Agent (Researcher, RLM Root, Scout-Report-Suggest)
   ↓ (Task blocked or failure)
-Level 2: Strategic Agent (RLM Root, Project Architect, Critical Analyst)
+Level 2: Strategic Agent (Project Architect, Critical Analyst)
   ↓ (Strategy failure or coordination needed)
 Level 3: Primary Coordinator (Orchestrator)
   ↓ (Unresolvable or requires user decision)
@@ -565,33 +407,30 @@ Executive Summary: 2-3k tokens
 
 ### Tool Assignment by Role
 
-| Tool | Caddy | Orchestrator | RLM Root | Builder | Researcher | Validator |
+| Tool | Orchestrator | RLM Root | Researcher | Project Architect | Scout-Report-Suggest | Meta-Agent |
 |---|---|---|---|---|---|---|
-| **Task** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Task** | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
 | **Read** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Write** | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| **Edit** | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Write** | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **Edit** | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | **Glob** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Grep** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Bash** | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ (read-only) |
-| **WebSearch** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Bash** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **WebSearch** | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | **TaskCreate** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **TaskUpdate** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **TaskGet** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### Skill Invocation Authority
 
-| Skill Category | Who Can Invoke | Who Recommends | Who Audits |
-|---|---|---|---|
-| **Context (prime)** | Orchestrator, Builder, Researcher | Orchestrator | Caddy-Assistant |
-| **Knowledge (knowledge-db)** | Any agent | Orchestrator | Caddy-Assistant |
-| **Quality (code-review, test-generator)** | Builder, Validator | Orchestrator | Caddy-Assistant |
-| **Security (security-scanner, dependency-audit)** | Critical Analyst, Builder | Orchestrator | Caddy-Assistant (mandatory) |
-| **Planning (brainstorm, feasibility, task-decomposition)** | Orchestrator, Project Architect | Orchestrator | None |
-| **Development (refactoring, error-analyzer, performance-profiler)** | Builder | Orchestrator | None |
-| **Project (project-scaffolder, documentation-writer)** | PSG, Builder | Project Architect, Orchestrator | None |
-| **Version Control (git-workflow, worktree-manager)** | Builder, Orchestrator | Orchestrator | Caddy-Assistant |
-| **Meta (meta-skill)** | Meta-Agent, PSG | Project Architect, Orchestrator | Caddy-Assistant |
+| Skill Category | Who Can Invoke | Who Recommends |
+|---|---|---|
+| **Context (prime)** | Orchestrator, Researcher | Orchestrator |
+| **Knowledge (knowledge-db)** | Any agent | Orchestrator |
+| **Quality (code-review, test-generator)** | Orchestrator, main session | Orchestrator |
+| **Security (security-scanner)** | Critical Analyst, Orchestrator | Orchestrator |
+| **Analysis (error-analyzer, refactoring-assistant)** | Orchestrator, main session | Orchestrator |
+| **Meta (meta-agent)** | Orchestrator, Project Architect | Project Architect |
 
 ### Preventing Duplicate Tool Calls
 
@@ -819,63 +658,47 @@ graph TD
 Trigger: Simple task, standard quality, focused scope
 
 Flow:
-  1. User → Caddy: "Fix typo in README.md line 42"
-  2. Caddy analyzes: simple/fix/standard/focused
-  3. Caddy → Builder: Direct assignment
-  4. Builder: Read → Edit → Complete
-  5. Builder → Caddy: Done
-  6. Caddy → User: Report
+  1. User: "Fix typo in README.md line 42"
+  2. Caddy (hook) classifies: simple/fix/standard/focused → direct strategy
+  3. Claude session: Read → Edit → Complete
+  4. Claude → User: Report
 
-Participants: Caddy, Builder
 Token efficiency: Highest (no coordination overhead)
 ```
 
-### Pattern 2: Research → Build → Test
+### Pattern 2: Research → Implement
 
 ```yaml
-Trigger: Moderate task, needs context, implementation required
+Trigger: Moderate task, needs context before implementation
 
 Flow:
-  1. User → Caddy: "Add user authentication"
-  2. Caddy analyzes: moderate/implement/high/moderate
-  3. Caddy → Orchestrator: Coordinate team
-  4. Orchestrator → Researcher: Auth best practices (parallel)
-  5. Orchestrator → Critical Analyst: Auth vulnerabilities (parallel)
-  6. Orchestrator waits for both
-  7. Orchestrator → Builder: Implement (context from 4+5)
-  8. Builder → Orchestrator: Done
-  9. Orchestrator → Validator: Verify
-  10. Validator → Orchestrator: PASS
-  11. Orchestrator → Caddy: Synthesized report
-  12. Caddy → User: Report
+  1. User: "Add user authentication"
+  2. Caddy (hook) classifies: moderate/implement/high/moderate → team strategy
+  3. Claude → Researcher (parallel): "Explore existing auth code"
+  4. Claude → Critical Analyst (parallel): "Identify auth risks"
+  5. Claude waits for both
+  6. Claude: Implement using sub-agent findings as context
+  7. Claude → User: Summary
 
-Participants: Caddy, Orchestrator, Researcher, Critical Analyst, Builder, Validator
+Participants: Claude session, Researcher, Critical Analyst
 Token efficiency: Medium (research in isolation, synthesis)
 ```
 
-### Pattern 3: RLM (Ralph Loop) for Large Codebases
+### Pattern 3: RLM for Large Codebases
 
 ```yaml
 Trigger: Massive task, broad scope, iterative exploration needed
 
 Flow:
-  1. User → Caddy: "Find all N+1 query problems"
-  2. Caddy analyzes: massive/fix/high/broad
-  3. Caddy → RLM Root: Execute RLM pattern
-  4. RLM Root: Search codebase (Grep "ORM patterns")
-  5. RLM Root: Peek at 50 locations (Read 50 lines each)
-  6. RLM Root → Researcher (×3 parallel): Analyze locations 1-17, 18-33, 34-50
-  7. RLM Root waits for all 3
-  8. RLM Root: Synthesize findings (prioritized list)
-  9. RLM Root: Iterate? (if more exploration needed, goto 4)
-  10. RLM Root → Caddy: Complete analysis
-  11. Caddy → Orchestrator: Fix top 10 issues (team)
-  12. Orchestrator → Builder (×3 parallel): Fix issues 1-3, 4-7, 8-10
-  13. Orchestrator → Validator: Verify all fixes
-  14. Orchestrator → Caddy: Done
-  15. Caddy → User: Report
+  1. User: /rlm "Find all N+1 query problems"
+  2. RLM Root: Search codebase (Grep "ORM patterns")
+  3. RLM Root: Peek at relevant locations (Read 30-50 lines each)
+  4. RLM Root → sub-agents (×3 parallel): Analyze sections
+  5. RLM Root waits for all 3
+  6. RLM Root: Synthesize findings (prioritized list)
+  7. RLM Root: Iterate if needed, then report
 
-Participants: Caddy, RLM Root, Researcher (×3), Orchestrator, Builder (×3), Validator
+Participants: RLM Root, general-purpose sub-agents
 Token efficiency: High (RLM never loads full context, uses search+peek+delegate)
 ```
 
@@ -885,72 +708,31 @@ Token efficiency: High (RLM never loads full context, uses search+peek+delegate)
 Trigger: Critical quality, security-sensitive, production-facing
 
 Flow:
-  1. User → Caddy: "Implement payment processing"
-  2. Caddy analyzes: complex/implement/critical/moderate
-  3. Caddy → Orchestrator: Fusion pattern
-  4. Orchestrator → Builder-Pragmatist: Simple approach (parallel)
-  5. Orchestrator → Builder-Architect: Scalable approach (parallel)
-  6. Orchestrator → Builder-Optimizer: Performant approach (parallel)
-  7. Orchestrator waits for all 3
-  8. Orchestrator: Score all 3 (correctness×3, simplicity×2, robustness×2, performance×1)
-  9. Orchestrator: Fuse best solution (or merge elements)
-  10. Orchestrator → Builder: Apply fused solution
-  11. Orchestrator → Validator: Verify
-  12. Orchestrator → Critical Analyst: Security review
-  13. Orchestrator → Caddy: Synthesized report
-  14. Caddy → User: Report with confidence score
+  1. User: /fusion "Implement payment processing"
+  2. Orchestrator → 3 parallel general-purpose agents with different approaches
+  3. Orchestrator: Score all 3 (correctness×3, simplicity×2, robustness×2, performance×1)
+  4. Orchestrator: Fuse best solution
+  5. Orchestrator → Critical Analyst: Security review
+  6. Orchestrator → User: Report with confidence score
 
-Participants: Caddy, Orchestrator, Builder (×4: 3 perspectives + 1 final), Validator, Critical Analyst
-Token efficiency: Low (3× implementations) but quality is maximized
+Token efficiency: Low (3× work) but quality maximized
 Cost justification: Critical tasks worth 3× cost for 95% optimal vs 65% single-agent
 ```
 
-### Pattern 5: Parallel Independent Work
+### Pattern 5: Orchestrated Team
 
 ```yaml
-Trigger: Multiple independent sub-tasks
+Trigger: Complex multi-file task, multiple parallel workstreams
 
 Flow:
-  1. User → Caddy: "Refactor database layer"
-  2. Caddy analyzes: complex/refactor/high/moderate
-  3. Caddy → Orchestrator: Coordinate team
-  4. Orchestrator plans: 3 independent modules
-  5. Orchestrator → Builder-1: Refactor users.ts (parallel)
-  6. Orchestrator → Builder-2: Refactor orders.ts (parallel)
-  7. Orchestrator → Builder-3: Refactor products.ts (parallel)
-  8. Orchestrator waits for all 3
-  9. Orchestrator → Validator (×3 parallel): Verify each
-  10. Orchestrator → Caddy: Synthesized report
-  11. Caddy → User: Report
+  1. User: /orchestrate "Refactor database layer"
+  2. Orchestrator plans: 3 independent modules
+  3. Orchestrator → general-purpose agents ×3 (parallel): Refactor each module
+  4. Orchestrator waits for all 3
+  5. Orchestrator → User: Synthesized report
 
-Participants: Caddy, Orchestrator, Builder (×3), Validator (×3)
 Token efficiency: Very high (maximum parallelization)
 Time efficiency: ~3× faster than sequential
-```
-
-### Pattern 6: Sequential Dependency Chain
-
-```yaml
-Trigger: Tasks with dependencies (A → B → C)
-
-Flow:
-  1. User → Caddy: "Add feature with migrations, code, tests"
-  2. Caddy analyzes: complex/implement/high/moderate
-  3. Caddy → Orchestrator: Coordinate chain
-  4. Orchestrator plans: migration → implementation → tests
-  5. Orchestrator → Builder-1: Create migration
-  6. Orchestrator waits for Builder-1
-  7. Orchestrator → Builder-2: Implement feature (reads migration)
-  8. Orchestrator waits for Builder-2
-  9. Orchestrator → Builder-3: Generate tests (reads implementation)
-  10. Orchestrator waits for Builder-3
-  11. Orchestrator → Validator: Run full test suite
-  12. Orchestrator → Caddy: Report
-  13. Caddy → User: Report
-
-Participants: Caddy, Orchestrator, Builder (×3 sequential), Validator
-Token efficiency: Medium (cannot parallelize due to dependencies)
-Correctness: High (proper dependency order maintained)
 ```
 
 ---
@@ -960,37 +742,28 @@ Correctness: High (proper dependency order maintained)
 ### Tier Distribution
 
 ```yaml
-Opus (12% of agents):
+Opus (3 agents — 37.5%):
   - Reason: Complex reasoning, deep analysis, strategic planning
   - Cost: Highest
   - Agents:
-      - caddy (meta-orchestrator)
       - orchestrator (team coordination)
-      - rlm-root (recursive control)
       - project-architect (system design)
       - critical-analyst (risk analysis)
 
-Sonnet (48% of agents):
+Sonnet (4 agents — 50%):
   - Reason: Good balance of speed, quality, cost for implementation
   - Cost: Medium
   - Agents:
-      - builder (implementation)
+      - rlm-root (recursive codebase exploration)
       - researcher (information gathering)
-      - project-skill-generator (automation creation)
-      - context-manager (context optimization)
       - meta-agent (agent generation)
-      - [+ 11 more specialized agents]
+      - scout-report-suggest (read-only analysis)
 
-Haiku (39% of agents):
-  - Reason: Fast, cheap, sufficient for mechanical/validation tasks
+Haiku (1 agent — 12.5%):
+  - Reason: Fast, cheap, sufficient for mechanical tasks
   - Cost: Lowest
   - Agents:
-      - validator (verification)
-      - caddy-assistant (triage)
-      - create-worktree-subagent (worktree creation)
       - docs-scraper (doc fetching)
-      - hello-world-agent (template)
-      - [+ 8 more support agents]
 ```
 
 ### Model Selection Decision Tree
@@ -1000,7 +773,7 @@ graph TD
     Start[New Agent Needed] --> Q1{Requires deep<br/>reasoning/strategy?}
 
     Q1 -->|Yes| Q2{Multi-agent<br/>coordination?}
-    Q2 -->|Yes| Opus1[Opus<br/>orchestrator/rlm-root/caddy]
+    Q2 -->|Yes| Opus1[Opus<br/>orchestrator]
     Q2 -->|No| Q3{Security/risk<br/>analysis?}
     Q3 -->|Yes| Opus2[Opus<br/>critical-analyst]
     Q3 -->|No| Q4{System design/<br/>architecture?}
@@ -1008,7 +781,7 @@ graph TD
     Q4 -->|No| Sonnet1[Sonnet<br/>fallback for complex]
 
     Q1 -->|No| Q5{Implementation/<br/>synthesis work?}
-    Q5 -->|Yes| Sonnet2[Sonnet<br/>builder/researcher/psg]
+    Q5 -->|Yes| Sonnet2[Sonnet<br/>rlm-root/researcher/meta-agent]
     Q5 -->|No| Q6{Mechanical/<br/>validation task?}
     Q6 -->|Yes| Haiku1[Haiku<br/>validator/assistant]
     Q6 -->|No| Sonnet3[Sonnet<br/>default]
@@ -1056,7 +829,7 @@ graph TD
 
 This document provides the complete organizational structure for the Claude Agentic Framework. Key takeaways:
 
-1. **Hierarchy is strict**: User → Caddy → Strategic Agents → Execution Agents → Support Agents
+1. **Hierarchy is strict**: User → Orchestrator → Strategic Agents → Execution Agents → Support Agents
 2. **Responsibilities are non-overlapping**: Each agent has clear boundaries
 3. **Communication follows protocols**: Escalation, handoff, and context sharing are well-defined
 4. **Tools are role-specific**: Write operations require ownership, reads are safe
@@ -1072,6 +845,6 @@ For implementation details, see:
 
 ---
 
-**Version**: 2.0.0 (February 2026)
-**Last Updated**: 2026-02-12
+**Version**: 2.1.0 (February 2026)
+**Last Updated**: 2026-02-25
 **Maintained by**: Claude Agentic Framework Core Team

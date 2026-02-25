@@ -1,6 +1,6 @@
 # RLM Architecture: Recursive Language Model
 
-> **2026 Update**: The RLM root controller is assigned to Opus tier. Sub-agents spawned by RLM use Sonnet/Haiku tiers for cost efficiency. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+> **2026 Update**: The RLM root controller (`rlm-root`) is assigned to the **Sonnet** tier. Sub-agents spawned by RLM use general-purpose agents (Sonnet) for cost efficiency. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
 
 ## The Paradigm Shift
 
