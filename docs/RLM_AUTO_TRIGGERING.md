@@ -218,7 +218,7 @@ To force orchestration even for broad tasks:
 
 ## References
 
-- Research: `/Users/tomkwon/Documents/claude-agentic-framework/logs/[session]/researcher-rlm-analysis.md`
+- Research: `~/.claude/logs/[session]/researcher-rlm-analysis.md`
 - Implementation: `global-hooks/framework/caddy/analyze_request.py:275-310`
 - Orchestrator: `global-agents/orchestrator.md:83-138`
 - Tests: `global-hooks/framework/caddy/test_caddy.py:38-144`
