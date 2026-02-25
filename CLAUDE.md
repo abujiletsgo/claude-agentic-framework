@@ -62,7 +62,6 @@ When context compacts, preserve: task list state, modified file paths, test comm
 - `uv run` for all Python execution
 - Edit template not settings.json directly -- run `bash install.sh` to apply
 - Never delete hook files the live settings.json references -- stub them first, delete after reinstall
-- Never move or rename this framework directory without updating `~/.claude/settings.json` first -- all tools (Bash/Read/Edit/Write) will be blocked immediately if hook paths break. Safe move procedure in ADMIN.md.
 - Knowledge DB: `data/knowledge-db/` via knowledge-db skill
 - Big outputs (>1000 tokens) -- save to `/tmp/claude/` and reference, don't flood context
 - `/prime` caching: First prime = full analysis + cache save. Subsequent = instant load. Auto-invalidates on git changes. Cache: `.claude/PROJECT_CONTEXT.md`
