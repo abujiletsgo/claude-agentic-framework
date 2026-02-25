@@ -54,6 +54,7 @@ out/
 .python-version
 
 .claude/PROJECT_CONTEXT.md
+.claude/settings.json
 
 # Runtime logs (generated at runtime, not source)
 logs/

@@ -2,46 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-24 (14:58 UTC)
-**Commit:** docs: update memory system diagrams to reflect on-demand episodic memory (5e7363b)
-**Changed:**
-  README.md                   |   21 +-
-  docs/MEMORY_ARCHITECTURE.md |  150 +++---
-  docs/memory-system.html     | 1132 +++++++++++++++++++++++++++----------------
-  scripts/generate_docs.py    |   21 +-
-  4 files changed, 819 insertions(+), 505 deletions(-)
-
-## 2026-02-24 (14:58 UTC)
-**Commit:** docs: update memory system diagrams to reflect on-demand episodic memory (5e7363b)
-**Changed:**
-  README.md                   |   21 +-
-  docs/MEMORY_ARCHITECTURE.md |  150 +++---
-  docs/memory-system.html     | 1132 +++++++++++++++++++++++++++----------------
-  scripts/generate_docs.py    |   21 +-
-  4 files changed, 819 insertions(+), 505 deletions(-)
-
-## 2026-02-24 (15:05 UTC) · @Tom Kwon
-**Commit:** feat(memory): add team author tagging + fix Korean HTML layout (a78ff62) by Tom Kwon
-**Changed:**
-  docs/memory-system-ko.html                         | 969 +++++++++++++++++++++
-  .../framework/facts/auto_fact_extractor.py         |  26 +-
-  global-hooks/framework/facts/fact_manager.py       |   7 +-
-  .../framework/memory/auto_memory_writer.py         |  17 +-
-  4 files changed, 1014 insertions(+), 5 deletions(-)
-
-## 2026-02-24 (15:27 UTC) · @Tom Kwon
-**Commit:** docs: add multi-page HTML documentation system (0f5c3e9) by Tom Kwon
-**Changed:**
-  docs/agents.html           | 372 ++++++++++++++++++++++++++++++++
-  docs/caddy.html            | 310 +++++++++++++++++++++++++++
-  docs/hooks.html            | 304 ++++++++++++++++++++++++++
-  docs/index.html            | 520 +++++++++++++++++++++++++++++++++++++++++++++
-  docs/memory-system-ko.html |  10 +
-  docs/memory-system.html    |  10 +
-  docs/shared.css            | 231 ++++++++++++++++++++
-  docs/skills.html           | 260 +++++++++++++++++++++++
-  8 files changed, 2017 insertions(+)
-
 ## 2026-02-24 (15:45 UTC) · @Tom Kwon
 **Commit:** docs: translate all HTML pages to Korean, fix memory-system colors (d89e2e0) by Tom Kwon
 **Changed:**
@@ -282,3 +242,31 @@
   README.md                | 13 +++++++++++++
   scripts/generate_docs.py | 13 +++++++++++++
   2 files changed, 26 insertions(+)
+
+## 2026-02-25 (07:16 UTC) · @Tom Kwon
+**Commit:** chore: update session memory files (fed7e58) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md  |   4 +
+  .claude/MEMORY.md | 291 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+  2 files changed, 275 insertions(+), 20 deletions(-)
+
+## 2026-02-25 (07:17 UTC) · @Tom Kwon
+**Commit:** chore: update session memory files (fed7e58) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md  |   4 +
+  .claude/MEMORY.md | 291 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+  2 files changed, 275 insertions(+), 20 deletions(-)
+
+## 2026-02-25 (07:17 UTC) · @Tom Kwon
+**Commit:** chore: update session memory files (fed7e58) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md  |   4 +
+  .claude/MEMORY.md | 291 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+  2 files changed, 275 insertions(+), 20 deletions(-)
+
+## 2026-02-25 (07:19 UTC) · @Tom Kwon
+**Commit:** chore: update session memory files (fed7e58) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md  |   4 +
+  .claude/MEMORY.md | 291 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+  2 files changed, 275 insertions(+), 20 deletions(-)
