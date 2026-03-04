@@ -58,6 +58,11 @@ def get_git_changes(cwd: str) -> list[str]:
     return [line for line in stat.splitlines() if line.strip()]
 
 
+def get_commit_hash(cwd: str) -> str:
+    """Get short hash of the latest commit (used as dedup key)."""
+    return run(["git", "log", "-1", "--format=%h"], cwd)
+
+
 def get_last_commit(cwd: str) -> str:
     return run(["git", "log", "-1", "--format=%s (%h) by %an"], cwd)
 
@@ -155,6 +160,39 @@ def prune_old_entries(content: str, max_entries: int) -> str:
     return file_header + "".join(sessions[-max_entries:])
 
 
+def upsert_entry(content: str, entry: str, commit_hash: str) -> str:
+    """Replace existing entry for the same commit, or append if new."""
+    if not commit_hash:
+        # No commit hash to dedup on — just append
+        return content.rstrip() + "\n\n" + entry
+
+    parts = re.split(r"(## \d{4}-\d{2}-\d{2})", content)
+    if len(parts) <= 1:
+        return content.rstrip() + "\n\n" + entry
+
+    file_header = parts[0]
+    sessions = []
+    i = 1
+    while i < len(parts):
+        header = parts[i]
+        body = parts[i + 1] if i + 1 < len(parts) else ""
+        sessions.append(header + body)
+        i += 2
+
+    # Find existing entry with this commit hash and replace it
+    replaced = False
+    for idx, block in enumerate(sessions):
+        if commit_hash in block:
+            sessions[idx] = entry + "\n"
+            replaced = True
+            break
+
+    if replaced:
+        return file_header.rstrip() + "\n\n" + "".join(sessions).rstrip() + "\n"
+    else:
+        return content.rstrip() + "\n\n" + entry
+
+
 def ensure_memory_file(path: Path, project: str) -> str:
     """Create MEMORY.md if it doesn't exist."""
     if path.exists():
@@ -184,7 +222,8 @@ def main():
             sys.exit(0)
 
         content = ensure_memory_file(path, project)
-        content = content.rstrip() + "\n\n" + entry
+        commit_hash = get_commit_hash(cwd)
+        content = upsert_entry(content, entry, commit_hash)
         content = prune_old_entries(content, MAX_MEMORY_ENTRIES)
         path.write_text(content)
 

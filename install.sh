@@ -28,30 +28,93 @@ else
 fi
 
 # python3 3.10+ — required for settings.json generation during install
+# Try common Homebrew paths first (macOS often has old system python3)
+for _p in /opt/homebrew/bin /usr/local/bin; do
+  if [ -x "$_p/python3" ]; then
+    _ver=$("$_p/python3" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
+    if [ -n "$_ver" ] && [ "$_ver" -ge 10 ]; then
+      export PATH="$_p:$PATH"
+      break
+    fi
+  fi
+done
+
+_install_python() {
+  echo "  Python 3.10+ not found. Installing via uv..."
+  uv python install 3.13 2>/dev/null
+  # uv installs to ~/.local/share/uv/python — find it
+  local uv_py
+  uv_py=$(uv python find 3.13 2>/dev/null)
+  if [ -n "$uv_py" ] && [ -x "$uv_py" ]; then
+    # Symlink into a PATH location so the rest of the script sees it
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$uv_py" "$HOME/.local/bin/python3"
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+}
+
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "  ERROR: python3 not found. Install Python 3.10+ and re-run."
+  _install_python
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "  ERROR: python3 not found and auto-install failed."
+  echo "         Install Python 3.10+ manually and re-run."
   exit 1
 fi
+
 PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 PY_MAJOR=$(python3 -c "import sys; print(sys.version_info.major)")
 PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)")
 if [ "$PY_MAJOR" -lt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 10 ]; }; then
-  echo "  ERROR: Python 3.10+ required (found $PY_VERSION). Upgrade Python and re-run."
-  exit 1
+  echo "  System python3 is $PY_VERSION (too old). Installing via uv..."
+  _install_python
+  # Re-check after install
+  PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  PY_MAJOR=$(python3 -c "import sys; print(sys.version_info.major)")
+  PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)")
+  if [ "$PY_MAJOR" -lt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 10 ]; }; then
+    echo "  ERROR: Python 3.10+ required (found $PY_VERSION). Auto-install failed."
+    echo "         Install Python 3.10+ manually and re-run."
+    exit 1
+  fi
 fi
 echo "  python3: OK ($PY_VERSION)"
 
 # git — required for hook validation and pre-push hook
 if ! command -v git >/dev/null 2>&1; then
-  echo "  ERROR: git not found. Install git and re-run."
+  echo "  git not found. Installing..."
+  if command -v brew >/dev/null 2>&1; then
+    brew install git
+  elif command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update && sudo apt-get install -y git
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y git
+  else
+    echo "  ERROR: git not found and no supported package manager detected."
+    echo "         Install git manually and re-run."
+    exit 1
+  fi
+fi
+if ! command -v git >/dev/null 2>&1; then
+  echo "  ERROR: git install failed. Install manually and re-run."
   exit 1
 fi
 echo "  git: OK"
 
-# claude — warn if Claude Code CLI is not installed (required to use the framework)
+# claude — auto-install Claude Code CLI if not found
 if ! command -v claude >/dev/null 2>&1; then
-  echo "  WARNING: Claude Code CLI not found. Install it to use the framework:"
-  echo "           https://docs.anthropic.com/en/docs/claude-code"
+  echo "  Claude Code CLI not found. Installing via npm..."
+  if command -v npm >/dev/null 2>&1; then
+    npm install -g @anthropic-ai/claude-code 2>/dev/null && echo "  claude: installed" || \
+      echo "  WARNING: Claude Code CLI install failed. Install manually: npm install -g @anthropic-ai/claude-code"
+  elif command -v brew >/dev/null 2>&1; then
+    brew install claude-code 2>/dev/null && echo "  claude: installed" || \
+      echo "  WARNING: Claude Code CLI install failed. Install manually: https://docs.anthropic.com/en/docs/claude-code"
+  else
+    echo "  WARNING: Claude Code CLI not found and no npm/brew available."
+    echo "           Install it to use the framework: https://docs.anthropic.com/en/docs/claude-code"
+  fi
 fi
 
 echo ""
