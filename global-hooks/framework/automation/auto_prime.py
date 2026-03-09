@@ -118,6 +118,46 @@ def ensure_project_permissions(repo_root):
         return False
 
 
+ARCH_STALE_COMMIT_THRESHOLD = 10  # commits before map is considered stale
+
+
+def get_commits_since(repo_root, since_hash):
+    """Count commits since a given hash."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--count", f"{since_hash}..HEAD"],
+            capture_output=True, text=True, cwd=repo_root, timeout=5,
+        )
+        if result.returncode == 0:
+            return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, OSError, ValueError):
+        pass
+    return 0
+
+
+def get_arch_map_status(repo_root, current_hash):
+    """Check whether .claude/ARCHITECTURE.md exists and is fresh.
+
+    Stale only if > ARCH_STALE_COMMIT_THRESHOLD commits since generation,
+    so minor commits don't constantly invalidate the map.
+    """
+    arch_file = repo_root / ".claude" / "ARCHITECTURE.md"
+    if not arch_file.exists():
+        return "missing"
+    try:
+        import re
+        with open(arch_file, "r") as f:
+            first_lines = f.read(300)
+        match = re.search(r'[a-f0-9]{40}', first_lines)
+        if match and current_hash and match.group(0) != current_hash:
+            commits_behind = get_commits_since(repo_root, match.group(0))
+            if commits_behind >= ARCH_STALE_COMMIT_THRESHOLD:
+                return "stale"
+        return "fresh"
+    except Exception:
+        return "unknown"
+
+
 def emit_and_exit(message=None):
     """Output valid JSON and exit 0."""
     result = {"result": "continue"}
@@ -149,10 +189,17 @@ def main():
                 " Full autonomy permissions have been written to `.claude/settings.json` — restart this session to activate."
                 if patched else ""
             )
+            arch_file = repo_root / ".claude" / "ARCHITECTURE.md"
+            arch_note = (
+                " An architecture map also exists at `.claude/ARCHITECTURE.md` — read it for the dependency graph and blast-radius table."
+                if arch_file.exists() else
+                " After priming, run `/arch-map` to generate a dependency diagram and blast-radius table for this project."
+            )
             emit_and_exit(
                 message=(
                     "**Auto-Prime**: No project context cache found at `.claude/PROJECT_CONTEXT.md`. "
                     "Invoke the `/prime` skill now to analyze this project and create a cache for future sessions."
+                    + arch_note
                     + perm_note
                 )
             )
@@ -167,6 +214,24 @@ def main():
 
             if stale:
                 cached_content += "\n\n> **Note:** Project context cache may be slightly stale (new commits since last /prime). Run /prime to refresh."
+
+            # Check architecture map status and append guidance
+            arch_status = get_arch_map_status(repo_root, current_hash)
+            arch_notes = {
+                "fresh":   (
+                    "\n\n> **Architecture map:** `.claude/ARCHITECTURE.md` — read ON DEMAND, discard after use.\n"
+                    "> Sections: [1] **Blast-radius table** (what to update when X changes) · "
+                    "[2] **Mermaid diagram** (full dependency graph) · "
+                    "[3] **Critical paths** (common workflows + commands) · "
+                    "[4] **Data lineage** (who produces/consumes each file) · "
+                    "[5] **Duplication warnings** (synced definitions). "
+                    "Read only the section you need, then drop it from context."
+                ),
+                "stale":   "\n\n> **Architecture map:** `.claude/ARCHITECTURE.md` exists but is stale (new commits since last generation). Run `/arch-map` to regenerate.",
+                "missing": "\n\n> **Architecture map:** None found. Run `/arch-map` to generate one (blast-radius table, dependency diagram, critical paths, data lineage).",
+                "unknown": "",
+            }
+            cached_content += arch_notes.get(arch_status, "")
 
             instruction_prefix = (
                 "**SESSION CONTEXT LOADED** — The following is your pre-loaded project context. "

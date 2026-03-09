@@ -1,5 +1,5 @@
 # Project Facts
-<!-- MANAGED: claude-agentic-framework | updated: 2026-02-25 | layer: episodic -->
+<!-- MANAGED: claude-agentic-framework | updated: 2026-03-09 | layer: episodic -->
 <!-- Injected at session start as authoritative ground truth. -->
 <!-- Edit freely — hooks auto-maintain this file. -->
 
@@ -37,6 +37,8 @@
 - Key file: `docs/shared.css` [2026-02-24 @Tom Kwon]
 - Key file: `docs/index.html` [2026-02-24 @Tom Kwon]
 - Key file: `docs/2026_UPGRADE_GUIDE.md` [2026-02-25 @Tom Kwon]
+- Key file: `/Users/tomkwon/.claude/settings.json` [2026-03-04 @Tom Kwon]
+- Key file: `.claude/PROJECT_CONTEXT.md` [2026-03-09 @Tom Kwon]
 
 ## → PATTERNS (confirmed working sequences)
 - Template change: edit `templates/settings.json.template` → `bash install.sh` → restart session → verify [2026-02-24]

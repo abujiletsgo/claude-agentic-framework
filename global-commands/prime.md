@@ -95,6 +95,11 @@ Update the `<!-- GENERATED: ... -->` line in the cache file to the current date 
 # With:    <!-- GENERATED: current-date -->
 ```
 
+Also check the architecture map status (one bash line, no file reads):
+```bash
+[ -f .claude/ARCHITECTURE.md ] && echo "ARCH=EXISTS" || echo "ARCH=MISSING"
+```
+
 Then extract key summary info and present this brief confirmation:
 
 ```
@@ -103,6 +108,7 @@ Then extract key summary info and present this brief confirmation:
 ✅ [Project Name] v[version if available]
 ✅ [N] agents, [N] commands, [N] skills
 ✅ [Primary tech stack in 3-5 words]
+🗺️  Architecture map: [EXISTS → ready | MISSING → run /arch-map to generate]
 
 Ready for instructions.
 ```
@@ -143,6 +149,7 @@ Use Glob to find documentation files (prioritize by importance):
 - `ai_docs/README.md` or `ai_docs/*.md` (AI-specific documentation)
 - `docs/architecture.md` or `docs/README.md` (architecture overview)
 - `ARCHITECTURE.md` (high-level design)
+- **`.claude/ARCHITECTURE.md`** ← **read this first if it exists** — contains the full dependency map, "if X changes update Y" table, and critical paths. Use it to populate the Architecture Highlights section of the report instead of doing manual exploration.
 - `CONTRIBUTING.md` (contribution guidelines)
 - `.github/workflows/*.yml` (CI/CD understanding)
 
@@ -316,6 +323,8 @@ After completing all phases, provide a **concise, structured summary**:
 - Key directories and their purpose
 - Main entry points
 - Notable patterns or conventions
+- **If `.claude/ARCHITECTURE.md` exists**: pull the top 3-5 rows from the "If X changes, update Y" table here, and list the critical workflow paths. This section should be populated from the arch map, not re-discovered manually.
+- **Architecture map status**: 🗺️ [FRESH | STALE — run /arch-map | Generated just now | Not yet created — run /arch-map]
 
 ### 💡 Key Insights
 - 3-5 bullet points about what makes this project unique
@@ -346,6 +355,39 @@ After completing all phases, provide a **concise, structured summary**:
 
 ### ✅ Ready to Execute
 Confirm: "Agent primed. Context loaded. Ready for instructions."
+
+---
+
+## Phase 6.5: Architecture Map — Check & Suggest
+
+**Run after Phase 6 team assessment, before writing the cache.**
+
+```bash
+# Check arch map existence and staleness (threshold: 10+ commits behind = stale)
+ARCH_HASH=$(head -3 .claude/ARCHITECTURE.md 2>/dev/null | grep -oE '[a-f0-9]{40}' || echo "")
+CURRENT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+if [ ! -f .claude/ARCHITECTURE.md ]; then
+  echo "ARCH=MISSING"
+elif [ -n "$ARCH_HASH" ] && [ -n "$CURRENT_HASH" ] && [ "$ARCH_HASH" != "$CURRENT_HASH" ]; then
+  COMMITS_BEHIND=$(git rev-list --count "${ARCH_HASH}..HEAD" 2>/dev/null || echo "0")
+  [ "$COMMITS_BEHIND" -ge 10 ] && echo "ARCH=STALE ($COMMITS_BEHIND commits)" || echo "ARCH=FRESH"
+else
+  echo "ARCH=FRESH"
+fi
+```
+
+**Decision tree — based on ARCH status AND Phase 6 complexity score:**
+
+- **`ARCH=FRESH`**: Read it internally (do NOT dump to user). Pull top 3-5 rows from the "If X changes" table and the critical paths into the Architecture Highlights section of the prime report. Note: "🗺️ Architecture map up to date."
+
+- **`ARCH=STALE`**: Note in the report: "🗺️ Architecture map is ~N commits behind — run `/arch-map` to regenerate." Do NOT regenerate automatically.
+
+- **`ARCH=MISSING` + complexity score < 2.0**: Project is simple — say nothing. Skip the suggestion entirely. Not worth the overhead.
+
+- **`ARCH=MISSING` + complexity score 2.0–3.5**: Mention it once at the end of the report: "🗺️ This project is growing in complexity — consider running `/arch-map` to generate a dependency map and blast-radius table."
+
+- **`ARCH=MISSING` + complexity score > 3.5**: Proactively recommend it in the Architecture Highlights section: "🗺️ **Recommended:** Run `/arch-map` — this project has multiple layers and interconnected scripts where a dependency map would save significant time." Do NOT auto-generate (user opts in by running the command).
 
 ---
 

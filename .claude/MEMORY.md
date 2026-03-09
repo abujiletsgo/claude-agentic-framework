@@ -62,3 +62,12 @@
   CLAUDE.md                | 1 +
   scripts/generate_docs.py | 1 +
   2 files changed, 2 insertions(+)
+
+## 2026-03-09 (05:53 UTC) · @Tom Kwon
+**Commit:** fix: deduplicate memory entries, auto-install prerequisites (093d268) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md                                   |   3 +-
+  .claude/MEMORY.md                                  | 288 +++------------------
+  .../framework/memory/auto_memory_writer.py         |  41 ++-
+  install.sh                                         |  77 +++++-
+  4 files changed, 152 insertions(+), 257 deletions(-)
