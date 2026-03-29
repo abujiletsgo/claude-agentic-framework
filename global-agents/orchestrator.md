@@ -1,11 +1,12 @@
 ---
 name: orchestrator
 description: Primary coordinator with strategy selection capabilities. Analyzes request complexity, selects optimal execution strategy (direct, orchestrate, RLM, fusion, research, brainstorm, skills), and coordinates specialized agent teams for execution.
-tools: Task, Read, Glob, Grep, Bash
+tools: Task, Read, Glob, Grep, Bash, Write, Edit
 model: opus
 role: executive
 memory: user
 effort: high
+initialPrompt: "/prime"
 maxTurns: 50
 permissionMode: default
 ---

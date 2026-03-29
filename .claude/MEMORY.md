@@ -84,3 +84,12 @@
   global-hooks/framework/automation/auto_prime.py |  65 +++++
   global-skills/arch-map/SKILL.md                 | 353 ++++++++++++++++++++++++
   8 files changed, 531 insertions(+), 8 deletions(-)
+
+## 2026-03-29 (16:57 UTC) · @Tom Kwon
+**Commit:** v3.0.2: Regenerate all docs, update FACTS.md, bump version (543e963) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md         | 78 +++++++++++++++++++++++++-----------------------
+  CLAUDE.md                | 76 +++++++++++++++++++++++++++++++++++++++++++---
+  README.md                | 22 +++++++-------
+  scripts/generate_docs.py |  2 +-
+  4 files changed, 125 insertions(+), 53 deletions(-)

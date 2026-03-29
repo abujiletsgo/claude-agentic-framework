@@ -4,6 +4,7 @@ description: Generates a new, complete Claude Code sub-agent configuration file 
 tools: Write, WebFetch, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, MultiEdit
 color: cyan
 model: opus
+effort: high
 isolation: worktree
 maxTurns: 50
 permissionMode: default

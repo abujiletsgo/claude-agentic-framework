@@ -1,5 +1,5 @@
 {
-  "_comment": "Autonomous Mode: Minimal permission prompts. Auto-approve safe operations, prompt only for destructive actions.",
+  "_comment": "v4.0: Full lifecycle hooks (25 events), async non-blocking, conditional filtering, prompt/agent hook types",
   "version": "1.0",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
@@ -20,10 +20,82 @@
       "*"
     ]
   },
+  "permissionMode": "bypassPermissions",
   "sandbox": {
     "enabled": false
   },
   "hooks": {
+
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
+            "timeout": 60,
+            "statusMessage": "Initializing session..."
+          }
+        ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
+            "timeout": 180,
+            "statusMessage": "Building symbol index..."
+          }
+        ]
+      }
+    ],
+
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "Release all session locks on exit"
+          }
+        ]
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/korean/kr_mode.py",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/analyze_request.py",
+            "timeout": 10,
+            "statusMessage": "Analyzing request..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+
     "PreToolUse": [
       {
         "matcher": "Read|Edit|Write",
@@ -56,6 +128,7 @@
         ]
       }
     ],
+
     "PostToolUse": [
       {
         "hooks": [
@@ -72,7 +145,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
-            "timeout": 8
+            "timeout": 8,
+            "async": true,
+            "_comment": "ASYNC: bundle logging doesn't need to block"
           }
         ]
       },
@@ -82,7 +157,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_cost_warnings.py",
-            "timeout": 5
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: cost warnings delivered on next turn"
           }
         ]
       },
@@ -102,13 +179,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
-            "timeout": 6
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
+            "timeout": 6,
+            "_comment": "PARALLEL: these 2 Write|Edit hooks run simultaneously"
+          },
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
@@ -132,7 +205,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_escalate.py",
-            "timeout": 5
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: escalation advice delivered on next turn"
           }
         ]
       },
@@ -142,7 +217,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
-            "timeout": 5
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: voice notifications are fire-and-forget"
           }
         ]
       },
@@ -152,7 +229,9 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_team_review.py",
-            "timeout": 5
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: team review triggers don't need to block"
           }
         ]
       },
@@ -163,11 +242,26 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/facts/auto_fact_extractor.py",
             "timeout": 5,
-            "_comment": "Layer 2: extract verified facts to FACTS.md (episodic memory)"
+            "async": true,
+            "_comment": "ASYNC: fact extraction writes to disk, result delivered next turn"
           }
         ]
       }
     ],
+
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+
     "Stop": [
       {
         "hooks": [
@@ -193,7 +287,7 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/memory/auto_memory_writer.py",
             "timeout": 10,
-            "_comment": "Layer 2: write session summary to .claude/MEMORY.md (project mid-term memory)"
+            "_comment": "Layer 2: write session summary to .claude/MEMORY.md"
           }
         ]
       },
@@ -203,7 +297,7 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
             "timeout": 5,
-            "_comment": "Layer 2: prune stale facts from FACTS.md (episodic memory maintenance)"
+            "_comment": "Layer 2: prune stale facts from FACTS.md"
           }
         ]
       },
@@ -213,7 +307,7 @@
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_skill_generator.py",
             "timeout": 10,
-            "_comment": "Analyze session patterns and auto-generate skills for repeated workflows"
+            "_comment": "Analyze session patterns and auto-generate skills"
           }
         ]
       },
@@ -222,11 +316,42 @@
           {
             "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/notifications/voice_done.py",
-            "timeout": 5
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: voice notification is fire-and-forget"
           }
         ]
       }
     ],
+
+    "StopFailure": [
+      {
+        "matcher": "rate_limit|authentication_failed|billing_error|server_error|max_output_tokens|unknown",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/stop_failure_recovery.py",
+            "timeout": 5,
+            "_comment": "v4.0: Handle all API failures with typed recovery advice"
+          }
+        ]
+      }
+    ],
+
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "v4.0: Track subagent spawning with agent_id/agent_type"
+          }
+        ]
+      }
+    ],
+
     "SubagentStop": [
       {
         "hooks": [
@@ -238,6 +363,48 @@
         ]
       }
     ],
+
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/task_quality_gate.py",
+            "timeout": 10,
+            "_comment": "v4.0: Validate task completion criteria before marking done"
+          }
+        ]
+      }
+    ],
+
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/project_fingerprint.py",
+            "timeout": 10,
+            "_comment": "v4.0: Auto-detect project stack, load relevant instincts, configure per-project"
+          }
+        ]
+      }
+    ],
+
+    "FileChanged": [
+      {
+        "matcher": "package.json|pyproject.toml|Cargo.toml|go.mod",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/file_watcher.py",
+            "timeout": 10,
+            "async": true,
+            "_comment": "v4.0: React to dependency file changes"
+          }
+        ]
+      }
+    ],
+
     "ConfigChange": [
       {
         "hooks": [
@@ -249,40 +416,10 @@
         ]
       }
     ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
-            "timeout": 8
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
-            "timeout": 60
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
-            "timeout": 180
-          }
-        ]
-      }
-    ],
+
     "PreCompact": [
       {
+        "matcher": "manual|auto",
         "hooks": [
           {
             "type": "command",
@@ -292,44 +429,22 @@
         ]
       }
     ],
-    "UserPromptSubmit": [
+
+    "PostCompact": [
       {
+        "matcher": "manual|auto",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/korean/kr_mode.py",
-            "timeout": 8
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/auto_prime_inject.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/analyze_request.py",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
-            "timeout": 5
+            "command": "uv run __REPO_DIR__/global-hooks/framework/context/post_compact_verify.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "v4.0: Verify critical state survived compaction"
           }
         ]
       }
     ]
+
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true

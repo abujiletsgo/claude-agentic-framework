@@ -4,6 +4,7 @@ description: Recursive Language Model Root Controller - processes infinite conte
 tools: Task, Read, Glob, Grep, Bash
 model: opus
 role: controller
+effort: high
 maxTurns: 50
 permissionMode: default
 ---

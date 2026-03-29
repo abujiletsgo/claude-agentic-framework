@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Agentic Framework v4.0 — 종합 운영 가이드</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --surface2: #f5f4f0;
+    --border: #e5e3de;
+    --text: #1a1918;
+    --muted: #6b6660;
+    --faint: #c5c0ba;
+    --l3: #b8860b;
+    --l3-bg: #fdf8ea;
+    --l3-border: #e8d8a0;
+    --l2: #2e7d32;
+    --l2-bg: #edf7ee;
+    --l2-border: #a5d6a7;
+    --l1: #c65100;
+    --l1-bg: #fff3e0;
+    --l1-border: #ffcc80;
+    --l0: #78909c;
+    --l0-bg: #f5f5f5;
+    --l0-border: #cfd8dc;
+    --accent: #d84315;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.65; font-size: 15px; }
+
+  /* ── Header ── */
+  header {
+    padding: 72px 40px 52px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  header h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.1;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p { color: var(--muted); font-size: 16px; max-width: 620px; margin: 0 auto; line-height: 1.7; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; gap: 0; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  nav a {
+    text-decoration: none; color: var(--muted);
+    font-size: 12px; font-family: var(--font-mono);
+    padding: 13px 14px; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav a:hover { color: var(--text); border-bottom-color: var(--faint); }
+
+  /* ── Layout ── */
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  .eyebrow-sm {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); margin-bottom: 8px; }
+
+  .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 36px; max-width: 620px; line-height: 1.7; }
+
+  /* ── Layer cards ── */
+  .layers-grid { display: flex; flex-direction: column; gap: 0; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 48px; }
+
+  .layer-card { background: var(--surface); padding: 28px 24px; position: relative; transition: background 0.2s; border-bottom: 1px solid var(--border); }
+  .layer-card:last-child { border-bottom: none; }
+  .layer-card:hover { background: var(--surface2); }
+
+  .layer-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .layer-card.l3::before { background: var(--l3); }
+  .layer-card.l2::before { background: var(--l2); }
+  .layer-card.l1::before { background: var(--l1); }
+  .layer-card.l0::before { background: var(--l0); }
+
+  .layer-num { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .l3 .layer-num { color: var(--l3); }
+  .l2 .layer-num { color: var(--l2); }
+  .l1 .layer-num { color: var(--l1); }
+  .l0 .layer-num { color: var(--l0); }
+
+  .layer-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .l3 .layer-dot { background: var(--l3); }
+  .l2 .layer-dot { background: var(--l2); }
+  .l1 .layer-dot { background: var(--l1); }
+  .l0 .layer-dot { background: var(--l0); opacity: 0.5; }
+
+  .layer-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .layer-meta { font-size: 12px; color: var(--muted); margin-bottom: 18px; font-family: var(--font-mono); }
+
+  .layer-files { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .layer-files li { font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+  .layer-files li::before { content: '\2500'; color: var(--faint); flex-shrink: 0; }
+  .layer-files li span { color: var(--text); }
+  .layer-files li em { font-style: normal; color: var(--l2); }
+
+  .tok-row { background: var(--surface2); border-radius: 6px; padding: 8px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+  .tok-row .val { color: var(--l3); font-weight: 600; }
+
+  /* ── Budget bars ── */
+  .budget-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .budget-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .budget-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 240px; word-break: break-word; flex: 1; }
+  .budget-bar-wrap { flex: 1; background: var(--border); border-radius: 3px; height: 6px; overflow: hidden; }
+  .budget-bar { height: 100%; border-radius: 3px; }
+  .budget-tok { font-family: var(--font-mono); font-size: 11px; color: var(--l3); min-width: 65px; text-align: right; }
+  .budget-tok.dim { color: var(--faint); }
+
+  /* ── Tags ── */
+  .tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; letter-spacing: 0.3px; font-family: var(--font-mono); vertical-align: middle; margin-left: 5px; }
+  .tag.l3 { background: var(--l3-bg); color: var(--l3); border: 1px solid var(--l3-border); }
+  .tag.l2 { background: var(--l2-bg); color: var(--l2); border: 1px solid var(--l2-border); }
+  .tag.l1 { background: var(--l1-bg); color: var(--l1); border: 1px solid var(--l1-border); }
+  .tag.l0 { background: var(--l0-bg); color: var(--l0); border: 1px solid var(--l0-border); }
+  .tag.auto { background: var(--l3-bg); color: var(--l3); border: 1px solid var(--l3-border); }
+  .tag.demand { background: var(--l2-bg); color: var(--l2); border: 1px solid var(--l2-border); }
+  .tag.tok { background: var(--l3-bg); color: var(--l3); border: 1px solid var(--l3-border); }
+  .tag.async { background: #ede7f6; color: #5e35b1; border: 1px solid #b39ddb; }
+  .tag.opus { background: var(--l1-bg); color: var(--l1); border: 1px solid var(--l1-border); }
+  .tag.haiku { background: var(--l0-bg); color: var(--l0); border: 1px solid var(--l0-border); }
+  .tag.new { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
+
+  /* ── Flow ── */
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+  .flow-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+
+  .flow-step { display: flex; gap: 14px; align-items: flex-start; position: relative; }
+  .flow-step:not(:last-child)::after { content: ''; position: absolute; left: 17px; top: 36px; bottom: -10px; width: 1px; background: linear-gradient(180deg, var(--border) 0%, transparent 100%); }
+  .flow-step + .flow-step { margin-top: 10px; }
+
+  .flow-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); }
+  .flow-icon.l3 { background: var(--l3-bg); border-color: var(--l3-border); }
+  .flow-icon.l2 { background: var(--l2-bg); border-color: var(--l2-border); }
+  .flow-icon.l1 { background: var(--l1-bg); border-color: var(--l1-border); }
+  .flow-icon.l0 { background: var(--l0-bg); border-color: var(--l0-border); }
+  .flow-icon.demand { background: var(--l2-bg); border-color: var(--l2-border); }
+
+  .flow-content { flex: 1; padding: 8px 0; }
+  .flow-hook { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 3px; font-family: var(--font-mono); word-break: break-word; }
+  .flow-desc { font-size: 12px; color: var(--muted); line-height: 1.6; word-break: break-word; }
+
+  /* ── Lifecycle ── */
+  .lifecycle { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .phase { background: var(--surface); padding: 22px; }
+  .phase:hover { background: var(--surface2); }
+  .phase-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .phase-icon { width: 32px; height: 32px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--surface2); border: 1px solid var(--border); }
+  .phase-name { font-size: 13px; font-weight: 700; color: var(--text); word-break: break-word; }
+  .phase-trigger { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+  .ev-list { list-style: none; }
+  .ev-list li { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid var(--surface2); font-size: 11px; font-family: var(--font-mono); }
+  .ev-list li:last-child { border-bottom: none; }
+  .ev-hook { color: var(--text); font-weight: 500; flex: 1; word-break: break-word; min-width: 0; }
+  .ev-arr { color: var(--faint); flex-shrink: 0; }
+  .ev-target { color: var(--muted); text-align: right; flex-shrink: 0; }
+  .ev-target.l2 { color: var(--l2); }
+  .ev-target.l1 { color: var(--l1); }
+  .ev-target.async { color: #5e35b1; }
+
+  /* ── GL cards ── */
+  .gl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .gl-grid { grid-template-columns: 1fr; } }
+
+  .gl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; }
+  .gl-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .gl-card.global h3 { color: var(--l3); }
+  .gl-card.local h3 { color: var(--l2); }
+
+  .gl-path { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--surface2); padding: 4px 8px; border-radius: 4px; margin-bottom: 12px; display: block; border: 1px solid var(--border); }
+
+  .gl-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--surface2); font-size: 12px; }
+  .gl-item:last-child { border-bottom: none; }
+  .gl-item-name { font-family: var(--font-mono); color: var(--text); font-weight: 500; min-width: 150px; word-break: break-word; }
+  .gl-item-desc { color: var(--muted); }
+
+  /* ── Resolution ── */
+  .res-row { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .res-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; text-align: center; font-family: var(--font-mono); font-size: 11px; }
+  .res-box.local { border-color: var(--l2-border); background: var(--l2-bg); }
+  .res-box.global { border-color: var(--l3-border); background: var(--l3-bg); }
+  .res-box.wins { border-color: var(--accent); background: #fbe9e7; }
+  .res-box .name { font-weight: 700; font-size: 11px; margin-bottom: 3px; }
+  .res-box.local .name { color: var(--l2); }
+  .res-box.global .name { color: var(--l3); }
+  .res-box.wins .name { color: var(--accent); }
+  .res-box .detail { color: var(--muted); font-size: 10px; word-break: break-all; }
+  .res-op { text-align: center; color: var(--faint); font-size: 12px; }
+  .res-op.beats { color: var(--l2); }
+
+  /* ── FACTS pipeline ── */
+  .pipe-row { display: flex; gap: 0; align-items: stretch; flex-wrap: wrap; margin-bottom: 10px; }
+  .pipe-box { flex: 1; min-width: 120px; padding: 10px 12px; background: var(--surface2); border-radius: 6px; text-align: center; font-family: var(--font-mono); font-size: 11px; }
+  .pipe-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--faint); font-size: 13px; }
+  .pipe-box .pname { font-weight: 700; margin-bottom: 3px; }
+  .pipe-box .pdesc { color: var(--muted); font-size: 10px; }
+  .pipe-box.confirmed { background: var(--l2-bg); border: 1px solid var(--l2-border); }
+  .pipe-box.confirmed .pname { color: var(--l2); }
+  .pipe-box.gotcha { background: var(--l1-bg); border: 1px solid var(--l1-border); }
+  .pipe-box.gotcha .pname { color: var(--l1); }
+  .pipe-box.paths { background: var(--l2-bg); border: 1px solid var(--l2-border); }
+  .pipe-box.paths .pname { color: var(--l2); }
+  .pipe-box.pruned { background: var(--surface); border: 1px solid var(--border); }
+  .pipe-box.pruned .pname { color: var(--text); }
+
+  /* ── Trust ── */
+  .trust-chain { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .trust-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--surface2); gap: 16px; transition: background 0.15s; }
+  .trust-row:last-child { border-bottom: none; }
+  .trust-row:hover { background: var(--surface2); }
+  .trust-rank { font-family: var(--font-mono); font-size: 22px; font-weight: 900; min-width: 30px; text-align: center; }
+  .trust-row:nth-child(1) .trust-rank { color: var(--l3); }
+  .trust-row:nth-child(2) .trust-rank { color: var(--l2); }
+  .trust-row:nth-child(3) .trust-rank { color: var(--l1); }
+  .trust-row:nth-child(4) .trust-rank { color: var(--muted); }
+  .trust-row:nth-child(5) .trust-rank { color: var(--faint); }
+  .trust-source { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text); flex: 1; word-break: break-word; }
+  .trust-why { font-size: 13px; color: var(--muted); flex: 2; word-break: break-word; }
+
+  /* ── Callout ── */
+  .callout { background: var(--l2-bg); border: 1px solid var(--l2-border); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 16px; line-height: 1.7; }
+  .callout strong { color: var(--l2); }
+  .callout.warn { background: var(--l1-bg); border-color: var(--l1-border); }
+  .callout.warn strong { color: var(--l1); }
+
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+  .info-box strong { color: var(--text); }
+
+  code { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--text); word-break: break-all; }
+
+  /* ── Stats grid ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 36px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .stat-num { font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--accent); }
+  .stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+
+  /* ── Command table ── */
+  .cmd-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .cmd-table th { background: var(--surface2); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .cmd-table td { padding: 10px 16px; border-bottom: 1px solid var(--surface2); font-size: 13px; }
+  .cmd-table td:first-child { font-family: var(--font-mono); font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .cmd-table tr:last-child td { border-bottom: none; }
+  .cmd-table tr:hover td { background: var(--surface2); }
+
+  /* ── Defense tier ── */
+  .defense-tier { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+  .defense-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .defense-num { font-family: var(--font-mono); font-size: 20px; font-weight: 900; }
+  .defense-body { padding: 16px 22px; }
+  .defense-body p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  /* ── Workflow ── */
+  .workflow-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; margin-bottom: 12px; }
+  .workflow-card h3 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .workflow-steps { list-style: none; counter-reset: wf; }
+  .workflow-steps li { counter-increment: wf; padding: 8px 0; border-bottom: 1px solid var(--surface2); font-size: 13px; color: var(--muted); display: flex; gap: 10px; line-height: 1.6; }
+  .workflow-steps li:last-child { border-bottom: none; }
+  .workflow-steps li::before { content: counter(wf); font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--accent); background: var(--l1-bg); border: 1px solid var(--l1-border); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+
+  /* ── Example Toggle ── */
+  details.example-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  details.example-toggle summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  details.example-toggle summary::before {
+    content: '\25B6';
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+
+  details.example-toggle[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  details.example-toggle .example-content {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 760px) {
+    .budget-row { flex-wrap: wrap; }
+    .budget-bar-wrap { min-width: 100px; }
+    .res-row { grid-template-columns: 1fr 16px 1fr 16px 1fr; font-size: 10px; }
+    .gl-item { flex-wrap: wrap; }
+    .gl-item-name { min-width: 0; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    header { padding: 48px 20px 36px; }
+    section { padding: 48px 0; }
+  }
+
+  footer { padding: 48px 40px; text-align: center; color: var(--muted); font-size: 12px; font-family: var(--font-mono); border-top: 1px solid var(--border); background: var(--surface); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .layer-card { animation: fadeIn 0.35s ease both; }
+  .layer-card:nth-child(1) { animation-delay: 0.04s; }
+  .layer-card:nth-child(2) { animation-delay: 0.08s; }
+  .layer-card:nth-child(3) { animation-delay: 0.12s; }
+  .layer-card:nth-child(4) { animation-delay: 0.16s; }
+  .phase { animation: fadeIn 0.3s ease both; }
+  .phase:nth-child(1) { animation-delay: 0.05s; }
+  .phase:nth-child(2) { animation-delay: 0.10s; }
+  .phase:nth-child(3) { animation-delay: 0.15s; }
+  .phase:nth-child(4) { animation-delay: 0.20s; }
+  .phase:nth-child(5) { animation-delay: 0.25s; }
+  .phase:nth-child(6) { animation-delay: 0.30s; }
+  .gl-card { animation: fadeIn 0.3s ease both; }
+  .stat-card { animation: fadeIn 0.25s ease both; }
+  .stat-card:nth-child(1) { animation-delay: 0.03s; }
+  .stat-card:nth-child(2) { animation-delay: 0.06s; }
+  .stat-card:nth-child(3) { animation-delay: 0.09s; }
+  .stat-card:nth-child(4) { animation-delay: 0.12s; }
+  .stat-card:nth-child(5) { animation-delay: 0.15s; }
+  .stat-card:nth-child(6) { animation-delay: 0.18s; }
+  .trust-row { animation: fadeIn 0.25s ease both; }
+  .trust-row:nth-child(1) { animation-delay: 0.05s; }
+  .trust-row:nth-child(2) { animation-delay: 0.10s; }
+  .trust-row:nth-child(3) { animation-delay: 0.15s; }
+  .trust-row:nth-child(4) { animation-delay: 0.20s; }
+  .trust-row:nth-child(5) { animation-delay: 0.25s; }
+  .flow-step { animation: fadeIn 0.3s ease both; }
+  .workflow-card { animation: fadeIn 0.3s ease both; }
+  .defense-tier { animation: fadeIn 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Claude Agentic Framework v4.0</div>
+  <h1><span>종합</span> 운영 가이드</h1>
+  <p>모든 Claude Code session에서 작동하는 자율형 multi-agent orchestration platform. Hook 36개, Agent 8개, Command 15개, Skill 9개를 하나의 프레임워크로 통합합니다.</p>
+</header>
+
+<nav>
+  <a href="#overview">개요</a>
+  <a href="#architecture">아키텍처</a>
+  <a href="#hooks">Hook 시스템</a>
+  <a href="#agents">Agent 시스템</a>
+  <a href="#commands">Command</a>
+  <a href="#skills">Skill</a>
+  <a href="#memory">Memory</a>
+  <a href="#context">Context</a>
+  <a href="#caddy">Caddy</a>
+  <a href="#damage">Damage Control</a>
+  <a href="#fingerprint">프로젝트 적응</a>
+  <a href="#self-improve">자기 개선</a>
+  <a href="#archmap">Architecture Map</a>
+  <a href="#troubleshoot">문제 해결</a>
+</nav>
+
+<div class="container">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S1: OVERVIEW                                 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="overview">
+    <div class="eyebrow-sm">개요</div>
+    <h2>v4.0 핵심 숫자</h2>
+    <p class="section-desc">하나의 저장소, 하나의 설치, 하나의 진실 소스. Opus-first 아키텍처로 Max plan에서 최적 성능을 발휘합니다.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">36</div><div class="stat-label">Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Events</div></div>
+      <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">Async Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Agents</div></div>
+      <div class="stat-card"><div class="stat-num">15</div><div class="stat-label">Commands</div></div>
+      <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Skills</div></div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">Directory Structure</div>
+      <div class="gl-grid">
+        <div class="gl-card global">
+          <h3>global-hooks/</h3>
+          <div class="gl-item"><div class="gl-item-name">damage-control/</div><div class="gl-item-desc">보안 패턴 매칭</div></div>
+          <div class="gl-item"><div class="gl-item-name">observability/</div><div class="gl-item-desc">비용, 컨텍스트 모니터링</div></div>
+          <div class="gl-item"><div class="gl-item-name">framework/</div><div class="gl-item-desc">코어 자동화 훅</div></div>
+        </div>
+        <div class="gl-card global">
+          <h3>global-agents/</h3>
+          <div class="gl-item"><div class="gl-item-name">8개 에이전트</div><div class="gl-item-desc">7 Opus + 1 Haiku</div></div>
+        </div>
+        <div class="gl-card global">
+          <h3>global-commands/</h3>
+          <div class="gl-item"><div class="gl-item-name">15개 명령어</div><div class="gl-item-desc">슬래시 명령어 시스템</div></div>
+        </div>
+        <div class="gl-card global">
+          <h3>global-skills/</h3>
+          <div class="gl-item"><div class="gl-item-name">9개 스킬</div><div class="gl-item-desc">자동 트리거 가능</div></div>
+        </div>
+        <div class="gl-card local">
+          <h3>data/</h3>
+          <div class="gl-item"><div class="gl-item-name">knowledge-db/</div><div class="gl-item-desc">SQLite FTS5 지식 DB</div></div>
+          <div class="gl-item"><div class="gl-item-name">model_tiers.yaml</div><div class="gl-item-desc">에이전트별 모델 설정</div></div>
+        </div>
+        <div class="gl-card local">
+          <h3>templates/</h3>
+          <div class="gl-item"><div class="gl-item-name">settings.json.template</div><div class="gl-item-desc">단일 진실 소스</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S2: ARCHITECTURE                             -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="architecture">
+    <div class="eyebrow-sm">아키텍처</div>
+    <h2>3-Phase Pipeline</h2>
+    <p class="section-desc">모든 요청은 분류, 실행, 학습의 3단계 파이프라인을 거칩니다. 각 단계에서 Hook이 자동으로 개입합니다.</p>
+
+    <div class="flow" style="margin-bottom:24px;">
+      <div class="flow-title">분류 &rarr; 실행 &rarr; 학습</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l3">1</div>
+        <div class="flow-content">
+          <div class="flow-hook">Phase 1: 분류 (Classification)</div>
+          <div class="flow-desc"><code>analyze_request.py</code> (Caddy Classifier)가 요청의 복잡도, 유형, 품질, 범위를 4차원으로 분류합니다. <code>auto_delegate.py</code>가 분류 결과에 따라 적절한 전략(direct, team, orchestrate, rlm, fusion)으로 라우팅합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">2</div>
+        <div class="flow-content">
+          <div class="flow-hook">Phase 2: 실행 (Execution)</div>
+          <div class="flow-desc">Damage control이 위험 명령을 차단하고, Session lock이 동시성을 방지합니다. 에이전트가 작업을 수행하며, PostToolUse 훅이 오류 분석, 컨텍스트 관리, 코드 리뷰를 실시간으로 수행합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">3</div>
+        <div class="flow-content">
+          <div class="flow-hook">Phase 3: 학습 (Learning)</div>
+          <div class="flow-desc"><code>auto_fact_extractor.py</code>가 실행 결과를 FACTS.md에 기록합니다. <code>auto_memory_writer.py</code>가 세션 종료 시 MEMORY.md에 요약을 저장합니다. <code>auto_skill_generator.py</code>가 반복 패턴을 스킬로 자동 생성합니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S3: HOOK SYSTEM                              -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="hooks">
+    <div class="eyebrow-sm">이벤트 시스템</div>
+    <h2>Hook System &mdash; 16 Events, 36 Hooks</h2>
+    <p class="section-desc">Claude Code의 모든 생명주기 이벤트에 훅이 연결됩니다. 10개의 비동기 훅은 성능 저하 없이 백그라운드에서 실행됩니다.</p>
+
+    <!-- All 16 events -->
+    <div class="lifecycle" style="margin-bottom:36px;">
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">1</div><div><div class="phase-name">SessionStart</div><div class="phase-trigger">2 hooks</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_startup.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">무결성 + 잠금</span></li>
+          <li><span class="ev-hook">repo_map.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">파일 200+ 시</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">2</div><div><div class="phase-name">SessionEnd</div><div class="phase-trigger">1 hook <span class="tag async">async</span></div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">잠금 해제</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">3</div><div><div class="phase-name">UserPromptSubmit</div><div class="phase-trigger">4 hooks</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">kr_mode.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">한국어 모드</span></li>
+          <li><span class="ev-hook">auto_prime_inject.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">PROJECT_CONTEXT</span></li>
+          <li><span class="ev-hook">analyze_request.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">Caddy 분류</span></li>
+          <li><span class="ev-hook">auto_delegate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">전략 라우팅</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">4</div><div><div class="phase-name">PreToolUse</div><div class="phase-trigger">3 hooks</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">동시성 방지</span></li>
+          <li><span class="ev-hook">unified-damage-control.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">위험 차단</span></li>
+          <li><span class="ev-hook">auto_review_team.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">위험 Bash 검토</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">5</div><div><div class="phase-name">PostToolUse</div><div class="phase-trigger">11 hooks (5 async)</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 관리</span></li>
+          <li><span class="ev-hook">context-bundle-logger.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">번들 기록</span></li>
+          <li><span class="ev-hook">auto_cost_warnings.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">비용 경고</span></li>
+          <li><span class="ev-hook">auto_error_analyzer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오류 분석</span></li>
+          <li><span class="ev-hook">auto_refine.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">코드 개선</span></li>
+          <li><span class="ev-hook">auto_dependency_audit.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">의존성 감사</span></li>
+          <li><span class="ev-hook">auto_context_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">70% 시 압축</span></li>
+          <li><span class="ev-hook">auto_escalate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">에스컬레이션</span></li>
+          <li><span class="ev-hook">auto_voice_notifications.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">음성 알림</span></li>
+          <li><span class="ev-hook">auto_team_review.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">팀 리뷰</span></li>
+          <li><span class="ev-hook">auto_fact_extractor.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">6</div><div><div class="phase-name">PostToolUseFailure</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">auto_error_analyzer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">오류 분석</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">7</div><div><div class="phase-name">Stop</div><div class="phase-trigger">6 hooks (1 async)</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 해제</span></li>
+          <li><span class="ev-hook">check_lthread_progress.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">진행 확인</span></li>
+          <li><span class="ev-hook">auto_memory_writer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">MEMORY.md</span></li>
+          <li><span class="ev-hook">validate_facts.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md 정리</span></li>
+          <li><span class="ev-hook">auto_skill_generator.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">스킬 자동 생성</span></li>
+          <li><span class="ev-hook">voice_done.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">완료 알림</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">8</div><div><div class="phase-name">StopFailure</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">stop_failure_recovery.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">복구</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            rate_limit, auth_failed, billing, server_error, max_output_tokens 처리
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">9</div><div><div class="phase-name">SubagentStart</div><div class="phase-trigger">1 hook <span class="tag async">async</span></div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">서브에이전트 추적</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">10</div><div><div class="phase-name">SubagentStop</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">추적 완료</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">11</div><div><div class="phase-name">TaskCompleted</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">task_quality_gate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">품질 게이트</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">12</div><div><div class="phase-name">CwdChanged</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">project_fingerprint.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">스택 감지</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            언어, 프레임워크, 테스트 러너, CI/CD, DB, 패키지 매니저 자동 감지
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">13</div><div><div class="phase-name">FileChanged</div><div class="phase-trigger">1 hook <span class="tag async">async</span></div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">file_watcher.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">파일 감시</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            package.json, pyproject.toml 등 변경 감시
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">14</div><div><div class="phase-name">ConfigChange</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">audit_config_change.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">설정 감사</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">15</div><div><div class="phase-name">PreCompact</div><div class="phase-trigger">1 hook</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">pre_compact_preserve.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">L1 보존</span></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">16</div><div><div class="phase-name">PostCompact</div><div class="phase-trigger">1 hook <span class="tag async">async</span> <span class="tag new">NEW</span></div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">post_compact_verify.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">보존 검증</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4 Hook Types -->
+    <h2 style="font-size:20px; margin-bottom:24px;">4가지 Hook 유형</h2>
+    <div class="gl-grid" style="margin-bottom:36px;">
+      <div class="gl-card global">
+        <h3>command <span class="tag l1">200-500ms</span></h3>
+        <div style="font-size:13px; color:var(--muted); line-height:1.7;">
+          셸 스크립트 또는 Python 스크립트를 직접 실행합니다. stdin으로 JSON 입력, stdout으로 결과 반환. 대부분의 Hook이 이 유형입니다.
+        </div>
+      </div>
+      <div class="gl-card global">
+        <h3>prompt <span class="tag l2">~0ms 생성</span></h3>
+        <div style="font-size:13px; color:var(--muted); line-height:1.7;">
+          LLM 컨텍스트에 인라인으로 삽입됩니다. 외부 프로세스 없이 프롬프트 내에서 평가됩니다. 추가 지침이나 경고를 주입할 때 사용합니다.
+        </div>
+      </div>
+      <div class="gl-card local">
+        <h3>http <span class="tag l0">~50ms</span></h3>
+        <div style="font-size:13px; color:var(--muted); line-height:1.7;">
+          HTTP endpoint로 요청을 보냅니다. 외부 서비스 연동이나 웹훅에 사용됩니다. Observability 앱과의 통신에 활용됩니다.
+        </div>
+      </div>
+      <div class="gl-card local">
+        <h3>agent <span class="tag opus">~2-5s</span></h3>
+        <div style="font-size:13px; color:var(--muted); line-height:1.7;">
+          Sub-agent를 생성하여 검증 작업을 수행합니다. 가장 느리지만 가장 강력합니다. <code>auto_review_team.py</code>가 이 유형으로 위험 Bash 명령을 검토합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- Circuit Breaker -->
+    <h2 style="font-size:20px; margin-bottom:12px;">Circuit Breaker</h2>
+    <p class="section-desc">훅 실패가 전체 시스템을 중단시키지 않도록 보호합니다.</p>
+
+    <div class="trust-chain">
+      <div class="trust-row">
+        <div class="trust-rank">1</div>
+        <div class="trust-source">훅 실패 감지</div>
+        <div class="trust-why">훅이 비정상 종료 코드 반환 또는 타임아웃 (5-15초) 초과</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">2</div>
+        <div class="trust-source">Circuit Breaker 트립</div>
+        <div class="trust-why"><code>~/.claude/circuit_breakers/</code>에 브레이커 파일 생성 — 해당 훅 비활성화</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">3</div>
+        <div class="trust-source">자동 복구</div>
+        <div class="trust-why">60초 쿨다운 후 자동 복구. 수동: 브레이커 파일 삭제</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">4</div>
+        <div class="trust-source">나머지 훅 정상 작동</div>
+        <div class="trust-why">다른 훅은 영향 없이 계속 실행 — 격리된 장애 처리</div>
+      </div>
+    </div>
+
+    <!-- Hook Example Toggle 1: Damage Control -->
+    <details class="example-toggle">
+      <summary>예시: Damage Control이 위험 명령어를 차단하는 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">Claude가 Bash 도구로 명령 실행 시도</div>
+              <div class="flow-desc"><code>git push --force origin main</code></div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">!</div>
+            <div class="flow-content">
+              <div class="flow-hook">PreToolUse &rarr; unified-damage-control.py</div>
+              <div class="flow-desc">
+                1. Quoted content stripping: 따옴표/heredoc 내용 제거<br>
+                2. Pattern matching: <code>\bgit\s+push\s+--force\b</code> &rarr; <strong style="color:var(--accent);">매칭!</strong><br>
+                3. Reason: "Force push는 원격 기록을 덮어씁니다"
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">X</div>
+            <div class="flow-content">
+              <div class="flow-hook">결과: <span style="color:var(--accent); font-weight:700;">BLOCKED</span></div>
+              <div class="flow-desc">
+                출력: <code>{"hookSpecificOutput": {"permissionDecision": "deny", "permissionDecisionReason": "Force push는 원격 기록을 덮어씁니다"}}</code><br>
+                Claude에게 차단 사유가 전달됨 &rarr; 대안 제시 (일반 push 또는 사용자 확인 요청)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Hook Example Toggle 2: Circuit Breaker -->
+    <details class="example-toggle">
+      <summary>예시: Circuit Breaker가 장애를 격리하는 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon l1">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">auto_cost_warnings.py 실패 (3회 연속)</div>
+              <div class="flow-desc">외부 API 응답 지연으로 타임아웃 (15초 초과). 3회 연속 실패 감지.</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">!</div>
+            <div class="flow-content">
+              <div class="flow-hook">Circuit Breaker OPEN</div>
+              <div class="flow-desc">
+                <code>~/.claude/circuit_breakers/auto_cost_warnings.json</code> 파일 생성<br>
+                상태: <strong style="color:var(--accent);">OPEN</strong> &mdash; 해당 훅 비활성화<br>
+                나머지 36개 훅은 정상 작동 유지
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l0">60s</div>
+            <div class="flow-content">
+              <div class="flow-hook">쿨다운 대기 (60초)</div>
+              <div class="flow-desc">자동 복구 타이머 작동. 이 시간 동안 해당 훅은 호출되지 않음.</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">OK</div>
+            <div class="flow-content">
+              <div class="flow-hook">자동 복구 &rarr; HALF-OPEN &rarr; CLOSED</div>
+              <div class="flow-desc">
+                60초 후 브레이커 파일 삭제. 다음 호출에서 성공하면 CLOSED 상태로 복귀.<br>
+                <span class="tag l2">시스템 전체 중단 없이 단일 훅 장애만 격리</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S4: AGENT SYSTEM                             -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="agents">
+    <div class="eyebrow-sm">에이전트</div>
+    <h2>Agent System &mdash; 8 Agents</h2>
+    <p class="section-desc">7개의 Opus 에이전트와 1개의 Haiku 에이전트. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
+
+    <div class="gl-grid" style="margin-bottom:12px;">
+      <div class="gl-card global">
+        <h3>orchestrator <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 메인 코디네이터 &middot; initialPrompt: /prime</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Task, Read, Glob, Grep, Bash, Write, Edit</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">복잡한 multi-agent 작업을 분해하고 조율. TaskList로 병렬 실행 관리.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">복잡한 조율에는 최고 수준의 추론이 필요합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>project-architect <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 아키텍처 감독 &middot; isolation: worktree</code>
+        <div class="gl-item"><div class="gl-item-name">initialPrompt</div><div class="gl-item-desc">/prime</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">대규모 아키텍처 변경 계획 및 감독. Worktree 격리로 안전하게 실험.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">아키텍처 결정은 돌이킬 수 없습니다. 격리 환경에서 검증 후 적용.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>critical-analyst <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 심층 분석 &middot; 읽기 전용</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Glob, Grep, AskUserQuestion만 허용</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">코드를 수정할 수 없어 편향 없는 분석이 가능합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">분석자가 코드를 수정하면 객관성이 훼손됩니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>researcher <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 코드베이스 탐색 &middot; initialPrompt: /prime</code>
+        <div class="gl-item"><div class="gl-item-name">disallowedTools</div><div class="gl-item-desc">[Write, Edit]</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">대규모 코드베이스를 탐색하고 발견한 내용을 요약합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">탐색 전용으로 주 컨텍스트를 보존합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>scout-report-suggest <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 타겟 분석 &middot; 안전 모드</code>
+        <div class="gl-item"><div class="gl-item-name">disallowedTools</div><div class="gl-item-desc">[Write, Edit, Bash]</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">코드를 스캔하고 제안만 합니다. 실행 없이 보고서 생성.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">안전한 정찰 — 어떤 부작용도 없습니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>rlm-root <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 재귀적 탐색 &middot; 무한 컨텍스트</code>
+        <div class="gl-item"><div class="gl-item-name">effort</div><div class="gl-item-desc">high</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">RLM (Recursive Language Model) 패턴으로 깊이 우선 탐색. 하위 에이전트를 재귀적으로 생성.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">컨텍스트 제한을 초월하는 대규모 분석.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>meta-agent <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 에이전트 생성기 &middot; isolation: worktree</code>
+        <div class="gl-item"><div class="gl-item-name">isolation</div><div class="gl-item-desc">worktree</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">새 에이전트를 설계하고 생성합니다. Worktree에서 격리 작업.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">프레임워크 자체를 확장할 수 있는 자기 참조 능력.</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>docs-scraper <span class="tag haiku">Haiku</span></h3>
+        <code class="gl-path">역할: 문서 작업 &middot; 속도 우선</code>
+        <div class="gl-item"><div class="gl-item-name">모델 선택 이유</div><div class="gl-item-desc">speed &gt; quality</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">문서 수집, 포맷팅, 요약. 복잡한 추론이 불필요한 반복 작업.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">Opus 토큰을 절약하면서 대량 문서 작업을 빠르게 처리.</div></div>
+      </div>
+    </div>
+
+    <!-- Agent Example Toggle 1: researcher -->
+    <details class="example-toggle">
+      <summary>예시: researcher Agent의 Read-Only 조사</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">요청: "인증 시스템 구조 분석"</div>
+              <div class="flow-desc">researcher agent가 위임받아 코드베이스 탐색 시작. disallowedTools: [Write, Edit] &mdash; 읽기 전용.</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Grep + Glob으로 대상 파일 식별</div>
+              <div class="flow-desc">
+                <code>Grep: "auth|jwt|session|login" &rarr; 20개 파일 발견</code><br>
+                <code>Glob: "src/auth/**/*" &rarr; 8개 파일</code><br>
+                경로만 반환 &mdash; 파일 내용은 아직 읽지 않음
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">핵심 파일만 선별적으로 Read (offset/limit)</div>
+              <div class="flow-desc">
+                <code>Read src/auth/middleware.ts lines 40-80</code> &rarr; JWT 검증 미들웨어<br>
+                <code>Read src/auth/jwt.ts lines 10-45</code> &rarr; RS256, access token 15분<br>
+                <code>Read src/auth/pkce.ts lines 1-30</code> &rarr; PKCE 챌린지<br>
+                <strong>각 파일 2-3 문장으로 요약. Raw 코드 반환 없음.</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">3K token 요약을 메인 Claude에 반환</div>
+              <div class="flow-desc">
+                "JWT 기반 인증 (RS256, access 15분/refresh 7일), 미들웨어에서 Bearer token 검증, PKCE 지원, Redis 세션 저장소"<br>
+                <span class="tag tok">소비: ~3,000 tokens</span> (전체 파일 읽기 시: ~80,000 tokens)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Agent Example Toggle 2: orchestrator -->
+    <details class="example-toggle">
+      <summary>예시: orchestrator가 팀을 자동 구성하는 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자: "결제 시스템에 Stripe webhook 처리 추가해줘"</div>
+              <div class="flow-desc">Caddy가 complex + implement + high quality로 분류 &rarr; orchestrate 전략 자동 선택</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">O</div>
+            <div class="flow-content">
+              <div class="flow-hook">orchestrator가 TaskList로 작업 분해</div>
+              <div class="flow-desc">
+                Task 1: researcher &rarr; Stripe webhook API 문서 조사 (WebSearch + WebFetch)<br>
+                Task 2: builder (메인) &rarr; <code>src/payments/webhook.ts</code> 구현<br>
+                Task 3: scout &rarr; 코드 리뷰 (disallowedTools: [Write, Edit, Bash])
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">P</div>
+            <div class="flow-content">
+              <div class="flow-hook">Task 1 + Task 2 병렬 실행</div>
+              <div class="flow-desc">
+                researcher가 Stripe 공식 문서 조사하는 동안 builder가 기본 구조 구현 시작.<br>
+                researcher 결과가 반환되면 builder가 상세 구현에 반영.
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">V</div>
+            <div class="flow-content">
+              <div class="flow-hook">Task 3: scout 검증 + auto_fact_extractor 기록</div>
+              <div class="flow-desc">
+                scout가 보안, 에러 핸들링, 멱등성 검토 &rarr; 이슈 발견 시 builder에 피드백<br>
+                auto_fact_extractor: FACTS.md에 "Stripe webhook endpoint: /api/webhooks/stripe" 기록<br>
+                <span class="tag l2">사용자 개입 0회 &mdash; 전체 자동 조율</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S5: COMMAND SYSTEM                           -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="commands">
+    <div class="eyebrow-sm">명령어</div>
+    <h2>Command System &mdash; 15 Commands</h2>
+    <p class="section-desc">슬래시 명령어로 프레임워크 기능에 직접 접근합니다. 각 명령어는 특정 워크플로우에 최적화되어 있습니다.</p>
+
+    <div style="overflow-x:auto;">
+      <table class="cmd-table">
+        <thead>
+          <tr><th>Command</th><th>용도</th><th>사용 시기</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/prime</td><td>프로젝트 컨텍스트 프라이밍</td><td>새 세션 시작, 컨텍스트 캐시 갱신 필요 시</td></tr>
+          <tr><td>/orchestrate</td><td>Multi-agent 조율</td><td>5+ 파일 변경, 500+ LOC, 복잡한 리팩토링</td></tr>
+          <tr><td>/rlm</td><td>재귀적 분석</td><td>대규모 코드베이스 탐색, 깊이 우선 분석</td></tr>
+          <tr><td>/fusion</td><td>Best-of-N 병렬 실행</td><td>중요 결정, 여러 접근법 비교 필요 시</td></tr>
+          <tr><td>/research</td><td>서브에이전트 연구 위임</td><td>주 컨텍스트 보존하면서 탐색 작업 시</td></tr>
+          <tr><td>/review</td><td>코드 리뷰</td><td>PR 전 품질 검사, 변경 사항 검토</td></tr>
+          <tr><td>/test</td><td>테스트 실행/생성</td><td>테스트 작성, TDD, 커버리지 확인</td></tr>
+          <tr><td>/commit</td><td>스마트 커밋</td><td>변경 사항 커밋 (자동 메시지 생성)</td></tr>
+          <tr><td>/plan</td><td>구현 계획 작성</td><td>기능 설계, specs 디렉토리에 저장</td></tr>
+          <tr><td>/debug</td><td>오류 진단</td><td>에러 발생 시 근본 원인 분석</td></tr>
+          <tr><td>/refine</td><td>리뷰 피드백 자동 수정</td><td>/review 결과를 자동으로 반영</td></tr>
+          <tr><td>/costs</td><td>API 비용 추적</td><td>세션 비용 확인, 예산 모니터링</td></tr>
+          <tr><td>/kr</td><td>한국어 모드 전환</td><td>한국어 입출력 활성화/비활성화</td></tr>
+          <tr><td>/loadbundle</td><td>번들 복원</td><td>이전 세션 컨텍스트 0% 손실로 복원</td></tr>
+          <tr><td>/arch-map</td><td>아키텍처 맵 생성</td><td>의존성 다이어그램, blast-radius 분석</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Command Example Toggle 1: /research -->
+    <details class="example-toggle">
+      <summary>예시: /research -- 3-Layer Token 효율적 조사</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자 입력</div>
+              <div class="flow-desc"><code>/research 이 repo에서 인증이 어떻게 구현되어 있는지 분석해줘</code></div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l0">L1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Layer 1: Index Scan (Explore agent, ~500 tokens)</div>
+              <div class="flow-desc">
+                <code>Grep: "auth|jwt|session|login|token" &rarr; 23개 파일 발견</code><br>
+                <code>Glob: "src/auth/**/*" &rarr; 8개 파일</code><br>
+                결과: <code>src/auth/middleware.ts:42</code>, <code>src/auth/jwt.ts:15</code>, <code>src/auth/pkce.ts:1</code> 등 경로만 반환
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">L2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Layer 2: Targeted Read (Researcher agent, ~2000 tokens)</div>
+              <div class="flow-desc">
+                <code>Read src/auth/middleware.ts lines 40-80</code> &rarr; "JWT 검증 미들웨어. Bearer token 파싱 후 jsonwebtoken.verify()로 검증"<br>
+                <code>Read src/auth/jwt.ts lines 10-45</code> &rarr; "토큰 생성: access token (15분) + refresh token (7일). RS256 알고리즘"<br>
+                <code>Read src/auth/pkce.ts lines 1-30</code> &rarr; "PKCE 챌린지: SHA-256 code_verifier &rarr; code_challenge 변환"<br>
+                <strong>각 파일 2-3문장 요약만 반환. Raw 코드 없음.</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">L3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Layer 3: Synthesis (메인 Claude, ~1000 tokens)</div>
+              <div class="flow-desc">
+                "이 프로젝트의 인증 시스템:<br>
+                1. <strong>JWT 기반</strong> &mdash; RS256 알고리즘, access token 15분, refresh token 7일<br>
+                2. <strong>미들웨어</strong> &mdash; <code>src/auth/middleware.ts</code>에서 모든 요청에 Bearer token 검증<br>
+                3. <strong>PKCE 지원</strong> &mdash; 모바일 클라이언트용 <code>src/auth/pkce.ts</code><br>
+                4. <strong>세션 저장소</strong> &mdash; Redis 기반 (<code>src/auth/session.ts</code>)"<br><br>
+                <span class="tag tok">총 비용: ~3,500 tokens</span> (기존 방식: 파일 전체 읽기 ~80,000 tokens)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Command Example Toggle 2: /fusion -->
+    <details class="example-toggle">
+      <summary>예시: /fusion -- Best-of-3 접근법</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자: <code>/fusion 이 정렬 알고리즘을 최적화해줘</code></div>
+              <div class="flow-desc">3개의 독립 Agent가 동시에 같은 문제를 다른 관점에서 해결합니다.</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#e8eaf6; border-color:#9fa8da;">A</div>
+            <div class="flow-content">
+              <div class="flow-hook">Agent 1: Pragmatist (실용주의자)</div>
+              <div class="flow-desc">
+                "현재 O(n2) &rarr; O(n log n) 전환. 기존 코드 최소 변경.<br>
+                Array.sort() 내장 함수 활용. 테스트 3개 추가."<br>
+                <span class="tag" style="background:#e8eaf6; color:#3f51b5; border:1px solid #9fa8da;">변경: 12줄</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#fce4ec; border-color:#f48fb1;">B</div>
+            <div class="flow-content">
+              <div class="flow-hook">Agent 2: Architect (설계자)</div>
+              <div class="flow-desc">
+                "Strategy 패턴으로 정렬 알고리즘을 교체 가능하게 설계.<br>
+                SortStrategy 인터페이스 + MergeSort, QuickSort, TimSort 구현체."<br>
+                <span class="tag" style="background:#fce4ec; color:#e91e63; border:1px solid #f48fb1;">변경: 85줄</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#e0f2f1; border-color:#80cbc4;">C</div>
+            <div class="flow-content">
+              <div class="flow-hook">Agent 3: Optimizer (최적화자)</div>
+              <div class="flow-desc">
+                "데이터 특성 분석 후 적응형 선택. 작은 배열 &rarr; insertion sort,<br>
+                거의 정렬됨 &rarr; TimSort, 랜덤 &rarr; QuickSort. 벤치마크 포함."<br>
+                <span class="tag" style="background:#e0f2f1; color:#00897b; border:1px solid #80cbc4;">변경: 45줄</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">J</div>
+            <div class="flow-content">
+              <div class="flow-hook">Fusion Judge: 최적 조합 선택</div>
+              <div class="flow-desc">
+                평가 기준: 성능(40%), 유지보수성(30%), 테스트 커버리지(20%), 코드 크기(10%)<br><br>
+                <strong>결과:</strong> Agent 3 (Optimizer)의 적응형 접근법 선택 + Agent 1 (Pragmatist)의 테스트 포함<br>
+                <span class="tag l2">최종: 성능 3.2배 향상, 테스트 5개 포함, 변경 48줄</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Command Example Toggle 3: /rlm -->
+    <details class="example-toggle">
+      <summary>예시: /rlm -- 무한 Context 반복 탐색</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자: <code>/rlm 이 모노레포의 모든 마이크로서비스 간 API 계약을 매핑해줘</code></div>
+              <div class="flow-desc">거대한 코드베이스 (500+ 파일)를 단일 context window로 처리 불가능 &rarr; RLM 패턴 사용</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Iteration 1: rlm-root가 탐색 계획 수립</div>
+              <div class="flow-desc">
+                <code>progress.md</code> 파일 생성:<br>
+                "서비스 발견: auth-service, user-service, payment-service, notification-service, gateway"<br>
+                "다음: auth-service의 API 엔드포인트 매핑"
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Iteration 2: 새로운 Context에서 시작 (이전 context 소멸)</div>
+              <div class="flow-desc">
+                <code>progress.md</code> 읽기 &rarr; 이전 진행 상황 파악<br>
+                "auth-service: POST /auth/login, POST /auth/refresh, GET /auth/verify"<br>
+                "다음: user-service 매핑"
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">N</div>
+            <div class="flow-content">
+              <div class="flow-hook">Iteration N: 모든 서비스 매핑 완료</div>
+              <div class="flow-desc">
+                <code>progress.md</code>에 전체 API 계약 매핑 완성:<br>
+                5개 서비스, 47개 엔드포인트, 12개 서비스 간 의존성<br><br>
+                <strong>핵심:</strong> 매 Iteration마다 <strong>새로운 context window</strong>로 시작.<br>
+                상태는 <strong>파일 시스템</strong>(progress.md)에만 유지.<br>
+                &rarr; Context window 한계와 무관하게 무한히 큰 코드베이스 처리 가능
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S6: SKILL SYSTEM                             -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="skills">
+    <div class="eyebrow-sm">스킬</div>
+    <h2>Skill System &mdash; 9 Skills</h2>
+    <p class="section-desc">스킬은 특정 패턴을 감지하면 자동으로 활성화됩니다. 수동으로 호출할 수도 있습니다.</p>
+
+    <div class="gl-grid">
+      <div class="gl-card global">
+        <h3>code-review</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"코드 리뷰", "PR review", "quality check" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">버그, 보안 이슈, 성능, 스타일 위반 검사</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>error-analyzer</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">에러, 예외, 크래시, 스택 트레이스 감지 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">근본 원인 분석 및 수정 제안</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>test-generator</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"테스트 작성", "TDD", "test coverage" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">단위/통합/E2E 테스트 스위트 생성</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>security-scanner</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"보안 감사", "vulnerability scan" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">취약점, 설정 오류, 안전하지 않은 패턴 검사</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>refactoring-assistant</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"리팩토링", "코드 정리", "restructure" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">안전한 리팩토링 — 테스트와 점진적 변경으로 검증</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>knowledge-db</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"기억해", "knowledge", "past decisions" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">SQLite FTS5 기반 영구 지식 저장소</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>facts</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">FACTS.md 관리 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">사실 추가, 목록, 은퇴, 검사</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>arch-map</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"architecture map", "dependency diagram" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">Mermaid 다이어그램, blast-radius 테이블 생성</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>skill-builder</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"스킬 만들어", "new skill" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">새 스킬 설계, 생성, 설치 가이드</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S7: MEMORY SYSTEM                            -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="memory">
+    <div class="eyebrow-sm">인지 메모리</div>
+    <h2>Memory System &mdash; 4 Layers</h2>
+    <p class="section-desc">각 레이어는 범위, 수명, 접근 방식이 다릅니다. Layer 3 + Layer 2 아키텍처만 자동 주입됩니다.</p>
+
+    <div class="layers-grid" style="margin-bottom:36px;">
+      <div class="layer-card l3">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 3 &mdash; SEMANTIC</div>
+        <div class="layer-title">시맨틱 (글로벌)</div>
+        <div class="layer-meta">글로벌 &middot; 무기한 &middot; <strong style="color:var(--l3)">항상 주입</strong></div>
+        <ul class="layer-files">
+          <li><span>~/.claude/CLAUDE.md</span> &mdash; 시스템 지침</li>
+          <li><span>~/.claude/memory/MEMORY.md</span> &mdash; 글로벌 규칙</li>
+          <li><span>~/.claude/agents/</span> &mdash; 글로벌 에이전트 8개</li>
+          <li><span>~/.claude/skills/</span> &mdash; 글로벌 스킬 9개</li>
+        </ul>
+        <div class="tok-row"><span>세션 시작 자동 주입</span><span class="val">~800 토큰</span></div>
+      </div>
+
+      <div class="layer-card l2">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 2 &mdash; EPISODIC</div>
+        <div class="layer-title">에피소딕 (프로젝트)</div>
+        <div class="layer-meta">프로젝트별 &middot; 프로젝트 수명 &middot; 부분 자동 주입</div>
+        <ul class="layer-files">
+          <li><span>.claude/PROJECT_CONTEXT.md</span> &mdash; <em>자동 주입</em></li>
+          <li><span>.claude/FACTS.md</span> &mdash; <em style="color:var(--muted)">필요시 호출</em></li>
+          <li><span>.claude/MEMORY.md</span> &mdash; <em style="color:var(--muted)">필요시 호출</em></li>
+          <li><span>.claude/agents/</span> &mdash; 로컬 에이전트 오버라이드</li>
+          <li><span>.claude/skills/</span> &mdash; 로컬 스킬 오버라이드</li>
+        </ul>
+        <div class="tok-row"><span>PROJECT_CONTEXT 자동 주입</span><span class="val">~2000 토큰</span></div>
+      </div>
+
+      <div class="layer-card l1">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 1 &mdash; WORKING</div>
+        <div class="layer-title">워킹 (세션)</div>
+        <div class="layer-meta">세션 범위 &middot; 일시적 &middot; 컴팩션 이후에도 유지</div>
+        <ul class="layer-files">
+          <li><span>TaskList</span> &mdash; 현재 작업 상태 (컨텍스트 내)</li>
+          <li><span>compressed_context/</span> &mdash; 냉각 작업 요약</li>
+          <li><span>수정된 파일 경로</span> &mdash; pre_compact가 추적</li>
+          <li><span>핵심 결정 사항</span> &mdash; 컴팩션 시 보존</li>
+        </ul>
+        <div class="tok-row"><span>런타임</span><span class="val">~1000 토큰</span></div>
+      </div>
+
+      <div class="layer-card l0">
+        <div class="layer-num"><div class="layer-dot"></div>LAYER 0 &mdash; SENSORY</div>
+        <div class="layer-title">감각 (현재 턴)</div>
+        <div class="layer-meta">턴별 &middot; 일시적 &middot; 영속성 없음</div>
+        <ul class="layer-files">
+          <li><span>도구 출력</span> &mdash; Bash, Read, Write 결과</li>
+          <li><span>파일 내용</span> &mdash; 현재 읽은 파일</li>
+          <li><span>웹 결과</span> &mdash; 가져온 콘텐츠</li>
+          <li>각 응답 후 사라짐</li>
+        </ul>
+        <div class="tok-row"><span>비용</span><span class="val">무제한 / 턴</span></div>
+      </div>
+    </div>
+
+    <!-- Token budget bars -->
+    <div class="budget-section" style="margin-bottom:36px;">
+      <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:20px;">세션 시작 주입 예산</div>
+
+      <div class="budget-row">
+        <div class="budget-label">L3 &middot; CLAUDE.md + MEMORY.md (글로벌 규칙)</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:var(--l3);"></div></div>
+        <div class="budget-tok">~800</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 &middot; PROJECT_CONTEXT.md (아키텍처) <span class="tag auto">자동</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:57%; background:var(--l2);"></div></div>
+        <div class="budget-tok">~2000</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 &middot; FACTS.md <span class="tag demand">필요시</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:42%; background:var(--l2); opacity:0.25;"></div></div>
+        <div class="budget-tok dim">~1500*</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 &middot; MEMORY.md <span class="tag demand">필요시</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:22%; background:var(--l2); opacity:0.25;"></div></div>
+        <div class="budget-tok dim">~800*</div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">L2 &middot; REPO_MAP (파일 200+ 시) <span class="tag auto">자동</span></div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:28%; background:var(--l0);"></div></div>
+        <div class="budget-tok" style="color:var(--muted);">~1000</div>
+      </div>
+
+      <div style="margin-top:16px; background:var(--surface2); border-radius:7px; padding:12px 16px; display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:12px; border:1px solid var(--border);">
+        <span style="color:var(--muted);">첫 메시지 전 자동 주입 컨텍스트</span>
+        <span style="color:var(--l3); font-weight:700;">~2800 토큰</span>
+      </div>
+      <p style="font-size:11px; color:var(--faint); margin-top:8px; font-family:var(--font-mono);">* 필요시만 소비 &mdash; 세션 시작 시 자동 주입 아님</p>
+    </div>
+
+    <!-- FACTS.md pipeline -->
+    <h2 style="font-size:20px; margin-bottom:16px;">FACTS.md Pipeline</h2>
+
+    <div class="pipe-row">
+      <div class="pipe-box"><div class="pname">Bash / Write</div><div class="pdesc">도구 실행</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box"><div class="pname">auto_fact_extractor</div><div class="pdesc">패턴 매칭</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box confirmed"><div class="pname">CONFIRMED</div><div class="pdesc">검증된 사실</div></div>
+    </div>
+    <div class="pipe-row">
+      <div class="pipe-box"><div class="pname">오류 발생</div><div class="pdesc">실패 패턴</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box"><div class="pname">auto_fact_extractor</div><div class="pdesc">오류 분류</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box gotcha"><div class="pname">GOTCHAS</div><div class="pdesc">실패 모드</div></div>
+    </div>
+    <div class="pipe-row">
+      <div class="pipe-box"><div class="pname">파일 경로</div><div class="pdesc">핵심 경로</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box"><div class="pname">auto_fact_extractor</div><div class="pdesc">경로 추적</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box paths"><div class="pname">PATHS</div><div class="pdesc">핵심 파일 위치</div></div>
+    </div>
+    <div class="pipe-row">
+      <div class="pipe-box"><div class="pname">90일 경과</div><div class="pdesc">오래된 항목</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box"><div class="pname">validate_facts.py</div><div class="pdesc">Stop 시 실행</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-box pruned"><div class="pname">STALE &rarr; 삭제</div><div class="pdesc">자동 정리</div></div>
+    </div>
+
+    <!-- Trust hierarchy -->
+    <h2 style="font-size:20px; margin-top:36px; margin-bottom:16px;">신뢰 계층 (Trust Hierarchy)</h2>
+
+    <div class="trust-chain">
+      <div class="trust-row">
+        <div class="trust-rank">1</div>
+        <div class="trust-source">CONFIRMED 사실</div>
+        <div class="trust-why">실행으로 검증된 사실 &mdash; 최고 신뢰도. 추론을 항상 재정의합니다.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">2</div>
+        <div class="trust-source">글로벌 MEMORY 규칙</div>
+        <div class="trust-why">~/.claude/memory/MEMORY.md &mdash; 크로스 프로젝트 학습. CLAUDE.md 수준 권한.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">3</div>
+        <div class="trust-source">프로젝트 MEMORY</div>
+        <div class="trust-why">.claude/MEMORY.md &mdash; 세션 기록. Git diff 기반 사실적 데이터.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">4</div>
+        <div class="trust-source">PROJECT_CONTEXT</div>
+        <div class="trust-why">.claude/PROJECT_CONTEXT.md &mdash; 구조적 개요. Git 해시 검증.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank">5</div>
+        <div class="trust-source">추론 (Inference)</div>
+        <div class="trust-why">LLM의 자체 판단 &mdash; 최저 신뢰도. 항상 상위 소스를 우선합니다.</div>
+      </div>
+    </div>
+
+    <!-- Memory Example Toggle: cross-session learning -->
+    <details class="example-toggle">
+      <summary>예시: 세션 간 학습 루프</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon l1">S1</div>
+            <div class="flow-content">
+              <div class="flow-hook">세션 1: pytest 실행 시도</div>
+              <div class="flow-desc">
+                <code>$ pytest tests/</code> &rarr; 실패 (ModuleNotFoundError)<br>
+                <code>$ pytest tests/ -x --tb=short</code> &rarr; 실패 (conftest.py 누락)<br>
+                <code>$ uv run pytest tests/ -x --tb=short</code> &rarr; 성공<br><br>
+                <strong>auto_fact_extractor 자동 기록:</strong><br>
+                &rarr; CONFIRMED: "<code>uv run pytest tests/ -x --tb=short</code>로 테스트 실행 가능"<br>
+                &rarr; GOTCHA: "pytest를 직접 실행하면 ModuleNotFoundError 발생. uv run 필수"
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">E</div>
+            <div class="flow-content">
+              <div class="flow-hook">세션 1 종료 (Stop Hook)</div>
+              <div class="flow-desc">
+                <strong>auto_memory_writer:</strong> <code>git diff --stat HEAD~1</code> &rarr; ".claude/FACTS.md에 2개 사실 추가"<br>
+                <strong>validate_facts:</strong> 모든 사실 유효 (90일 미만)
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">S2</div>
+            <div class="flow-content">
+              <div class="flow-hook">세션 2: 테스트 요청 (다음 날)</div>
+              <div class="flow-desc">
+                사용자: "테스트 실행해줘"<br><br>
+                Claude가 <code>.claude/FACTS.md</code> 읽음:<br>
+                &rarr; CONFIRMED: <code>uv run pytest tests/ -x --tb=short</code><br>
+                &rarr; GOTCHA: pytest 직접 실행 불가, uv run 필수<br><br>
+                <strong>첫 번째 시도에 바로 성공:</strong><br>
+                <code>$ uv run pytest tests/ -x --tb=short</code> &rarr; 성공<br><br>
+                <span class="tag l2">이전 세션의 실패를 반복하지 않음</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S8: CONTEXT ENGINEERING                      -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="context">
+    <div class="eyebrow-sm">컨텍스트</div>
+    <h2>Context Engineering</h2>
+    <p class="section-desc">컨텍스트 70% 도달 시 자동 압축이 시작됩니다. v4.0에서 PostCompact 검증 단계가 추가되었습니다.</p>
+
+    <div class="flow" style="margin-bottom:24px;">
+      <div class="flow-title">2-Phase Compaction + PostCompact 검증</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">1</div>
+        <div class="flow-content">
+          <div class="flow-hook">auto_context_manager.py <span class="tag l1">PostToolUse</span></div>
+          <div class="flow-desc">컨텍스트 사용률 모니터링. 70% 임계값 초과 시 냉각 작업을 <code>compressed_context/</code>에 저장합니다. 활성 작업은 유지하고 완료된 작업만 압축합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">2</div>
+        <div class="flow-content">
+          <div class="flow-hook">pre_compact_preserve.py <span class="tag l1">PreCompact</span></div>
+          <div class="flow-desc">컴팩션 직전에 실행. 활성 TaskList, 수정된 파일 경로, 테스트 명령어, 검증 결과, 핵심 결정을 보존 지침으로 컴팩션 프롬프트에 주입합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">3</div>
+        <div class="flow-content">
+          <div class="flow-hook">post_compact_verify.py <span class="tag async">async</span> <span class="tag new">NEW v4.0</span></div>
+          <div class="flow-desc">컴팩션 완료 후 보존 상태를 검증합니다. 핵심 정보 손실 여부를 확인하고 누락된 컨텍스트가 있으면 복원을 시도합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>컴팩션 시 보존되는 항목:</strong> 활성 TaskList 상태, 수정된 파일 경로, 테스트 명령어, 검증 결과, 핵심 결정 사항, git diff 통계. 이 항목들은 컴팩션 이후에도 Working Memory (L1)에 유지됩니다.
+    </div>
+
+    <!-- Context Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: Context 압축 파이프라인 작동 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon l1">70%</div>
+            <div class="flow-content">
+              <div class="flow-hook">auto_context_manager.py: 임계값 감지</div>
+              <div class="flow-desc">
+                PostToolUse에서 컨텍스트 사용률 체크 &rarr; <strong style="color:var(--l1);">72% 도달</strong><br>
+                냉각 작업 식별: Task 1 (완료), Task 2 (완료), Task 3 (진행 중)<br>
+                Task 1, 2의 상세 내용을 <code>compressed_context/task_1_2_summary.md</code>로 저장
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">PC</div>
+            <div class="flow-content">
+              <div class="flow-hook">pre_compact_preserve.py: 핵심 정보 추출</div>
+              <div class="flow-desc">
+                보존 대상:<br>
+                &mdash; TaskList: "[Task 3: src/api/routes.ts 리팩토링 - 진행 중]"<br>
+                &mdash; 수정된 파일: <code>src/api/routes.ts</code>, <code>src/api/middleware.ts</code>, <code>tests/api.test.ts</code><br>
+                &mdash; 테스트 명령: <code>uv run pytest tests/ -x --tb=short</code><br>
+                &mdash; 핵심 결정: "REST &rarr; tRPC 마이그레이션은 하지 않기로 결정"<br>
+                이 정보가 컴팩션 프롬프트에 주입됨
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">V</div>
+            <div class="flow-content">
+              <div class="flow-hook">post_compact_verify.py: 보존 검증</div>
+              <div class="flow-desc">
+                컴팩션 완료 후 확인:<br>
+                &mdash; TaskList 상태 유지됨? <strong style="color:var(--l2);">OK</strong><br>
+                &mdash; 파일 경로 보존됨? <strong style="color:var(--l2);">OK</strong><br>
+                &mdash; 핵심 결정 보존됨? <strong style="color:var(--l2);">OK</strong><br>
+                <span class="tag l2">컨텍스트 45%로 감소 &mdash; 핵심 정보 손실 0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S9: CADDY CLASSIFIER                         -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="caddy">
+    <div class="eyebrow-sm">분류기</div>
+    <h2>Caddy Classifier</h2>
+    <p class="section-desc">모든 사용자 요청을 4차원으로 분류하고 최적의 실행 전략으로 라우팅합니다.</p>
+
+    <div class="gl-grid" style="margin-bottom:24px;">
+      <div class="gl-card global">
+        <h3>Complexity (복잡도)</h3>
+        <div class="gl-item"><div class="gl-item-name">simple</div><div class="gl-item-desc">1-2 파일, 명확한 변경</div></div>
+        <div class="gl-item"><div class="gl-item-name">moderate</div><div class="gl-item-desc">3-5 파일, 일부 탐색 필요</div></div>
+        <div class="gl-item"><div class="gl-item-name">complex</div><div class="gl-item-desc">5-10 파일, 깊은 분석</div></div>
+        <div class="gl-item"><div class="gl-item-name">massive</div><div class="gl-item-desc">10+ 파일, 전체 시스템</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>Type (유형)</h3>
+        <div class="gl-item"><div class="gl-item-name">implement</div><div class="gl-item-desc">새 기능 구현</div></div>
+        <div class="gl-item"><div class="gl-item-name">fix</div><div class="gl-item-desc">버그 수정</div></div>
+        <div class="gl-item"><div class="gl-item-name">refactor</div><div class="gl-item-desc">코드 리팩토링</div></div>
+        <div class="gl-item"><div class="gl-item-name">research</div><div class="gl-item-desc">조사 / 탐색</div></div>
+        <div class="gl-item"><div class="gl-item-name">test</div><div class="gl-item-desc">테스트 작성</div></div>
+        <div class="gl-item"><div class="gl-item-name">review</div><div class="gl-item-desc">코드 리뷰</div></div>
+        <div class="gl-item"><div class="gl-item-name">document</div><div class="gl-item-desc">문서 작성</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>Quality (품질 수준)</h3>
+        <div class="gl-item"><div class="gl-item-name">standard</div><div class="gl-item-desc">일반 품질</div></div>
+        <div class="gl-item"><div class="gl-item-name">high</div><div class="gl-item-desc">높은 품질 요구</div></div>
+        <div class="gl-item"><div class="gl-item-name">critical</div><div class="gl-item-desc">핵심 경로 &mdash; 실패 불가</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>Scope (범위)</h3>
+        <div class="gl-item"><div class="gl-item-name">focused</div><div class="gl-item-desc">단일 모듈/파일</div></div>
+        <div class="gl-item"><div class="gl-item-name">moderate</div><div class="gl-item-desc">여러 관련 모듈</div></div>
+        <div class="gl-item"><div class="gl-item-name">broad</div><div class="gl-item-desc">전체 시스템</div></div>
+        <div class="gl-item"><div class="gl-item-name">unknown</div><div class="gl-item-desc">탐색 필요</div></div>
+      </div>
+    </div>
+
+    <!-- Strategy mapping -->
+    <h2 style="font-size:18px; margin-bottom:16px;">전략 매핑 (Strategy Mapping)</h2>
+    <div class="trust-chain">
+      <div class="trust-row">
+        <div class="trust-rank" style="font-size:14px;">D</div>
+        <div class="trust-source">direct</div>
+        <div class="trust-why">simple + focused &rarr; 직접 실행. 에이전트 없이 빠르게 처리.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank" style="font-size:14px;">R</div>
+        <div class="trust-source">research</div>
+        <div class="trust-why">research type + unknown scope &rarr; researcher 에이전트에 위임.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank" style="font-size:14px;">T</div>
+        <div class="trust-source">team</div>
+        <div class="trust-why">moderate + high quality &rarr; Builder + Validator 팀 병렬 실행.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank" style="font-size:14px;">O</div>
+        <div class="trust-source">orchestrate</div>
+        <div class="trust-why">complex + broad &rarr; orchestrator 에이전트가 전체 조율.</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-rank" style="font-size:14px;">L</div>
+        <div class="trust-source">rlm</div>
+        <div class="trust-why">massive + broad &rarr; 재귀적 분석. 컨텍스트 제한 초월.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:16px;">
+      <strong>fusion 전략:</strong> critical quality 등급일 때 자동 활성화. Best-of-N 방식으로 여러 접근법을 병렬 실행한 후 최적의 결과를 선택합니다.
+    </div>
+
+    <!-- Caddy Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: Caddy가 전략을 자동 선택하는 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자: "결제 시스템에 Stripe webhook 처리 추가해줘"</div>
+              <div class="flow-desc">UserPromptSubmit &rarr; analyze_request.py 실행</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:var(--l3-bg); border-color:var(--l3-border);">4D</div>
+            <div class="flow-content">
+              <div class="flow-hook">Caddy 4차원 분류 결과</div>
+              <div class="flow-desc">
+                <code>Complexity: moderate</code> &mdash; webhook 처리는 여러 파일 수정 필요<br>
+                <code>Type: implement</code> &mdash; 새 기능 추가<br>
+                <code>Quality: high</code> &mdash; 결제 = 높은 정확도 필요<br>
+                <code>Scope: moderate</code> &mdash; 결제 모듈 + API 라우트 + 테스트
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">R</div>
+            <div class="flow-content">
+              <div class="flow-hook">전략 결정: <span class="tag l2">orchestrate</span> (confidence: 82%)</div>
+              <div class="flow-desc">
+                auto_delegate.py가 mandatory orchestration directive를 주입:<br>
+                <code>[Caddy] 이 작업은 orchestrate 전략이 적합합니다.</code><br>
+                <code>[Caddy] researcher가 Stripe webhook API 문서를 조사하고,</code><br>
+                <code>[Caddy] builder가 구현한 후, validator가 검증합니다.</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">E</div>
+            <div class="flow-content">
+              <div class="flow-hook">자동 실행 (사용자 개입 없음)</div>
+              <div class="flow-desc">
+                orchestrator agent가 팀 구성:<br>
+                1. <code>researcher</code> &rarr; Stripe webhook 공식 문서 조사<br>
+                2. <code>builder</code> &rarr; <code>src/payments/webhook.ts</code> 구현<br>
+                3. <code>scout</code> &rarr; 코드 리뷰 (안전 모드)<br>
+                4. <code>auto_fact_extractor</code> &rarr; FACTS.md에 엔드포인트 기록
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S10: DAMAGE CONTROL                          -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="damage">
+    <div class="eyebrow-sm">보안</div>
+    <h2>Damage Control &mdash; 3-Tier Defense</h2>
+    <p class="section-desc"><code>allow: ["*"]</code> 환경에서도 실수를 방지합니다. 3단계 방어로 위험한 명령을 차단합니다.</p>
+
+    <div class="defense-tier" style="border-left: 3px solid var(--l3);">
+      <div class="defense-header">
+        <div class="defense-num" style="color:var(--l3);">T1</div>
+        <div><strong style="color:var(--text);">Permission Rules</strong> &mdash; settings.json allow/deny/ask</div>
+      </div>
+      <div class="defense-body">
+        <p>Claude Code의 내장 권한 시스템. <code>allow: ["*"]</code>로 전체 허용하되, 프레임워크의 추가 방어 계층이 보호합니다. 패턴 매칭보다 먼저 평가됩니다.</p>
+      </div>
+    </div>
+
+    <div class="defense-tier" style="border-left: 3px solid var(--l1);">
+      <div class="defense-header">
+        <div class="defense-num" style="color:var(--l1);">T2</div>
+        <div><strong style="color:var(--text);">Pattern Matching</strong> &mdash; unified-damage-control.py + patterns.yaml</div>
+      </div>
+      <div class="defense-body">
+        <p>정규식 패턴으로 위험 명령을 차단합니다. <code>rm -rf /</code>, <code>git push --force main</code>, <code>DROP TABLE</code> 등을 차단. <code>patterns.yaml</code>에서 패턴 추가/수정. 안전한 명령 목록(safe_commands)으로 오탐 방지.</p>
+      </div>
+    </div>
+
+    <div class="defense-tier" style="border-left: 3px solid var(--accent);">
+      <div class="defense-header">
+        <div class="defense-num" style="color:var(--accent);">T3</div>
+        <div><strong style="color:var(--text);">Path Protection</strong> &mdash; 경로별 접근 제어</div>
+      </div>
+      <div class="defense-body">
+        <p>파일 시스템 수준의 보호. <strong>zero-access</strong> (접근 자체 차단), <strong>read-only</strong> (읽기만 허용), <strong>no-delete</strong> (삭제만 차단)의 3단계로 경로를 보호합니다. <code>settings.json</code>, <code>.env</code>, 인증서 파일 등이 보호 대상입니다.</p>
+      </div>
+    </div>
+
+    <!-- Damage Control Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: 경로 보호 -- .env 파일 접근 차단</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">Claude가 .env 파일 읽기 시도</div>
+              <div class="flow-desc"><code>Read .env</code> &mdash; API 키, 데이터베이스 비밀번호 등이 포함된 파일</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">!</div>
+            <div class="flow-content">
+              <div class="flow-hook">PreToolUse &rarr; Path Protection (T3)</div>
+              <div class="flow-desc">
+                1. 파일 경로 패턴 매칭: <code>.env</code> &rarr; <strong>zero-access</strong> 규칙에 매칭<br>
+                2. <code>.env*</code>, <code>*.pem</code>, <code>*.key</code> 등 모두 zero-access로 설정<br>
+                3. Read, Write, Edit 모든 도구에서 차단
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">X</div>
+            <div class="flow-content">
+              <div class="flow-hook">결과: <span style="color:var(--accent); font-weight:700;">BLOCKED</span></div>
+              <div class="flow-desc">
+                <code>{"permissionDecision": "deny", "permissionDecisionReason": "Path .env is protected (zero-access)"}</code><br>
+                Claude에게 차단 사유 전달 &rarr; 사용자에게 "환경 변수 내용은 직접 확인해 주세요" 안내<br>
+                <span class="tag l2">비밀 정보 유출 방지 &mdash; 도구 유형과 무관하게 모든 접근 차단</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S11: PROJECT FINGERPRINT                     -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="fingerprint">
+    <div class="eyebrow-sm">자동 적응 &mdash; v4.0</div>
+    <h2>프로젝트별 자동 적응 <span class="tag new">NEW</span></h2>
+    <p class="section-desc"><code>project_fingerprint.py</code> (CwdChanged hook)가 디렉토리 전환 시 자동으로 프로젝트 스택을 감지합니다.</p>
+
+    <div class="flow" style="margin-bottom:24px;">
+      <div class="flow-title">감지 항목</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">L</div>
+        <div class="flow-content">
+          <div class="flow-hook">Language</div>
+          <div class="flow-desc">Python, JavaScript, TypeScript, Go, Rust, Java 등. package.json, pyproject.toml, go.mod, Cargo.toml로 감지.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">F</div>
+        <div class="flow-content">
+          <div class="flow-hook">Framework</div>
+          <div class="flow-desc">React, Vue, Next.js, Django, FastAPI, Spring Boot 등. 의존성 파일과 프로젝트 구조로 감지.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">T</div>
+        <div class="flow-content">
+          <div class="flow-hook">Test Runner</div>
+          <div class="flow-desc">pytest, jest, vitest, go test, cargo test 등. 설정 파일과 테스트 디렉토리로 감지.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">C</div>
+        <div class="flow-content">
+          <div class="flow-hook">CI/CD + Database + Package Manager</div>
+          <div class="flow-desc">GitHub Actions, GitLab CI, PostgreSQL, MySQL, npm, yarn, pnpm, uv, poetry 등 자동 감지.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>저장 위치:</strong> <code>~/.claude/data/project_fingerprints/</code>에 프로젝트별 JSON 파일로 저장됩니다. 이후 세션에서 동일 프로젝트 진입 시 즉시 로드됩니다.
+    </div>
+
+    <!-- Fingerprint Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: Next.js 프로젝트 자동 감지</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">D</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자가 다른 프로젝트로 이동</div>
+              <div class="flow-desc"><code>cd ~/projects/my-nextjs-app</code> &rarr; CwdChanged Hook 발동</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">S</div>
+            <div class="flow-content">
+              <div class="flow-hook">project_fingerprint.py 자동 실행</div>
+              <div class="flow-desc" style="font-family:var(--font-mono); font-size:11px; line-height:1.8;">
+                감지 과정:<br>
+                - <code>package.json</code> 발견 &rarr; Node.js 프로젝트<br>
+                - dependencies에 <code>"next": "14.x"</code> &rarr; Next.js 프레임워크<br>
+                - devDependencies에 <code>"vitest": "1.x"</code> &rarr; vitest 테스트 러너<br>
+                - <code>pnpm-lock.yaml</code> &rarr; pnpm 패키지 매니저<br>
+                - <code>.github/workflows/</code> &rarr; GitHub Actions CI<br>
+                - <code>prisma/</code> 디렉토리 &rarr; Prisma DB
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">I</div>
+            <div class="flow-content">
+              <div class="flow-hook">Context 자동 주입</div>
+              <div class="flow-desc">
+                Claude에게 전달: <code>"Project fingerprint: JavaScript/TypeScript + Next.js, tests: vitest, CI: GitHub Actions, DB: Prisma, pkg: pnpm"</code><br><br>
+                <strong>효과:</strong> Claude가 이제 이 프로젝트에서:<br>
+                &rarr; <code>pnpm</code> (npm 아님)으로 패키지 설치<br>
+                &rarr; <code>vitest</code> (jest 아님)로 테스트 실행<br>
+                &rarr; Prisma 스키마 구조를 고려한 코드 생성<br>
+                &rarr; Next.js App Router 패턴 사용
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S12: SELF-IMPROVEMENT                        -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="self-improve">
+    <div class="eyebrow-sm">학습</div>
+    <h2>자기 개선 시스템</h2>
+    <p class="section-desc">현재 3개의 자동 학습 메커니즘이 작동하며, 미래의 instinct 기반 시스템이 계획되어 있습니다.</p>
+
+    <div class="lifecycle" style="margin-bottom:24px;">
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">1</div><div><div class="phase-name">Fact Extraction</div><div class="phase-trigger">auto_fact_extractor.py</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">PostToolUse: Bash, Write</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            실행 결과를 패턴 매칭으로 분류.<br>
+            LLM 호출 없이 순수 패턴 매칭.<br>
+            CONFIRMED, GOTCHAS, PATHS, PATTERNS 카테고리.
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">2</div><div><div class="phase-name">Memory Writing</div><div class="phase-trigger">auto_memory_writer.py</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">Stop 시 실행</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">MEMORY.md</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            git diff + 커밋 메시지 기반 요약.<br>
+            변경 사항 없으면 저장 안 함.<br>
+            롤링 세션 기록 (최대 30개).
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">3</div><div><div class="phase-name">Skill Generation</div><div class="phase-trigger">auto_skill_generator.py</div></div></div>
+        <ul class="ev-list">
+          <li><span class="ev-hook">Stop 시 실행</span><span class="ev-arr">&rarr;</span><span class="ev-target">auto-generated skills</span></li>
+          <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
+            반복 패턴 감지 시 자동으로<br>
+            새 스킬을 생성합니다.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-title">미래: Instinct 기반 시스템 (계획)</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l0">1</div>
+        <div class="flow-content">
+          <div class="flow-hook">Observe (관찰)</div>
+          <div class="flow-desc">사용자 패턴, 반복 작업, 공통 오류를 관찰합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l0">2</div>
+        <div class="flow-content">
+          <div class="flow-hook">Detect Patterns (패턴 감지)</div>
+          <div class="flow-desc">반복되는 행동 패턴을 식별하고 분류합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">3</div>
+        <div class="flow-content">
+          <div class="flow-hook">Instincts (본능)</div>
+          <div class="flow-desc">신뢰도 0.0-1.0으로 본능을 형성합니다. 낮은 신뢰도는 제안만, 높은 신뢰도는 자동 실행.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">4</div>
+        <div class="flow-content">
+          <div class="flow-hook">Cluster &rarr; Skills</div>
+          <div class="flow-desc">유사한 본능을 클러스터링하여 재사용 가능한 스킬로 승격합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Self-Improvement Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: auto_skill_generator가 반복 패턴을 Skill로 만드는 과정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">반복 패턴 감지 (최근 5개 세션 분석)</div>
+              <div class="flow-desc">
+                세션 분석 결과:<br>
+                &mdash; 세션 7: "Docker compose 빌드 후 테스트 실행"<br>
+                &mdash; 세션 9: "Docker 이미지 빌드, 테스트 컨테이너 실행"<br>
+                &mdash; 세션 12: "docker-compose up, 헬스체크, pytest"<br>
+                <strong>패턴:</strong> Docker + 테스트 워크플로우가 3회 반복됨
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l1">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">auto_skill_generator.py가 스킬 후보 생성</div>
+              <div class="flow-desc">
+                제안: <code>docker-test</code> 스킬<br>
+                &mdash; trigger: "docker test", "컨테이너 테스트", "compose test"<br>
+                &mdash; 동작: docker-compose up &rarr; 헬스체크 대기 &rarr; pytest 실행 &rarr; docker-compose down<br>
+                &mdash; 파일: <code>global-skills/docker-test/SKILL.md</code> 자동 생성
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">다음 세션에서 자동 활성화</div>
+              <div class="flow-desc">
+                사용자: "Docker 환경에서 테스트 돌려줘"<br>
+                &rarr; <code>docker-test</code> 스킬 자동 트리거<br>
+                &rarr; 이전 3개 세션에서 반복했던 수동 작업이 원클릭으로 실행<br>
+                <span class="tag l2">학습 루프 완성: 관찰 &rarr; 패턴 감지 &rarr; 스킬 생성 &rarr; 자동 실행</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S13: ARCHITECTURE MAP                        -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="archmap">
+    <div class="eyebrow-sm">아키텍처 분석</div>
+    <h2>Architecture Map</h2>
+    <p class="section-desc"><code>/arch-map</code> 명령이 생성하는 5가지 산출물입니다.</p>
+
+    <div class="lifecycle">
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">1</div><div><div class="phase-name">Blast-Radius Table</div><div class="phase-trigger">"X 변경 시 Y 업데이트"</div></div></div>
+        <ul class="ev-list">
+          <li style="font-size:11px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            모든 파일 간 의존성을 매핑합니다. 하나의 파일을 변경했을 때 영향을 받는 모든 파일을 테이블로 표시합니다.
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">2</div><div><div class="phase-name">Mermaid Diagram</div><div class="phase-trigger">의존성 시각화</div></div></div>
+        <ul class="ev-list">
+          <li style="font-size:11px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            Mermaid 포맷의 의존성 다이어그램 생성. 모듈 간 관계를 시각적으로 표현합니다.
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">3</div><div><div class="phase-name">Critical Paths</div><div class="phase-trigger">핵심 워크플로우</div></div></div>
+        <ul class="ev-list">
+          <li style="font-size:11px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            시스템의 핵심 경로를 식별합니다. SessionStart &rarr; PreToolUse &rarr; Stop 같은 중요 흐름을 추적합니다.
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">4</div><div><div class="phase-name">Data Lineage</div><div class="phase-trigger">데이터 파일 계보</div></div></div>
+        <ul class="ev-list">
+          <li style="font-size:11px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            데이터 파일이 어디서 생성되고 어디서 소비되는지 추적합니다. YAML, JSON, TOML 설정 파일의 흐름을 시각화합니다.
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><div class="phase-icon">5</div><div><div class="phase-name">Duplication Warnings</div><div class="phase-trigger">중복 경고</div></div></div>
+        <ul class="ev-list">
+          <li style="font-size:11px; color:var(--muted); padding:4px 0; display:block; border-bottom:none; line-height:1.6;">
+            코드 또는 설정의 중복을 감지하고 경고합니다. DRY 원칙 위반을 자동으로 식별합니다.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:16px;">
+      <strong>저장 위치:</strong> <code>.claude/ARCHITECTURE.md</code>에 저장되며 프로젝트 컨텍스트와 통합됩니다.
+    </div>
+
+    <!-- Architecture Map Example Toggle -->
+    <details class="example-toggle">
+      <summary>예시: Blast-Radius Table 실제 출력</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">Q</div>
+            <div class="flow-content">
+              <div class="flow-hook">사용자: <code>/arch-map</code></div>
+              <div class="flow-desc">Explore agent가 전체 코드베이스를 분석하여 .claude/ARCHITECTURE.md를 생성합니다.</div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l3">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">생성된 Blast-Radius Table (일부)</div>
+              <div class="flow-desc" style="font-family:var(--font-mono); font-size:11px; line-height:1.8;">
+                <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:4px 8px; color:var(--accent); font-weight:600;">변경 대상</td>
+                    <td style="padding:4px 8px; color:var(--muted);">영향 받는 곳</td>
+                    <td style="padding:4px 8px; color:var(--l2);">실행 명령</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border); background:var(--surface2);">
+                    <td style="padding:4px 8px;">settings.json.template</td>
+                    <td style="padding:4px 8px; color:var(--muted);">모든 Hook 경로 (36개)</td>
+                    <td style="padding:4px 8px; color:var(--l2);"><code>bash install.sh</code></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:4px 8px;">model_tiers.yaml</td>
+                    <td style="padding:4px 8px; color:var(--muted);">README.md, CLAUDE.md</td>
+                    <td style="padding:4px 8px; color:var(--l2);"><code>uv run scripts/generate_docs.py</code></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border); background:var(--surface2);">
+                    <td style="padding:4px 8px;">patterns.yaml</td>
+                    <td style="padding:4px 8px; color:var(--muted);">Damage Control 동작</td>
+                    <td style="padding:4px 8px; color:var(--l2);"><code>uv run scripts/run_tests.py</code></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-icon l2">U</div>
+            <div class="flow-content">
+              <div class="flow-hook">이후 활용</div>
+              <div class="flow-desc">
+                파일 수정 전 ARCHITECTURE.md의 Blast-Radius Table을 확인하면:<br>
+                "이 파일을 변경하면 어디에 영향이 가는지" 즉시 파악 가능.<br>
+                <strong>결과:</strong> "Hook 파일 이름 변경 &rarr; settings.json.template도 수정 필요" 같은 연쇄 영향을 미리 파악하여 시스템 마비 방지.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S14: TROUBLESHOOTING                         -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="troubleshoot">
+    <div class="eyebrow-sm">문제 해결</div>
+    <h2>문제 해결 가이드</h2>
+    <p class="section-desc">자주 발생하는 문제와 해결 방법입니다.</p>
+
+    <div style="overflow-x:auto; margin-bottom:24px;">
+      <table class="cmd-table">
+        <thead>
+          <tr><th>증상</th><th>원인</th><th>해결</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">모든 도구에서 "hook error"</td>
+            <td>Circuit breaker 트립</td>
+            <td><code>~/.claude/circuit_breakers/</code> 파일 삭제 또는 60초 대기</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">settings.json 변경 사항 사라짐</td>
+            <td>직접 편집 (install.sh가 덮어씀)</td>
+            <td><code>templates/settings.json.template</code> 편집 후 <code>bash install.sh</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">훅이 실행되지 않음</td>
+            <td>경로가 깨짐 (디렉토리 이동)</td>
+            <td><code>~/.claude/settings.json</code> 경로 확인 후 <code>bash install.sh</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">컨텍스트가 너무 빨리 소진</td>
+            <td>큰 파일을 통째로 읽음</td>
+            <td>offset/limit 사용, 서브에이전트 위임, /rlm 사용</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">에이전트가 감지되지 않음</td>
+            <td>심링크 깨짐</td>
+            <td><code>bash install.sh</code>로 심링크 재생성</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">pip 충돌 발생</td>
+            <td>pip install 직접 사용</td>
+            <td>항상 <code>uv run</code> 사용 &mdash; 환경 격리</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text); font-weight:500;">FACTS.md에 오래된 항목</td>
+            <td>validate_facts.py 미실행</td>
+            <td>세션 정상 종료 확인. 수동: <code>/facts</code> 스킬로 정리</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Debugging sequence -->
+    <h2 style="font-size:18px; margin-bottom:16px;">디버깅 순서</h2>
+
+    <div class="flow">
+      <div class="flow-title">훅 장애 시 디버깅 시퀀스</div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">1</div>
+        <div class="flow-content">
+          <div class="flow-hook">Circuit Breaker 확인</div>
+          <div class="flow-desc"><code>ls ~/.claude/circuit_breakers/</code> &mdash; 트립된 브레이커가 있는지 확인합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l1">2</div>
+        <div class="flow-content">
+          <div class="flow-hook">FACTS.md GOTCHAS 확인</div>
+          <div class="flow-desc"><code>Read .claude/FACTS.md</code> &mdash; 알려진 실패 모드가 기록되어 있는지 확인합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">3</div>
+        <div class="flow-content">
+          <div class="flow-hook">훅 스크립트 직접 실행</div>
+          <div class="flow-desc"><code>uv run global-hooks/.../the_hook.py</code> &mdash; 테스트 stdin으로 직접 실행하여 stderr 확인합니다.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-icon l2">4</div>
+        <div class="flow-content">
+          <div class="flow-hook">테스트 스위트 실행</div>
+          <div class="flow-desc"><code>uv run scripts/run_tests.py</code> &mdash; 전체 테스트를 실행하여 수정 사항 검증합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:16px;">
+      <strong>절대 하지 말 것:</strong> settings.json 직접 편집, 훅 파일 참조 확인 없이 삭제, 프레임워크 디렉토리 경로 업데이트 없이 이동, 훅에서 sleep 사용 (타임아웃 트립), pip install 직접 사용 (환경 오염).
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Claude Agentic Framework v4.0 &middot; Hook 36개 &middot; Event 16개 &middot; Agent 8개 &middot; Command 15개 &middot; Skill 9개
+  <br><br>
+  <span style="color:var(--faint);">Opus-first on Max plan &middot; One repo, one install, one source of truth</span>
+</footer>
+
+</body>
+</html>
