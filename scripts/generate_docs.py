@@ -335,7 +335,7 @@ def generate_claude_md(d):
 
     return f"""# Claude Agentic Framework
 
-v2.1.0 | One repo, one install, one source of truth.
+v3.0.2 | One repo, one install, one source of truth. Opus-first on Max plan.
 
 ## Structure
 
