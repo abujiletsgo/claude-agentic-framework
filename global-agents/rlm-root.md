@@ -2,7 +2,7 @@
 name: rlm-root
 description: Recursive Language Model Root Controller - processes infinite context without reading it
 tools: Task, Read, Glob, Grep, Bash
-model: sonnet
+model: opus
 role: controller
 maxTurns: 50
 permissionMode: default

@@ -1,133 +1,67 @@
 # Multi-Model Tier Configuration
-# Assigns optimal models to agents for cost/quality balance.
+# Max Plan: Opus everywhere that benefits from stronger reasoning.
+# Haiku only for mechanical/validation tasks where speed > depth.
 #
-# Pricing (Anthropic 2026):
-#   Haiku 4.5:  $0.25 / $1.25  per 1M tokens (input/output)
-#   Sonnet 4.5: $3.00 / $15.00 per 1M tokens (input/output)
-#   Opus 4.6:   $15.00 / $75.00 per 1M tokens (input/output)
-#
-# Target: 50-60% cost reduction vs all-Sonnet baseline.
+# Pricing irrelevant on Max plan — optimize for QUALITY not cost.
 
-default_model: sonnet
+default_model: opus
 
 # ─── Tier Definitions ───────────────────────────────────────────────
 
 tiers:
   opus:
     model_id: claude-opus-4-6
-    input_cost_per_1m: 15.00
-    output_cost_per_1m: 75.00
     use_for:
-      - Orchestration and multi-agent planning
-      - Architecture and design decisions
-      - Security-critical analysis
-      - Complex multi-step reasoning
-      - Recursive context control (RLM)
-
-  sonnet:
-    model_id: claude-sonnet-4-5
-    input_cost_per_1m: 3.00
-    output_cost_per_1m: 15.00
-    use_for:
-      - Standard code generation and implementation
+      - Everything that benefits from reasoning
+      - Orchestration, planning, architecture
+      - Code generation and implementation
       - Research and analysis
-      - Documentation writing
-      - Agent/skill generation
       - Code review and refactoring
-      - Test generation
+      - Security analysis
+      - Agent/skill generation
+      - Complex multi-step tasks
 
   haiku:
     model_id: claude-haiku-4-5
-    input_cost_per_1m: 0.25
-    output_cost_per_1m: 1.25
     use_for:
-      - Read-only validation and verification
-      - Simple file operations and scraping
-      - Data validation and formatting
+      - Read-only validation (syntax checks, linting)
+      - Fast file exploration (Explore agent)
+      - Documentation scraping
+      - Data formatting and mechanical transforms
       - Status reporting and TTS summaries
-      - Worktree creation (mechanical delegation)
-      - Documentation generation (from templates)
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# Total: 8 root agents (3 opus, 4 sonnet, 1 haiku)
-# Team agents (builder, validator, project-skill-generator) archived
-# Optimization: rlm-root downgraded opus→sonnet for 5x cost savings
+# Max Plan: 7 opus, 1 haiku. No sonnet tier needed.
 
 agent_tiers:
-  # Opus tier (3 agents) - Deep reasoning, planning, architecture
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
     - critical-analyst        # Deep critical thinking, risk analysis
+    - researcher              # Research and analysis (upgraded from sonnet)
+    - meta-agent              # Agent file generation (upgraded from sonnet)
+    - scout-report-suggest    # Codebase scouting (upgraded from sonnet)
+    - rlm-root                # Recursive exploration (upgraded from sonnet)
 
-  # Sonnet tier (4 agents) - Implementation, research, analysis
-  sonnet:
-    - researcher              # Research and analysis
-    - meta-agent              # Agent file generation (was opus, downgraded)
-    - scout-report-suggest    # Codebase scouting and analysis
-    - rlm-root                # Recursive exploration (downgraded from opus for cost optimization)
-
-  # Haiku tier (1 agent) - Simple ops, data tasks
   haiku:
-    - docs-scraper            # Documentation scraping
+    - docs-scraper            # Documentation scraping (speed > depth)
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 
 skill_default_models:
-  test-generator: sonnet  # Upgraded from haiku for better test quality
-  code-review: sonnet
-  refactoring-assistant: sonnet
+  test-generator: opus
+  code-review: opus
+  refactoring-assistant: opus
   security-scanner: opus
-  error-analyzer: sonnet
-  knowledge-db: haiku
-
-# ─── Cost Estimation ────────────────────────────────────────────────
-#
-# Scenario: Typical development session (100k tokens total)
-#
-# All-Sonnet baseline:
-#   Input:  80k tokens * $3.00/1M  = $0.24
-#   Output: 20k tokens * $15.00/1M = $0.30
-#   Total: $0.54 per session
-#
-# Multi-tier optimized (30% haiku, 60% sonnet, 10% opus):
-#   Haiku:  24k in * $0.25/1M + 6k out * $1.25/1M   = $0.006 + $0.008 = $0.014
-#   Sonnet: 48k in * $3.00/1M + 12k out * $15.00/1M  = $0.144 + $0.180 = $0.324
-#   Opus:   8k in * $15.00/1M + 2k out * $75.00/1M   = $0.120 + $0.150 = $0.270
-#   Total: $0.61 per session
-#
-# Heavy session (1M tokens total, more subagent delegation):
-#
-# All-Sonnet baseline:
-#   Input:  800k * $3.00/1M + 200k * $15.00/1M = $5.40
-#
-# Multi-tier optimized:
-#   Haiku:  240k in + 60k out  = $0.060 + $0.075 = $0.135
-#   Sonnet: 480k in + 120k out = $1.440 + $1.800 = $3.240
-#   Opus:   80k in + 20k out   = $1.200 + $1.500 = $2.700
-#   Total: $6.08
-#
-# All-Opus baseline:
-#   Input:  800k * $15/1M + 200k * $75/1M = $27.00
-#
-# Savings vs all-Opus: 77% ($6.08 vs $27.00)
-# Savings vs all-Sonnet: ~0% for light sessions, but quality improves
-#   because critical tasks get Opus while bulk work uses Haiku
-#
-# Real savings come from:
-#   1. Validators using Haiku instead of Opus (60x cheaper)
-#   2. Mechanical tasks (worktree, docs, data) using Haiku
-#   3. Bulk implementation using Sonnet instead of Opus (5x cheaper)
-#   4. Only 4 agents use Opus (was 8+ before optimization)
+  error-analyzer: opus
+  knowledge-db: haiku     # Mechanical DB ops, speed matters
 
 # ─── Decision Matrix ────────────────────────────────────────────────
 
 decision_matrix:
-  - condition: "Task involves security, architecture, or multi-agent planning"
+  - condition: "Any task requiring reasoning, analysis, or generation"
     model: opus
-  - condition: "Task is code implementation, research, or analysis"
-    model: sonnet
-  - condition: "Task is validation, data processing, or mechanical ops"
+  - condition: "Mechanical validation, exploration, or data formatting"
     model: haiku
   - condition: "Unknown complexity"
-    model: sonnet  # Default
+    model: opus  # Default to strongest on Max plan

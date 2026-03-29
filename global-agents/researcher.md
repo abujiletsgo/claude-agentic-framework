@@ -3,7 +3,7 @@ name: researcher
 description: Deep research agent for reading docs, analyzing code, and synthesizing findings. Use when task requires reading many files or comprehensive analysis. PROACTIVE use for research-heavy tasks.
 tools: Read, Glob, Grep, Bash
 color: Blue
-model: sonnet
+model: opus
 initialPrompt: "/prime"
 maxTurns: 50
 permissionMode: default
