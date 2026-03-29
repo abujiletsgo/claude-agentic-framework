@@ -16,8 +16,12 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_DIR = Path.home() / ".claude" / "data" / "knowledge-db"
-DB_PATH = DB_DIR / "knowledge.db"
+# Import canonical DB path from the single source of truth
+sys.path.insert(0, str(Path(__file__).parent))
+from knowledge_db import get_canonical_db_path
+
+DB_PATH = get_canonical_db_path()
+DB_DIR = DB_PATH.parent
 CONFIG_PATH = Path.home() / ".claude" / "knowledge_pipeline.yaml"
 OBSERVATIONS_FILE = Path.home() / ".claude" / "observations.jsonl"
 ANALYSIS_LOG = Path.home() / ".claude" / "analysis_log.jsonl"

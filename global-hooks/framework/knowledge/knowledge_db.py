@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 # ---------------------------------------------------------------------------
-# Paths
+# Paths — single source of truth for the entire knowledge pipeline
 # ---------------------------------------------------------------------------
 
 DB_DIR = Path.home() / ".claude" / "data" / "knowledge-db"
@@ -34,6 +34,18 @@ DB_PATH = DB_DIR / "knowledge.db"
 JSONL_PATH = Path.home() / ".claude" / "knowledge.jsonl"
 
 VALID_TAGS = {"LEARNED", "DECISION", "FACT", "PATTERN", "INVESTIGATION"}
+
+
+def get_canonical_db_path() -> Path:
+    """Return the single canonical path to the knowledge database.
+
+    Every module in the knowledge pipeline MUST use this function
+    (or import DB_PATH from this module) to avoid split-brain bugs
+    where writers and readers target different database files.
+
+    Canonical path: ~/.claude/data/knowledge-db/knowledge.db
+    """
+    return DB_PATH
 
 # ---------------------------------------------------------------------------
 # Security helpers

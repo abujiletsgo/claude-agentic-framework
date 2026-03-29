@@ -4,6 +4,9 @@ description: Deep research agent for reading docs, analyzing code, and synthesiz
 tools: Read, Glob, Grep, Bash
 color: Blue
 model: sonnet
+initialPrompt: "/prime"
+maxTurns: 50
+permissionMode: default
 ---
 
 # Researcher Agent

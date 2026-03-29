@@ -208,8 +208,52 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_skill_generator.py",
+            "timeout": 10,
+            "_comment": "Analyze session patterns and auto-generate skills for repeated workflows"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "uv run __REPO_DIR__/global-hooks/framework/notifications/voice_done.py",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/security/audit_config_change.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
+            "timeout": 8
           }
         ]
       }

@@ -146,6 +146,36 @@ bashToolPatterns:
     reason: Blocks xargs with rm (mass deletion via piping)
 
   # ---------------------------------------------------------------------------
+  # CVE MITIGATIONS
+  # ---------------------------------------------------------------------------
+  # CVE-2025-59536: Blocks permission-skip flags that bypass all safety checks
+  - pattern: '--dangerously(-[Ss]kip|-Skip)[Pp]ermissions'
+    reason: Blocks --dangerouslySkipPermissions flag (CVE-2025-59536 mitigation)
+
+  - pattern: '--dangerously[Ss]kip[Pp]ermissions'
+    reason: Blocks --dangerouslySkipPermissions flag (CVE-2025-59536 mitigation)
+
+  # Block direct writes to Claude settings files (hook/permission injection vector)
+  - pattern: '(echo|cat|printf|tee)\s+.*>.*\.claude/settings\.json'
+    reason: Blocks direct write to .claude/settings.json (hook injection vector)
+
+  - pattern: '(echo|cat|printf|tee)\s+.*>.*\.claude/settings\.local\.json'
+    reason: Blocks direct write to .claude/settings.local.json (hook injection vector)
+
+  - pattern: '>\s*\.claude/settings\.(json|local\.json)'
+    reason: Blocks redirect to .claude/settings files (hook injection vector)
+
+  # Comprehensive curl/wget pipe-to-shell blocking
+  - pattern: 'wget\s+.*\|\s*(bash|sh|zsh|dash)'
+    reason: Blocks wget pipe to shell (arbitrary code download/execution)
+
+  - pattern: 'curl\s+.*\|\s*(zsh|dash)'
+    reason: Blocks curl pipe to zsh/dash (arbitrary code download/execution)
+
+  - pattern: '(curl|wget)\s+.*\|\s*sudo\s+(bash|sh|zsh)'
+    reason: Blocks curl/wget pipe to sudo shell (privileged code execution)
+
+  # ---------------------------------------------------------------------------
   # AWS CLI DESTRUCTIVE OPERATIONS
   # ---------------------------------------------------------------------------
   - pattern: '\baws\s+s3\s+rm\s+.*--recursive'
@@ -408,6 +438,13 @@ bashToolPatterns:
 # Enforced by: Bash, Edit, Write tools
 # Supports glob patterns: *.pem, .env*, *-credentials.json
 zeroAccessPaths:
+  # ---------------------------------------------------------------------------
+  # CLAUDE CODE SETTINGS (prevent AI self-modification of hooks/permissions)
+  # ---------------------------------------------------------------------------
+  - ".claude/settings.json"
+  - ".claude/settings.local.json"
+  - "managed-settings.json"
+
   # ---------------------------------------------------------------------------
   # ENVIRONMENT FILES (HIGH RISK - contain secrets)
   # ---------------------------------------------------------------------------

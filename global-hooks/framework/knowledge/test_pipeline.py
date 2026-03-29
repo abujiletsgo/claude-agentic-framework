@@ -355,9 +355,9 @@ def test_evolve():
         try:
             rows = conn.execute(
                 "SELECT e.id, e.category, e.title, e.content, e.confidence, rank "
-                "FROM knowledge_fts f "
+                "FROM knowledge_entries_fts f "
                 "JOIN knowledge_entries e ON f.rowid = e.id "
-                "WHERE knowledge_fts MATCH ? "
+                "WHERE knowledge_entries_fts MATCH ? "
                 "ORDER BY rank LIMIT 3",
                 (query,),
             ).fetchall()

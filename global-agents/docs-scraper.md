@@ -4,6 +4,8 @@ description: Documentation scraping specialist. Use proactively to fetch and sav
 tools: mcp__firecrawl-mcp__firecrawl_scrape, WebFetch, Write, Edit
 model: haiku
 color: blue
+maxTurns: 50
+permissionMode: default
 ---
 
 # Purpose

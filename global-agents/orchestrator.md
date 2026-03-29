@@ -4,6 +4,10 @@ description: Primary coordinator with strategy selection capabilities. Analyzes 
 tools: Task, Read, Glob, Grep, Bash
 model: opus
 role: executive
+memory: user
+effort: high
+maxTurns: 50
+permissionMode: default
 ---
 
 # Orchestrator Agent - Primary Coordinator

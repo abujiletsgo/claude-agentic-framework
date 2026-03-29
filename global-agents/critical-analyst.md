@@ -4,6 +4,9 @@ description: Questions every detail, assumption, plan, and decision throughout t
 tools: Read, Glob, Grep, AskUserQuestion
 model: opus
 color: red
+effort: high
+maxTurns: 50
+permissionMode: default
 ---
 
 # critical-analyst

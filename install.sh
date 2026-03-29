@@ -182,6 +182,9 @@ for skill_dir in "$REPO_DIR"/global-skills/*/; do
   ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
 done
 echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
+# Ensure auto-generated skills directory exists (used by auto_skill_generator hook)
+mkdir -p "$CLAUDE_DIR/skills/auto-generated"
+mkdir -p "$CLAUDE_DIR/data"
 
 # 5. Symlink agents (remove ALL existing symlinks first for clean install)
 echo "[5/9] Linking agents..."

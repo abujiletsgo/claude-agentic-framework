@@ -44,23 +44,23 @@ CREATE TABLE IF NOT EXISTS knowledge_entries (
     updated_at TEXT NOT NULL,
     expires_at TEXT DEFAULT NULL
 );
-CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_entries_fts USING fts5(
     title, content, tags,
     content=knowledge_entries, content_rowid=id,
     tokenize='porter unicode61'
 );
 CREATE TRIGGER IF NOT EXISTS kn_ai AFTER INSERT ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(rowid, title, content, tags)
+    INSERT INTO knowledge_entries_fts(rowid, title, content, tags)
     VALUES (new.id, new.title, new.content, new.tags);
 END;
 CREATE TRIGGER IF NOT EXISTS kn_ad AFTER DELETE ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(knowledge_fts, rowid, title, content, tags)
+    INSERT INTO knowledge_entries_fts(knowledge_entries_fts, rowid, title, content, tags)
     VALUES ('delete', old.id, old.title, old.content, old.tags);
 END;
 CREATE TRIGGER IF NOT EXISTS kn_au AFTER UPDATE ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(knowledge_fts, rowid, title, content, tags)
+    INSERT INTO knowledge_entries_fts(knowledge_entries_fts, rowid, title, content, tags)
     VALUES ('delete', old.id, old.title, old.content, old.tags);
-    INSERT INTO knowledge_fts(rowid, title, content, tags)
+    INSERT INTO knowledge_entries_fts(rowid, title, content, tags)
     VALUES (new.id, new.title, new.content, new.tags);
 END;
 CREATE TABLE IF NOT EXISTS knowledge_relations (

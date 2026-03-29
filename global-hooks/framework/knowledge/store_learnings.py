@@ -19,10 +19,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Import canonical DB path from the single source of truth
+sys.path.insert(0, str(Path(__file__).parent))
+from knowledge_db import get_canonical_db_path
+
 CONFIG_PATH = Path.home() / ".claude" / "knowledge_pipeline.yaml"
 PENDING_LEARNINGS = Path.home() / ".claude" / "pending_learnings.json"
-DB_DIR = Path.home() / ".claude" / "data" / "knowledge-db"
-DB_PATH = DB_DIR / "knowledge.db"
+DB_PATH = get_canonical_db_path()
+DB_DIR = DB_PATH.parent
 
 # ---------------------------------------------------------------------------
 # Schema (matches knowledge_cli.py exactly)
@@ -45,20 +49,20 @@ CREATE TABLE IF NOT EXISTS knowledge_entries (
 CREATE INDEX IF NOT EXISTS idx_cat ON knowledge_entries(category);
 CREATE INDEX IF NOT EXISTS idx_proj ON knowledge_entries(project);
 CREATE INDEX IF NOT EXISTS idx_created ON knowledge_entries(created_at);
-CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_entries_fts USING fts5(
     title, content, tags,
     content=knowledge_entries, content_rowid=id,
     tokenize='porter unicode61'
 );
 CREATE TRIGGER IF NOT EXISTS kn_ai AFTER INSERT ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(rowid, title, content, tags) VALUES (new.id, new.title, new.content, new.tags);
+    INSERT INTO knowledge_entries_fts(rowid, title, content, tags) VALUES (new.id, new.title, new.content, new.tags);
 END;
 CREATE TRIGGER IF NOT EXISTS kn_ad AFTER DELETE ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(knowledge_fts, rowid, title, content, tags) VALUES ('delete', old.id, old.title, old.content, old.tags);
+    INSERT INTO knowledge_entries_fts(knowledge_entries_fts, rowid, title, content, tags) VALUES ('delete', old.id, old.title, old.content, old.tags);
 END;
 CREATE TRIGGER IF NOT EXISTS kn_au AFTER UPDATE ON knowledge_entries BEGIN
-    INSERT INTO knowledge_fts(knowledge_fts, rowid, title, content, tags) VALUES ('delete', old.id, old.title, old.content, old.tags);
-    INSERT INTO knowledge_fts(rowid, title, content, tags) VALUES (new.id, new.title, new.content, new.tags);
+    INSERT INTO knowledge_entries_fts(knowledge_entries_fts, rowid, title, content, tags) VALUES ('delete', old.id, old.title, old.content, old.tags);
+    INSERT INTO knowledge_entries_fts(rowid, title, content, tags) VALUES (new.id, new.title, new.content, new.tags);
 END;
 CREATE TABLE IF NOT EXISTS knowledge_relations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +105,34 @@ def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _migrate_fts_table(conn):
+    """Migrate legacy knowledge_fts -> knowledge_entries_fts if needed.
+
+    Before this fix, store_learnings.py and knowledge_db.py both tried to
+    create a table called 'knowledge_fts' with different schemas, causing
+    a split-brain bug. If an old knowledge_fts exists that was created for
+    knowledge_entries (has 'title' column), drop it so knowledge_db.py can
+    recreate knowledge_fts for its own 'knowledge' table schema.
+    """
+    try:
+        # Check if knowledge_fts exists and has the knowledge_entries schema
+        row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='knowledge_fts'"
+        ).fetchone()
+        if row and row[0] and 'content=knowledge_entries' in row[0]:
+            # This is the old FTS table that belonged to knowledge_entries.
+            # Drop triggers, FTS table, then let SCHEMA recreate as knowledge_entries_fts.
+            conn.executescript("""
+                DROP TRIGGER IF EXISTS kn_ai;
+                DROP TRIGGER IF EXISTS kn_ad;
+                DROP TRIGGER IF EXISTS kn_au;
+                DROP TABLE IF EXISTS knowledge_fts;
+            """)
+            conn.commit()
+    except Exception:
+        pass
+
+
 def get_db():
     """Get database connection, initializing schema if needed."""
     DB_DIR.mkdir(parents=True, exist_ok=True)
@@ -108,6 +140,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    _migrate_fts_table(conn)
     conn.executescript(SCHEMA)
     conn.commit()
     return conn
@@ -131,9 +164,9 @@ def is_duplicate(conn, content, threshold=0.7):
 
     try:
         rows = conn.execute(
-            "SELECT e.content, rank FROM knowledge_fts f "
+            "SELECT e.content, rank FROM knowledge_entries_fts f "
             "JOIN knowledge_entries e ON f.rowid = e.id "
-            "WHERE knowledge_fts MATCH ? "
+            "WHERE knowledge_entries_fts MATCH ? "
             "ORDER BY rank LIMIT 3",
             (query,),
         ).fetchall()

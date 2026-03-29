@@ -4,6 +4,12 @@ description: Expert at analyzing projects and creating custom agent ecosystems, 
 tools: Read, Glob, Grep, Write, Bash, Task
 model: opus
 color: purple
+memory: user
+isolation: worktree
+skills: [arch-map, code-review]
+initialPrompt: "/prime"
+maxTurns: 50
+permissionMode: default
 ---
 
 # project-architect

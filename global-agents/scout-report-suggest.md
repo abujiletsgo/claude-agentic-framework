@@ -4,6 +4,8 @@ description: Use proactively to scout codebase issues, identify problem location
 tools: Read, Glob, Grep
 model: sonnet
 color: blue
+maxTurns: 50
+permissionMode: default
 ---
 
 # scout-report-suggest

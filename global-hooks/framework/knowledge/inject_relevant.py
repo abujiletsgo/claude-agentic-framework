@@ -21,9 +21,13 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Import canonical DB path from the single source of truth
+sys.path.insert(0, str(Path(__file__).parent))
+from knowledge_db import get_canonical_db_path
+
 CONFIG_PATH = Path.home() / ".claude" / "knowledge_pipeline.yaml"
-DB_DIR = Path.home() / ".claude" / "data" / "knowledge-db"
-DB_PATH = DB_DIR / "knowledge.db"
+DB_PATH = get_canonical_db_path()
+DB_DIR = DB_PATH.parent
 
 
 def load_config():
@@ -143,33 +147,37 @@ def get_recent_files_context():
 # Knowledge retrieval
 # ---------------------------------------------------------------------------
 
-def search_knowledge(conn, search_terms, config):
-    """Search knowledge database using FTS5 with BM25 ranking."""
-    if not search_terms:
-        return []
+def _table_exists(conn, table_name):
+    """Check if a table exists in the database."""
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (table_name,),
+        ).fetchone()
+        return row is not None
+    except Exception:
+        return False
 
+
+def _search_knowledge_entries(conn, search_terms, config):
+    """Search the knowledge_entries table (store_learnings.py schema)."""
     categories = config.get("include_categories", ["LEARNED", "PATTERN", "INVESTIGATION"])
     max_results = config.get("max_injections", 5)
     lookback_days = config.get("lookback_days", 30)
-
-    # Build FTS query (OR-based for broad matching)
     query = " OR ".join(search_terms[:10])
-
-    # Calculate lookback date
     cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )
-
-    # Build category filter
     cat_placeholders = ",".join(["?" for _ in categories])
 
+    # Try FTS first (knowledge_entries_fts is the FTS table for knowledge_entries)
     try:
         sql = (
             "SELECT e.id, e.category, e.title, e.content, e.tags, "
             "e.confidence, e.created_at, e.source, rank "
-            "FROM knowledge_fts f "
+            "FROM knowledge_entries_fts f "
             "JOIN knowledge_entries e ON f.rowid = e.id "
-            "WHERE knowledge_fts MATCH ? "
+            "WHERE knowledge_entries_fts MATCH ? "
             f"AND e.category IN ({cat_placeholders}) "
             "AND e.created_at > ? "
             "AND (e.expires_at IS NULL OR e.expires_at > ?) "
@@ -198,6 +206,65 @@ def search_knowledge(conn, search_terms, config):
         return [dict(r) for r in rows]
     except Exception:
         return []
+
+
+def _search_knowledge_table(conn, search_terms, config):
+    """Search the knowledge table (knowledge_db.py / extract_learnings.py schema).
+
+    This is the OTHER half of the split-brain fix: extract_learnings.py writes
+    to the 'knowledge' table via knowledge_db.add_knowledge(), so we must also
+    read from it here.
+    """
+    categories = config.get("include_categories", ["LEARNED", "PATTERN", "INVESTIGATION"])
+    max_results = config.get("max_injections", 5)
+    lookback_days = config.get("lookback_days", 30)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    tag_placeholders = ",".join(["?" for _ in categories])
+
+    try:
+        sql = (
+            "SELECT k.id, k.tag AS category, k.content AS title, k.content, "
+            "k.tag AS tags, 0.5 AS confidence, k.timestamp AS created_at, "
+            "'extract_learnings' AS source "
+            "FROM knowledge k "
+            f"WHERE k.tag IN ({tag_placeholders}) "
+            "AND k.timestamp > ? "
+            "ORDER BY k.timestamp DESC "
+            f"LIMIT ?"
+        )
+        params = categories + [cutoff, max_results]
+        rows = conn.execute(sql, params).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def search_knowledge(conn, search_terms, config):
+    """Search knowledge database across BOTH schemas.
+
+    The knowledge pipeline has two writers:
+      1. extract_learnings.py -> knowledge_db.add_knowledge() -> 'knowledge' table
+      2. store_learnings.py -> direct insert -> 'knowledge_entries' table
+
+    This function queries both tables and merges the results so no
+    learnings are invisible to the injection stage.
+    """
+    if not search_terms:
+        return []
+
+    results = []
+
+    # Search knowledge_entries table (store_learnings.py schema)
+    if _table_exists(conn, "knowledge_entries"):
+        results.extend(_search_knowledge_entries(conn, search_terms, config))
+
+    # Search knowledge table (knowledge_db.py / extract_learnings.py schema)
+    if _table_exists(conn, "knowledge"):
+        results.extend(_search_knowledge_table(conn, search_terms, config))
+
+    return results
 
 
 def rank_and_filter(results, config):

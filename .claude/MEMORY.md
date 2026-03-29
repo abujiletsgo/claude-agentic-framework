@@ -71,3 +71,16 @@
   .../framework/memory/auto_memory_writer.py         |  41 ++-
   install.sh                                         |  77 +++++-
   4 files changed, 152 insertions(+), 257 deletions(-)
+
+## 2026-03-27 (01:30 UTC) · @Tom Kwon
+**Commit:** feat: add arch-map command/skill, update prime with caching improvements (eb5971b) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md                                |   4 +-
+  .claude/MEMORY.md                               |   9 +
+  CLAUDE.md                                       |   4 +-
+  README.md                                       |  12 +-
+  global-commands/arch-map.md                     |  50 ++++
+  global-commands/prime.md                        |  42 +++
+  global-hooks/framework/automation/auto_prime.py |  65 +++++
+  global-skills/arch-map/SKILL.md                 | 353 ++++++++++++++++++++++++
+  8 files changed, 531 insertions(+), 8 deletions(-)
