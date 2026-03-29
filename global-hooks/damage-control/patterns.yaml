@@ -155,6 +155,9 @@ bashToolPatterns:
   - pattern: '--dangerously[Ss]kip[Pp]ermissions'
     reason: Blocks --dangerouslySkipPermissions flag (CVE-2025-59536 mitigation)
 
+  - pattern: '--dangerously-skip-permissions'
+    reason: Blocks --dangerously-skip-permissions flag (CVE-2025-59536 all-lowercase-dashed variant)
+
   # Block direct writes to Claude settings files (hook/permission injection vector)
   - pattern: '(echo|cat|printf|tee)\s+.*>.*\.claude/settings\.json'
     reason: Blocks direct write to .claude/settings.json (hook injection vector)
@@ -164,6 +167,9 @@ bashToolPatterns:
 
   - pattern: '>\s*\.claude/settings\.(json|local\.json)'
     reason: Blocks redirect to .claude/settings files (hook injection vector)
+
+  - pattern: '\btee\s+.*\.claude/settings(\.(local\.)?json)'
+    reason: Blocks tee writing to .claude/settings files (pipe-based hook injection vector)
 
   # Comprehensive curl/wget pipe-to-shell blocking
   - pattern: 'wget\s+.*\|\s*(bash|sh|zsh|dash)'
@@ -428,7 +434,7 @@ bashToolPatterns:
     reason: SQL DELETE with specific ID
     ask: true
 
-  - pattern: 'UPDATE\s+.*\bSET\b(?\!.*\bWHERE\b)'
+  - pattern: 'UPDATE\s+.*\bSET\b(?!.*\bWHERE\b)'
     reason: Blocks SQL UPDATE without WHERE clause
 
 # ---------------------------------------------------------------------------

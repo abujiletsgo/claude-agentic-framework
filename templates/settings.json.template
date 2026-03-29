@@ -1,7 +1,10 @@
 {
   "_comment": "Autonomous Mode: Minimal permission prompts. Auto-approve safe operations, prompt only for destructive actions.",
   "version": "1.0",
-  "model": "sonnet",
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "model": "opus",
   "permissions": {
     "allow": [
       "Bash(*)",
