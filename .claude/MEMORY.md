@@ -93,3 +93,18 @@
   README.md                | 22 +++++++-------
   scripts/generate_docs.py |  2 +-
   4 files changed, 125 insertions(+), 53 deletions(-)
+
+## 2026-03-30 (12:14 UTC) · @Tom Kwon
+**Commit:** v4.0: Major upgrade — 16 events, async hooks, new agents, project cleanup (687c93b) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            |  476 +++++
+  .claude/MEMORY.md                                  |    9 +
+  CLAUDE.md                                          |  173 +-
+  README.md                                          |   30 +-
+  archive/docs/FRAMEWORK_GUIDE_KR.md                 | 1116 ++++++++++
+  .../docs}/KNOWLEDGE_DB_VERIFICATION.md             |    0
+  {docs => archive/docs}/KNOWLEDGE_PIPELINE_TEST.md  |    0
+  {docs => archive/docs}/REVIEW_SYSTEM_TEST.md       |    0
+  {docs => archive/docs}/RLM_AUTO_TRIGGERING.md      |    0
+  {docs => archive/docs}/SKILLS_INTEGRITY.md         |    0
+  ... and 42 more files

@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_startup.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_startup.py",
             "timeout": 60,
             "statusMessage": "Initializing session..."
           }
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
             "timeout": 180,
             "statusMessage": "Building symbol index..."
           }
@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5,
             "async": true,
             "_comment": "Release all session locks on exit"
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/korean/kr_mode.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/korean/kr_mode.py",
             "timeout": 8
           }
         ]
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/analyze_request.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/caddy/analyze_request.py",
             "timeout": 10,
             "statusMessage": "Analyzing request..."
           }
@@ -89,7 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
             "timeout": 5
           }
         ]
@@ -102,7 +102,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5
           }
         ]
@@ -112,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/damage-control/unified-damage-control.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/damage-control/unified-damage-control.py",
             "timeout": 5
           }
         ]
@@ -122,7 +122,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_review_team.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_review_team.py",
             "timeout": 5
           }
         ]
@@ -134,7 +134,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5
           }
         ]
@@ -144,7 +144,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
             "timeout": 8,
             "async": true,
             "_comment": "ASYNC: bundle logging doesn't need to block"
@@ -156,7 +156,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_cost_warnings.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_cost_warnings.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: cost warnings delivered on next turn"
@@ -168,7 +168,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
             "timeout": 8
           }
         ]
@@ -178,13 +178,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
             "timeout": 6,
             "_comment": "PARALLEL: these 2 Write|Edit hooks run simultaneously"
           },
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
             "timeout": 15
           }
         ]
@@ -194,7 +194,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/context/auto_context_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/context/auto_context_manager.py",
             "timeout": 5
           }
         ]
@@ -204,7 +204,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_escalate.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_escalate.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: escalation advice delivered on next turn"
@@ -216,7 +216,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: voice notifications are fire-and-forget"
@@ -228,7 +228,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_team_review.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_team_review.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: team review triggers don't need to block"
@@ -240,7 +240,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/facts/auto_fact_extractor.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/facts/auto_fact_extractor.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: fact extraction writes to disk, result delivered next turn"
@@ -255,7 +255,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
             "timeout": 8
           }
         ]
@@ -267,7 +267,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5
           }
         ]
@@ -276,7 +276,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
             "timeout": 5
           }
         ]
@@ -285,7 +285,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/memory/auto_memory_writer.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/auto_memory_writer.py",
             "timeout": 10,
             "_comment": "Layer 2: write session summary to .claude/MEMORY.md"
           }
@@ -295,7 +295,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
             "timeout": 5,
             "_comment": "Layer 2: prune stale facts from FACTS.md"
           }
@@ -305,7 +305,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run __REPO_DIR__/global-hooks/framework/automation/auto_skill_generator.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_skill_generator.py",
             "timeout": 10,
             "_comment": "Analyze session patterns and auto-generate skills"
           }
@@ -315,7 +315,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/notifications/voice_done.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/voice_done.py",
             "timeout": 5,
             "async": true,
             "_comment": "ASYNC: voice notification is fire-and-forget"
@@ -330,7 +330,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/stop_failure_recovery.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/stop_failure_recovery.py",
             "timeout": 5,
             "_comment": "v4.0: Handle all API failures with typed recovery advice"
           }
@@ -343,7 +343,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
             "timeout": 5,
             "async": true,
             "_comment": "v4.0: Track subagent spawning with agent_id/agent_type"
@@ -357,7 +357,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
             "timeout": 5
           }
         ]
@@ -369,7 +369,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/task_quality_gate.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/task_quality_gate.py",
             "timeout": 10,
             "_comment": "v4.0: Validate task completion criteria before marking done"
           }
@@ -382,7 +382,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/project_fingerprint.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/project_fingerprint.py",
             "timeout": 10,
             "_comment": "v4.0: Auto-detect project stack, load relevant instincts, configure per-project"
           }
@@ -396,7 +396,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/automation/file_watcher.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/file_watcher.py",
             "timeout": 10,
             "async": true,
             "_comment": "v4.0: React to dependency file changes"
@@ -410,7 +410,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/security/audit_config_change.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/security/audit_config_change.py",
             "timeout": 5
           }
         ]
@@ -423,7 +423,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/context/pre_compact_preserve.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/context/pre_compact_preserve.py",
             "timeout": 10
           }
         ]
@@ -436,7 +436,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run __REPO_DIR__/global-hooks/framework/context/post_compact_verify.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/context/post_compact_verify.py",
             "timeout": 5,
             "async": true,
             "_comment": "v4.0: Verify critical state survived compaction"
@@ -451,7 +451,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run __REPO_DIR__/global-status-lines/mastery/status_line_custom.py",
+    "command": "uv run --no-project __REPO_DIR__/global-status-lines/mastery/status_line_custom.py",
     "padding": 0
   }
 }
