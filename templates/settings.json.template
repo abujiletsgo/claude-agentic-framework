@@ -28,7 +28,6 @@
 
     "SessionStart": [
       {
-        "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
@@ -39,7 +38,6 @@
         ]
       },
       {
-        "matcher": "startup",
         "hooks": [
           {
             "type": "command",

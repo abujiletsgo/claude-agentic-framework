@@ -2,7 +2,7 @@
 name: critical-analyst
 description: Questions every detail, assumption, plan, and decision throughout the project lifecycle. Use proactively during planning, building, and decision-making to ensure thorough analysis of why and how.
 tools: Read, Glob, Grep, AskUserQuestion
-model: opus
+model: sonnet
 color: red
 effort: high
 maxTurns: 50

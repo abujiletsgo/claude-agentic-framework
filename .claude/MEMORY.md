@@ -108,3 +108,10 @@
   {docs => archive/docs}/RLM_AUTO_TRIGGERING.md      |    0
   {docs => archive/docs}/SKILLS_INTEGRITY.md         |    0
   ... and 42 more files
+
+## 2026-03-31 (16:29 UTC) · @Tom Kwon
+**Commit:** fix: add --no-project to all uv run hook commands (dc88499) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                | 15 ++++++++
+  templates/settings.json.template | 74 ++++++++++++++++++++--------------------
+  2 files changed, 52 insertions(+), 37 deletions(-)

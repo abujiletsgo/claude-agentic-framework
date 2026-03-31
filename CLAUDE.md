@@ -6,9 +6,9 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 
 ```
 global-hooks/        36 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:11, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:3, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:6, hooks_StopFailure:1, hooks_SubagentStart:1, hooks_SubagentStop:1, hooks_TaskCompleted:1, hooks_UserPromptSubmit:3)
-global-agents/       8 agents (8 root + 0 team)
+global-agents/       9 agents (9 root + 0 team)
 global-commands/     15 commands
-global-skills/       9 skills
+global-skills/       11 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
 ```
@@ -20,7 +20,8 @@ templates/           settings.json.template (edit this, run install.sh)
 ## Model Tiers
 
 ```
-  Opus (7): orchestrator, project-architect, critical-analyst, researcher, meta-agent, scout-report-suggest, rlm-root
+  Opus (3): orchestrator, project-architect, rlm-root
+Sonnet (4): critical-analyst, researcher, meta-agent, scout-report-suggest
  Haiku (1): docs-scraper
 ```
 

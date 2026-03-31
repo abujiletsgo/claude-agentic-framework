@@ -1,10 +1,8 @@
 # Multi-Model Tier Configuration
-# Max Plan: Opus everywhere that benefits from stronger reasoning.
-# Haiku only for mechanical/validation tasks where speed > depth.
-#
-# Pricing irrelevant on Max plan — optimize for QUALITY not cost.
+# Balanced: Opus for coordination/architecture, Sonnet for capable workhorse tasks,
+# Haiku for mechanical/validation. Optimized for token efficiency.
 
-default_model: opus
+default_model: sonnet
 
 # ─── Tier Definitions ───────────────────────────────────────────────
 
@@ -12,14 +10,20 @@ tiers:
   opus:
     model_id: claude-opus-4-6
     use_for:
-      - Everything that benefits from reasoning
       - Orchestration, planning, architecture
-      - Code generation and implementation
+      - Complex multi-step coordination
+      - Recursive exploration controllers
+
+  sonnet:
+    model_id: claude-sonnet-4-6
+    use_for:
       - Research and analysis
+      - Code generation and implementation
       - Code review and refactoring
       - Security analysis
       - Agent/skill generation
-      - Complex multi-step tasks
+      - Codebase scouting and reporting
+      - Critical analysis
 
   haiku:
     model_id: claude-haiku-4-5
@@ -31,17 +35,19 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# Max Plan: 7 opus, 1 haiku. No sonnet tier needed.
+# Balanced: 3 Opus, 4 Sonnet, 1 Haiku
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
-    - critical-analyst        # Deep critical thinking, risk analysis
-    - researcher              # Research and analysis (upgraded from sonnet)
-    - meta-agent              # Agent file generation (upgraded from sonnet)
-    - scout-report-suggest    # Codebase scouting (upgraded from sonnet)
-    - rlm-root                # Recursive exploration (upgraded from sonnet)
+    - rlm-root                # Recursive exploration controller
+
+  sonnet:
+    - critical-analyst        # Critical thinking, risk analysis
+    - researcher              # Research and analysis
+    - meta-agent              # Agent file generation
+    - scout-report-suggest    # Codebase scouting
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)
@@ -49,19 +55,21 @@ agent_tiers:
 # ─── Skill Overrides ────────────────────────────────────────────────
 
 skill_default_models:
-  test-generator: opus
-  code-review: opus
-  refactoring-assistant: opus
-  security-scanner: opus
-  error-analyzer: opus
+  test-generator: sonnet
+  code-review: sonnet
+  refactoring-assistant: sonnet
+  security-scanner: sonnet
+  error-analyzer: sonnet
   knowledge-db: haiku     # Mechanical DB ops, speed matters
 
 # ─── Decision Matrix ────────────────────────────────────────────────
 
 decision_matrix:
-  - condition: "Any task requiring reasoning, analysis, or generation"
+  - condition: "Coordination, orchestration, or architecture decisions"
     model: opus
+  - condition: "Code generation, analysis, review, or research"
+    model: sonnet
   - condition: "Mechanical validation, exploration, or data formatting"
     model: haiku
   - condition: "Unknown complexity"
-    model: opus  # Default to strongest on Max plan
+    model: sonnet  # Default to capable workhorse

@@ -4,7 +4,7 @@ description: Deep research agent for reading docs, analyzing code, and synthesiz
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 disallowedTools: [Write, Edit]
 color: Blue
-model: opus
+model: sonnet
 effort: high
 initialPrompt: "/prime"
 maxTurns: 50
