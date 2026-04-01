@@ -9,7 +9,7 @@ Launch the `solve` agent to autonomously investigate and fix the problem.
 Pass the user's full message as context. The agent will interview, research, hypothesize, challenge, implement, verify, and improve in a loop.
 
 ```
-Agent(subagent_type="solve", prompt="<user's problem description and any args passed to /solve>")
+Agent(subagent_type="solve", description="Autonomous problem-solver", prompt="<user's problem description and any args passed to /solve>")
 ```
 
 If args are provided, pass them as the problem statement. If no args, the agent will interview the user.

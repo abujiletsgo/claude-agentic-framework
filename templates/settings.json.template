@@ -36,16 +36,6 @@
             "statusMessage": "Initializing session..."
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/repo_map.py",
-            "timeout": 180,
-            "statusMessage": "Building symbol index..."
-          }
-        ]
       }
     ],
 
@@ -89,6 +79,16 @@
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/epistemic_guard.py",
+            "timeout": 5,
+            "_comment": "Inject epistemic discipline reminder for analysis/interpretation prompts"
           }
         ]
       }
@@ -146,18 +146,6 @@
             "timeout": 8,
             "async": true,
             "_comment": "ASYNC: bundle logging doesn't need to block"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_cost_warnings.py",
-            "timeout": 5,
-            "async": true,
-            "_comment": "ASYNC: cost warnings delivered on next turn"
           }
         ]
       },
@@ -443,6 +431,13 @@
       }
     ]
 
+  },
+  "mcpServers": {
+    "officecli": {
+      "command": "officecli",
+      "args": ["mcp"],
+      "_comment": "OfficeCLI: create/read/edit Word, Excel, PowerPoint — used by /docs skill"
+    }
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true

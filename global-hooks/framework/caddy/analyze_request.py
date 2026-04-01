@@ -650,6 +650,17 @@ def load_caddy_config() -> dict:
 
 def main():
     try:
+        # CAF_MODE check: skip in light mode
+        _framework_dir = Path(__file__).parent.parent
+        if str(_framework_dir) not in sys.path:
+            sys.path.insert(0, str(_framework_dir))
+        try:
+            from caf_mode import should_run
+            if not should_run("analyze_request"):
+                sys.exit(0)
+        except ImportError:
+            pass
+
         input_data = json.load(sys.stdin)
 
         # Extract user prompt
@@ -662,6 +673,16 @@ def main():
 
         # Skip slash commands - they already have a clear execution path
         if prompt.strip().startswith("/"):
+            sys.exit(0)
+
+        # Skip trivial/conversational prompts to save context tokens
+        stripped = prompt.strip().lower()
+        if len(stripped) < 15 or stripped in (
+            "yes", "no", "ok", "okay", "thanks", "thank you", "sure",
+            "go ahead", "continue", "proceed", "do it", "looks good",
+            "lgtm", "done", "next", "got it", "perfect", "great",
+            "y", "n", "yep", "nope", "right", "correct",
+        ):
             sys.exit(0)
 
         # Load configuration

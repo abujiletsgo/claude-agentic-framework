@@ -183,6 +183,17 @@ def emit_escalation(triggered_signals: list) -> None:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
+    # CAF_MODE check: skip in light mode
+    _framework_dir = Path(__file__).parent.parent
+    if str(_framework_dir) not in sys.path:
+        sys.path.insert(0, str(_framework_dir))
+    try:
+        from caf_mode import should_run
+        if not should_run("auto_escalate"):
+            sys.exit(0)
+    except ImportError:
+        pass
+
     try:
         hook_input = json.loads(sys.stdin.read())
     except (json.JSONDecodeError, ValueError):

@@ -5,10 +5,10 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        36 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:11, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:3, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:6, hooks_StopFailure:1, hooks_SubagentStart:1, hooks_SubagentStop:1, hooks_TaskCompleted:1, hooks_UserPromptSubmit:3)
+global-hooks/        35 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:10, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:3, hooks_SessionEnd:1, hooks_SessionStart:1, hooks_Stop:6, hooks_StopFailure:1, hooks_SubagentStart:1, hooks_SubagentStop:1, hooks_TaskCompleted:1, hooks_UserPromptSubmit:4)
 global-agents/       9 agents (9 root + 0 team)
 global-commands/     15 commands
-global-skills/       11 skills
+global-skills/       12 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
 ```
@@ -58,6 +58,30 @@ Session start is lean. Only PROJECT_CONTEXT.md auto-injected. Read episodic memo
 Memory writes are automatic: `auto_fact_extractor.py` (PostToolUse) → FACTS.md, `auto_memory_writer.py` (Stop) → MEMORY.md, `validate_facts.py` (Stop) → prunes >90 days.
 
 Trust: CONFIRMED facts > CLAUDE.md rules > inference. Local agents/skills override global.
+
+## Epistemic Discipline
+
+When making claims about data, results, or system behavior, you MUST distinguish between what the data shows and what you are inferring. This is non-negotiable.
+
+**Three-tier labeling:**
+- **OBSERVED** -- directly visible in data, logs, output, or source code. Cite the source (file:line, command output, data point).
+- **INFERRED** -- a conclusion you drew from observations. State the reasoning chain: "X was observed, which suggests Y because Z." Always flag with "This is an inference" or equivalent.
+- **SPECULATIVE** -- a hypothesis without strong supporting evidence. Flag explicitly: "Speculation:" or "One possible explanation:" -- never present as established fact.
+
+**Hard rules:**
+1. Never state an inference as if it were an observation. If you didn't directly see it in the data, say so.
+2. When presenting a narrative that connects multiple data points, explicitly flag which connections are observed vs. inferred.
+3. If you catch yourself building a confident-sounding story, pause and ask: "What does the data actually show vs. what am I adding?" Restructure if needed.
+4. When reversing a previous position, acknowledge the reversal explicitly and explain what new evidence changed your view. Never quietly replace one confident narrative with another.
+5. Quantitative claims require citing the actual numbers. "X has 73% accuracy" requires showing the calculation or source, not just stating it.
+6. When the data is ambiguous or insufficient, say so directly. "The data doesn't clearly show X" is always better than fabricating a confident interpretation.
+
+**Format for analytical responses:**
+```
+What the data shows: [observations with citations]
+What this suggests: [inferences with reasoning]
+What remains uncertain: [gaps, alternative explanations]
+```
 
 ## Mistake Prevention
 

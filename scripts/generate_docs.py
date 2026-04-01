@@ -390,6 +390,30 @@ Memory writes are automatic: `auto_fact_extractor.py` (PostToolUse) → FACTS.md
 
 Trust: CONFIRMED facts > CLAUDE.md rules > inference. Local agents/skills override global.
 
+## Epistemic Discipline
+
+When making claims about data, results, or system behavior, you MUST distinguish between what the data shows and what you are inferring. This is non-negotiable.
+
+**Three-tier labeling:**
+- **OBSERVED** -- directly visible in data, logs, output, or source code. Cite the source (file:line, command output, data point).
+- **INFERRED** -- a conclusion you drew from observations. State the reasoning chain: "X was observed, which suggests Y because Z." Always flag with "This is an inference" or equivalent.
+- **SPECULATIVE** -- a hypothesis without strong supporting evidence. Flag explicitly: "Speculation:" or "One possible explanation:" -- never present as established fact.
+
+**Hard rules:**
+1. Never state an inference as if it were an observation. If you didn't directly see it in the data, say so.
+2. When presenting a narrative that connects multiple data points, explicitly flag which connections are observed vs. inferred.
+3. If you catch yourself building a confident-sounding story, pause and ask: "What does the data actually show vs. what am I adding?" Restructure if needed.
+4. When reversing a previous position, acknowledge the reversal explicitly and explain what new evidence changed your view. Never quietly replace one confident narrative with another.
+5. Quantitative claims require citing the actual numbers. "X has 73% accuracy" requires showing the calculation or source, not just stating it.
+6. When the data is ambiguous or insufficient, say so directly. "The data doesn't clearly show X" is always better than fabricating a confident interpretation.
+
+**Format for analytical responses:**
+```
+What the data shows: [observations with citations]
+What this suggests: [inferences with reasoning]
+What remains uncertain: [gaps, alternative explanations]
+```
+
 ## Mistake Prevention
 
 - **Edit settings.json directly?** → Stop. Edit template, run install.sh.

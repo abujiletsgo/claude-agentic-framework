@@ -256,7 +256,16 @@ def stop_handler():
     emit({"result": "continue"})
 
 def main():
-    """Main entry point"""
+    """Main entry point.
+
+    Multi-session locking is opt-in: only runs if ~/.claude/multi_session_mode exists.
+    Most users run a single session and don't need the overhead of lock checking
+    on every PreToolUse/PostToolUse event.
+    """
+    # Fast path: skip entirely if multi-session mode not enabled
+    if not (Path.home() / ".claude" / "multi_session_mode").exists():
+        sys.exit(0)
+
     try:
         # Read hook input from stdin — all hook events send JSON
         hook_input = json.loads(sys.stdin.read())

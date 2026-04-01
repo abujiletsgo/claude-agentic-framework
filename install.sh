@@ -102,6 +102,26 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 echo "  git: OK"
 
+# officecli — required for /docs skill (Word/Excel/PowerPoint operations)
+if ! command -v officecli >/dev/null 2>&1; then
+  echo "  officecli not found. Installing..."
+  if curl -fsSL https://raw.githubusercontent.com/iOfficeAI/OfficeCLI/main/install.sh | bash 2>/dev/null; then
+    # Re-source PATH in case install.sh added to .local/bin
+    export PATH="$HOME/.local/bin:$PATH"
+    if command -v officecli >/dev/null 2>&1; then
+      echo "  officecli: installed ($(officecli --version 2>/dev/null || echo OK))"
+    else
+      echo "  WARNING: officecli install ran but binary not found in PATH."
+      echo "           Restart your shell or run: export PATH=\"\$HOME/.local/bin:\$PATH\""
+    fi
+  else
+    echo "  WARNING: officecli install failed. /docs skill will not work."
+    echo "           Install manually: curl -fsSL https://raw.githubusercontent.com/iOfficeAI/OfficeCLI/main/install.sh | bash"
+  fi
+else
+  echo "  officecli: OK ($(officecli --version 2>/dev/null || echo found))"
+fi
+
 # claude — auto-install Claude Code CLI if not found
 if ! command -v claude >/dev/null 2>&1; then
   echo "  Claude Code CLI not found. Installing via npm..."

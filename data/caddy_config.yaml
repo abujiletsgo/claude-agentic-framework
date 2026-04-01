@@ -86,6 +86,7 @@ caddy:
     project-scaffolder: true
     git-workflow: true
     verification-checklist: true
+    docs: true
 
   # Skill security audit configuration
   # Caddy audits skills for dangerous patterns before recommending them

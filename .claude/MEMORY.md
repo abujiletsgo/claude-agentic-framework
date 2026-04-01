@@ -115,3 +115,18 @@
   .claude/MEMORY.md                | 15 ++++++++
   templates/settings.json.template | 74 ++++++++++++++++++++--------------------
   2 files changed, 52 insertions(+), 37 deletions(-)
+
+## 2026-04-01 (05:44 UTC) · @Tom Kwon
+**Commit:** v4.0: Add solve agent with parallel orchestration, tidy skill, model tier updates (ea6f7f2) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                     |   7 +
+  CLAUDE.md                             |   7 +-
+  README.md                             |  15 +-
+  data/model_tiers.yaml                 |  50 +--
+  global-agents/critical-analyst.md     |   2 +-
+  global-agents/meta-agent.md           |   2 +-
+  global-agents/researcher.md           |   2 +-
+  global-agents/scout-report-suggest.md |   2 +-
+  global-agents/solve.md                | 569 ++++++++++++++++++++++++++++++++++
+  global-skills/solve/SKILL.md          |  15 +
+  ... and 4 more files

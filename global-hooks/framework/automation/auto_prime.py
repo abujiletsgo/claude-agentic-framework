@@ -158,6 +158,60 @@ def get_arch_map_status(repo_root, current_hash):
         return "unknown"
 
 
+def _extract_slim_context(full_content: str) -> str:
+    """Extract a slim version of PROJECT_CONTEXT.md for context injection.
+
+    Keeps: Project Overview, Security Audit, Key Insights, Critical Rules.
+    Drops: Full hooks table, directory tree, memory system docs, team recommendation
+           (all of which duplicate CLAUDE.md or are rarely needed).
+
+    Target: ~4-5KB instead of ~12KB.
+    """
+    import re
+
+    lines = full_content.split("\n")
+    slim_lines = []
+    current_section = None
+    # Sections to KEEP (partial match on heading)
+    keep_sections = {
+        "project overview", "security audit", "key insights",
+        "critical rules", "change detection",
+    }
+    # Sections to SKIP
+    skip_sections = {
+        "documentation available", "claude code integration",
+        "architecture highlights", "team recommendation",
+    }
+    in_skip = False
+
+    for line in lines:
+        # Detect section headings (## with emoji or without)
+        heading_match = re.match(r'^##\s+(?:\S+\s+)?(.+)$', line)
+        if heading_match:
+            heading_text = heading_match.group(1).strip().lower()
+            if any(s in heading_text for s in skip_sections):
+                in_skip = True
+                continue
+            elif any(s in heading_text for s in keep_sections):
+                in_skip = False
+                slim_lines.append(line)
+                continue
+            else:
+                # Unknown section - keep it (conservative)
+                in_skip = False
+                slim_lines.append(line)
+                continue
+
+        if not in_skip:
+            slim_lines.append(line)
+
+    result = "\n".join(slim_lines).strip()
+    # If extraction failed (empty result), fall back to full content
+    if len(result) < 200:
+        return full_content
+    return result
+
+
 def emit_and_exit(message=None):
     """Output valid JSON and exit 0."""
     result = {"result": "continue"}
@@ -233,13 +287,18 @@ def main():
             }
             cached_content += arch_notes.get(arch_status, "")
 
+            # Slim injection: extract only the essential sections to save context tokens.
+            # Full PROJECT_CONTEXT.md is ~12KB / ~3000 tokens. We extract the compact
+            # sections and skip the verbose hooks table, directory tree, and memory docs
+            # which duplicate CLAUDE.md content.
+            slim_content = _extract_slim_context(cached_content)
+
             instruction_prefix = (
-                "**SESSION CONTEXT LOADED** — The following is your pre-loaded project context. "
-                "Treat this as authoritative. When answering questions about the project's architecture, "
-                "files, hooks, agents, commands, or features, use this context FIRST before reading files from disk.\n\n"
+                "**SESSION CONTEXT LOADED** — Project context summary below. "
+                "For full details, read `.claude/PROJECT_CONTEXT.md` on demand.\n\n"
                 "---\n\n"
             )
-            emit_and_exit(message=instruction_prefix + cached_content)
+            emit_and_exit(message=instruction_prefix + slim_content)
 
     except Exception as e:
         print(f"Auto prime error (non-blocking): {e}", file=sys.stderr)
