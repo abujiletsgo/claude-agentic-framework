@@ -4,7 +4,7 @@
 
 ## What You Get
 
-- **13 Agents** — Opus-first (3 Opus + 3 Haiku)
+- **13 Agents** — Opus-first (4 Opus + 3 Haiku)
 - **16 Commands** for delegation, orchestration, and planning
 - **18 Skills** for the full engineering lifecycle
 - **10 Guides** covering context engineering to multi-agent patterns
@@ -48,7 +48,7 @@ archive/             Archived commands, skills, hooks
 ## Model Tiers
 
 ```
-    Opus (3): orchestrator, project-architect, rlm-root
+    Opus (4): orchestrator, project-architect, rlm-root, solve
   Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger
    Haiku (3): docs-scraper, validator, agent-watchdog
 ```
