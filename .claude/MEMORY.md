@@ -145,3 +145,33 @@
   global-hooks/framework/caf_mode.py                 | 111 +++++++++++
   .../framework/guardrails/epistemic_guard.py        | 135 ++++++++++++++
   ... and 7 more files
+
+## 2026-04-03 (05:59 UTC) · @Tom Kwon
+**Commit:** feat: v4.1 role-based multi-agent team with self-correction and token efficiency (8d118a7) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  15 +
+  CLAUDE.md                                          |  12 +-
+  README.md                                          |  29 +-
+  data/model_tiers.yaml                              |   6 +-
+  global-agents/agent-watchdog.md                    | 128 ++++++
+  global-agents/builder.md                           | 109 +++++
+  global-agents/debugger.md                          | 111 +++++
+  global-agents/orchestrator.md                      | 500 +++++++++++++++++++--
+  global-agents/solve.md                             | 199 ++++++--
+  global-agents/validator.md                         | 100 +++++
+  ... and 14 more files
+
+## 2026-04-03 (06:00 UTC) · @Tom Kwon
+**Commit:** fix: sync orchestrator, caddy, and tier configs with actual skills/agents (d2794d2) by Tom Kwon
+**Changed:**
+  CLAUDE.md                     |  2 +-
+  data/caddy_config.yaml        | 37 +++++++++++++++++++++----------------
+  data/model_tiers.yaml         |  3 ++-
+  global-agents/orchestrator.md | 33 ++++++++++++++++++++-------------
+  4 files changed, 44 insertions(+), 31 deletions(-)
+
+## 2026-04-03 (07:56 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (bd1745c) by Tom Kwon
+**Changed:**
+  README.md | 4 ++--
+  1 file changed, 2 insertions(+), 2 deletions(-)

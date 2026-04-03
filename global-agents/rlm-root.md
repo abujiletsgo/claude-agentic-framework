@@ -27,7 +27,12 @@ You have access to these pre-defined functions in your environment:
     *   *Output:* A text summary of the Sub-Agent's findings.
 
 **The RLM Loop Strategy:**
-1.  **Locate:** Use `search()` to find keywords related to the user's query.
+0.  **Context Check (FIRST):** Read existing context layers to avoid redundant exploration:
+    - `/tmp/caf_project_context.md` -- project structure, commands, conventions
+    - `.claude/FACTS.md` -- verified facts, gotchas, key paths
+    - `.claude/ARCHITECTURE.md` -- dependency map, critical paths
+    Note what's already known. Only search for GAPS not covered by context layers.
+1.  **Locate:** Use `search()` to find keywords related to the GAPS (not the full query).
 2.  **Isolate:** Use `read_slice()` to grab *just* the relevant 50-100 lines around the match.
 3.  **Delegate:** Pass that slice to `delegate()`. The Sub-Agent will do the heavy reading.
 4.  **Synthesize:** Read the Sub-Agent's output. If you need more info, repeat step 1 with new search terms.

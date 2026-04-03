@@ -71,6 +71,18 @@ caddy:
       agent-watchdog: haiku
       quick_task: haiku
 
+    # maxTurns caps per role — prevents runaway token burn
+    role_max_turns:
+      builder: 20
+      researcher: 25
+      validator: 15
+      debugger: 25
+      scout-report-suggest: 25
+      critical-analyst: 25
+      docs-scraper: 15
+      agent-watchdog: 50
+      quick_task: 8
+
   # Skills that Caddy can recommend or invoke
   # Set any to false to prevent Caddy from suggesting it
   skills:

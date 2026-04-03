@@ -6,7 +6,6 @@ model: opus
 role: executive
 memory: user
 effort: high
-initialPrompt: "/prime"
 maxTurns: 50
 permissionMode: default
 ---
@@ -26,21 +25,20 @@ permissionMode: default
 
 ## Core Principles
 
-### Load Project Context First (MANDATORY)
+### Use Inherited Context (MANDATORY)
 
-Before any planning or execution, check if `/tmp/caf_project_context.md` exists and is less than 4 hours old.
+You inherit PROJECT_CONTEXT.md via the root session's auto-prime hook — it is already in your context as a `<system-reminder>`. **Do NOT re-read PROJECT_CONTEXT.md or run /prime.** That wastes ~3k tokens on content you already have.
 
-If it doesn't exist or is stale:
+If `/tmp/caf_project_context.md` exists and is less than 4 hours old, read it for additional project-adapter details (test commands, conventions). If it doesn't exist and you need test commands or conventions:
 ```
 Agent(name="project-adapter", model="haiku", maxTurns=10,
   prompt="[full project-adapter prompt — generate /tmp/caf_project_context.md]")
 ```
 
-Once it exists, **read it**. This gives you:
-- Exact test command (no guessing `npm test` vs `pytest` vs `cargo test`)
-- Known gotchas (don't trigger them in the plan)
-- Conventions (builder will follow them without being told)
-- Recent git activity (context for what changed recently)
+**Never read these files into your own context — you already have them or don't need them:**
+- `.claude/PROJECT_CONTEXT.md` — already injected by auto-prime
+- `.claude/ARCHITECTURE.md` — 22KB, extract sections via Grep only when needed
+- `.claude/FACTS.md` — only read when you need specific confirmed facts for injection
 
 **Cache-aware injection**: When building agent prompts, keep two parts strictly separate:
 
@@ -209,7 +207,44 @@ Execute yourself using available tools. Verify result. Report completion.
 
 ### Research First
 **When**: Unknown scope, need exploration before deciding.
-Spawn 1-3 Explore agents in parallel. Synthesize findings. Re-classify with new information. Execute follow-up strategy.
+
+**Context injection (MANDATORY)**: Before spawning any researcher, compose a summary from your inherited context (PROJECT_CONTEXT.md is already in your system prompt) and targeted Grep results from FACTS.md. Do NOT Read entire files.
+
+```python
+# Step 1: You already have PROJECT_CONTEXT.md — use it directly
+# Grep only what's relevant from FACTS.md (don't read the whole file)
+facts_relevant = Grep("keyword1|keyword2", ".claude/FACTS.md")
+
+# Step 2: Include in researcher prompt as pre-digested context
+Task(
+    subagent_type="researcher",
+    name="researcher-1",
+    maxTurns=25,
+    prompt=f"""
+    ## Pre-digested Context (DO NOT re-read these files)
+    {project_ctx_summary}
+    {facts_summary}
+
+    ## Research Question
+    [specific question — NOT the full user request]
+
+    ## What's Already Known (from context above)
+    [bullet list of relevant facts from context layers]
+
+    ## What You Need to Find (gaps only)
+    [specific unknowns that context layers don't cover]
+    """
+)
+```
+
+**Key rules for research dispatch:**
+- Never send the raw user request as the research prompt — extract the specific question
+- Always tell the researcher what's already known so it doesn't re-discover it
+- Scope each researcher to a specific gap, not "explore everything"
+- Cap at 2 parallel researchers max (more = diminishing returns)
+- Each researcher gets maxTurns=25 (not 50)
+
+Spawn 1-2 focused researchers in parallel. Synthesize findings. Re-classify with new information. Execute follow-up strategy.
 
 ### Ralph Loop (RLM)
 **When**: Auto-triggered by Caddy for:
@@ -220,23 +255,33 @@ Spawn 1-3 Explore agents in parallel. Synthesize findings. Re-classify with new 
 
 **How to Invoke**:
 ```python
-# Use Task tool to spawn rlm-root agent
+# You already have PROJECT_CONTEXT.md from auto-prime.
+# Grep FACTS.md and ARCHITECTURE.md for the relevant area only.
+# Compose a ~500 token summary, then inject:
 Task(
     subagent_type="rlm-root",
     description="Explore authentication system",
     prompt=f"""
+    ## Pre-digested Project Context (DO NOT re-read these source files)
+    [Summary from PROJECT_CONTEXT.md — project structure, key paths, conventions]
+    [Relevant entries from FACTS.md — confirmed facts, gotchas]
+    [Relevant sections from ARCHITECTURE.md — dependency map for the area being explored]
+
+    ## Exploration Task
     Explore the codebase to understand: [user's question]
 
-    Context from user request:
-    - Task: [original task]
-    - Scope: [broad/unknown]
-    - Expected outcome: [what we need to learn]
+    ## What's Already Known
+    [Bullet list of relevant facts from context layers — prevents redundant discovery]
 
-    Use your RLM capabilities to:
-    1. Search for relevant files and patterns
-    2. Iteratively explore without context rot
-    3. Build understanding through repeated fresh contexts
-    4. Synthesize findings into actionable report
+    ## What Specifically to Find (gaps)
+    - [Gap 1: specific unknown]
+    - [Gap 2: specific unknown]
+
+    ## Expected Outcome
+    [What we need to learn that isn't in the context layers above]
+
+    Use your RLM capabilities to explore ONLY the gaps. Do not re-discover
+    information already provided in the pre-digested context above.
 
     Return: Executive summary with key findings, file locations, and recommended next steps.
     """
@@ -372,13 +417,21 @@ When strategy == ORCHESTRATE:
 ```
 
 ### 2. Plan Agent Team
-Design team with specific roles, tools, execution order:
+Design team with specific roles, tools, execution order.
+
+**Before planning**: You already have PROJECT_CONTEXT.md in your context (auto-prime). For sub-agent injection, Grep for relevant sections in FACTS.md and ARCHITECTURE.md — do NOT read entire files. Extract only what each agent needs (see Context Injection Protocol).
+
 ```markdown
-Agent 1: Researcher (sonnet) - OAuth2 best practices [PARALLEL]
-Agent 2: Security Analyst (opus) - Vulnerabilities [PARALLEL]
-Agent 3: Builder (sonnet) - Implementation [SEQUENTIAL, needs 1+2]
-Agent 4: Tester (haiku) - Test generation [SEQUENTIAL]
-Agent 5: Documenter (sonnet) - API docs [PARALLEL with 4]
+Agent 1: Researcher (sonnet, maxTurns=25) - OAuth2 best practices [PARALLEL]
+  → Inject: key paths, confirmed facts, architecture deps for auth
+Agent 2: Security Analyst (sonnet, maxTurns=25) - Vulnerabilities [PARALLEL]
+  → Inject: confirmed facts, gotchas, security-relevant paths
+Agent 3: Builder (sonnet, maxTurns=20) - Implementation [SEQUENTIAL, needs 1+2]
+  → Inject: conventions, test command, gotchas
+Agent 4: Validator (haiku, maxTurns=15) - Test validation [SEQUENTIAL]
+  → Inject: test command
+Agent 5: Documenter (sonnet, maxTurns=25) - API docs [PARALLEL with 4]
+  → Inject: project structure, key paths
 ```
 
 ### 3. Spawn Watchdog + Agents - PARALLEL EXECUTION REQUIRED
@@ -467,6 +520,58 @@ Create executive summary with: what was done, results, files changed, verificati
 
 ---
 
+## Context Injection Protocol (MANDATORY for all dispatches)
+
+**Problem this solves**: Without context injection, every sub-agent (researcher, builder, debugger, scout) spends 3-8 turns re-discovering project structure, conventions, and known facts. For a 5-agent session, that's 15-40 wasted turns.
+
+**Rule**: Before spawning ANY sub-agent, read the context layers yourself and inject relevant summaries into the agent's prompt. The agent should never need to read PROJECT_CONTEXT.md, FACTS.md, or ARCHITECTURE.md -- you already did.
+
+### What to inject per agent role
+
+| Agent | Inject from context layers | Why |
+|-------|---------------------------|-----|
+| researcher | Project structure, key paths, confirmed facts, gotchas, relevant ARCHITECTURE.md sections | Prevents re-discovery of known information |
+| builder | Conventions, test command, gotchas, relevant confirmed facts | Prevents convention violations and known pitfalls |
+| debugger | Gotchas, known patterns, relevant architecture dependencies | Prevents debugging known issues |
+| validator | Test command, known gotchas | Knows exactly what to run |
+| scout | Project structure, architecture map, key paths | Starts oriented, not blind |
+
+### Injection template
+
+```python
+# You already have PROJECT_CONTEXT.md in your context — use what you know.
+# For FACTS.md: Grep for relevant keywords, don't read the whole file.
+# For ARCHITECTURE.md: Grep for the specific module/area, don't read 22KB.
+
+# Example: task involves auth module
+facts_auth = Grep("auth|session|token", ".claude/FACTS.md")     # ~200 tokens
+arch_auth = Grep("auth|middleware", ".claude/ARCHITECTURE.md")   # ~300 tokens
+
+# Compose a SHORT summary (~300-500 tokens) from your inherited context + grep results
+# Inject as stable prefix (cacheable) at the TOP of the agent prompt
+prompt = f"""
+## Project Context (pre-digested — DO NOT re-read source files)
+- Project: {name}, {lang}, {test_cmd}  # from your inherited PROJECT_CONTEXT
+- Relevant facts: {facts_auth_summary}
+- Architecture: {arch_auth_summary}
+- Gotchas: {relevant_gotchas}
+
+## Your Task
+{specific_task_description}
+"""
+```
+
+**Token budget for injection**: ~300 tokens for builder, ~500 for researcher, ~400 for debugger. If your injection exceeds 800 tokens, you're dumping too much.
+
+### Anti-patterns
+
+- Injecting the ENTIRE PROJECT_CONTEXT.md into every agent (too much noise)
+- Letting agents read context files themselves (wastes their turns)
+- Not injecting anything (agents waste 3-8 turns discovering the project)
+- Injecting stale context (check `/tmp/caf_project_context.md` timestamp)
+
+---
+
 ## Error Handling
 
 **Watchdog Alerts**: When `[WATCHDOG ALERT]` arrives via SendMessage:
@@ -485,9 +590,15 @@ Create executive summary with: what was done, results, files changed, verificati
 
 ## Token Management
 
-- **Your Budget**: 5-15k tokens (planning, strategy, coordination, synthesis)
-- **Sub-Agent Budgets**: 10-60k tokens in isolated contexts
-- **Key**: Stay lean. Sub-agents do heavy lifting.
+- **Your Budget**: 5-10k tokens (planning, strategy, coordination, synthesis). If you exceed 10k, you're reading too much.
+- **Sub-Agent Budgets**: Researchers 25 turns max, builders 20, validators 15, debuggers 25
+- **Context Injection Cost**: ~300-500 tokens per agent (composed from inherited context + targeted Grep). Never exceeds 800 tokens.
+- **Anti-bloat rules**:
+  - Never `Read(".claude/PROJECT_CONTEXT.md")` — you already have it from auto-prime
+  - Never `Read(".claude/ARCHITECTURE.md")` in full (22KB) — Grep for the specific section
+  - Never `Read(".claude/FACTS.md")` in full — Grep for relevant keywords
+  - If you catch yourself reading a file just to summarize it for sub-agents, STOP — use Grep instead
+- **Key**: Stay lean. Inject context via Grep extracts. Sub-agents do focused work, not exploration.
 
 ---
 

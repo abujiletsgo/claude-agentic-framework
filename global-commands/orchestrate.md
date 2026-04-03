@@ -162,12 +162,15 @@ The rule: **smallest model that can do it, tightest scope possible, explicit sto
 
 ## Token Efficiency
 
+- **Context-first**: Orchestrator reads PROJECT_CONTEXT.md, FACTS.md, ARCHITECTURE.md once and injects relevant summaries into every agent prompt — agents never re-read these files
+- **Researchers capped at 25 turns** (was 50) — must check context layers before searching
 - Watchdog (haiku) runs in background — doesn't block
 - Validator is always haiku — fast and cheap
 - RLM only triggers for genuinely broad/unknown scope
 - Fusion is opt-in, never default
 - Recovery loop caps at 5 iterations with escalation to human
 - Every spawned agent has explicit `maxTurns` — no silent runaway agents
+- Max 2 parallel researchers per task (more = diminishing returns)
 
 ---
 

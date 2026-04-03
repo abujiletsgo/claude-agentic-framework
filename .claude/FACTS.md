@@ -17,12 +17,16 @@
 - Auto-skill generator fires on Stop, detects repeated patterns, creates SKILL.md [2026-03-29]
 - CVE-2025-59536/CVE-2026-21852 mitigations in damage-control patterns [2026-03-29]
 - Memory layer testing methodology: 15-question process, target 14/15 [2026-03-29]
+- Researcher maxTurns=25 (not 50), must check context layers before searching [2026-04-03]
+- Context-first protocol: agents read PROJECT_CONTEXT.md/FACTS.md/ARCHITECTURE.md BEFORE any codebase search [2026-04-03]
+- Orchestrator injects pre-digested context into all sub-agent prompts to prevent redundant reads [2026-04-03]
 
 ## GOTCHAS
 - NEVER delete a hook file referenced in live settings.json — stub first, reinstall, delete after [2026-02-24]
 - `observe_patterns.py` and `analyze_session.py` NOT wired — knowledge pipeline only runs LEARN + EVOLVE [2026-02-24]
 - Circuit breaker disables hooks after 3 failures for 60s — delete `~/.claude/circuit_breakers/{hook}.json` to reset [2026-02-24]
 - Damage control blocks CVE flag names and "eval" even in commit messages — rephrase to avoid [2026-03-29]
+- Research agents that skip context-first protocol waste 3-8 turns re-discovering known project info [2026-04-03]
 - meta-agent.md has two `model:` lines — frontmatter (opus) is the real one, body line is template instructions [2026-03-29]
 
 ## PATHS & ARCHITECTURE

@@ -16,9 +16,10 @@ tiers:
 
   sonnet:
     model_id: claude-sonnet-4-6
+    max_turns_default: 25  # Cap for research/analysis agents; builder=20
     use_for:
-      - Research and analysis
-      - Code generation and implementation
+      - Research and analysis (context-first, 25 turns max)
+      - Code generation and implementation (20 turns max)
       - Code review and refactoring
       - Security analysis
       - Agent/skill generation
