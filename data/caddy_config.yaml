@@ -63,30 +63,35 @@ caddy:
     role_defaults:
       builder: sonnet
       researcher: sonnet
-      tester: sonnet
-      reviewer: opus
-      security: opus
-      documenter: sonnet
+      validator: haiku
+      critical-analyst: sonnet
+      scout-report-suggest: sonnet
+      debugger: sonnet
+      docs-scraper: haiku
+      agent-watchdog: haiku
       quick_task: haiku
 
   # Skills that Caddy can recommend or invoke
   # Set any to false to prevent Caddy from suggesting it
   skills:
-    brainstorm-before-code: true
-    feasibility-analysis: true
-    tdd-workflow: true
+    arch-map: true
+    change-validator: true
     code-review: true
-    security-scanner: true
-    performance-profiler: true
-    test-generator: true
-    documentation-writer: true
-    refactoring-assistant: true
-    dependency-audit: true
-    task-decomposition: true
-    project-scaffolder: true
-    git-workflow: true
-    verification-checklist: true
     docs: true
+    error-analyzer: true
+    facts: true
+    issue-scoper: true
+    knowledge-db: true
+    project-adapter: true
+    refactoring-assistant: true
+    rollback: true
+    security-scanner: true
+    skill-builder: true
+    solve: true
+    test-generator: true
+    test-scout: true
+    tidy: true
+    worktree: true
 
   # Skill security audit configuration
   # Caddy audits skills for dangerous patterns before recommending them

@@ -20,7 +20,7 @@ templates/           settings.json.template (edit this, run install.sh)
 ## Model Tiers
 
 ```
-  Opus (3): orchestrator, project-architect, rlm-root
+  Opus (4): orchestrator, project-architect, rlm-root, solve
 Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger
  Haiku (3): docs-scraper, validator, agent-watchdog
 ```

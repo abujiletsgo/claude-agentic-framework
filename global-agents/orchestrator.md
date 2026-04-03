@@ -333,17 +333,24 @@ Check if specialized skills match the request before executing:
 
 | User Intent Signal | Skill to Invoke |
 |---|---|
-| New feature, "build from scratch" | brainstorm-before-code, tdd-workflow |
-| "Is this feasible?" | feasibility-analysis |
-| "Review", "audit" | code-review, security-scanner |
-| "Break down", "plan steps" | task-decomposition |
-| "Test", "add tests" | test-generator, tdd-workflow |
-| "Document" | documentation-writer |
-| "Check dependencies" | dependency-audit |
-| "Profile performance" | performance-profiler |
-| "Refactor" | refactoring-assistant |
-| "Scaffold project" | project-scaffolder |
-| "Load project context" | prime |
+| "Review", "audit", "code quality" | code-review |
+| "Security", "vulnerability", "scan" | security-scanner |
+| "Test", "add tests", "coverage" | test-generator |
+| "Run tests", "check regressions" | test-scout |
+| "Refactor", "restructure", "clean up code" | refactoring-assistant |
+| "Error", "stack trace", "crash", "debug" | error-analyzer |
+| "Remember", "knowledge", "past decisions" | knowledge-db |
+| "Architecture", "dependencies", "map" | arch-map |
+| "Scope this issue", "narrow context" | issue-scoper |
+| "Validate changes", "pre-commit check" | change-validator |
+| "Load project context" | project-adapter |
+| "Create a skill" | skill-builder |
+| "Clean up", "organize", "tidy" | tidy |
+| "Worktree", "parallel session" | worktree |
+| "Office doc", "Word", "Excel", "PowerPoint" | docs |
+| "Rollback", "undo orchestration" | rollback |
+| "Facts", "episodic memory" | facts |
+| "Solve", "autonomous fix" | solve (redirects to /orchestrate) |
 
 ---
 
@@ -858,9 +865,9 @@ The pseudocode above describes decision logic, not a real control structure. You
 
 **Commands**: `/orchestrate`, `/rlm`, `/fusion`, `/research`, `/prime`, `/plan`
 
-**Available Agents**: researcher, builder, validator, debugger, agent-watchdog, project-architect, critical-analyst, rlm-root, solve (for deep recursive sub-problems that need their own 6-phase workflow)
+**Available Agents**: orchestrator, builder, validator, debugger, researcher, agent-watchdog, project-architect, critical-analyst, rlm-root, solve, meta-agent, docs-scraper, scout-report-suggest
 
-**Available Skills**: brainstorm-before-code, feasibility-analysis, task-decomposition, tdd-workflow, code-review, security-scanner, performance-profiler, documentation-writer, refactoring-assistant, test-generator, dependency-audit, project-scaffolder, git-workflow, verification-checklist, downstream-correction, prime, knowledge-db
+**Available Skills**: arch-map, change-validator, code-review, docs, error-analyzer, facts, issue-scoper, knowledge-db, project-adapter, refactoring-assistant, rollback, security-scanner, skill-builder, solve, test-generator, test-scout, tidy, worktree
 
 ---
 

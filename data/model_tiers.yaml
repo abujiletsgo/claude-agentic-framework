@@ -35,13 +35,14 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 3 Opus, 6 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
+# 4 Opus, 6 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
     - rlm-root                # Recursive exploration controller
+    - solve                   # Deep autonomous problem-solver (spawned by orchestrator)
 
   sonnet:
     - critical-analyst        # Critical thinking, risk analysis
