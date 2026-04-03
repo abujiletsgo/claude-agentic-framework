@@ -1,8 +1,10 @@
 {
-  "_comment": "v4.0: Full lifecycle hooks (25 events), async non-blocking, conditional filtering, prompt/agent hook types",
+  "_comment": "v4.1: Full lifecycle hooks, async non-blocking, role-based team, session cost tracking",
+  "_cache_note": "Extended cache TTL active (1-hour via ANTHROPIC_CUSTOM_HEADERS). Default is 5 min — 1-hour TTL ensures project context cache hits across all agents in long pipelines. Cache minimums: Sonnet 4.6=2048 tokens, Opus/Haiku=4096 tokens.",
   "version": "1.0",
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ANTHROPIC_CUSTOM_HEADERS": "anthropic-beta: extended-cache-ttl-2025-04-11"
   },
   "model": "opus",
   "permissions": {
@@ -345,6 +347,17 @@
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/monitoring/session_cost_tracker.py",
+            "timeout": 8,
+            "async": true,
+            "_comment": "ASYNC: reads agent transcript + records cost — fire-and-forget"
           }
         ]
       }

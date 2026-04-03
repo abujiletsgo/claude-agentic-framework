@@ -130,3 +130,18 @@
   global-agents/solve.md                | 569 ++++++++++++++++++++++++++++++++++
   global-skills/solve/SKILL.md          |  15 +
   ... and 4 more files
+
+## 2026-04-03 (05:52 UTC) · @Tom Kwon
+**Commit:** v4.1: Epistemic guard hook, CAF mode, auto-prime improvements (4ca6dd4) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  15 ++
+  CLAUDE.md                                          |  28 ++-
+  README.md                                          |  11 +-
+  data/caddy_config.yaml                             |   1 +
+  global-hooks/framework/automation/auto_escalate.py |  11 ++
+  global-hooks/framework/automation/auto_prime.py    |  67 ++++++-
+  global-hooks/framework/caddy/analyze_request.py    |  21 +++
+  global-hooks/framework/caddy/auto_delegate.py      |  21 +++
+  global-hooks/framework/caf_mode.py                 | 111 +++++++++++
+  .../framework/guardrails/epistemic_guard.py        | 135 ++++++++++++++
+  ... and 7 more files

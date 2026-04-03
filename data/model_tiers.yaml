@@ -35,7 +35,7 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# Balanced: 3 Opus, 4 Sonnet, 1 Haiku
+# 3 Opus, 6 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
 
 agent_tiers:
   opus:
@@ -48,9 +48,13 @@ agent_tiers:
     - researcher              # Research and analysis
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
+    - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
+    - debugger                # Root cause analysis + fix plan writing
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)
+    - validator               # Test running + pass/fail reporting
+    - agent-watchdog          # Background anomaly detection
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 

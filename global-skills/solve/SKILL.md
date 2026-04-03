@@ -1,15 +1,13 @@
 ---
 name: solve
-description: Launch the autonomous problem-solver. Combines RLM recursion, multi-agent research, fusion testing, and dynamic skill creation. Self-iterates until solved.
+description: Redirect to /orchestrate — the unified entry point for all complex work including autonomous problem-solving.
 user-invocable: true
 ---
 
-Launch the `solve` agent to autonomously investigate and fix the problem.
-
-Pass the user's full message as context. The agent will interview, research, hypothesize, challenge, implement, verify, and improve in a loop.
+`/solve` is now `/orchestrate`.
 
 ```
-Agent(subagent_type="solve", description="Autonomous problem-solver", prompt="<user's problem description and any args passed to /solve>")
+Agent(subagent_type="orchestrator", description="Unified orchestration", prompt="<user's full message and any args passed to /solve>")
 ```
 
-If args are provided, pass them as the problem statement. If no args, the agent will interview the user.
+The orchestrator handles everything `/solve` did: interview mode, RLM recursion, parallel research, recovery loop, guardian validation, spiral detection, and self-correction. No separate entry point needed.

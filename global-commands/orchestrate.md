@@ -1,201 +1,178 @@
-# Orchestrate Command
+# /orchestrate — Unified Smart Orchestrator
 
-**Purpose**: Invoke the Orchestrator Agent for complex multi-agent workflows.
-
----
-
-## When to Use
-
-Use the Orchestrator when you need:
-- **Multi-step workflows** requiring coordination
-- **Parallel execution** of independent tasks
-- **Complex features** needing research + implementation + testing
-- **Large-scale operations** (audits, refactoring, optimization)
+**Purpose**: Single entry point for all complex work. Analyzes the task, picks the right team and strategy, executes with role separation, and self-corrects on failure. Replaces `/solve`.
 
 ---
 
 ## Usage
 
-```bash
-/orchestrate "high-level goal"
+```
+/orchestrate [task description]
+/orchestrate                     ← omit args to trigger interview mode
 ```
 
 ---
 
-## Example
+## What It Does
 
-```
-/orchestrate "Implement OAuth2 authentication with comprehensive security"
-```
+The Orchestrator agent receives your task and runs the full intelligence pipeline:
 
-**What Happens**:
-1. Orchestrator spawns Researcher agent
-2. Orchestrator spawns Security Analyst agent
-3. Orchestrator spawns Builder agent (with context from 1 & 2)
-4. Orchestrator spawns Tester agent
-5. Orchestrator synthesizes results and reports back
-
----
-
-## How It Works
-
-### Step 1: Load Orchestrator Agent
-
-The system loads the Orchestrator agent from:
-```
-~/.claude/agents/orchestrator.md
-```
-
-### Step 2: Orchestrator Plans
-
-The Orchestrator:
-1. Analyzes your high-level goal
-2. Breaks it into specialized sub-tasks
-3. Identifies required agent types
-4. Plans execution order (parallel vs sequential)
-
-### Step 3: Orchestrator Executes
-
-The Orchestrator:
-1. Spawns sub-agents using `Task` tool
-2. Provides context to each agent
-3. Coordinates parallel/sequential execution
-4. Waits for all agents to complete
-
-### Step 4: Orchestrator Synthesizes
-
-The Orchestrator:
-1. Collects all agent reports
-2. Synthesizes into executive summary
-3. Reports back to you with:
-   - What was done
-   - Results achieved
-   - Time saved
-   - Next steps (if any)
+1. **Clarify** — If the task is ambiguous, asks 1-3 focused questions before planning
+2. **Classify** — Complexity, task type, quality need, codebase scope (4-dimension analysis)
+3. **Select strategy** — Direct / Research / RLM / Orchestrate / Brainstorm / Skills
+4. **Assemble team** — Right agents, right models, right maxTurns per role
+5. **Execute** — Parallel where possible, sequential where dependent
+6. **Self-correct** — On failure: Debug → Re-plan → Rebuild (up to 5 iterations)
+7. **Report** — Executive summary with what changed, test results, rollback info
 
 ---
 
-## Combining with Other Tools
+## Strategy Selection (automatic)
 
-### With Context Priming
-```
-/prime
-/orchestrate "Implement new feature X"
-```
+The orchestrator picks the strategy. You don't need to specify it.
 
-Orchestrator benefits from primed context for better planning.
+| Signal | Strategy |
+|--------|----------|
+| Single action, < 3 steps | Direct — does it inline |
+| Unknown scope ("how does X work?") | RLM — iterative exploration |
+| Broad codebase ("audit everything") | RLM — prevents context rot |
+| 2+ independent workstreams | Orchestrate — parallel team |
+| Bug with clear error trace | Recovery loop — builder → validator → debugger |
+| Complex design decision | Brainstorm + Plan |
+| Matches a skill | Delegates to skill first |
 
----
-
-### With Context Bundles
-```
-/loadbundle latest
-/orchestrate "Continue implementing feature Y"
-```
-
-Orchestrator restores previous session intelligence before planning.
+**Fusion** is never auto-selected. See "When to suggest Fusion" below.
 
 ---
 
-## When NOT to Use
+## Team Composition (automatic)
 
-### Simple Tasks
-If the task is straightforward and doesn't need coordination:
-```
-❌ /orchestrate "Fix typo in README"
-✅ Just fix it directly
-```
+The orchestrator assembles the right team per task:
 
-### Single-Agent Tasks
-If only one specialized agent is needed:
-```
-❌ /orchestrate "Research OAuth2 best practices"
-✅ /research "OAuth2 best practices"
-```
+| Role | Agent | Model | When Used |
+|------|-------|-------|-----------|
+| Implementer | `builder` | sonnet | Any code change |
+| Checker | `validator` | haiku | After every build |
+| Fixer | `debugger` | sonnet | After any failure |
+| Researcher | `researcher` | sonnet | Unknown scope |
+| Critic | `critical-analyst` | sonnet | Challenging hypotheses |
+| Mapper | `scout-report-suggest` | sonnet | Codebase exploration |
+| Monitor | `agent-watchdog` | haiku | Background, any parallel batch |
+| Architect | `project-architect` | opus | System design |
 
-### Interactive Tasks
-If you need back-and-forth conversation:
+You never need to specify the team. But you can hint:
+
 ```
-❌ /orchestrate "Help me understand how authentication works"
-✅ Ask directly for explanation
+/orchestrate "Add caching to the API — prioritize correctness over speed"
+/orchestrate "Refactor auth module — keep changes small and reviewable"
 ```
 
 ---
 
-## Advanced Usage
+## Self-Correction Loop
 
-### Specify Agent Team Composition
+When implementation fails, the orchestrator runs a structured recovery loop instead of retrying blindly:
 
 ```
-/orchestrate "Optimize database queries. Use 5 profiler agents in parallel."
+Write plan → Builder → Validator
+                          ↓ FAIL
+                       Debugger (reads error, writes fix plan)
+                          ↓
+                    Update plan (add dead end, new approach)
+                          ↓
+                       Builder (round 2)
+                          ↓
+                       Validator
+                          ↓ FAIL again → repeat up to 5×
+                          ↓ PASS → commit + report
 ```
 
-The Orchestrator will follow your guidance on team composition.
+Dead ends are tracked so the same approach is never tried twice. After 5 failed iterations, the orchestrator escalates to you with a full audit trail and rollback command.
 
 ---
 
-### Provide Constraints
+## When to Suggest Fusion
 
-```
-/orchestrate "Refactor codebase, but keep changes under 100 lines per file."
-```
+The orchestrator will **suggest** (not auto-run) Fusion when:
 
-The Orchestrator passes constraints to sub-agents.
+- Multiple valid solution architectures exist and correctness is hard to determine upfront
+- The task is irreversible (production schema changes, published APIs)
+- You've asked for the "best" solution explicitly, not just "a" solution
+- The recovery loop has tried 2+ approaches and the problem is design-level, not implementation-level
 
----
+When suggesting, the orchestrator will say:
 
-### Request Specific Outputs
+> "This looks like a case where Fusion (Best-of-N) could find a better solution than a single approach. Want me to run 3 parallel implementations and fuse the best? It costs ~3× the tokens but gives you a scored comparison. Type `/fusion [task]` or say 'yes' to proceed."
 
-```
-/orchestrate "Audit security. Provide JSON report with severity ratings."
-```
-
-The Orchestrator ensures sub-agents generate requested format.
+You decide. If you say yes, it spawns Fusion. If not, it proceeds with its best single approach.
 
 ---
 
-## Troubleshooting
+## Compared to Old Commands
 
-### Issue: Orchestrator seems slow
-
-**Cause**: Large number of agents spawned
-
-**Solution**: This is expected. Orchestrator coordinates complex workflows. The time saved vs manual work is significant.
-
----
-
-### Issue: Sub-agent failed
-
-**What Happens**: Orchestrator automatically handles failures:
-1. Analyzes failure
-2. Spawns debugger/fixer agent
-3. Retries operation
-4. If still fails: Reports to you with details
+| Old | New |
+|-----|-----|
+| `/solve "fix this bug"` | `/orchestrate "fix this bug"` |
+| `/orchestrate "implement X"` | `/orchestrate "implement X"` (unchanged) |
+| `/fusion "..."` | Still available standalone — now also suggested by orchestrate when appropriate |
 
 ---
 
-### Issue: Need to cancel orchestration
+## Examples
 
-**Solution**:
-```bash
-# Stop the orchestrator
-Ctrl+C
+```
+/orchestrate "the login endpoint returns 500 for valid users"
+→ Interviews if needed, traces error, recovery loop
 
-# Or use stop command
-/stop
+/orchestrate "add rate limiting to all API routes"
+→ Research → plan → builder team → validator → report
+
+/orchestrate "how does the auth system work?"
+→ RLM exploration → architecture summary
+
+/orchestrate
+→ Interview mode — asks what you need
 ```
 
 ---
 
-## Summary
+## Dynamic Subagents (project-specific + issue-specific)
 
-The `/orchestrate` command transforms you from **Lead Engineer** to **Executive**:
+The orchestrator can spawn purpose-built subagents on the fly — no agent file needed. These are more accurate and cheaper than forcing a general agent to handle specialized work.
 
-**Before**: You coordinate everything manually
-**After**: Orchestrator coordinates, you provide high-level goals
+The orchestrator will do this automatically when it detects:
+- A task requires project-specific domain knowledge (your schema, your DSL, your custom formats)
+- A narrow, repetitive operation would run faster as a focused 5-turn haiku agent than a general 20-turn sonnet
+- The fixed team (builder/validator/debugger) isn't the right fit for the sub-problem
 
-**Before**: Your context bloats with every task
-**After**: Orchestrator keeps your context pristine
+You can also hint at it:
 
-**Before**: Serial execution (one thing at a time)
-**After**: Parallel execution (many agents simultaneously)
+```
+/orchestrate "validate all migration files against our schema rules"
+→ Orchestrator reads the schema, creates a migration-validator agent inline,
+  runs it on all migration files, reports results. No general agent overhead.
+
+/orchestrate "find every auth failure in the last 24h of logs and group by user"
+→ Spawns a focused log-parser haiku agent. Done in 5 turns, not 20.
+```
+
+The rule: **smallest model that can do it, tightest scope possible, explicit stop condition.** Dynamic subagents shouldn't think — they should execute a narrow job and stop.
+
+---
+
+## Token Efficiency
+
+- Watchdog (haiku) runs in background — doesn't block
+- Validator is always haiku — fast and cheap
+- RLM only triggers for genuinely broad/unknown scope
+- Fusion is opt-in, never default
+- Recovery loop caps at 5 iterations with escalation to human
+- Every spawned agent has explicit `maxTurns` — no silent runaway agents
+
+---
+
+## Invoke
+
+```
+Agent(subagent_type="orchestrator", description="Unified orchestration", prompt="<user's full message and any args>")
+```
