@@ -268,3 +268,10 @@
   install.sh                                         |   2 +-
   templates/settings.json.template                   |   4 +
   7 files changed, 388 insertions(+), 1 deletion(-)
+
+## 2026-04-07 (17:31 UTC) · @Tom Kwon
+**Commit:** chore: flesh out mempalace.yaml rooms + commit session memory (3d94e5b) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  mempalace.yaml    | 34 ++++++++++++++++++++++++
+  2 files changed, 112 insertions(+)

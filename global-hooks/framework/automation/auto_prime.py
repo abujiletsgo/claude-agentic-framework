@@ -19,8 +19,10 @@ Exit codes:
 """
 
 import json
+import os
 import subprocess
 import sys
+import sys as _sys
 from pathlib import Path
 
 
@@ -158,6 +160,26 @@ def get_arch_map_status(repo_root, current_hash):
         return "unknown"
 
 
+def _aaak_compress_context(text: str) -> str:
+    """Compress context with AAAK dialect. Fail-open: returns original on any error."""
+    try:
+        framework_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
+        if framework_dir not in _sys.path:
+            _sys.path.insert(0, framework_dir)
+        from aaak_compress import compress_with_stats, log_compression_stats
+        compressed, stats = compress_with_stats(text, metadata={"hook": "auto_prime"})
+        if stats:
+            log_compression_stats(stats, context="auto_prime")
+            ratio = stats.get("ratio", 0)
+            import sys
+            print(f"[AAAK] auto_prime: {len(text)} → {len(compressed)} chars ({ratio:.1f}x)", file=sys.stderr)
+        return compressed
+    except Exception:
+        return text
+
+
 def _extract_slim_context(full_content: str) -> str:
     """Extract a slim version of PROJECT_CONTEXT.md for context injection.
 
@@ -292,6 +314,9 @@ def main():
             # sections and skip the verbose hooks table, directory tree, and memory docs
             # which duplicate CLAUDE.md content.
             slim_content = _extract_slim_context(cached_content)
+
+            # AAAK compress the context for token efficiency
+            slim_content = _aaak_compress_context(slim_content)
 
             instruction_prefix = (
                 "**SESSION CONTEXT LOADED** — Project context summary below. "

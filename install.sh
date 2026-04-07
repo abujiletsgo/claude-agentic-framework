@@ -192,6 +192,17 @@ echo "$UV_WARMUP_OPT" > "$OPT_FILE"
 uv run --no-project "$OPT_FILE" 2>/dev/null || echo "  Optional deps (anthropic): skipped (install later if needed)"
 rm -f "$WARMUP_FILE" "$OPT_FILE"
 
+# Check mempalace availability (optional)
+MEMPALACE_VENV="$HOME/Documents/mempalace/.venv/lib/python3.12/site-packages"
+if [ -d "$MEMPALACE_VENV" ]; then
+    echo "✓ mempalace found at $MEMPALACE_VENV"
+    MEMPALACE_AVAILABLE=true
+else
+    echo "⚠ mempalace not found (optional) — AAAK compression will be disabled"
+    echo "  Install: git clone <repo> ~/Documents/mempalace && cd ~/Documents/mempalace && uv sync"
+    MEMPALACE_AVAILABLE=false
+fi
+
 echo ""
 
 # 1. Validate all hook files exist before generating config
@@ -263,9 +274,25 @@ data.setdefault('env', {})['PATH'] = hook_path
 json.dump(data, sys.stdout, indent=2)
 ")
 
-echo "$SETTINGS_CONTENT" > "$CLAUDE_DIR/settings.json"
-echo "  -> $CLAUDE_DIR/settings.json"
+SETTINGS_PATH="$CLAUDE_DIR/settings.json"
+echo "$SETTINGS_CONTENT" > "$SETTINGS_PATH"
+echo "  -> $SETTINGS_PATH"
 echo "  -> Hook PATH: $HOOK_PATH"
+
+if [ "$MEMPALACE_AVAILABLE" = false ]; then
+    # Remove mempalace MCP server entry if not installed
+    python3 -c "
+import json, sys
+with open('$SETTINGS_PATH') as f:
+    cfg = json.load(f)
+mcp = cfg.get('mcpServers', {})
+if 'mempalace' in mcp:
+    del mcp['mempalace']
+    with open('$SETTINGS_PATH', 'w') as f:
+        json.dump(cfg, f, indent=2)
+    print('  Removed mempalace MCP server (not installed)')
+"
+fi
 
 # 3. Symlink commands (remove ALL existing symlinks first for clean install)
 echo "[3/11] Linking commands..."
@@ -405,6 +432,10 @@ else
   echo "  claude:  NOT FOUND — install Claude Code CLI to use the framework"
   echo "           https://docs.anthropic.com/en/docs/claude-code"
 fi
+
+echo ""
+echo "Optional features:"
+echo "  AAAK compression: $([ "$MEMPALACE_AVAILABLE" = true ] && echo 'enabled' || echo 'disabled (install mempalace to enable)')"
 
 echo ""
 echo "Done. Start a new Claude Code session to use the framework."
