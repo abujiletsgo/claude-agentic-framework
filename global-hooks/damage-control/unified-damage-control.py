@@ -39,10 +39,14 @@ def get_config_path():
 
 def load_config():
     config_path = get_config_path()
+    defaults = {"bashToolPatterns": [], "zeroAccessPaths": [], "readOnlyPaths": [], "noDeletePaths": []}
     if not config_path.exists():
-        return {"bashToolPatterns": [], "zeroAccessPaths": [], "readOnlyPaths": [], "noDeletePaths": []}
-    with open(config_path, "r") as f:
-        return yaml.safe_load(f) or {}
+        return defaults
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f) or defaults
+    except Exception:
+        return defaults
 
 # -- Path matching (used by Edit/Write and Bash path checks) --
 
@@ -245,9 +249,8 @@ def check_bash_command(command, config):
 def main():
     try:
         input_data = json.load(sys.stdin)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
-        sys.exit(1)
+    except (json.JSONDecodeError, ValueError):
+        sys.exit(0)  # fail-open: can't parse input, allow the tool
 
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
@@ -286,4 +289,11 @@ def main():
     sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as e:
+        if e.code == 2:
+            raise  # preserve intentional blocks
+        sys.exit(0)  # any other exit: fail-open
+    except Exception:
+        sys.exit(0)  # on crash: fail-open, never show "hook error"

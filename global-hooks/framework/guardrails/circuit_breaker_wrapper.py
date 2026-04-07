@@ -216,4 +216,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit as e:
+        if e.code == 2:
+            raise  # preserve intentional blocks
+        sys.exit(0)  # any other exit: fail-open
+    except Exception:
+        sys.exit(0)  # fail-open: never block due to wrapper crash
