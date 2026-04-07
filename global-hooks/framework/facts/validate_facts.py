@@ -70,6 +70,19 @@ def main():
         # 3. Log
         log_stats(cwd, counts, pruned)
 
+        # --- Sync facts to mempalace Knowledge Graph ---
+        try:
+            facts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'framework', 'facts')
+            if facts_dir not in sys.path:
+                sys.path.insert(0, facts_dir)
+            from fact_kg_sync import sync_all_facts
+
+            synced = sync_all_facts(str(path))
+            if synced > 0:
+                sys.stderr.write(f"[KG] Synced {synced} facts to knowledge graph\n")
+        except Exception:
+            pass  # fail-open
+
         # 4. Warn if getting large
         if total > WARN_THRESHOLD:
             print(

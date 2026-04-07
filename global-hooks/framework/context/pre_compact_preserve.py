@@ -490,6 +490,51 @@ def main():
 
         instructions = build_preservation_instructions(context, trigger)
 
+        # --- AAAK compression for token efficiency ---
+        try:
+            framework_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+            if framework_dir not in sys.path:
+                sys.path.insert(0, framework_dir)
+            from aaak_compress import compress_sections, log_compression_stats
+
+            # Split output into data and rules
+            rules_marker = "COMPACTION RULES:"
+            if rules_marker in instructions:
+                parts = instructions.split(rules_marker, 1)
+                data_part = parts[0]
+                rules_part = rules_marker + parts[1]
+
+                # Compress only the data part
+                original_len = len(data_part)
+                compressed_data = compress_sections(data_part)
+                compressed_len = len(compressed_data)
+
+                instructions = compressed_data + "\n" + rules_part
+
+                # Log stats
+                if original_len > 0:
+                    ratio = original_len / max(compressed_len, 1)
+                    stats = {
+                        "original_chars": original_len,
+                        "compressed_chars": compressed_len,
+                        "ratio": round(ratio, 2),
+                        "original_tokens": original_len // 4,
+                        "compressed_tokens": compressed_len // 4,
+                    }
+                    log_compression_stats(stats, context="pre_compact_preserve")
+                    sys.stderr.write(f"[AAAK] Compaction context: {original_len} → {compressed_len} chars ({ratio:.1f}x)\n")
+            else:
+                # No rules section found — compress entire output
+                original_len = len(instructions)
+                instructions = compress_sections(instructions)
+                compressed_len = len(instructions)
+                if original_len > 0:
+                    ratio = original_len / max(compressed_len, 1)
+                    sys.stderr.write(f"[AAAK] Compaction context: {original_len} → {compressed_len} chars ({ratio:.1f}x)\n")
+        except Exception as e:
+            # Fail-open: use uncompressed output
+            sys.stderr.write(f"[AAAK] Compression skipped: {e}\n")
+
         output = {
             "hookSpecificOutput": {
                 "hookEventName": "PreCompact",

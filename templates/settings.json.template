@@ -485,6 +485,10 @@
       "command": "officecli",
       "args": ["mcp"],
       "_comment": "OfficeCLI: create/read/edit Word, Excel, PowerPoint — used by /docs skill"
+    },
+    "mempalace": {
+      "command": "__HOME__/Documents/mempalace/.venv/bin/python",
+      "args": ["-m", "mempalace.mcp_server"]
     }
   },
   "enabledPlugins": {

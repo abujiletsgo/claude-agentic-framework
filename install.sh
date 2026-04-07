@@ -197,7 +197,7 @@ echo ""
 # 1. Validate all hook files exist before generating config
 echo "[1/11] Validating hook files..."
 ERRORS=0
-SETTINGS_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/templates/settings.json.template")
+SETTINGS_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/templates/settings.json.template" | sed "s|__HOME__|$HOME|g")
 HOOK_PATHS=$(echo "$SETTINGS_CONTENT" | python3 -c "
 import json, sys, re
 data = json.load(sys.stdin)

@@ -234,8 +234,18 @@ def main():
             if file_path:
                 facts = extract_from_write(file_path, cwd)
 
+        today_str = __import__('datetime').datetime.now().strftime("%Y-%m-%d")
         for category, entry in facts:
             add(path, category, entry, project, author)
+            # Also sync to KG
+            try:
+                facts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'framework', 'facts')
+                if facts_dir not in sys.path:
+                    sys.path.insert(0, facts_dir)
+                from fact_kg_sync import sync_fact_to_kg
+                sync_fact_to_kg(category, entry, today_str)
+            except Exception:
+                pass
 
     except Exception as e:
         print(f"auto_fact_extractor error: {e}", file=sys.stderr)
