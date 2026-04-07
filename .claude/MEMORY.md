@@ -175,3 +175,18 @@
 **Changed:**
   README.md | 4 ++--
   1 file changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-04-07 (05:46 UTC) · @Tom Kwon
+**Commit:** perf: eliminate token bloat in research/orchestration pipeline (eb9c33c) by Tom Kwon
+**Changed:**
+  .claude/FACTS.md                      |   4 +
+  .claude/MEMORY.md                     |  30 +++++
+  data/caddy_config.yaml                |  12 ++
+  data/model_tiers.yaml                 |   5 +-
+  global-agents/orchestrator.md         | 169 +++++++++++++++++++-----
+  global-agents/researcher.md           | 234 ++++++++++++----------------------
+  global-agents/rlm-root.md             |   7 +-
+  global-agents/scout-report-suggest.md |  27 +++-
+  global-commands/orchestrate.md        |   3 +
+  global-commands/research.md           | 157 ++++++++++++++---------
+  ... and 1 more files

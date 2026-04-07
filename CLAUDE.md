@@ -5,10 +5,10 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        36 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:10, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:3, hooks_SessionEnd:1, hooks_SessionStart:1, hooks_Stop:6, hooks_StopFailure:1, hooks_SubagentStart:1, hooks_SubagentStop:2, hooks_TaskCompleted:1, hooks_UserPromptSubmit:4)
-global-agents/       13 agents (13 root + 0 team)
+global-hooks/        40 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:10, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:1, hooks_Stop:6, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:3, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
+global-agents/       14 agents (14 root + 0 team)
 global-commands/     16 commands
-global-skills/       18 skills
+global-skills/       19 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
 ```
@@ -38,6 +38,7 @@ Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, buil
 
 ## Key Rules
 
+- **`/orchestrate` is MANDATORY**: When user types `/orchestrate`, IMMEDIATELY call `Skill(skill="orchestrate")` BEFORE any other tool. Never ignore it. Never do the work yourself. Never treat it as decorative text. The orchestrator agent spawns parallel teams — you are not the orchestrator.
 - `uv run` for all Python. Never `pip install`.
 - Edit `templates/settings.json.template` → `bash install.sh`. Never edit settings.json directly.
 - Never delete hook files settings.json references. Stub first, delete after reinstall.

@@ -369,6 +369,7 @@ templates/           settings.json.template (edit this, run install.sh)
 
 ## Key Rules
 
+- **`/orchestrate` is MANDATORY**: When user types `/orchestrate`, IMMEDIATELY call `Skill(skill="orchestrate")` BEFORE any other tool. Never ignore it. Never do the work yourself. Never treat it as decorative text. The orchestrator agent spawns parallel teams — you are not the orchestrator.
 - `uv run` for all Python. Never `pip install`.
 - Edit `templates/settings.json.template` → `bash install.sh`. Never edit settings.json directly.
 - Never delete hook files settings.json references. Stub first, delete after reinstall.

@@ -93,10 +93,31 @@
             "_comment": "Inject epistemic discipline reminder for analysis/interpretation prompts"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/enforce_orchestrate.py",
+            "timeout": 5,
+            "_comment": "Enforce Skill tool invocation when /orchestrate is detected"
+          }
+        ]
       }
     ],
 
     "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orchestrator_tool_guard.py",
+            "timeout": 5,
+            "_comment": "Block orchestrator from using file/search/exec tools directly — forces delegation to subagents"
+          }
+        ]
+      },
       {
         "matcher": "Read|Edit|Write",
         "hooks": [
@@ -337,6 +358,16 @@
             "_comment": "v4.0: Track subagent spawning with agent_id/agent_type"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orch_depth_tracker.py",
+            "timeout": 5,
+            "_comment": "Track orchestration nesting depth for tool guard"
+          }
+        ]
       }
     ],
 
@@ -347,6 +378,16 @@
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orch_depth_tracker.py",
+            "timeout": 5,
+            "_comment": "Track orchestration nesting depth for tool guard"
           }
         ]
       },

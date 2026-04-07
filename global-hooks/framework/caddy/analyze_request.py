@@ -793,6 +793,17 @@ def main():
                 f"(confidence: {confidence:.0%})"
             )
 
+            # Simple tasks: minimal output (classification + strategy only)
+            if complexity == "simple":
+                output = {
+                    "hookSpecificOutput": {
+                        "hookEventName": "UserPromptSubmit",
+                        "additionalContext": "\n".join(suggestions),
+                    }
+                }
+                print(json.dumps(output))
+                sys.exit(0)
+
             if skills:
                 skill_list = ", ".join(s["skill"] for s in skills[:3])
                 suggestions.append(
