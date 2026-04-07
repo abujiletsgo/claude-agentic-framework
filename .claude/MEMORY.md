@@ -190,3 +190,81 @@
   global-commands/orchestrate.md        |   3 +
   global-commands/research.md           | 157 ++++++++++++++---------
   ... and 1 more files
+
+## 2026-04-07 (06:56 UTC) · @Tom Kwon
+**Commit:** fix: enforce orchestrator delegation with structural guardrails (bc9ae25) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |   15 +
+  CLAUDE.md                                          |    7 +-
+  README.md                                          |   15 +-
+  global-agents/orchestrator-reference.md            |  516 +++++++++
+  global-agents/orchestrator.md                      | 1167 +++++++-------------
+  global-agents/solve.md                             |  169 +--
+  global-hooks/framework/caddy/analyze_request.py    |   11 +
+  .../framework/guardrails/enforce_orchestrate.py    |  129 +++
+  .../framework/guardrails/orch_depth_tracker.py     |  157 +++
+  .../guardrails/orchestrator_tool_guard.py          |  134 +++
+  ... and 4 more files
+
+## 2026-04-07 (07:08 UTC) · @Tom Kwon
+**Commit:** feat: add /makeskill skill — autonomous project skill factory (3b8e64a) by Tom Kwon
+**Changed:**
+  CLAUDE.md                        |   2 +-
+  README.md                        |   7 +-
+  global-skills/makeskill/SKILL.md | 685 +++++++++++++++++++++++++++++++++++++++
+  3 files changed, 690 insertions(+), 4 deletions(-)
+
+## 2026-04-07 (07:08 UTC) · @Tom Kwon
+**Commit:** fix: prevent hook errors on fresh installs (8acaa95) by Tom Kwon
+**Changed:**
+  .../framework/guardrails/integrate_guardrails.py   |   2 +-
+  global-hooks/framework/korean/kr_mode.py           |   6 ++
+  install.sh                                         | 120 +++++++++++++++++++--
+  3 files changed, 118 insertions(+), 10 deletions(-)
+
+## 2026-04-07 (07:15 UTC) · @Tom Kwon
+**Commit:** fix: resolve SessionStart and UserPromptSubmit hook errors (6f618d2) by Tom Kwon
+**Changed:**
+  global-hooks/framework/caddy/analyze_request.py        | 2 +-
+  global-hooks/framework/caddy/auto_delegate.py          | 2 +-
+  global-hooks/framework/caddy/monitor_progress.py       | 2 +-
+  global-hooks/framework/session/session_startup.py      | 2 +-
+  global-hooks/framework/teams/anti_loop_team.py         | 2 +-
+  global-hooks/framework/teams/delegate_mode_enforcer.py | 2 +-
+  global-hooks/framework/teams/task_validator.py         | 2 +-
+  global-hooks/framework/teams/teammate_monitor.py       | 2 +-
+  global-status-lines/mastery/status_line_custom.py      | 2 +-
+  global-status-lines/mastery/status_line_v9.py          | 2 +-
+  ... and 1 more files
+
+## 2026-04-07 (07:27 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (d4e2933) by Tom Kwon
+**Changed:**
+  CLAUDE.md | 2 +-
+  README.md | 6 +++---
+  2 files changed, 4 insertions(+), 4 deletions(-)
+
+## 2026-04-07 (07:40 UTC) · @Tom Kwon
+**Commit:** fix: inject dynamic PATH into settings.json for hook execution (cf7bb14) by Tom Kwon
+**Changed:**
+  install.sh | 32 +++++++++++++++++++++++++++++++-
+  1 file changed, 31 insertions(+), 1 deletion(-)
+
+## 2026-04-07 (16:07 UTC) · @Tom Kwon
+**Commit:** fix: make damage-control and circuit-breaker fail-open on errors (e7244a2) by Tom Kwon
+**Changed:**
+  .../damage-control/unified-damage-control.py       | 24 +++++++++++++++-------
+  .../guardrails/circuit_breaker_wrapper.py          |  9 +++++++-
+  2 files changed, 25 insertions(+), 8 deletions(-)
+
+## 2026-04-07 (16:51 UTC) · @Tom Kwon
+**Commit:** feat: integrate mempalace AAAK dialect + temporal knowledge graph (9a263a2) by Tom Kwon
+**Changed:**
+  global-hooks/framework/aaak_compress.py            | 131 +++++++++++++++
+  .../framework/context/pre_compact_preserve.py      |  45 +++++
+  .../framework/facts/auto_fact_extractor.py         |  10 ++
+  global-hooks/framework/facts/fact_kg_sync.py       | 184 +++++++++++++++++++++
+  global-hooks/framework/facts/validate_facts.py     |  13 ++
+  install.sh                                         |   2 +-
+  templates/settings.json.template                   |   4 +
+  7 files changed, 388 insertions(+), 1 deletion(-)
