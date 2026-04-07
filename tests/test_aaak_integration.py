@@ -109,9 +109,12 @@ def test_fail_open_on_missing_mempalace():
     original_path = sys.path[:]
     try:
         # Remove mempalace venv from path temporarily
-        mempalace_venv = os.path.expanduser(
-            "~/Documents/mempalace/.venv/lib/python3.12/site-packages"
-        )
+        # Find the actual mempalace venv path (any Python version)
+        import glob
+        matches = glob.glob(os.path.expanduser(
+            "~/Documents/mempalace/.venv/lib/python3.*/site-packages"
+        ))
+        mempalace_venv = matches[0] if matches else ""
         sys.path = [p for p in sys.path if p != mempalace_venv]
         # Also patch _get_dialect to simulate failure
         with patch("aaak_compress._get_dialect", return_value=None):

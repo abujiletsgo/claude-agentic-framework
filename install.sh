@@ -192,14 +192,18 @@ echo "$UV_WARMUP_OPT" > "$OPT_FILE"
 uv run --no-project "$OPT_FILE" 2>/dev/null || echo "  Optional deps (anthropic): skipped (install later if needed)"
 rm -f "$WARMUP_FILE" "$OPT_FILE"
 
-# Check mempalace availability (optional)
-MEMPALACE_VENV="$HOME/Documents/mempalace/.venv/lib/python3.12/site-packages"
-if [ -d "$MEMPALACE_VENV" ]; then
-    echo "✓ mempalace found at $MEMPALACE_VENV"
+# Check mempalace availability (optional — auto-detects any Python 3.x venv)
+MEMPALACE_VENV=""
+for _sp in "$HOME"/Documents/mempalace/.venv/lib/python3.*/site-packages; do
+  [ -d "$_sp" ] && MEMPALACE_VENV="$_sp" && break
+done
+
+if [ -n "$MEMPALACE_VENV" ]; then
+    echo "  mempalace: OK ($MEMPALACE_VENV)"
     MEMPALACE_AVAILABLE=true
 else
-    echo "⚠ mempalace not found (optional) — AAAK compression will be disabled"
-    echo "  Install: git clone <repo> ~/Documents/mempalace && cd ~/Documents/mempalace && uv sync"
+    echo "  mempalace: not found (optional) — AAAK compression will be disabled"
+    echo "             To enable: cd ~/Documents/mempalace && uv sync"
     MEMPALACE_AVAILABLE=false
 fi
 

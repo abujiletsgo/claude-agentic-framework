@@ -15,12 +15,20 @@ import sys
 from datetime import datetime
 
 
+def _find_mempalace_site_packages():
+    """Find mempalace venv site-packages regardless of Python version."""
+    import glob
+    base = os.path.expanduser("~/Documents/mempalace/.venv/lib")
+    matches = glob.glob(os.path.join(base, "python3.*/site-packages"))
+    return matches[0] if matches else None
+
+
 def _get_dialect():
     """Import and return a Dialect instance. Returns None if unavailable."""
     try:
-        venv_site = os.path.expanduser(
-            "~/Documents/mempalace/.venv/lib/python3.12/site-packages"
-        )
+        venv_site = _find_mempalace_site_packages()
+        if not venv_site:
+            return None
         if venv_site not in sys.path:
             sys.path.insert(0, venv_site)
         from mempalace.dialect import Dialect
