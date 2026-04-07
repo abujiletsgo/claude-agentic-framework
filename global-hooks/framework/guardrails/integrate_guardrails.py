@@ -13,7 +13,7 @@ from pathlib import Path
 # Paths
 SETTINGS_FILE = Path.home() / ".claude" / "settings.json"
 BACKUP_FILE = Path.home() / ".claude" / "settings.json.backup-before-guardrails"
-WRAPPER_PATH = "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails/circuit_breaker_wrapper.py"
+WRAPPER_PATH = str(Path(__file__).resolve().parent / "circuit_breaker_wrapper.py")
 
 def wrap_command(command: str) -> str:
     """Wrap a command with the circuit breaker wrapper if not already wrapped."""

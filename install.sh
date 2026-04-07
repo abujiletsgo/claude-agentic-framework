@@ -139,8 +139,63 @@ fi
 
 echo ""
 
+# 0b. Create required directories
+echo "[0b/11] Creating required directories..."
+mkdir -p "$CLAUDE_DIR/data/compressed_context"
+mkdir -p "$CLAUDE_DIR/data/knowledge-db"
+mkdir -p "$CLAUDE_DIR/circuit_breakers"
+mkdir -p "$CLAUDE_DIR/skills/auto-generated"
+mkdir -p "/tmp/claude"
+echo "  -> ~/.claude/data/, circuit_breakers/, skills/auto-generated/, /tmp/claude/"
+
+# 0c. Pre-warm uv dependency cache (prevents first-run hook timeouts)
+echo "[0c/11] Pre-warming hook dependencies..."
+UV_WARMUP=$(cat <<'PYEOF'
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "pyyaml>=6.0.0",
+#   "pydantic>=2.0.0",
+# ]
+# ///
+"""Pre-warm: download all hook dependencies into uv cache."""
+import yaml, pydantic  # noqa: F401, E401
+print("  Core deps (pyyaml, pydantic): cached")
+PYEOF
+)
+
+WARMUP_FILE=$(mktemp /tmp/caf_warmup_XXXX.py)
+echo "$UV_WARMUP" > "$WARMUP_FILE"
+if uv run --no-project "$WARMUP_FILE" 2>/dev/null; then
+  : # success message already printed by script
+else
+  echo "  WARNING: Failed to pre-warm core deps. Hooks may timeout on first run."
+  echo "           Try: uv pip install pyyaml pydantic"
+fi
+
+# Optional deps (don't fail install if these can't be cached)
+UV_WARMUP_OPT=$(cat <<'PYEOF'
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "anthropic>=0.40.0",
+# ]
+# ///
+"""Pre-warm: cache anthropic SDK for kr_mode and caddy hooks."""
+import anthropic  # noqa: F401
+print("  Optional deps (anthropic): cached")
+PYEOF
+)
+
+OPT_FILE=$(mktemp /tmp/caf_warmup_opt_XXXX.py)
+echo "$UV_WARMUP_OPT" > "$OPT_FILE"
+uv run --no-project "$OPT_FILE" 2>/dev/null || echo "  Optional deps (anthropic): skipped (install later if needed)"
+rm -f "$WARMUP_FILE" "$OPT_FILE"
+
+echo ""
+
 # 1. Validate all hook files exist before generating config
-echo "[1/9] Validating hook files..."
+echo "[1/11] Validating hook files..."
 ERRORS=0
 SETTINGS_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/templates/settings.json.template")
 HOOK_PATHS=$(echo "$SETTINGS_CONTENT" | python3 -c "
@@ -177,13 +232,13 @@ fi
 echo "  All hook files verified."
 
 # 2. Generate settings.json from template
-echo "[2/9] Generating settings.json..."
+echo "[2/11] Generating settings.json..."
 mkdir -p "$CLAUDE_DIR"
 echo "$SETTINGS_CONTENT" > "$CLAUDE_DIR/settings.json"
 echo "  -> $CLAUDE_DIR/settings.json"
 
 # 3. Symlink commands (remove ALL existing symlinks first for clean install)
-echo "[3/9] Linking commands..."
+echo "[3/11] Linking commands..."
 mkdir -p "$CLAUDE_DIR/commands"
 find "$CLAUDE_DIR/commands" -maxdepth 1 -type l -delete 2>/dev/null || true
 for f in "$REPO_DIR"/global-commands/*.md; do
@@ -193,7 +248,7 @@ done
 echo "  -> $(ls "$REPO_DIR"/global-commands/*.md 2>/dev/null | wc -l | tr -d ' ') commands"
 
 # 4. Symlink skills (remove ALL existing symlinks first for clean install)
-echo "[4/9] Linking skills..."
+echo "[4/11] Linking skills..."
 mkdir -p "$CLAUDE_DIR/skills"
 find "$CLAUDE_DIR/skills" -maxdepth 1 -type l -delete 2>/dev/null || true
 for skill_dir in "$REPO_DIR"/global-skills/*/; do
@@ -207,7 +262,7 @@ mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "$CLAUDE_DIR/data"
 
 # 5. Symlink agents (remove ALL existing symlinks first for clean install)
-echo "[5/9] Linking agents..."
+echo "[5/11] Linking agents..."
 mkdir -p "$CLAUDE_DIR/agents"
 # Only create team subdir if source exists
 if [ -d "$REPO_DIR/global-agents/team" ]; then
@@ -227,11 +282,11 @@ fi
 echo "  -> $(ls "$REPO_DIR"/global-agents/*.md 2>/dev/null | wc -l | tr -d ' ') agents"
 
 # 6. Generate documentation from repo state
-echo "[6/9] Generating docs..."
+echo "[6/11] Generating docs..."
 uv run "$REPO_DIR/scripts/generate_docs.py"
 
 # 7. Write global CLAUDE.md with full-autonomy instructions
-echo "[7/9] Writing global CLAUDE.md..."
+echo "[7/11] Writing global CLAUDE.md..."
 GLOBAL_CLAUDE="$CLAUDE_DIR/CLAUDE.md"
 YOLO_MARKER="# Autonomy: Yolo"
 if [ -f "$GLOBAL_CLAUDE" ] && grep -q "$YOLO_MARKER" "$GLOBAL_CLAUDE"; then
@@ -253,7 +308,7 @@ YOLO
 fi
 
 # 8. Install git hooks (auto-doc before push)
-echo "[8/9] Installing git hooks..."
+echo "[8/11] Installing git hooks..."
 if [ -d "$REPO_DIR/.git" ]; then
   cp "$REPO_DIR/scripts/pre-push-hook.sh" "$REPO_DIR/.git/hooks/pre-push"
   chmod +x "$REPO_DIR/.git/hooks/pre-push"
@@ -263,7 +318,54 @@ else
 fi
 
 # 9. Final summary
-echo "[9/9] Installation complete."
+echo "[9/11] Initializing memory files..."
+# Create FACTS.md and MEMORY.md if they don't exist (hooks append to these)
+for memfile in ".claude/FACTS.md" ".claude/MEMORY.md"; do
+  target="$HOME/$memfile"
+  if [ ! -f "$target" ]; then
+    mkdir -p "$(dirname "$target")"
+    touch "$target"
+    echo "  -> Created ~/$memfile"
+  fi
+done
+
+# Create project-level memory index if missing
+if [ -d "$REPO_DIR/.claude" ] && [ ! -f "$REPO_DIR/.claude/MEMORY.md" ]; then
+  touch "$REPO_DIR/.claude/MEMORY.md"
+  echo "  -> Created .claude/MEMORY.md (project)"
+fi
+if [ -d "$REPO_DIR/.claude" ] && [ ! -f "$REPO_DIR/.claude/FACTS.md" ]; then
+  touch "$REPO_DIR/.claude/FACTS.md"
+  echo "  -> Created .claude/FACTS.md (project)"
+fi
+
+echo "[10/11] Verifying hook execution..."
+# Quick smoke test: run a lightweight hook to verify uv + deps work
+SMOKE_TEST=$(cat <<'PYEOF'
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "pyyaml>=6.0.0",
+#   "pydantic>=2.0.0",
+# ]
+# ///
+import yaml, pydantic, json, sys  # noqa
+# Simulate hook: read stdin (empty), output valid hook JSON
+print(json.dumps({"result": "pass"}))
+PYEOF
+)
+SMOKE_FILE=$(mktemp /tmp/caf_smoke_XXXX.py)
+echo "$SMOKE_TEST" > "$SMOKE_FILE"
+if echo '{}' | uv run --no-project "$SMOKE_FILE" >/dev/null 2>&1; then
+  echo "  Hook smoke test: PASS"
+else
+  echo "  WARNING: Hook smoke test FAILED. Hooks may error at runtime."
+  echo "           Check: uv --version, python3 --version"
+  echo "           Try:   uv cache clean && bash install.sh"
+fi
+rm -f "$SMOKE_FILE"
+
+echo "[11/11] Installation complete."
 echo "  uv:      $(uv --version)"
 echo "  python3: $(python3 --version)"
 echo "  git:     $(git --version)"
