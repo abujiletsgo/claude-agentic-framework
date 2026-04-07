@@ -63,7 +63,7 @@ def main():
         try:
             import subprocess
             result = subprocess.run(
-                ["uv", "run", str(full_path)],
+                ["uv", "run", "--no-project", str(full_path)],
                 input=hook_input_str,
                 capture_output=True,
                 text=True,
