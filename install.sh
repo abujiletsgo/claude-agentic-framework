@@ -231,11 +231,41 @@ if [ "$ERRORS" -gt 0 ]; then
 fi
 echo "  All hook files verified."
 
-# 2. Generate settings.json from template
+# 2. Generate settings.json from template (with dynamic PATH for uv)
 echo "[2/11] Generating settings.json..."
 mkdir -p "$CLAUDE_DIR"
+
+# Build a PATH that guarantees hooks can find uv, python3, and git.
+# Claude Code hooks run in a minimal shell env that may not inherit the user's
+# full PATH (especially on macOS where ~/.local/bin is not in default PATH).
+UV_BIN_DIR=$(dirname "$(command -v uv)")
+PYTHON_BIN_DIR=$(dirname "$(command -v python3)")
+GIT_BIN_DIR=$(dirname "$(command -v git)")
+
+# Collect unique directories, preserving order
+HOOK_PATH=""
+for _dir in "$UV_BIN_DIR" "$PYTHON_BIN_DIR" "$GIT_BIN_DIR" \
+            "$HOME/.local/bin" "$HOME/.cargo/bin" \
+            "/opt/homebrew/bin" "/usr/local/bin" "/usr/bin" "/bin"; do
+  case ":$HOOK_PATH:" in
+    *":$_dir:"*) ;;  # already present
+    *) HOOK_PATH="${HOOK_PATH:+$HOOK_PATH:}$_dir" ;;
+  esac
+done
+
+# Inject PATH into env block of settings.json
+export HOOK_PATH
+SETTINGS_CONTENT=$(echo "$SETTINGS_CONTENT" | python3 -c "
+import json, sys, os
+data = json.load(sys.stdin)
+hook_path = os.environ['HOOK_PATH']
+data.setdefault('env', {})['PATH'] = hook_path
+json.dump(data, sys.stdout, indent=2)
+")
+
 echo "$SETTINGS_CONTENT" > "$CLAUDE_DIR/settings.json"
 echo "  -> $CLAUDE_DIR/settings.json"
+echo "  -> Hook PATH: $HOOK_PATH"
 
 # 3. Symlink commands (remove ALL existing symlinks first for clean install)
 echo "[3/11] Linking commands..."
