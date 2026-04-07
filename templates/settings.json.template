@@ -188,13 +188,7 @@
           {
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
-            "timeout": 6,
-            "_comment": "PARALLEL: these 2 Write|Edit hooks run simultaneously"
-          },
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
-            "timeout": 15
+            "timeout": 6
           }
         ]
       },
@@ -258,18 +252,7 @@
       }
     ],
 
-    "PostToolUseFailure": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
-            "timeout": 8
-          }
-        ]
-      }
-    ],
+    "PostToolUseFailure": [],
 
     "Stop": [
       {
@@ -307,6 +290,17 @@
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
             "timeout": 5,
             "_comment": "Layer 2: prune stale facts from FACTS.md"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
+            "timeout": 15,
+            "async": true,
+            "_comment": "Moved from PostToolUse:Write|Edit — run once per session instead of per-write"
           }
         ]
       },

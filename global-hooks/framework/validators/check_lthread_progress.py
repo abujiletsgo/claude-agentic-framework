@@ -133,4 +133,7 @@ def check_progress():
 
 
 if __name__ == '__main__':
-    check_progress()
+    try:
+        check_progress()
+    except Exception:
+        pass
