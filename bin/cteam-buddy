@@ -85,12 +85,13 @@ class BuddyWidget:
 
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_CYAN, -1)     # art
-        curses.init_pair(2, curses.COLOR_YELLOW, -1)    # speech
-        curses.init_pair(3, curses.COLOR_GREEN, -1)     # active button
-        curses.init_pair(4, curses.COLOR_MAGENTA, -1)   # name
-        curses.init_pair(5, curses.COLOR_WHITE, -1)     # bubble border
-        curses.init_pair(6, curses.COLOR_WHITE, -1)  # button (transparent)
+        # Semantic pairs — all use terminal's palette, transparent bg
+        curses.init_pair(1, -1, -1)   # art: default fg (theme-adaptive)
+        curses.init_pair(2, -1, -1)   # speech: default (shown bold)
+        curses.init_pair(3, -1, -1)   # unused
+        curses.init_pair(4, -1, -1)   # name: default (shown bold)
+        curses.init_pair(5, -1, -1)   # bubble: default (shown dim)
+        curses.init_pair(6, -1, -1)   # hint
 
         while True:
             try:
@@ -206,7 +207,7 @@ class BuddyWidget:
 
         # Name
         name = buddy["name"]
-        self.safe_addstr(y, max(0, (w - len(name)) // 2), name, curses.color_pair(4) | curses.A_BOLD)
+        self.safe_addstr(y, max(0, (w - len(name)) // 2), name, curses.A_BOLD)
         y += 2
 
         # Speech bubble
@@ -214,14 +215,14 @@ class BuddyWidget:
             msg = self.message[:w - 4]
             bubble_w = len(msg) + 4
             bx = max(0, (w - bubble_w) // 2)
-            self.safe_addstr(y, bx, "┌" + "─" * (bubble_w - 2) + "┐", curses.color_pair(5))
+            self.safe_addstr(y, bx, "┌" + "─" * (bubble_w - 2) + "┐", curses.A_DIM)
             y += 1
-            self.safe_addstr(y, bx, "│ " + msg + " │", curses.color_pair(2))
+            self.safe_addstr(y, bx, "│ " + msg + " │", curses.A_BOLD)
             y += 1
-            self.safe_addstr(y, bx, "└" + "─" * (bubble_w - 2) + "┘", curses.color_pair(5))
+            self.safe_addstr(y, bx, "└" + "─" * (bubble_w - 2) + "┘", curses.A_DIM)
             y += 1
             tail_x = bx + bubble_w // 2
-            self.safe_addstr(y, tail_x, "╲", curses.color_pair(5))
+            self.safe_addstr(y, tail_x, "╲", curses.A_DIM)
             y += 1
         else:
             y += 4
@@ -230,7 +231,7 @@ class BuddyWidget:
         for line in frame:
             base_x = max(0, (w - len(line)) // 2)
             x = max(0, min(w - len(line) - 1, base_x + self.position_offset))
-            self.safe_addstr(y, x, line, curses.color_pair(1))
+            self.safe_addstr(y, x, line, curses.A_NORMAL)
             y += 1
 
         # Hint at bottom

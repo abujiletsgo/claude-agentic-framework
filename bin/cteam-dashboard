@@ -68,12 +68,13 @@ def main(stdscr):
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_CYAN, -1)
-    curses.init_pair(2, curses.COLOR_GREEN, -1)
-    curses.init_pair(3, curses.COLOR_YELLOW, -1)
-    curses.init_pair(4, curses.COLOR_WHITE, -1)
-    curses.init_pair(5, curses.COLOR_MAGENTA, -1)
-    curses.init_pair(6, curses.COLOR_CYAN, -1)  # transparent
+    # All defaults — inherits terminal/Ghostty theme
+    curses.init_pair(1, -1, -1)
+    curses.init_pair(2, -1, -1)
+    curses.init_pair(3, -1, -1)
+    curses.init_pair(4, -1, -1)
+    curses.init_pair(5, -1, -1)
+    curses.init_pair(6, -1, -1)
     stdscr.timeout(5000)
 
     last_sprint_check = 0
@@ -99,7 +100,7 @@ def main(stdscr):
 
             # Header bar
             header = " CAF Team Dashboard "
-            safe_addstr(stdscr, 0, (w - len(header)) // 2, header, curses.color_pair(6) | curses.A_BOLD | curses.A_UNDERLINE)
+            safe_addstr(stdscr, 0, (w - len(header)) // 2, header, curses.A_BOLD | curses.A_UNDERLINE)
 
             y = 2
             branch, commit = get_git_info()
@@ -108,19 +109,19 @@ def main(stdscr):
 
             # Status line
             status = f"  {branch}  @{commit}  │  {skills} skills  {agents} agents"
-            safe_addstr(stdscr, y, 0, status, curses.color_pair(1))
+            safe_addstr(stdscr, y, 0, status, curses.A_BOLD)
             y += 1
 
             # Remotes
             if remotes:
                 remote_str = "  remotes: " + "  ".join(f"{k}→{v}" for k, v in remotes.items())
-                safe_addstr(stdscr, y, 0, remote_str, curses.color_pair(4) | curses.A_DIM)
+                safe_addstr(stdscr, y, 0, remote_str, curses.A_DIM)
             y += 2
 
             # Center message
             msg_y = max(y, h // 2 - 1)
             msg = "Waiting for sprint..."
-            safe_addstr(stdscr, msg_y, (w - len(msg)) // 2, msg, curses.color_pair(3))
+            safe_addstr(stdscr, msg_y, (w - len(msg)) // 2, msg, curses.A_DIM)
 
             hint = "Run /sprint in Claude to start  │  Dashboard auto-activates"
             safe_addstr(stdscr, msg_y + 1, max(0, (w - len(hint)) // 2), hint, curses.A_DIM)

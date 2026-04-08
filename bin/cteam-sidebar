@@ -114,14 +114,15 @@ class Sidebar:
         # Colors
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_CYAN, -1)     # index
-        curses.init_pair(2, curses.COLOR_CYAN, -1)      # selected (bold+underline)
-        curses.init_pair(3, curses.COLOR_YELLOW, -1)    # sprint
-        curses.init_pair(4, curses.COLOR_GREEN, -1)     # done
-        curses.init_pair(5, curses.COLOR_RED, -1)       # failed
-        curses.init_pair(6, curses.COLOR_WHITE, -1)     # button (transparent)
-        curses.init_pair(7, curses.COLOR_GREEN, -1)     # active button
-        curses.init_pair(8, curses.COLOR_CYAN, -1)      # hover
+        # All pairs use terminal defaults — theme comes from Ghostty/terminal
+        curses.init_pair(1, -1, -1)  # default
+        curses.init_pair(2, -1, -1)  # selected (use A_BOLD + A_REVERSE)
+        curses.init_pair(3, -1, -1)  # sprint status (use A_BOLD)
+        curses.init_pair(4, -1, -1)  # done (use A_DIM)
+        curses.init_pair(5, -1, -1)  # failed (use A_BOLD)
+        curses.init_pair(6, -1, -1)  # button
+        curses.init_pair(7, -1, -1)  # active
+        curses.init_pair(8, -1, -1)  # hover
 
         while True:
             try:
@@ -160,7 +161,7 @@ class Sidebar:
             if y >= h - 10:
                 break
             marker = "▸" if win["active"] else " "
-            attr = curses.color_pair(2) | curses.A_BOLD if i == self.selected else curses.A_NORMAL
+            attr = curses.A_BOLD | curses.A_REVERSE if i == self.selected else curses.A_NORMAL
 
             label = f" {marker} {win['idx']}  {win['name']}"
             if win["project"]:
@@ -183,7 +184,7 @@ class Sidebar:
             if x + len(label) + 1 >= w:
                 y += 1
                 x = 1
-            self.safe_addstr(y, x, label, curses.color_pair(6))
+            self.safe_addstr(y, x, label, curses.A_DIM)
             self.clickable.append((y, x, x + len(label), "button", action))
             x += len(label) + 1
 
@@ -191,12 +192,12 @@ class Sidebar:
         y += 2
         sprints = get_sprints()
         if sprints:
-            self.safe_addstr(y, 1, "⚡ Sprints", curses.color_pair(3) | curses.A_BOLD)
+            self.safe_addstr(y, 1, "⚡ Sprints", curses.A_BOLD)
             y += 1
             for sprint in sprints:
                 if y >= h - 2:
                     break
-                self.safe_addstr(y, 1, f"  {sprint['id']}", curses.color_pair(3))
+                self.safe_addstr(y, 1, f"  {sprint['id']}", curses.A_BOLD)
                 y += 1
                 for role, info in sprint["leads"].items():
                     if y >= h - 2:
@@ -204,9 +205,9 @@ class Sidebar:
                     st = info.get("status", "?") if isinstance(info, dict) else "?"
                     sym = {"running": "●", "done": "✓", "failed": "✗"}.get(st, "○")
                     color = {
-                        "done": curses.color_pair(4),
-                        "failed": curses.color_pair(5),
-                        "running": curses.color_pair(3),
+                        "done": curses.A_DIM,
+                        "failed": curses.A_BOLD,
+                        "running": curses.A_BOLD,
                     }.get(st, curses.A_DIM)
                     self.safe_addstr(y, 3, f"{sym} {role}: {st}", color)
                     y += 1
@@ -225,7 +226,7 @@ class Sidebar:
         for i, p in enumerate(projects):
             if y >= h - 4:
                 break
-            attr = curses.color_pair(2) if i == self.selected else curses.A_NORMAL
+            attr = curses.A_BOLD | curses.A_REVERSE if i == self.selected else curses.A_NORMAL
             label = f"  [{p['key']}] {p['name']}"
             self.safe_addstr(y, 0, label.ljust(w), attr)
             y += 1
@@ -234,9 +235,9 @@ class Sidebar:
             y += 1
 
         y += 1
-        self.safe_addstr(y, 1, " + Add ", curses.color_pair(6))
+        self.safe_addstr(y, 1, " + Add ", curses.A_DIM)
         self.clickable.append((y, 1, 8, "button", "add_project"))
-        self.safe_addstr(y, 10, " ← Back ", curses.color_pair(6))
+        self.safe_addstr(y, 10, " ← Back ", curses.A_DIM)
         self.clickable.append((y, 10, 18, "button", "back"))
 
     def draw_input(self, h, w):
