@@ -1,12 +1,11 @@
-"""Aggregated report panel — renders report.md as Markdown."""
+"""Report panel — renders report as styled text lines."""
 from pathlib import Path
-from textual.widgets import Markdown, Static
+from textual.widgets import RichLog, Static
 from textual.widget import Widget
-from textual.containers import Vertical, VerticalScroll
 
 
 class ReportPanel(Widget):
-    """Displays report.md (or concatenated results), polled every 5s."""
+    """Displays report.md as styled text, polled every 5s."""
 
     def __init__(self, ipc_dir: Path, **kwargs):
         super().__init__(**kwargs)
@@ -16,34 +15,60 @@ class ReportPanel(Widget):
 
     def compose(self):
         yield Static("Report", classes="panel-title")
-        with VerticalScroll():
-            yield Markdown("*Waiting for report...*", id="report-content")
+        yield RichLog(id="report-log", highlight=False, markup=True, wrap=True)
 
     def on_mount(self) -> None:
         self.refresh_data()
         self.set_interval(5, self.refresh_data)
 
     def refresh_data(self) -> None:
+        log = self.query_one("#report-log", RichLog)
         report_file = self.ipc_dir / "report.md"
-        md_widget = self.query_one("#report-content", Markdown)
         try:
             if report_file.exists() and report_file.stat().st_size > 0:
                 mtime = report_file.stat().st_mtime
-                if mtime != self.last_mtime:
-                    self.last_mtime = mtime
-                    md_widget.update(report_file.read_text())
+                if mtime == self.last_mtime:
+                    return
+                self.last_mtime = mtime
+                log.clear()
+                self._render_md(log, report_file.read_text())
                 return
 
             # Fallback: concatenate results
             results_dir = self.ipc_dir / "results"
             if results_dir.exists():
-                parts = []
-                for rf in sorted(results_dir.glob("*_result.md")):
-                    parts.append(f"## {rf.stem}\n\n{rf.read_text()}")
-                if parts:
-                    md_widget.update("\n\n---\n\n".join(parts))
+                result_files = sorted(results_dir.glob("*_result.md"))
+                if result_files:
+                    log.clear()
+                    for rf in result_files:
+                        log.write(f"[bold cyan]{rf.stem}[/]")
+                        log.write("")
+                        self._render_md(log, rf.read_text())
+                        log.write("[dim]───────────────────[/]")
                     return
 
-            md_widget.update("*Waiting for report...*")
         except OSError:
-            md_widget.update("*Error reading report*")
+            pass
+
+    def _render_md(self, log: RichLog, text: str) -> None:
+        """Simple markdown-to-rich-markup renderer."""
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("# "):
+                log.write(f"[bold underline]{stripped[2:]}[/]")
+            elif stripped.startswith("## "):
+                log.write(f"[bold]{stripped[3:]}[/]")
+            elif stripped.startswith("### "):
+                log.write(f"[bold dim]{stripped[4:]}[/]")
+            elif stripped.startswith("- "):
+                log.write(f"  • {stripped[2:]}")
+            elif stripped.startswith("---"):
+                log.write("[dim]───────────────────[/]")
+            elif stripped.startswith("**") and stripped.endswith("**"):
+                log.write(f"[bold]{stripped[2:-2]}[/]")
+            elif stripped.startswith("`") and stripped.endswith("`"):
+                log.write(f"[italic]{stripped[1:-1]}[/]")
+            elif stripped:
+                log.write(f"  {stripped}")
+            else:
+                log.write("")

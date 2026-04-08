@@ -2,181 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-03-30 (12:14 UTC) · @Tom Kwon
-**Commit:** v4.0: Major upgrade — 16 events, async hooks, new agents, project cleanup (687c93b) by Tom Kwon
-**Changed:**
-  .claude/ARCHITECTURE.md                            |  476 +++++
-  .claude/MEMORY.md                                  |    9 +
-  CLAUDE.md                                          |  173 +-
-  README.md                                          |   30 +-
-  archive/docs/FRAMEWORK_GUIDE_KR.md                 | 1116 ++++++++++
-  .../docs}/KNOWLEDGE_DB_VERIFICATION.md             |    0
-  {docs => archive/docs}/KNOWLEDGE_PIPELINE_TEST.md  |    0
-  {docs => archive/docs}/REVIEW_SYSTEM_TEST.md       |    0
-  {docs => archive/docs}/RLM_AUTO_TRIGGERING.md      |    0
-  {docs => archive/docs}/SKILLS_INTEGRITY.md         |    0
-  ... and 42 more files
-
-## 2026-03-31 (16:29 UTC) · @Tom Kwon
-**Commit:** fix: add --no-project to all uv run hook commands (dc88499) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                | 15 ++++++++
-  templates/settings.json.template | 74 ++++++++++++++++++++--------------------
-  2 files changed, 52 insertions(+), 37 deletions(-)
-
-## 2026-04-01 (05:44 UTC) · @Tom Kwon
-**Commit:** v4.0: Add solve agent with parallel orchestration, tidy skill, model tier updates (ea6f7f2) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                     |   7 +
-  CLAUDE.md                             |   7 +-
-  README.md                             |  15 +-
-  data/model_tiers.yaml                 |  50 +--
-  global-agents/critical-analyst.md     |   2 +-
-  global-agents/meta-agent.md           |   2 +-
-  global-agents/researcher.md           |   2 +-
-  global-agents/scout-report-suggest.md |   2 +-
-  global-agents/solve.md                | 569 ++++++++++++++++++++++++++++++++++
-  global-skills/solve/SKILL.md          |  15 +
-  ... and 4 more files
-
-## 2026-04-03 (05:52 UTC) · @Tom Kwon
-**Commit:** v4.1: Epistemic guard hook, CAF mode, auto-prime improvements (4ca6dd4) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                                  |  15 ++
-  CLAUDE.md                                          |  28 ++-
-  README.md                                          |  11 +-
-  data/caddy_config.yaml                             |   1 +
-  global-hooks/framework/automation/auto_escalate.py |  11 ++
-  global-hooks/framework/automation/auto_prime.py    |  67 ++++++-
-  global-hooks/framework/caddy/analyze_request.py    |  21 +++
-  global-hooks/framework/caddy/auto_delegate.py      |  21 +++
-  global-hooks/framework/caf_mode.py                 | 111 +++++++++++
-  .../framework/guardrails/epistemic_guard.py        | 135 ++++++++++++++
-  ... and 7 more files
-
-## 2026-04-03 (05:59 UTC) · @Tom Kwon
-**Commit:** feat: v4.1 role-based multi-agent team with self-correction and token efficiency (8d118a7) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                                  |  15 +
-  CLAUDE.md                                          |  12 +-
-  README.md                                          |  29 +-
-  data/model_tiers.yaml                              |   6 +-
-  global-agents/agent-watchdog.md                    | 128 ++++++
-  global-agents/builder.md                           | 109 +++++
-  global-agents/debugger.md                          | 111 +++++
-  global-agents/orchestrator.md                      | 500 +++++++++++++++++++--
-  global-agents/solve.md                             | 199 ++++++--
-  global-agents/validator.md                         | 100 +++++
-  ... and 14 more files
-
-## 2026-04-03 (06:00 UTC) · @Tom Kwon
-**Commit:** fix: sync orchestrator, caddy, and tier configs with actual skills/agents (d2794d2) by Tom Kwon
-**Changed:**
-  CLAUDE.md                     |  2 +-
-  data/caddy_config.yaml        | 37 +++++++++++++++++++++----------------
-  data/model_tiers.yaml         |  3 ++-
-  global-agents/orchestrator.md | 33 ++++++++++++++++++++-------------
-  4 files changed, 44 insertions(+), 31 deletions(-)
-
-## 2026-04-03 (07:56 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (bd1745c) by Tom Kwon
-**Changed:**
-  README.md | 4 ++--
-  1 file changed, 2 insertions(+), 2 deletions(-)
-
-## 2026-04-07 (05:46 UTC) · @Tom Kwon
-**Commit:** perf: eliminate token bloat in research/orchestration pipeline (eb9c33c) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md                      |   4 +
-  .claude/MEMORY.md                     |  30 +++++
-  data/caddy_config.yaml                |  12 ++
-  data/model_tiers.yaml                 |   5 +-
-  global-agents/orchestrator.md         | 169 +++++++++++++++++++-----
-  global-agents/researcher.md           | 234 ++++++++++++----------------------
-  global-agents/rlm-root.md             |   7 +-
-  global-agents/scout-report-suggest.md |  27 +++-
-  global-commands/orchestrate.md        |   3 +
-  global-commands/research.md           | 157 ++++++++++++++---------
-  ... and 1 more files
-
-## 2026-04-07 (06:56 UTC) · @Tom Kwon
-**Commit:** fix: enforce orchestrator delegation with structural guardrails (bc9ae25) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                                  |   15 +
-  CLAUDE.md                                          |    7 +-
-  README.md                                          |   15 +-
-  global-agents/orchestrator-reference.md            |  516 +++++++++
-  global-agents/orchestrator.md                      | 1167 +++++++-------------
-  global-agents/solve.md                             |  169 +--
-  global-hooks/framework/caddy/analyze_request.py    |   11 +
-  .../framework/guardrails/enforce_orchestrate.py    |  129 +++
-  .../framework/guardrails/orch_depth_tracker.py     |  157 +++
-  .../guardrails/orchestrator_tool_guard.py          |  134 +++
-  ... and 4 more files
-
-## 2026-04-07 (07:08 UTC) · @Tom Kwon
-**Commit:** feat: add /makeskill skill — autonomous project skill factory (3b8e64a) by Tom Kwon
-**Changed:**
-  CLAUDE.md                        |   2 +-
-  README.md                        |   7 +-
-  global-skills/makeskill/SKILL.md | 685 +++++++++++++++++++++++++++++++++++++++
-  3 files changed, 690 insertions(+), 4 deletions(-)
-
-## 2026-04-07 (07:08 UTC) · @Tom Kwon
-**Commit:** fix: prevent hook errors on fresh installs (8acaa95) by Tom Kwon
-**Changed:**
-  .../framework/guardrails/integrate_guardrails.py   |   2 +-
-  global-hooks/framework/korean/kr_mode.py           |   6 ++
-  install.sh                                         | 120 +++++++++++++++++++--
-  3 files changed, 118 insertions(+), 10 deletions(-)
-
-## 2026-04-07 (07:15 UTC) · @Tom Kwon
-**Commit:** fix: resolve SessionStart and UserPromptSubmit hook errors (6f618d2) by Tom Kwon
-**Changed:**
-  global-hooks/framework/caddy/analyze_request.py        | 2 +-
-  global-hooks/framework/caddy/auto_delegate.py          | 2 +-
-  global-hooks/framework/caddy/monitor_progress.py       | 2 +-
-  global-hooks/framework/session/session_startup.py      | 2 +-
-  global-hooks/framework/teams/anti_loop_team.py         | 2 +-
-  global-hooks/framework/teams/delegate_mode_enforcer.py | 2 +-
-  global-hooks/framework/teams/task_validator.py         | 2 +-
-  global-hooks/framework/teams/teammate_monitor.py       | 2 +-
-  global-status-lines/mastery/status_line_custom.py      | 2 +-
-  global-status-lines/mastery/status_line_v9.py          | 2 +-
-  ... and 1 more files
-
-## 2026-04-07 (07:27 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (d4e2933) by Tom Kwon
-**Changed:**
-  CLAUDE.md | 2 +-
-  README.md | 6 +++---
-  2 files changed, 4 insertions(+), 4 deletions(-)
-
-## 2026-04-07 (07:40 UTC) · @Tom Kwon
-**Commit:** fix: inject dynamic PATH into settings.json for hook execution (cf7bb14) by Tom Kwon
-**Changed:**
-  install.sh | 32 +++++++++++++++++++++++++++++++-
-  1 file changed, 31 insertions(+), 1 deletion(-)
-
-## 2026-04-07 (16:07 UTC) · @Tom Kwon
-**Commit:** fix: make damage-control and circuit-breaker fail-open on errors (e7244a2) by Tom Kwon
-**Changed:**
-  .../damage-control/unified-damage-control.py       | 24 +++++++++++++++-------
-  .../guardrails/circuit_breaker_wrapper.py          |  9 +++++++-
-  2 files changed, 25 insertions(+), 8 deletions(-)
-
-## 2026-04-07 (16:51 UTC) · @Tom Kwon
-**Commit:** feat: integrate mempalace AAAK dialect + temporal knowledge graph (9a263a2) by Tom Kwon
-**Changed:**
-  global-hooks/framework/aaak_compress.py            | 131 +++++++++++++++
-  .../framework/context/pre_compact_preserve.py      |  45 +++++
-  .../framework/facts/auto_fact_extractor.py         |  10 ++
-  global-hooks/framework/facts/fact_kg_sync.py       | 184 +++++++++++++++++++++
-  global-hooks/framework/facts/validate_facts.py     |  13 ++
-  install.sh                                         |   2 +-
-  templates/settings.json.template                   |   4 +
-  7 files changed, 388 insertions(+), 1 deletion(-)
-
 ## 2026-04-07 (17:31 UTC) · @Tom Kwon
 **Commit:** chore: flesh out mempalace.yaml rooms + commit session memory (3d94e5b) by Tom Kwon
 **Changed:**
@@ -306,3 +131,128 @@
   global-skills/orchestrate/SKILL.md |  51 ++++++++++++++++
   global-skills/worktree/SKILL.md    |  23 +++++++
   5 files changed, 181 insertions(+), 79 deletions(-)
+
+## 2026-04-08 (16:10 UTC) · @Tom Kwon
+**Commit:** Merge commit '76adabd56f1b36ab94769217057f738168e20f4a' as 'global-skills/gstack' (7553e3c1) by Tom Kwon
+**Changed:**
+  global-skills/gstack/.env.example                  |    5 +
+  global-skills/gstack/.github/actionlint.yaml       |    4 +
+  global-skills/gstack/.github/docker/Dockerfile.ci  |   63 +
+  .../gstack/.github/workflows/actionlint.yml        |    8 +
+  .../gstack/.github/workflows/ci-image.yml          |   40 +
+  .../gstack/.github/workflows/evals-periodic.yml    |  129 +
+  global-skills/gstack/.github/workflows/evals.yml   |  240 ++
+  .../gstack/.github/workflows/skill-docs.yml        |   33 +
+  global-skills/gstack/.gitignore                    |   26 +
+  global-skills/gstack/AGENTS.md                     |   49 +
+  ... and 405 more files
+
+## 2026-04-08 (16:12 UTC) · @Tom Kwon
+**Commit:** fix: gstack-bridge check supports subtree installs (9d5e2a66) by Tom Kwon
+**Changed:**
+  bin/gstack-bridge | 6 ++++--
+  1 file changed, 4 insertions(+), 2 deletions(-)
+
+## 2026-04-08 (16:13 UTC) · @Tom Kwon
+**Commit:** feat: add cteam launcher — tmux workspace with dashboard pane (6a555f05) by Tom Kwon
+**Changed:**
+  bin/cteam | 37 +++++++++++++++++++++++++++++++++++++
+  1 file changed, 37 insertions(+)
+
+## 2026-04-08 (16:15 UTC) · @Tom Kwon
+**Commit:** feat: cteam sidebar with session/project manager + 3-pane layout (a59bb209) by Tom Kwon
+**Changed:**
+  bin/cteam         |  28 +++++--
+  bin/cteam-sidebar | 247 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  2 files changed, 268 insertions(+), 7 deletions(-)
+
+## 2026-04-08 (16:19 UTC) · @Tom Kwon
+**Commit:** feat: clickable curses sidebar with mouse support (bad92f01) by Tom Kwon
+**Changed:**
+  bin/cteam         |   3 +
+  bin/cteam-sidebar | 673 ++++++++++++++++++++++++++++++++++--------------------
+  2 files changed, 434 insertions(+), 242 deletions(-)
+
+## 2026-04-08 (16:25 UTC) · @Tom Kwon
+**Commit:** feat: /buddy companion system — cat, dog, owl, ghost, robot with live dashboard widget (cb5fc2c1) by Tom Kwon
+**Changed:**
+  bin/cteam                    |  19 ++-
+  bin/cteam-buddy              | 257 ++++++++++++++++++++++++++++++++
+  global-skills/buddy/SKILL.md |  88 +++++++++++
+  lib/buddies.py               | 339 +++++++++++++++++++++++++++++++++++++++++++
+  4 files changed, 696 insertions(+), 7 deletions(-)
+
+## 2026-04-08 (16:28 UTC) · @Tom Kwon
+**Commit:** feat: proper idle dashboard — shows git status, auto-launches sprint TUI when sprint starts (f3157cc7) by Tom Kwon
+**Changed:**
+  bin/cteam           |   4 +-
+  bin/cteam-dashboard | 157 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+  2 files changed, 158 insertions(+), 3 deletions(-)
+
+## 2026-04-08 (16:34 UTC) · @Tom Kwon
+**Commit:** feat: animated buddies — 96 frames, idle cycling, drift, oneshot reactions, pet responses (5a2d09c8) by Tom Kwon
+**Changed:**
+  bin/cteam-buddy | 209 +++++++++++------
+  lib/buddies.py  | 685 ++++++++++++++++++++++++++++++++++++++++++++++++--------
+  2 files changed, 727 insertions(+), 167 deletions(-)
+
+## 2026-04-08 (16:37 UTC) · @Tom Kwon
+**Commit:** fix: transparent backgrounds for Ghostty, shrink buddy pane, remove buddy buttons (353655ed) by Tom Kwon
+**Changed:**
+  bin/cteam           |  4 ++--
+  bin/cteam-buddy     | 30 +++++-------------------------
+  bin/cteam-dashboard |  8 +++-----
+  bin/cteam-sidebar   | 12 ++++++------
+  4 files changed, 16 insertions(+), 38 deletions(-)
+
+## 2026-04-08 (16:55 UTC) · @Tom Kwon
+**Commit:** fix: fully theme-adaptive — zero hardcoded colors, inherits terminal palette + transparency (15e6d5d8) by Tom Kwon
+**Changed:**
+  bin/cteam-buddy     | 25 +++++++++++++------------
+  bin/cteam-dashboard | 21 +++++++++++----------
+  bin/cteam-sidebar   | 37 +++++++++++++++++++------------------
+  3 files changed, 43 insertions(+), 40 deletions(-)
+
+## 2026-04-08 (16:59 UTC) · @Tom Kwon
+**Commit:** fix: buddy pane split order, sprint TUI transparent backgrounds (32f34fe2) by Tom Kwon
+**Changed:**
+  bin/cteam                | 34 +++++++++++++++++++---------------
+  dashboard/sprint_tui.css | 25 +++++++++++--------------
+  2 files changed, 30 insertions(+), 29 deletions(-)
+
+## 2026-04-08 (17:04 UTC) · @Tom Kwon
+**Commit:** fix: Textual ANSI_COLOR + transparent, buddy pane verified, add cteam --reset (34e622ec) by Tom Kwon
+**Changed:**
+  bin/cteam                |  5 +++++
+  dashboard/sprint_tui.css | 44 +++++++++++++++++++++++++++++++++++++++-----
+  dashboard/sprint_tui.py  |  1 +
+  3 files changed, 45 insertions(+), 5 deletions(-)
+
+## 2026-04-08 (17:07 UTC) · @Tom Kwon
+**Commit:** fix: force transparent on ALL Textual widgets — wildcard + explicit overrides (3d517f6e) by Tom Kwon
+**Changed:**
+  dashboard/sprint_tui.css | 49 +++++++++++++++++++++++++++++++++++++-----------
+  1 file changed, 38 insertions(+), 11 deletions(-)
+
+## 2026-04-08 (17:08 UTC) · @Tom Kwon
+**Commit:** feat: live agent dashboard for /orchestrate visibility (2ff65fdc) by Tom Kwon
+**Changed:**
+  dashboard/live_tui.py                              | 147 +++++++++++++++++++++
+  global-commands/live.md                            |  41 ++++++
+  .../hooks_SubagentStart/write_agent_live.py        |  76 +++++++++++
+  .../hooks_SubagentStop/write_agent_live.py         |  70 ++++++++++
+  templates/settings.json.template                   |  22 +++
+  5 files changed, 356 insertions(+)
+
+## 2026-04-08 (17:13 UTC) · @Tom Kwon
+**Commit:** feat: auto-launch live TUI on session start inside tmux (763d8a35) by Tom Kwon
+**Changed:**
+  global-hooks/hooks_SessionStart/launch_live_tui.py | 55 ++++++++++++++++++++++
+  templates/settings.json.template                   | 11 +++++
+  2 files changed, 66 insertions(+)
+
+## 2026-04-08 (17:15 UTC) · @Tom Kwon
+**Commit:** refactor: move live TUI launch from hook to cteam script (f53a8f0f) by Tom Kwon
+**Changed:**
+  global-hooks/hooks_SessionStart/launch_live_tui.py | 54 ++--------------------
+  1 file changed, 3 insertions(+), 51 deletions(-)

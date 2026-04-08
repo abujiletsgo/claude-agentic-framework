@@ -28,9 +28,9 @@ fi
 # │    Claude Code       │  (sidebar)  │
 # │    (main)            ├─────────────┤
 # │                      │  Buddy      │
-# ├──────────────────────┴─────────────┤
-# │  Dashboard                         │
-# └────────────────────────────────────┘
+# ├───────────────┬──────┴─────────────┤
+# │  Dashboard    │  Live Agents       │
+# └───────────────┴────────────────────┘
 
 # Step 1: Create session — single pane (will become top-left / Claude)
 tmux new-session -d -s "$SESSION" -c "$CAF_DIR" -x "$(tput cols)" -y "$(tput lines)"
@@ -50,7 +50,12 @@ tmux split-window -t "${SESSION}:0.0" -h -l '22%' -c "$CAF_DIR" \
 tmux split-window -t "${SESSION}:0.1" -v -l '40%' -c "$CAF_DIR" \
   "python3 ${BUDDY}"
 
-# Now panes are: 0=main(claude), 1=sidebar, 2=buddy, 3=dashboard
+# Step 5: Split the dashboard pane horizontally for live agents TUI (40% of bottom)
+# Layout: [dashboard | live-agents] at bottom
+tmux split-window -t "${SESSION}:0.3" -h -l '40%' -c "$CAF_DIR" \
+  "uv run --no-project python ${CAF_DIR}/dashboard/live_tui.py"
+
+# Now panes are: 0=main(claude), 1=sidebar, 2=buddy, 3=dashboard, 4=live-agents
 
 # Enable mouse
 tmux set-option -t "$SESSION" -g mouse on
