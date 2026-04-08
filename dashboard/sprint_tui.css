@@ -1,3 +1,8 @@
+/* Force ALL widgets to transparent — let terminal theme show through */
+* {
+    background: transparent;
+}
+
 Screen {
     background: transparent;
 }
@@ -8,44 +13,37 @@ SprintTUI {
 
 #main-panels {
     height: 1fr;
-    background: transparent;
 }
 
 #lead-panel {
     width: 30%;
     border: round ansi_default;
-    background: transparent;
 }
 
 #log-viewer {
     width: 42%;
     border: round ansi_default;
-    background: transparent;
 }
 
 #report-panel {
     width: 28%;
     border: round ansi_default;
-    background: transparent;
 }
 
 #wave-progress {
     height: 5;
-    background: transparent;
     border-top: hkey ansi_default;
     padding: 0 1;
 }
 
 .panel-title {
     text-align: center;
-    background: transparent;
     text-style: bold;
     height: 1;
 }
 
 #log-filter {
     height: 1;
-    background: transparent;
     border: tall ansi_default;
 }
 
@@ -70,8 +68,16 @@ DataTable > .datatable--header {
 }
 
 DataTable > .datatable--cursor {
-    background: ansi_default;
+    background: transparent;
     text-style: bold reverse;
+}
+
+DataTable > .datatable--even-row {
+    background: transparent;
+}
+
+DataTable > .datatable--odd-row {
+    background: transparent;
 }
 
 RichLog {
@@ -82,14 +88,35 @@ Markdown {
     background: transparent;
 }
 
-ProgressBar {
-    height: 1;
+MarkdownH1, MarkdownH2, MarkdownH3 {
+    background: transparent;
+}
+
+VerticalScroll {
+    background: transparent;
+}
+
+Vertical {
+    background: transparent;
+}
+
+Horizontal {
+    background: transparent;
+}
+
+Static {
+    background: transparent;
 }
 
 Input {
     background: transparent;
 }
 
-Static {
+ProgressBar {
+    height: 1;
+    background: transparent;
+}
+
+ProgressBar Bar {
     background: transparent;
 }
