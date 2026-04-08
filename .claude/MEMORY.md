@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (07:19 UTC) · @Tom Kwon
-**Commit:** chore: update session memory files (fed7e58) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md  |   4 +
-  .claude/MEMORY.md | 291 ++++++++++++++++++++++++++++++++++++++++++++++++++----
-  2 files changed, 275 insertions(+), 20 deletions(-)
-
 ## 2026-02-25 (07:29 UTC) · @Tom Kwon
 **Commit:** chore: ignore generated .claude/settings.json, update memory (520dcd3) by Tom Kwon
 **Changed:**
@@ -301,3 +294,13 @@
   .../framework/memory/subagent_kg_inject.py         | 118 ++++
   .../framework/memory/subagent_palace_store.py      | 114 ++++
   ... and 3 more files
+
+## 2026-04-08 (03:23 UTC) · @Tom Kwon
+**Commit:** chore: tidy repo + generate full framework report (fc9686a) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                     |  22 +-
+  README.md                             |  19 +-
+  mempalace.yaml => data/mempalace.yaml |   0
+  docs/framework-report.html            | 403 ++++++++++++++++++++++++++++++++++
+  scripts/generate_docs.py              |  19 +-
+  5 files changed, 446 insertions(+), 17 deletions(-)

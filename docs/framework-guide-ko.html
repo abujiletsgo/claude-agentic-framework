@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Agentic Framework v4.0 — 종합 운영 가이드</title>
+<title>Claude Agentic Framework v4.1 — 종합 운영 가이드</title>
 <style>
   :root {
     --bg: #fafaf8;
@@ -162,6 +162,7 @@
   .tag.tok { background: var(--l3-bg); color: var(--l3); border: 1px solid var(--l3-border); }
   .tag.async { background: #ede7f6; color: #5e35b1; border: 1px solid #b39ddb; }
   .tag.opus { background: var(--l1-bg); color: var(--l1); border: 1px solid var(--l1-border); }
+  .tag.sonnet { background: var(--l2-bg); color: var(--l2); border: 1px solid var(--l2-border); }
   .tag.haiku { background: var(--l0-bg); color: var(--l0); border: 1px solid var(--l0-border); }
   .tag.new { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
 
@@ -391,7 +392,7 @@
 <body>
 
 <header>
-  <div class="eyebrow">Claude Agentic Framework v4.0</div>
+  <div class="eyebrow">Claude Agentic Framework v4.1</div>
   <h1><span>종합</span> 운영 가이드</h1>
   <p>모든 Claude Code session에서 작동하는 자율형 multi-agent orchestration platform. Hook 36개, Agent 8개, Command 15개, Skill 9개를 하나의 프레임워크로 통합합니다.</p>
 </header>
@@ -420,16 +421,16 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="overview">
     <div class="eyebrow-sm">개요</div>
-    <h2>v4.0 핵심 숫자</h2>
+    <h2>v4.1 핵심 숫자</h2>
     <p class="section-desc">하나의 저장소, 하나의 설치, 하나의 진실 소스. Opus-first 아키텍처로 Max plan에서 최적 성능을 발휘합니다.</p>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num">36</div><div class="stat-label">Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">41</div><div class="stat-label">Hooks</div></div>
       <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Events</div></div>
-      <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">Async Hooks</div></div>
-      <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Agents</div></div>
-      <div class="stat-card"><div class="stat-num">15</div><div class="stat-label">Commands</div></div>
-      <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Skills</div></div>
+      <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Async Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">14</div><div class="stat-label">Agents</div></div>
+      <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Commands</div></div>
+      <div class="stat-card"><div class="stat-num">20</div><div class="stat-label">Skills</div></div>
     </div>
 
     <div class="flow">
@@ -443,15 +444,15 @@
         </div>
         <div class="gl-card global">
           <h3>global-agents/</h3>
-          <div class="gl-item"><div class="gl-item-name">8개 에이전트</div><div class="gl-item-desc">7 Opus + 1 Haiku</div></div>
+          <div class="gl-item"><div class="gl-item-name">14개 에이전트</div><div class="gl-item-desc">4 Opus + 6 Sonnet + 3 Haiku</div></div>
         </div>
         <div class="gl-card global">
           <h3>global-commands/</h3>
-          <div class="gl-item"><div class="gl-item-name">15개 명령어</div><div class="gl-item-desc">슬래시 명령어 시스템</div></div>
+          <div class="gl-item"><div class="gl-item-name">16개 명령어</div><div class="gl-item-desc">슬래시 명령어 시스템</div></div>
         </div>
         <div class="gl-card global">
           <h3>global-skills/</h3>
-          <div class="gl-item"><div class="gl-item-name">9개 스킬</div><div class="gl-item-desc">자동 트리거 가능</div></div>
+          <div class="gl-item"><div class="gl-item-name">20개 스킬</div><div class="gl-item-desc">자동 트리거 가능</div></div>
         </div>
         <div class="gl-card local">
           <h3>data/</h3>
@@ -508,8 +509,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="hooks">
     <div class="eyebrow-sm">이벤트 시스템</div>
-    <h2>Hook System &mdash; 16 Events, 36 Hooks</h2>
-    <p class="section-desc">Claude Code의 모든 생명주기 이벤트에 훅이 연결됩니다. 10개의 비동기 훅은 성능 저하 없이 백그라운드에서 실행됩니다.</p>
+    <h2>Hook System &mdash; 16 Events, 41 Hooks</h2>
+    <p class="section-desc">Claude Code의 모든 생명주기 이벤트에 훅이 연결됩니다. 11개의 비동기 훅은 성능 저하 없이 백그라운드에서 실행됩니다.</p>
 
     <!-- All 16 events -->
     <div class="lifecycle" style="margin-bottom:36px;">
@@ -530,26 +531,28 @@
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">3</div><div><div class="phase-name">UserPromptSubmit</div><div class="phase-trigger">4 hooks</div></div></div>
+        <div class="phase-head"><div class="phase-icon">3</div><div><div class="phase-name">UserPromptSubmit</div><div class="phase-trigger">5 hooks</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">kr_mode.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">한국어 모드</span></li>
           <li><span class="ev-hook">auto_prime_inject.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">PROJECT_CONTEXT</span></li>
           <li><span class="ev-hook">analyze_request.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">Caddy 분류</span></li>
           <li><span class="ev-hook">auto_delegate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">전략 라우팅</span></li>
+          <li><span class="ev-hook">enforce_orchestrate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">/orchestrate 강제</span></li>
         </ul>
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">4</div><div><div class="phase-name">PreToolUse</div><div class="phase-trigger">3 hooks</div></div></div>
+        <div class="phase-head"><div class="phase-icon">4</div><div><div class="phase-name">PreToolUse</div><div class="phase-trigger">4 hooks</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">동시성 방지</span></li>
           <li><span class="ev-hook">unified-damage-control.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">위험 차단</span></li>
           <li><span class="ev-hook">auto_review_team.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">위험 Bash 검토</span></li>
+          <li><span class="ev-hook">orchestrator_tool_guard.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이터 직접 사용 차단</span></li>
         </ul>
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">5</div><div><div class="phase-name">PostToolUse</div><div class="phase-trigger">11 hooks (5 async)</div></div></div>
+        <div class="phase-head"><div class="phase-icon">5</div><div><div class="phase-name">PostToolUse</div><div class="phase-trigger">9 hooks (5 async)</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 관리</span></li>
           <li><span class="ev-hook">context-bundle-logger.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">번들 기록</span></li>
@@ -573,13 +576,14 @@
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">7</div><div><div class="phase-name">Stop</div><div class="phase-trigger">6 hooks (1 async)</div></div></div>
+        <div class="phase-head"><div class="phase-icon">7</div><div><div class="phase-name">Stop</div><div class="phase-trigger">7 hooks (3 async)</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 해제</span></li>
           <li><span class="ev-hook">check_lthread_progress.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">진행 확인</span></li>
           <li><span class="ev-hook">auto_memory_writer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">MEMORY.md</span></li>
           <li><span class="ev-hook">validate_facts.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md 정리</span></li>
           <li><span class="ev-hook">auto_skill_generator.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">스킬 자동 생성</span></li>
+          <li><span class="ev-hook">auto_dependency_audit.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">의존성 감사</span></li>
           <li><span class="ev-hook">voice_done.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">완료 알림</span></li>
         </ul>
       </div>
@@ -595,16 +599,21 @@
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">9</div><div><div class="phase-name">SubagentStart</div><div class="phase-trigger">1 hook <span class="tag async">async</span></div></div></div>
+        <div class="phase-head"><div class="phase-icon">9</div><div><div class="phase-name">SubagentStart</div><div class="phase-trigger">3 hooks</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">서브에이전트 추적</span></li>
+          <li><span class="ev-hook">orch_depth_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이션 깊이</span></li>
+          <li><span class="ev-hook">subagent_kg_inject.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">KG 결정 주입 <span class="tag new">NEW</span></span></li>
         </ul>
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">10</div><div><div class="phase-name">SubagentStop</div><div class="phase-trigger">1 hook</div></div></div>
+        <div class="phase-head"><div class="phase-icon">10</div><div><div class="phase-name">SubagentStop</div><div class="phase-trigger">4 hooks (2 async)</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">추적 완료</span></li>
+          <li><span class="ev-hook">orch_depth_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">깊이 추적</span></li>
+          <li><span class="ev-hook">session_cost_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">비용 추적</span></li>
+          <li><span class="ev-hook">subagent_palace_store.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">Mempalace 저장 <span class="tag new">NEW</span></span></li>
         </ul>
       </div>
 
@@ -805,8 +814,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="agents">
     <div class="eyebrow-sm">에이전트</div>
-    <h2>Agent System &mdash; 8 Agents</h2>
-    <p class="section-desc">7개의 Opus 에이전트와 1개의 Haiku 에이전트. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
+    <h2>Agent System &mdash; 14 Agents</h2>
+    <p class="section-desc">4개의 Opus, 6개의 Sonnet, 3개의 Haiku 에이전트. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
 
     <div class="gl-grid" style="margin-bottom:12px;">
       <div class="gl-card global">
@@ -826,7 +835,7 @@
       </div>
 
       <div class="gl-card global">
-        <h3>critical-analyst <span class="tag opus">Opus</span></h3>
+        <h3>critical-analyst <span class="tag sonnet">Sonnet</span></h3>
         <code class="gl-path">역할: 심층 분석 &middot; 읽기 전용</code>
         <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Glob, Grep, AskUserQuestion만 허용</div></div>
         <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">코드를 수정할 수 없어 편향 없는 분석이 가능합니다.</div></div>
@@ -834,7 +843,7 @@
       </div>
 
       <div class="gl-card global">
-        <h3>researcher <span class="tag opus">Opus</span></h3>
+        <h3>researcher <span class="tag sonnet">Sonnet</span></h3>
         <code class="gl-path">역할: 코드베이스 탐색 &middot; initialPrompt: /prime</code>
         <div class="gl-item"><div class="gl-item-name">disallowedTools</div><div class="gl-item-desc">[Write, Edit]</div></div>
         <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">대규모 코드베이스를 탐색하고 발견한 내용을 요약합니다.</div></div>
@@ -842,7 +851,7 @@
       </div>
 
       <div class="gl-card global">
-        <h3>scout-report-suggest <span class="tag opus">Opus</span></h3>
+        <h3>scout-report-suggest <span class="tag sonnet">Sonnet</span></h3>
         <code class="gl-path">역할: 타겟 분석 &middot; 안전 모드</code>
         <div class="gl-item"><div class="gl-item-name">disallowedTools</div><div class="gl-item-desc">[Write, Edit, Bash]</div></div>
         <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">코드를 스캔하고 제안만 합니다. 실행 없이 보고서 생성.</div></div>
@@ -858,11 +867,51 @@
       </div>
 
       <div class="gl-card global">
-        <h3>meta-agent <span class="tag opus">Opus</span></h3>
+        <h3>meta-agent <span class="tag sonnet">Sonnet</span></h3>
         <code class="gl-path">역할: 에이전트 생성기 &middot; isolation: worktree</code>
         <div class="gl-item"><div class="gl-item-name">isolation</div><div class="gl-item-desc">worktree</div></div>
         <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">새 에이전트를 설계하고 생성합니다. Worktree에서 격리 작업.</div></div>
         <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">프레임워크 자체를 확장할 수 있는 자기 참조 능력.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>solve <span class="tag opus">Opus</span></h3>
+        <code class="gl-path">역할: 자율 문제 해결 &middot; RLM 재귀 + guardian 검증</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Write, Edit, Bash, Grep, Glob, Agent, Task*</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">오케스트레이터가 위임한 복잡한 하위 문제를 재귀적으로 해결. 빌더를 직접 조율합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">빌드 실패 시 에스컬레이션 대상. 나선 감지(spiral detection)로 무한 루프 방지.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>builder <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: 순수 구현 &middot; 계획 파일 기반 코딩</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Write, Edit, Bash</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">계획 파일을 읽고 코드를 정확히 구현합니다. 연구, 검증, 디버깅 없이 — 오직 빌드만.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">단일 책임 원칙. 구현에만 집중하여 품질과 속도를 보장합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>debugger <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: 순수 진단 &middot; 근본 원인 분석 + 수정 계획</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Glob, Grep, Bash</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">검증 실패 보고서를 분석하고 근본 원인을 찾아 구조화된 수정 계획을 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">빌더의 실패를 진단하여 다음 빌드 반복에 피드백. 코드를 직접 작성하지 않습니다.</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>validator <span class="tag haiku">Haiku</span></h3>
+        <code class="gl-path">역할: 순수 검증 &middot; PASS/FAIL 보고</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Glob, Grep, Bash</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">빌드 결과와 수용 기준을 비교하여 PASS/FAIL을 판정합니다. 코드를 작성하지 않습니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">모든 빌드 단계 후 필수 게이트. Haiku로 빠르고 저렴하게 검증.</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>agent-watchdog <span class="tag haiku">Haiku</span></h3>
+        <code class="gl-path">역할: 백그라운드 모니터 &middot; 항상 Haiku</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Bash, Glob, Grep, SendMessage</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">병렬 에이전트 배치를 감시. 사일런트 실패, 빈 출력, 무한 루프, 토큰 낭비 패턴을 감지합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">대규모 오케스트레이션에서 실패한 에이전트를 조기 발견. 항상 백그라운드 실행.</div></div>
       </div>
 
       <div class="gl-card local">
@@ -983,7 +1032,7 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="commands">
     <div class="eyebrow-sm">명령어</div>
-    <h2>Command System &mdash; 15 Commands</h2>
+    <h2>Command System &mdash; 16 Commands</h2>
     <p class="section-desc">슬래시 명령어로 프레임워크 기능에 직접 접근합니다. 각 명령어는 특정 워크플로우에 최적화되어 있습니다.</p>
 
     <div style="overflow-x:auto;">
@@ -1007,6 +1056,7 @@
           <tr><td>/kr</td><td>한국어 모드 전환</td><td>한국어 입출력 활성화/비활성화</td></tr>
           <tr><td>/loadbundle</td><td>번들 복원</td><td>이전 세션 컨텍스트 0% 손실로 복원</td></tr>
           <tr><td>/arch-map</td><td>아키텍처 맵 생성</td><td>의존성 다이어그램, blast-radius 분석</td></tr>
+          <tr><td>/worktree</td><td>격리 실행 환경</td><td>안전한 실험, 병렬 작업 시 git worktree 활용</td></tr>
         </tbody>
       </table>
     </div>
@@ -1191,7 +1241,7 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="skills">
     <div class="eyebrow-sm">스킬</div>
-    <h2>Skill System &mdash; 9 Skills</h2>
+    <h2>Skill System &mdash; 20 Skills</h2>
     <p class="section-desc">스킬은 특정 패턴을 감지하면 자동으로 활성화됩니다. 수동으로 호출할 수도 있습니다.</p>
 
     <div class="gl-grid">
@@ -1248,6 +1298,72 @@
         <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"스킬 만들어", "new skill" 요청 시</div></div>
         <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">새 스킬 설계, 생성, 설치 가이드</div></div>
       </div>
+
+      <div class="gl-card global">
+        <h3>orchestrate</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">/orchestrate 명령 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">멀티 에이전트 팀 구성 및 병렬 실행 조율</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>solve</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">복잡한 하위 문제 에스컬레이션 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">RLM 재귀 + guardian 검증으로 자율적 문제 해결</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>tidy</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"정리", "tidy up", "clean repo" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">파일 재배치, 아카이브, 문서 갱신, 네이밍 정규화</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>worktree</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">/worktree 명령 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">격리된 git worktree에서 안전하게 실험 실행</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>docs</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"문서 생성", "documentation" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">API 문서, 가이드, 참조 문서 자동 생성</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>rollback</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"롤백", "revert", "되돌리기" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">안전한 git 롤백 — 변경 사항 분석 후 되돌리기</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>project-adapter</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">새 프로젝트 적용 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">프레임워크를 새 프로젝트에 맞게 자동 설정</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>test-scout</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"테스트 탐색", "test coverage gaps" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">테스트 커버리지 갭 발견 및 우선순위 보고</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>change-validator</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">변경 후 자동 검증</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">코드 변경의 정합성, 참조 무결성, 타입 검사</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>issue-scoper</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"이슈 분석", "scope this issue" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">이슈 범위 분석, 영향도 평가, 작업 분해</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>makeskill</h3>
+        <div class="gl-item"><div class="gl-item-name">Auto-trigger</div><div class="gl-item-desc">"makeskill" 요청 시</div></div>
+        <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">SKILL.md 템플릿 기반 빠른 스킬 스캐폴딩</div></div>
+      </div>
     </div>
   </section>
 
@@ -1256,8 +1372,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="memory">
     <div class="eyebrow-sm">인지 메모리</div>
-    <h2>Memory System &mdash; 4 Layers</h2>
-    <p class="section-desc">각 레이어는 범위, 수명, 접근 방식이 다릅니다. Layer 3 + Layer 2 아키텍처만 자동 주입됩니다.</p>
+    <h2>Memory System &mdash; 5 Layers (+ Mempalace)</h2>
+    <p class="section-desc">각 레이어는 범위, 수명, 접근 방식이 다릅니다. Layer 3 + Layer 2 아키텍처만 자동 주입됩니다. <strong>v4.1:</strong> Mempalace 레이어가 추가되어 에이전트 결과를 프로젝트-로컬로 저장하고 자동 주입합니다.</p>
 
     <div class="layers-grid" style="margin-bottom:36px;">
       <div class="layer-card l3">
@@ -1267,8 +1383,8 @@
         <ul class="layer-files">
           <li><span>~/.claude/CLAUDE.md</span> &mdash; 시스템 지침</li>
           <li><span>~/.claude/memory/MEMORY.md</span> &mdash; 글로벌 규칙</li>
-          <li><span>~/.claude/agents/</span> &mdash; 글로벌 에이전트 8개</li>
-          <li><span>~/.claude/skills/</span> &mdash; 글로벌 스킬 9개</li>
+          <li><span>~/.claude/agents/</span> &mdash; 글로벌 에이전트 14개</li>
+          <li><span>~/.claude/skills/</span> &mdash; 글로벌 스킬 20개</li>
         </ul>
         <div class="tok-row"><span>세션 시작 자동 주입</span><span class="val">~800 토큰</span></div>
       </div>
@@ -1311,6 +1427,25 @@
           <li>각 응답 후 사라짐</li>
         </ul>
         <div class="tok-row"><span>비용</span><span class="val">무제한 / 턴</span></div>
+      </div>
+
+      <div class="layer-card" style="border-top:3px solid #c62828;">
+        <div class="layer-num" style="color:#c62828;"><div class="layer-dot" style="background:#c62828;"></div>LAYER 5 &mdash; MEMPALACE <span class="tag new">NEW v4.1</span></div>
+        <div class="layer-title">Mempalace (프로젝트-로컬)</div>
+        <div class="layer-meta">프로젝트별 &middot; 영구 &middot; <strong style="color:#c62828;">자동 저장 + 자동 주입</strong></div>
+        <ul class="layer-files">
+          <li><span>.mempalace/palace/</span> &mdash; ChromaDB 벡터 저장소 (ONNX all-MiniLM-L6-v2 임베딩)</li>
+          <li><span>.mempalace/knowledge_graph.sqlite3</span> &mdash; 시간 기반 지식 그래프 (결정, 확인된 사실)</li>
+          <li><span>SubagentStop</span> &mdash; <em>에이전트 결과 자동 저장 (비동기, ~994ms)</em></li>
+          <li><span>SubagentStart</span> &mdash; <em>KG 결정 자동 주입 (~89ms, ~222 토큰/에이전트)</em></li>
+          <li><span>Researcher MCP</span> &mdash; <em style="color:var(--muted)">mempalace_search + mempalace_kg_query (온디맨드)</em></li>
+          <li><span>PreCompact</span> &mdash; <em>핵심 결정을 KG에 자동 추출</em></li>
+          <li><span>Stop</span> &mdash; <em>세션 요약을 KG 다이어리에 기록</em></li>
+        </ul>
+        <div class="tok-row"><span>에이전트당 주입</span><span class="val" style="color:#c62828;">~222 토큰</span></div>
+        <div style="margin-top:10px; font-size:11px; color:var(--muted); line-height:1.6;">
+          <strong>핵심:</strong> 모든 mempalace 연산은 API 토큰 0. ChromaDB 임베딩(ONNX), KG 쿼리(SQLite) 모두 로컬 실행. 비용은 Claude가 주입된 텍스트를 <em>읽을 때</em>만 발생.
+        </div>
       </div>
     </div>
 
@@ -1471,7 +1606,7 @@
   <section id="context">
     <div class="eyebrow-sm">컨텍스트</div>
     <h2>Context Engineering</h2>
-    <p class="section-desc">컨텍스트 70% 도달 시 자동 압축이 시작됩니다. v4.0에서 PostCompact 검증 단계가 추가되었습니다.</p>
+    <p class="section-desc">컨텍스트 70% 도달 시 자동 압축이 시작됩니다. v4.0에서 PostCompact 검증 단계가 추가되었고, v4.1에서 Mempalace 연동이 포함되었습니다.</p>
 
     <div class="flow" style="margin-bottom:24px;">
       <div class="flow-title">2-Phase Compaction + PostCompact 검증</div>
@@ -1773,7 +1908,7 @@
   <!-- S11: PROJECT FINGERPRINT                     -->
   <!-- ════════════════════════════════════════════ -->
   <section id="fingerprint">
-    <div class="eyebrow-sm">자동 적응 &mdash; v4.0</div>
+    <div class="eyebrow-sm">자동 적응 &mdash; v4.1</div>
     <h2>프로젝트별 자동 적응 <span class="tag new">NEW</span></h2>
     <p class="section-desc"><code>project_fingerprint.py</code> (CwdChanged hook)가 디렉토리 전환 시 자동으로 프로젝트 스택을 감지합니다.</p>
 
@@ -2214,7 +2349,7 @@
 </div>
 
 <footer>
-  Claude Agentic Framework v4.0 &middot; Hook 36개 &middot; Event 16개 &middot; Agent 8개 &middot; Command 15개 &middot; Skill 9개
+  Claude Agentic Framework v4.1 &middot; Hook 41개 &middot; Event 16개 &middot; Agent 14개 &middot; Command 16개 &middot; Skill 20개
   <br><br>
   <span style="color:var(--faint);">Opus-first on Max plan &middot; One repo, one install, one source of truth</span>
 </footer>
