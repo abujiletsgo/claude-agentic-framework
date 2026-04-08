@@ -1,0 +1,97 @@
+# CAF Sprint System Configuration
+# Single source of truth — everything reads this
+
+sprint:
+  # gstack (upstream dependency, never modified)
+  gstack:
+    path: "~/.claude/skills/gstack"
+    auto_update_check_days: 7
+
+  # tmux
+  tmux:
+    session_prefix: "sprint"
+    layout: "tiled"
+    dashboard_pane_width_pct: 28
+
+  # IPC filesystem
+  ipc:
+    base_dir: "/tmp/caf_sprint"
+    poll_interval_seconds: 5
+
+  # mempalace — long-term memory, NOT real-time compression
+  memory:
+    wing: "claude-agentic-framework"
+    sprint_room: "sprint_results"           # palace: lead results stored here
+    decision_room: "sprint_decisions"        # KG: decisions stored here
+    aaak_compress_on_store: true             # compress lead results before palace write
+    max_store_chars: 4000                    # truncate before storage
+    kg_decision_extraction: true             # extract decisions → KG triples
+    kg_inject_max_tokens: 375               # SubagentStart KG budget
+    sprint_context_max_chars: 2000          # SubagentStart sprint context budget
+
+  # structured logging
+  logging:
+    events_format: "jsonl"
+    include_token_counts: true
+    include_timing: true
+    audit_trail: true
+    archive_on_teardown: true               # copy events.jsonl to ~/.claude/data/sprint_events/
+    archive_aaak_compress: true             # AAAK-compress archived events for space
+
+  # wave definitions
+  waves:
+    0: { name: "Plan", parallel: true, gate: true, failure_policy: "block" }
+    1: { name: "Build", parallel: true, gate: true, failure_policy: "escalate" }
+    2: { name: "Validate", parallel: true, gate: true, failure_policy: "escalate" }
+    3: { name: "Ship", parallel: false, gate: false, failure_policy: "block" }
+
+  # lead roles
+  leads:
+    planning-lead:
+      wave: 0
+      gstack_skills: ["/plan-ceo-review", "/plan-eng-review", "/plan-design-review",
+                       "/plan-devex-review", "/autoplan"]
+      caf_fallback_agents: ["researcher"]
+      description: "Synthesize all planning reviews into unified architecture decision"
+      token_budget: 50000
+
+    engineering-lead:
+      wave: 1
+      gstack_skills: ["/investigate", "/pair-agent", "/careful"]
+      caf_fallback_agents: ["builder", "validator", "researcher"]
+      description: "Build features with spawned builders, validate with spawned validators"
+      token_budget: 100000
+
+    review-lead:
+      wave: 2
+      gstack_skills: ["/review", "/devex-review", "/codex"]
+      caf_fallback_agents: ["critical-analyst"]
+      description: "Code review and cross-model comparison"
+      token_budget: 60000
+
+    qa-lead:
+      wave: 2
+      gstack_skills: ["/qa", "/qa-only", "/browse"]
+      caf_fallback_agents: ["validator"]
+      description: "End-to-end QA, browser testing, regression checks"
+      token_budget: 80000
+
+    security-lead:
+      wave: 2
+      gstack_skills: ["/cso"]
+      caf_fallback_agents: ["scout-report-suggest"]
+      description: "OWASP/STRIDE security audit"
+      token_budget: 40000
+
+    release-lead:
+      wave: 3
+      gstack_skills: ["/ship", "/land-and-deploy", "/canary", "/document-release", "/retro"]
+      caf_fallback_agents: []
+      description: "Merge, deploy, document, retrospective"
+      token_budget: 30000
+
+  # graceful degradation
+  fallback:
+    no_tmux: "sequential_agents"    # leads run as Agent() calls (lose hierarchy depth)
+    no_gstack: "caf_skills"         # leads use CAF-native skills only
+    no_both: "orchestrate"          # equivalent to /orchestrate

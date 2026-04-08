@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    printf 'Usage: %s <sprint-id> <type> [<json-payload>]\n' "$(basename "$0")" >&2
+    printf '\nValid types:\n' >&2
+    printf '  sprint_started, sprint_completed, sprint_initialized,\n' >&2
+    printf '  wave_started, wave_completed,\n' >&2
+    printf '  lead_started, lead_completed, lead_failed,\n' >&2
+    printf '  agent_spawned, gstack_skill_invoked,\n' >&2
+    printf '  mempalace_stored, kg_triple_written,\n' >&2
+    printf '  gate_unlocked, error\n' >&2
+    exit 1
+}
+
+if [[ $# -lt 2 ]]; then
+    usage
+fi
+
+sprint_id="$1"
+event_type="$2"
+payload="${3:-}"
+
+ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+ipc_dir="/tmp/caf_sprint/${sprint_id}"
+mkdir -p "${ipc_dir}"
+events_file="${ipc_dir}/events.jsonl"
+
+# Build base JSON fields
+base='"ts":"'"${ts}"'","sprint":"'"${sprint_id}"'","type":"'"${event_type}"'"'
+
+if [[ -z "${payload}" ]]; then
+    # No payload: emit only base fields
+    json_line="{${base}}"
+else
+    # Strip outer braces from payload object
+    inner="${payload#\{}"
+    inner="${inner%\}}"
+    # Strip leading/trailing whitespace from inner
+    inner="${inner#"${inner%%[![:space:]]*}"}"
+    inner="${inner%"${inner##*[![:space:]]}"}"
+
+    if [[ -z "${inner}" ]]; then
+        # Empty payload '{}' — no extra fields
+        json_line="{${base}}"
+    else
+        # Merge payload fields at top level
+        json_line="{${base},${inner}}"
+    fi
+fi
+
+printf '%s\n' "${json_line}" >> "${events_file}"

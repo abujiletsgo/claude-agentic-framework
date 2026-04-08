@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IPC_BASE="/tmp/caf_sprint"
+DASHBOARD_WIDTH_PCT=28
+POLL_INTERVAL=5
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_NAME="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "project")")"
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: tmux-sprint <command> [args]
+
+Commands:
+  create <sprint-id>
+  launch-lead <sprint-id> <lead-role> <wave>
+  poll-wave <sprint-id> <wave>
+  gate <sprint-id> <wave>
+  teardown <sprint-id> [--force]
+  status <sprint-id>
+  list
+  dashboard <sprint-id>
+EOF
+  exit 1
+}
+
+cmd_create() {
+  local sprint_id="$1"
+  command -v tmux >/dev/null || { echo "tmux not found" >&2; exit 1; }
+  tmux new-session -d -s "sprint-${sprint_id}"
+  mkdir -p "${IPC_BASE}/${sprint_id}/logs" \
+           "${IPC_BASE}/${sprint_id}/prompts" \
+           "${IPC_BASE}/${sprint_id}/results"
+  echo '{}' > "${IPC_BASE}/${sprint_id}/status.json"
+  echo '{"unlocked_waves":[]}' > "${IPC_BASE}/${sprint_id}/gate.json"
+  tmux split-window -h -t "sprint-${sprint_id}" -p "${DASHBOARD_WIDTH_PCT}" \
+    "uv run python \"${SCRIPT_DIR}/../dashboard/sprint_tui.py\" ${sprint_id}"
+  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" sprint_initialized
+}
+
+cmd_launch_lead() {
+  local sprint_id="$1"
+  local lead_role="$2"
+  local wave="$3"
+  git worktree add "../${REPO_NAME}-sprint-${sprint_id}-${lead_role}" HEAD 2>/dev/null || true
+  local lead_cmd
+  lead_cmd="cd \"../${REPO_NAME}-sprint-${sprint_id}-${lead_role}\" && CAF_SPRINT_ID=\"${sprint_id}\" CAF_SPRINT_ROLE=\"${lead_role}\" claude --prompt \"\$(cat \"${IPC_BASE}/${sprint_id}/prompts/${lead_role}.md\")\" --allowedTools '*' 2>&1 | tee \"${IPC_BASE}/${sprint_id}/logs/${lead_role}.log\""
+  tmux split-window -t "sprint-${sprint_id}" "$lead_cmd"
+  local tmp
+  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/status.json.XXXXXX")
+  local started
+  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  python3 -c "
+import json, sys
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+data['${lead_role}'] = {'status': 'running', 'wave': ${wave}, 'started': '${started}'}
+json.dump(data, sys.stdout)
+" > "$tmp"
+  mv "$tmp" "${IPC_BASE}/${sprint_id}/status.json"
+  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" lead_started "{\"role\":\"${lead_role}\",\"wave\":${wave}}"
+}
+
+MAX_POLL_SECONDS=1800
+
+cmd_poll_wave() {
+  local sprint_id="$1"
+  local wave="$2"
+  local start_time
+  start_time=$(date +%s)
+  local max_poll=${MAX_POLL_SECONDS:-1800}
+  while true; do
+    result=$(python3 -c "
+import json, sys
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+leads = [v for v in data.values() if isinstance(v, dict) and v.get('wave') == ${wave}]
+if not leads:
+    print('waiting')
+elif all(v.get('status') == 'done' for v in leads):
+    print('done')
+elif any(v.get('status') == 'failed' for v in leads):
+    print('failed')
+else:
+    print('waiting')
+")
+    case "$result" in
+      done)   exit 0 ;;
+      failed) exit 1 ;;
+      *)
+        local elapsed=$(( $(date +%s) - start_time ))
+        if [ "$elapsed" -ge "$max_poll" ]; then
+          echo "poll-wave: timeout after ${elapsed}s" >&2
+          exit 2
+        fi
+        sleep "${POLL_INTERVAL}"
+        ;;
+    esac
+  done
+}
+
+cmd_gate() {
+  local sprint_id="$1"
+  local wave="$2"
+  local tmp
+  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/gate.json.XXXXXX")
+  python3 -c "
+import json
+with open('${IPC_BASE}/${sprint_id}/gate.json') as f:
+    data = json.load(f)
+waves = set(data.get('unlocked_waves', []))
+waves.add(${wave})
+data['unlocked_waves'] = sorted(waves)
+import sys; json.dump(data, sys.stdout)
+" > "$tmp"
+  mv "$tmp" "${IPC_BASE}/${sprint_id}/gate.json"
+}
+
+cmd_teardown() {
+  local sprint_id="$1"
+  local force="${2:-}"
+  tmux kill-session -t "sprint-${sprint_id}" 2>/dev/null || true
+  # Use bash glob expansion to find matching worktrees
+  for wt in ../"${REPO_NAME}"-sprint-"${sprint_id}"-*; do
+    if [ -d "$wt" ]; then
+      if [ "$force" = "--force" ]; then
+        git worktree remove --force "$wt" 2>/dev/null || true
+      else
+        git worktree remove "$wt" 2>/dev/null || true
+      fi
+    fi
+  done
+  mkdir -p ~/.claude/data/sprint_events
+  cp "${IPC_BASE}/${sprint_id}/events.jsonl" \
+     ~/.claude/data/sprint_events/"${sprint_id}.jsonl" 2>/dev/null || true
+  rm -rf "${IPC_BASE:?}/${sprint_id:?}"
+}
+
+cmd_status() {
+  local sprint_id="$1"
+  python3 -c "
+import json, sys
+
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+
+icons = {'done': '\u2713 done', 'running': '\u27f3 running', 'failed': '\u2717 failed'}
+print(f\"{'Role':<22} {'Wave':<6} {'Status':<12} {'Started'}\")
+print('-' * 70)
+for role, info in data.items():
+    if not isinstance(info, dict):
+        continue
+    wave = f\"W{info.get('wave', '?')}\"
+    status_raw = info.get('status', '?')
+    status = icons.get(status_raw, status_raw)
+    started = info.get('started', '')
+    print(f\"{role:<22} {wave:<6} {status:<12} {started}\")
+"
+}
+
+cmd_list() {
+  tmux ls 2>/dev/null | grep "^sprint-" || echo "No active sprints"
+}
+
+cmd_dashboard() {
+  local sprint_id="$1"
+  tmux split-window -h -t "sprint-${sprint_id}" -p "${DASHBOARD_WIDTH_PCT}" \
+    "uv run python \"${SCRIPT_DIR}/../dashboard/sprint_tui.py\" ${sprint_id}"
+}
+
+# Main dispatch
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+command_name="$1"
+shift
+
+case "$command_name" in
+  create)
+    [ $# -ge 1 ] || usage
+    cmd_create "$1"
+    ;;
+  launch-lead)
+    [ $# -ge 3 ] || usage
+    cmd_launch_lead "$1" "$2" "$3"
+    ;;
+  poll-wave)
+    [ $# -ge 2 ] || usage
+    cmd_poll_wave "$1" "$2"
+    ;;
+  gate)
+    [ $# -ge 2 ] || usage
+    cmd_gate "$1" "$2"
+    ;;
+  teardown)
+    [ $# -ge 1 ] || usage
+    cmd_teardown "$1" "${2:-}"
+    ;;
+  status)
+    [ $# -ge 1 ] || usage
+    cmd_status "$1"
+    ;;
+  list)
+    cmd_list
+    ;;
+  dashboard)
+    [ $# -ge 1 ] || usage
+    cmd_dashboard "$1"
+    ;;
+  *)
+    usage
+    ;;
+esac

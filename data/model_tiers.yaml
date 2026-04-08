@@ -1,0 +1,81 @@
+# Multi-Model Tier Configuration
+# Balanced: Opus for coordination/architecture, Sonnet for capable workhorse tasks,
+# Haiku for mechanical/validation. Optimized for token efficiency.
+
+default_model: sonnet
+
+# ─── Tier Definitions ───────────────────────────────────────────────
+
+tiers:
+  opus:
+    model_id: claude-opus-4-6
+    use_for:
+      - Orchestration, planning, architecture
+      - Complex multi-step coordination
+      - Recursive exploration controllers
+
+  sonnet:
+    model_id: claude-sonnet-4-6
+    max_turns_default: 25  # Cap for research/analysis agents; builder=20
+    use_for:
+      - Research and analysis (context-first, 25 turns max)
+      - Code generation and implementation (20 turns max)
+      - Code review and refactoring
+      - Security analysis
+      - Agent/skill generation
+      - Codebase scouting and reporting
+      - Critical analysis
+
+  haiku:
+    model_id: claude-haiku-4-5
+    use_for:
+      - Read-only validation (syntax checks, linting)
+      - Fast file exploration (Explore agent)
+      - Documentation scraping
+      - Data formatting and mechanical transforms
+      - Status reporting and TTS summaries
+
+# ─── Agent Assignments ──────────────────────────────────────────────
+# 2 Opus, 7 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
+# Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator)
+
+agent_tiers:
+  opus:
+    - orchestrator            # Multi-agent coordination and planning
+    - project-architect       # Architecture design, agent ecosystem creation
+
+  sonnet:
+    - critical-analyst        # Critical thinking, risk analysis
+    - researcher              # Research and analysis
+    - meta-agent              # Agent file generation
+    - scout-report-suggest    # Codebase scouting
+    - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
+    - debugger                # Root cause analysis + fix plan writing
+    - sprint-lead             # Sprint coordination, planning, and execution management
+
+  haiku:
+    - docs-scraper            # Documentation scraping (speed > depth)
+    - validator               # Test running + pass/fail reporting
+    - agent-watchdog          # Background anomaly detection
+
+# ─── Skill Overrides ────────────────────────────────────────────────
+
+skill_default_models:
+  test-generator: sonnet
+  code-review: sonnet
+  refactoring-assistant: sonnet
+  security-scanner: sonnet
+  error-analyzer: sonnet
+  knowledge-db: haiku     # Mechanical DB ops, speed matters
+
+# ─── Decision Matrix ────────────────────────────────────────────────
+
+decision_matrix:
+  - condition: "Coordination, orchestration, or architecture decisions"
+    model: opus
+  - condition: "Code generation, analysis, review, or research"
+    model: sonnet
+  - condition: "Mechanical validation, exploration, or data formatting"
+    model: haiku
+  - condition: "Unknown complexity"
+    model: sonnet  # Default to capable workhorse
