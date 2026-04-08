@@ -2,28 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-03-27 (01:30 UTC) · @Tom Kwon
-**Commit:** feat: add arch-map command/skill, update prime with caching improvements (eb5971b) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md                                |   4 +-
-  .claude/MEMORY.md                               |   9 +
-  CLAUDE.md                                       |   4 +-
-  README.md                                       |  12 +-
-  global-commands/arch-map.md                     |  50 ++++
-  global-commands/prime.md                        |  42 +++
-  global-hooks/framework/automation/auto_prime.py |  65 +++++
-  global-skills/arch-map/SKILL.md                 | 353 ++++++++++++++++++++++++
-  8 files changed, 531 insertions(+), 8 deletions(-)
-
-## 2026-03-29 (16:57 UTC) · @Tom Kwon
-**Commit:** v3.0.2: Regenerate all docs, update FACTS.md, bump version (543e963) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md         | 78 +++++++++++++++++++++++++-----------------------
-  CLAUDE.md                | 76 +++++++++++++++++++++++++++++++++++++++++++---
-  README.md                | 22 +++++++-------
-  scripts/generate_docs.py |  2 +-
-  4 files changed, 125 insertions(+), 53 deletions(-)
-
 ## 2026-03-30 (12:14 UTC) · @Tom Kwon
 **Commit:** v4.0: Major upgrade — 16 events, async hooks, new agents, project cleanup (687c93b) by Tom Kwon
 **Changed:**
@@ -311,3 +289,20 @@
 **Changed:**
   docs/framework-guide-ko.html | 1375 ++++++++++++++++++++++++++++++++++++++++++
   1 file changed, 1375 insertions(+)
+
+## 2026-04-08 (15:55 UTC) · @Tom Kwon
+**Commit:** chore: update gstack-bridge paths + CLAUDE.md for fork architecture (1097c55) by Tom Kwon
+**Changed:**
+  CLAUDE.md         | 30 ++++++++++++++++--------------
+  bin/gstack-bridge | 11 ++++++++++-
+  2 files changed, 26 insertions(+), 15 deletions(-)
+
+## 2026-04-08 (15:59 UTC) · @Tom Kwon
+**Commit:** feat: add sprint strategy to orchestrate, /worktree sprint subcommand, refresh docs (d8042d3) by Tom Kwon
+**Changed:**
+  .claude/PROJECT_CONTEXT.md         |  43 +++++--------
+  CLAUDE.md                          | 122 ++++++++++++++++++++++++-------------
+  README.md                          |  21 ++++---
+  global-skills/orchestrate/SKILL.md |  51 ++++++++++++++++
+  global-skills/worktree/SKILL.md    |  23 +++++++
+  5 files changed, 181 insertions(+), 79 deletions(-)
