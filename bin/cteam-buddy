@@ -90,7 +90,7 @@ class BuddyWidget:
         curses.init_pair(3, curses.COLOR_GREEN, -1)     # active button
         curses.init_pair(4, curses.COLOR_MAGENTA, -1)   # name
         curses.init_pair(5, curses.COLOR_WHITE, -1)     # bubble border
-        curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_WHITE)  # button
+        curses.init_pair(6, curses.COLOR_WHITE, -1)  # button (transparent)
 
         while True:
             try:
@@ -233,18 +233,8 @@ class BuddyWidget:
             self.safe_addstr(y, x, line, curses.color_pair(1))
             y += 1
 
-        # Switch buttons at bottom
-        y = h - 2
-        x = 1
-        for b in BUDDY_LIST:
-            label = f" {b} "
-            if b == self.current:
-                attr = curses.color_pair(3) | curses.A_BOLD
-            else:
-                attr = curses.color_pair(6)
-            if x + len(label) < w:
-                self.safe_addstr(y, x, label, attr)
-            x += len(label) + 1
+        # Hint at bottom
+        self.safe_addstr(h - 1, 1, "/buddy <name>", curses.A_DIM)
 
         self.stdscr.refresh()
 
@@ -252,18 +242,8 @@ class BuddyWidget:
         if key == curses.KEY_MOUSE:
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-                h, _ = self.stdscr.getmaxyx()
-                if my >= h - 3:
-                    x = 1
-                    for b in BUDDY_LIST:
-                        label = f" {b} "
-                        if x <= mx < x + len(label):
-                            self.switch_to(b)
-                            return
-                        x += len(label) + 1
-                else:
-                    # Pet!
-                    buddy = BUDDIES.get(self.current, BUDDIES["cat"])
+                # Pet!
+                buddy = BUDDIES.get(self.current, BUDDIES["cat"])
                     pet_msgs = {
                         "cat": ["*purrs*", "*headbutt*", "mrrp!", "*slow blink*", ":3"],
                         "dog": ["*tail goes crazy*", "*licks hand*", "WOOF!", "*belly up*"],

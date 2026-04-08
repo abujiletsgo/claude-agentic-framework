@@ -115,13 +115,13 @@ class Sidebar:
         curses.start_color()
         curses.use_default_colors()
         curses.init_pair(1, curses.COLOR_CYAN, -1)     # index
-        curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)  # selected
+        curses.init_pair(2, curses.COLOR_CYAN, -1)      # selected (bold+underline)
         curses.init_pair(3, curses.COLOR_YELLOW, -1)    # sprint
         curses.init_pair(4, curses.COLOR_GREEN, -1)     # done
         curses.init_pair(5, curses.COLOR_RED, -1)       # failed
-        curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_WHITE)  # button
-        curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_GREEN)  # active button
-        curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_CYAN)   # hover
+        curses.init_pair(6, curses.COLOR_WHITE, -1)     # button (transparent)
+        curses.init_pair(7, curses.COLOR_GREEN, -1)     # active button
+        curses.init_pair(8, curses.COLOR_CYAN, -1)      # hover
 
         while True:
             try:
@@ -152,7 +152,7 @@ class Sidebar:
     def draw_main(self, h, w):
         y = 0
         # Header
-        self.safe_addstr(y, 1, " Sessions ", curses.A_BOLD | curses.A_REVERSE)
+        self.safe_addstr(y, 1, " Sessions ", curses.A_BOLD | curses.A_UNDERLINE)
         y += 2
 
         windows = get_windows()
@@ -218,7 +218,7 @@ class Sidebar:
 
     def draw_projects(self, h, w):
         y = 0
-        self.safe_addstr(y, 1, " Projects ", curses.A_BOLD | curses.A_REVERSE)
+        self.safe_addstr(y, 1, " Projects ", curses.A_BOLD | curses.A_UNDERLINE)
         y += 2
 
         projects = load_json(PROJECTS_FILE, DEFAULT_PROJECTS)

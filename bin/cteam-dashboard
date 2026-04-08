@@ -73,7 +73,7 @@ def main(stdscr):
     curses.init_pair(3, curses.COLOR_YELLOW, -1)
     curses.init_pair(4, curses.COLOR_WHITE, -1)
     curses.init_pair(5, curses.COLOR_MAGENTA, -1)
-    curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(6, curses.COLOR_CYAN, -1)  # transparent
     stdscr.timeout(5000)
 
     last_sprint_check = 0
@@ -99,8 +99,7 @@ def main(stdscr):
 
             # Header bar
             header = " CAF Team Dashboard "
-            safe_addstr(stdscr, 0, 0, " " * w, curses.color_pair(6))
-            safe_addstr(stdscr, 0, (w - len(header)) // 2, header, curses.color_pair(6) | curses.A_BOLD)
+            safe_addstr(stdscr, 0, (w - len(header)) // 2, header, curses.color_pair(6) | curses.A_BOLD | curses.A_UNDERLINE)
 
             y = 2
             branch, commit = get_git_info()
@@ -128,8 +127,7 @@ def main(stdscr):
 
             # Bottom bar
             bar = " q:quit  /sprint:start  "
-            safe_addstr(stdscr, h - 1, 0, " " * w, curses.color_pair(6))
-            safe_addstr(stdscr, h - 1, (w - len(bar)) // 2, bar, curses.color_pair(6))
+            safe_addstr(stdscr, h - 1, (w - len(bar)) // 2, bar, curses.A_DIM)
 
             stdscr.refresh()
 

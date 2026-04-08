@@ -39,8 +39,8 @@ tmux split-window -t "$SESSION:0.0" -v -l '25%' -c "$CAF_DIR" \
 tmux split-window -t "$SESSION:0.0" -h -l '22%' -c "$CAF_DIR" \
   "python3 ${SIDEBAR}"
 
-# Buddy pane: below sidebar (40% of right column height)
-tmux split-window -t "$SESSION:0.1" -v -l '40%' -c "$CAF_DIR" \
+# Buddy pane: below sidebar (30% of right column height)
+tmux split-window -t "$SESSION:0.1" -v -l '30%' -c "$CAF_DIR" \
   "python3 ${BUDDY}"
 
 # Enable mouse (clickable panes, sidebar, scroll)
