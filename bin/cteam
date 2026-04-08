@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# cteam — Launch CAF Team workspace with tmux dashboard
+# cteam — Launch CAF Team workspace with tmux dashboard + session sidebar
 set -euo pipefail
 
 SESSION="caf-team"
 CAF_DIR="${HOME}/Documents/caf-team"
+SIDEBAR="${CAF_DIR}/bin/cteam-sidebar"
 DASHBOARD="${CAF_DIR}/dashboard/sprint_tui.py"
 
 # Already inside this session? Just restart dashboard pane if needed.
@@ -17,16 +18,29 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
   exec tmux attach -t "$SESSION"
 fi
 
-# Create new session: main pane (claude), bottom pane (dashboard)
+# ┌──────────────────────┬─────────────┐
+# │                      │             │
+# │    Claude Code       │  Sidebar    │
+# │    (main)            │  (sessions) │
+# │                      │             │
+# ├──────────────────────┴─────────────┤
+# │  Dashboard / Sprint TUI            │
+# └────────────────────────────────────┘
+
+# Create session with main pane
 tmux new-session -d -s "$SESSION" -c "$CAF_DIR" -x "$(tput cols)" -y "$(tput lines)"
 
-# Bottom pane: dashboard (28% height), starts with a placeholder until a sprint runs
-tmux split-window -t "$SESSION" -v -l '28%' -c "$CAF_DIR" \
-  "echo '⏳ No active sprint. Dashboard starts when you run /sprint.'; \
-   echo '   Or launch manually: uv run ${DASHBOARD} <sprint-id>'; \
+# Bottom pane: dashboard (28% height, full width)
+tmux split-window -t "$SESSION:0.0" -v -l '28%' -c "$CAF_DIR" \
+  "echo '  No active sprint. Dashboard starts with /sprint.'; \
+   echo '  Manual: uv run ${DASHBOARD} <sprint-id>'; \
    exec bash"
 
-# Top pane: Claude Code
+# Right sidebar: session manager (22% width, top area only)
+tmux split-window -t "$SESSION:0.0" -h -l '22%' -c "$CAF_DIR" \
+  "bash ${SIDEBAR}"
+
+# Select main pane (top-left) and launch Claude
 tmux select-pane -t "$SESSION:0.0"
 tmux send-keys -t "$SESSION:0.0" "claude" Enter
 
