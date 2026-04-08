@@ -30,6 +30,8 @@ class WaveProgress(Widget):
         self.set_interval(2, self.refresh_data)
 
     def refresh_data(self) -> None:
+        if self.ipc_dir is None:
+            return
         status_data = {}
         gate_data = {"unlocked_waves": []}
 
