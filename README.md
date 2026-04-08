@@ -141,10 +141,17 @@ See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
 | PostToolUse | auto_fact_extractor.py | Bash\|Write | Extract verified facts → .claude/FACTS.md |
 | Stop | session_lock_manager.py | — | Cleanup all locks |
 | Stop | check_lthread_progress.py | — | Validate RLM state |
-| Stop | auto_memory_writer.py | — | Write session summary → .claude/MEMORY.md |
+| Stop | auto_memory_writer.py | — | Write session summary → .claude/MEMORY.md + KG diary |
 | Stop | validate_facts.py | — | Prune 90-day stale entries from FACTS.md |
 | Stop | voice_done.py | — | Audio notification on session end |
-| PreCompact | pre_compact_preserve.py | — | Preserve task state into compaction prompt |
+| SubagentStart | subagent_tracker.py | — | Track subagent spawning |
+| SubagentStart | orch_depth_tracker.py | — | Track orchestration nesting depth |
+| SubagentStart | subagent_kg_inject.py | — | Inject project-local KG decisions (~222 tokens, 89ms) |
+| SubagentStop | subagent_tracker.py | — | Track subagent completion |
+| SubagentStop | orch_depth_tracker.py | — | Track orchestration depth on stop |
+| SubagentStop | session_cost_tracker.py | — | Record agent transcript cost |
+| SubagentStop | subagent_palace_store.py | — | Store agent results in project-local mempalace |
+| PreCompact | pre_compact_preserve.py | — | Preserve task state + extract decisions to KG |
 
 ## Subsystems
 
@@ -153,6 +160,7 @@ See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
 | **Damage Control** | Block/confirm destructive Bash commands; protect sensitive file paths |
 | **Caddy Classifier** | Classify every prompt on 4 dimensions; route to right strategy |
 | **Knowledge Pipeline** | Persistent cross-session learning via SQLite FTS5 |
+| **Mempalace** | Project-local ChromaDB + KG: auto-store agent results, inject decisions into subagents |
 | **RepoMap** | TreeSitter symbol index auto-generated for repos ≥200 source files |
 | **Circuit Breakers** | Prevent runaway hook execution; auto-recovers after 60s |
 | **Session Management** | Init, file conflict detection, cleanup |
@@ -165,9 +173,10 @@ See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
 4. **RLM Architecture** -- `/rlm` for infinite-scale codebase analysis
 5. **F-Threads (Fusion)** -- `/fusion` for best-of-N critical code
 6. **Knowledge Pipeline** -- Persistent cross-session memory via SQLite FTS5
-7. **Anti-Loop Guardrails** -- Circuit breakers prevent infinite agent loops
-8. **Caddy Classifier** -- Auto-routes each prompt to the right execution strategy
-9. **RepoMap** -- TreeSitter symbol index injected for large repos automatically
+7. **Mempalace Integration** -- Project-local vector store + knowledge graph for agent memory
+8. **Anti-Loop Guardrails** -- Circuit breakers prevent infinite agent loops
+9. **Caddy Classifier** -- Auto-routes each prompt to the right execution strategy
+10. **RepoMap** -- TreeSitter symbol index injected for large repos automatically
 
 ## Installation
 

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Agentic Framework — Full System Report</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --heading: #f0f6fc; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149;
+    --purple: #bc8cff; --orange: #db6d28; --pink: #f778ba;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  h1 { color: var(--heading); font-size: 2.2rem; margin-bottom: 0.5rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; }
+  h2 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { color: var(--purple); font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; }
+  .card-title { font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-value { font-size: 2rem; font-weight: 700; color: var(--heading); }
+  .card-detail { font-size: 0.85rem; color: var(--text); margin-top: 0.3rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--surface); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--border); }
+  td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:hover { background: rgba(88,166,255,0.05); }
+  code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; color: var(--orange); }
+  .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin: 0.1rem; }
+  .tag-opus { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .tag-sonnet { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .tag-haiku { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .tag-new { background: rgba(247,120,186,0.15); color: var(--pink); border: 1px solid rgba(247,120,186,0.3); }
+  .tag-async { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; line-height: 1.8; }
+  .flow .arrow { color: var(--accent); }
+  .flow .hook { color: var(--green); }
+  .flow .event { color: var(--yellow); }
+  .section { margin-bottom: 3rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .badge-pass { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-new { background: rgba(247,120,186,0.15); color: var(--pink); }
+  .metric-row { display: flex; gap: 2rem; flex-wrap: wrap; margin: 1rem 0; }
+  .metric { text-align: center; }
+  .metric-value { font-size: 1.8rem; font-weight: 700; color: var(--green); }
+  .metric-label { font-size: 0.8rem; color: #8b949e; }
+  .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.8rem; line-height: 1.6; overflow-x: auto; }
+  details { margin: 0.5rem 0; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 0.3rem 0; }
+  summary:hover { text-decoration: underline; }
+  .timestamp { color: #8b949e; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<h1>Claude Agentic Framework</h1>
+<p class="subtitle">v4.1 | Full System Report | Generated 2026-04-08</p>
+
+<!-- ═══ Overview Cards ═══ -->
+<div class="section">
+<h2>System Overview</h2>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">Agents</div>
+    <div class="card-value">14</div>
+    <div class="card-detail"><span class="tag tag-opus">Opus 4</span> <span class="tag tag-sonnet">Sonnet 6</span> <span class="tag tag-haiku">Haiku 3</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Commands</div>
+    <div class="card-value">16</div>
+    <div class="card-detail">Delegation, orchestration, planning</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Skills</div>
+    <div class="card-value">20</div>
+    <div class="card-detail">Full engineering lifecycle</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Hooks</div>
+    <div class="card-value">41</div>
+    <div class="card-detail">16 event types</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Tests</div>
+    <div class="card-value" style="color: var(--green);">86</div>
+    <div class="card-detail"><span class="badge badge-pass">ALL PASS</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Mempalace</div>
+    <div class="card-value" style="color: var(--pink);">NEW</div>
+    <div class="card-detail">Project-local ChromaDB + KG</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ Architecture Diagram ═══ -->
+<div class="section">
+<h2>Architecture Flow</h2>
+<div class="diagram">
+<span style="color:var(--yellow)">User Prompt</span>
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[UserPromptSubmit]</span> ── kr_mode.py ── auto_prime_inject.py ── analyze_request.py (Caddy) ── auto_delegate.py ── enforce_orchestrate.py
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--yellow)">Claude Processes</span>
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[PreToolUse]</span> ── orchestrator_tool_guard.py ── session_lock_manager.py ── unified-damage-control.py ── auto_review_team.py
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--green)">Tool Executes</span> (Read / Write / Edit / Bash / Agent / ...)
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[PostToolUse]</span> ── lock_manager ── bundle_logger ── error_analyzer ── auto_refine ── context_manager ── escalate ── voice ── team_review ── fact_extractor
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[SubagentStart]</span> ── subagent_tracker ── orch_depth_tracker ── <span style="color:var(--pink)">subagent_kg_inject.py [NEW]</span>
+  <span style="color:#8b949e">|</span>       <span style="color:#8b949e">(injects ~222 tokens of KG decisions from project-local .mempalace/)</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--green)">Subagent Runs</span> (researcher, builder, validator, ...)
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[SubagentStop]</span> ── subagent_tracker ── orch_depth_tracker ── session_cost_tracker ── <span style="color:var(--pink)">subagent_palace_store.py [NEW]</span>
+  <span style="color:#8b949e">|</span>       <span style="color:#8b949e">(stores agent output in ChromaDB + extracts decisions to KG)</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[Stop]</span> ── lock_manager ── lthread_check ── auto_memory_writer ── validate_facts ── dependency_audit ── skill_generator ── voice_done
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[PreCompact]</span> ── pre_compact_preserve.py (preserves tasks, files, decisions + extracts to project-local KG)
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[PostCompact]</span> ── post_compact_verify.py
+</div>
+</div>
+
+<!-- ═══ Mempalace Integration ═══ -->
+<div class="section">
+<h2>Mempalace Integration <span class="badge badge-new">NEW in v4.1</span></h2>
+
+<h3>How It Works</h3>
+<p>Every project gets its own <code>.mempalace/</code> directory with a ChromaDB vector store and SQLite knowledge graph. Agent results are automatically stored and injected across sessions.</p>
+
+<div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="card">
+    <div class="card-title">Store (SubagentStop)</div>
+    <div class="card-detail">
+      <strong>subagent_palace_store.py</strong><br>
+      Captures agent output in ChromaDB drawer<br>
+      Extracts decisions to KG triples<br>
+      <span class="tag tag-async">ASYNC</span> ~994ms (non-blocking)
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Inject (SubagentStart)</div>
+    <div class="card-detail">
+      <strong>subagent_kg_inject.py</strong><br>
+      Queries project-local KG for decisions<br>
+      Injects as additionalContext<br>
+      ~89ms, ~222 tokens per agent
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">MCP Access (On-Demand)</div>
+    <div class="card-detail">
+      <strong>Researcher agent</strong><br>
+      <code>mempalace_search</code> + <code>mempalace_kg_query</code><br>
+      Deep search when injection isn't enough<br>
+      Zero API token cost
+    </div>
+  </div>
+</div>
+
+<h3>Token Economics (Projected)</h3>
+<table>
+  <tr><th>Scenario</th><th>Before</th><th>After (With Mempalace)</th><th>Savings</th></tr>
+  <tr><td>7-agent orchestration (first run)</td><td>70K-90K tokens</td><td>73K-93K tokens</td><td>+3.5K (initial storage cost)</td></tr>
+  <tr><td>7-agent orchestration (repeat topic)</td><td>70K-90K tokens</td><td>46K-55K tokens</td><td style="color:var(--green)">~35-40%</td></tr>
+  <tr><td>Cross-session research (same project)</td><td>Full re-read</td><td>Retrieve from palace</td><td style="color:var(--green)">50-70%</td></tr>
+  <tr><td>Injected context per agent</td><td>0 tokens</td><td>~222 tokens</td><td>Targeted prior knowledge</td></tr>
+</table>
+
+<h3>Key Design Decisions</h3>
+<table>
+  <tr><th>Decision</th><th>Rationale</th></tr>
+  <tr><td>Project-local <code>.mempalace/</code></td><td>Each project gets its own ChromaDB + KG. Prevents cross-project contamination. Global memory stays short.</td></tr>
+  <tr><td>KG-only inject (not ChromaDB search)</td><td>SQLite KG queries are sub-ms. ChromaDB search adds ~200ms. Fast path keeps SubagentStart under 100ms.</td></tr>
+  <tr><td>Async store on SubagentStop</td><td>ChromaDB storage takes ~1s (subprocess + embedding). Async means zero blocking on agent completion.</td></tr>
+  <tr><td>Fail-open everywhere</td><td>If mempalace is unavailable, all hooks emit <code>{}</code> and exit 0. Framework works without mempalace installed.</td></tr>
+  <tr><td>Subprocess for ChromaDB</td><td>ChromaDB needs numpy compiled for Python 3.12 (mempalace venv), but hooks run on system Python 3.14. Subprocess bridges the version gap.</td></tr>
+</table>
+
+<h3>Data Flow</h3>
+<div class="diagram">
+<span style="color:var(--yellow)">Agent completes task</span>
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[SubagentStop]</span> subagent_palace_store.py
+  <span style="color:#8b949e">|--- stores output --></span> <span style="color:var(--green)">.mempalace/palace/</span> (ChromaDB, embeddings via ONNX all-MiniLM-L6-v2)
+  <span style="color:#8b949e">|--- extracts decisions --></span> <span style="color:var(--green)">.mempalace/knowledge_graph.sqlite3</span> (temporal triples)
+  <span style="color:#8b949e">|</span>
+<span style="color:#8b949e">... next session or next agent ...</span>
+  <span style="color:#8b949e">|</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">[SubagentStart]</span> subagent_kg_inject.py
+  <span style="color:#8b949e">|--- queries KG --></span> gets recent decisions + confirmed facts
+  <span style="color:#8b949e">|--- injects --></span> <span style="color:var(--yellow)">additionalContext</span> (~222 tokens, structured markdown)
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--green)">Agent starts with prior knowledge</span>
+</div>
+</div>
+
+<!-- ═══ Agents ═══ -->
+<div class="section">
+<h2>Agent Fleet (14)</h2>
+<table>
+  <tr><th>Agent</th><th>Model</th><th>Role</th><th>Key Capability</th></tr>
+  <tr><td>orchestrator</td><td><span class="tag tag-opus">Opus</span></td><td>Primary coordinator</td><td>Spawns parallel agent teams, strategy selection</td></tr>
+  <tr><td>project-architect</td><td><span class="tag tag-opus">Opus</span></td><td>System designer</td><td>Agent ecosystems, skills, automation workflows</td></tr>
+  <tr><td>rlm-root</td><td><span class="tag tag-opus">Opus</span></td><td>RLM controller</td><td>Infinite context processing without reading it</td></tr>
+  <tr><td>solve</td><td><span class="tag tag-opus">Opus</span></td><td>Deep problem solver</td><td>RLM recursion, guardian validation, spiral detection</td></tr>
+  <tr><td>researcher</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Research specialist</td><td>Context-first protocol, index-then-read, <span class="tag tag-new">+ mempalace MCP</span></td></tr>
+  <tr><td>builder</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Implementation</td><td>Reads plan, writes code exactly as specified</td></tr>
+  <tr><td>debugger</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Diagnosis</td><td>Root cause analysis, structured fix plans</td></tr>
+  <tr><td>critical-analyst</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Review / QA</td><td>Questions every detail, assumption, plan</td></tr>
+  <tr><td>meta-agent</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Agent generator</td><td>Creates new sub-agent configurations</td></tr>
+  <tr><td>scout-report-suggest</td><td><span class="tag tag-sonnet">Sonnet</span></td><td>Codebase scout</td><td>Read-only analysis, issue identification</td></tr>
+  <tr><td>docs-scraper</td><td><span class="tag tag-haiku">Haiku</span></td><td>Documentation</td><td>Fetch + format external docs as markdown</td></tr>
+  <tr><td>validator</td><td><span class="tag tag-haiku">Haiku</span></td><td>Verification</td><td>PASS/FAIL checks, fast and cheap</td></tr>
+  <tr><td>agent-watchdog</td><td><span class="tag tag-haiku">Haiku</span></td><td>Monitor</td><td>Watches for silent failures, stuck loops</td></tr>
+  <tr><td>orchestrator-reference</td><td><span class="tag tag-opus">Opus</span></td><td>Reference</td><td>Full orchestrator protocol documentation</td></tr>
+</table>
+</div>
+
+<!-- ═══ Hook Matrix ═══ -->
+<div class="section">
+<h2>Hook Matrix (41 hooks, 16 events)</h2>
+<table>
+  <tr><th>Event</th><th>Count</th><th>Hooks</th><th>Notes</th></tr>
+  <tr><td>SessionStart</td><td>1</td><td>session_startup.py</td><td>SHA-256 integrity, locks, auto-prime, KG context</td></tr>
+  <tr><td>SessionEnd</td><td>1</td><td>session_lock_manager.py</td><td>Release all locks</td></tr>
+  <tr><td>UserPromptSubmit</td><td>5</td><td>kr_mode, auto_prime_inject, analyze_request, auto_delegate, enforce_orchestrate</td><td>Caddy classification, delegation hints</td></tr>
+  <tr><td>PreToolUse</td><td>4</td><td>orchestrator_tool_guard, lock_manager, damage-control, auto_review_team</td><td>Security + coordination</td></tr>
+  <tr><td>PostToolUse</td><td>9</td><td>lock_manager, bundle_logger, error_analyzer, refine, context_manager, escalate, voice, team_review, fact_extractor</td><td>5 async, 4 sync</td></tr>
+  <tr><td>Stop</td><td>7</td><td>lock_manager, lthread_check, memory_writer, validate_facts, dependency_audit, skill_generator, voice_done</td><td>Session cleanup + memory</td></tr>
+  <tr><td>StopFailure</td><td>1</td><td>stop_failure_recovery.py</td><td>Rate limit / auth / billing recovery</td></tr>
+  <tr><td style="color:var(--pink)">SubagentStart</td><td>3</td><td>subagent_tracker, orch_depth_tracker, <strong>subagent_kg_inject</strong></td><td><span class="badge badge-new">+1 NEW</span> KG decisions injected</td></tr>
+  <tr><td style="color:var(--pink)">SubagentStop</td><td>4</td><td>subagent_tracker, orch_depth_tracker, cost_tracker, <strong>subagent_palace_store</strong></td><td><span class="badge badge-new">+1 NEW</span> Agent results stored</td></tr>
+  <tr><td>TaskCompleted</td><td>1</td><td>task_quality_gate.py</td><td>Validate completion criteria</td></tr>
+  <tr><td>CwdChanged</td><td>1</td><td>project_fingerprint.py</td><td>Auto-detect project stack</td></tr>
+  <tr><td>FileChanged</td><td>1</td><td>file_watcher.py</td><td>React to dep file changes</td></tr>
+  <tr><td>ConfigChange</td><td>1</td><td>audit_config_change.py</td><td>Security audit</td></tr>
+  <tr><td>PreCompact</td><td>1</td><td>pre_compact_preserve.py</td><td>Preserve state + KG decisions</td></tr>
+  <tr><td>PostCompact</td><td>1</td><td>post_compact_verify.py</td><td>Verify critical state survived</td></tr>
+</table>
+</div>
+
+<!-- ═══ Memory Architecture ═══ -->
+<div class="section">
+<h2>Memory Architecture (4 Layers + Mempalace)</h2>
+<table>
+  <tr><th>Layer</th><th>Storage</th><th>Scope</th><th>Writes</th><th>Reads</th></tr>
+  <tr><td><strong>L1: Sensory</strong></td><td>Context window</td><td>Current turn</td><td>Automatic (Claude)</td><td>Immediate</td></tr>
+  <tr><td><strong>L2: Working</strong></td><td><code>.claude/FACTS.md</code></td><td>Session</td><td>auto_fact_extractor (PostToolUse)</td><td>On-demand</td></tr>
+  <tr><td><strong>L3: Episodic</strong></td><td><code>.claude/MEMORY.md</code></td><td>Cross-session</td><td>auto_memory_writer (Stop)</td><td>On-demand</td></tr>
+  <tr><td><strong>L4: Semantic</strong></td><td>SQLite FTS5 knowledge-db</td><td>Persistent</td><td>knowledge pipeline</td><td>On-demand</td></tr>
+  <tr style="background: rgba(247,120,186,0.05);">
+    <td><strong>L5: Mempalace</strong> <span class="badge badge-new">NEW</span></td>
+    <td><code>.mempalace/</code> (ChromaDB + KG)</td><td>Project-local, persistent</td>
+    <td>SubagentStop auto-store, PreCompact KG extract, Stop diary</td>
+    <td>SubagentStart auto-inject, Researcher MCP search</td>
+  </tr>
+</table>
+
+<h3>Compaction Pipeline</h3>
+<div class="diagram">
+<span style="color:var(--yellow)">Context reaches 70%</span>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">auto_context_manager.py</span> (PostToolUse, every 10 turns)
+  writes structured summaries to <code>~/.claude/data/compressed_context/</code>
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">pre_compact_preserve.py</span> (PreCompact)
+  reads summaries + extracts: active tasks, modified files, key decisions, errors, git diff
+  <span style="color:var(--pink)">+ extracts decisions to project-local KG (new in v4.1)</span>
+  compresses data section via AAAK compress_sections() (~3x ratio, headers preserved)
+  injects as additionalContext for compaction prompt
+  <span style="color:#8b949e">v</span>
+<span style="color:var(--accent)">post_compact_verify.py</span> (PostCompact)
+  verifies critical state survived compaction
+</div>
+</div>
+
+<!-- ═══ Subsystems ═══ -->
+<div class="section">
+<h2>Subsystems</h2>
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+  <div class="card">
+    <div class="card-title" style="color:var(--red)">Damage Control</div>
+    <div class="card-detail">100+ blocked patterns. Path protection (zero-access / read-only / no-delete). SHA-256 skill integrity verification. Prevents destructive commands, credential leaks, force-pushes to main.</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--yellow)">Caddy Classifier</div>
+    <div class="card-detail">Classifies every prompt on 4 dimensions: complexity, type, quality, scope. Routes to: direct / orchestrate / rlm / fusion. Confidence scoring. Auto-delegation hints.</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--green)">Knowledge Pipeline</div>
+    <div class="card-detail">SQLite FTS5 for cross-session learning. auto_fact_extractor writes verified facts. validate_facts prunes >90 day entries. CONFIRMED > GOTCHAS > PATHS > PATTERNS.</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--pink)">Mempalace <span class="badge badge-new">NEW</span></div>
+    <div class="card-detail">Project-local ChromaDB + SQLite KG. Auto-stores agent results on SubagentStop. Injects KG decisions on SubagentStart (~222 tokens). Researchers get MCP search tools. Zero API token cost for all operations.</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--accent)">RepoMap</div>
+    <div class="card-detail">TreeSitter symbol index auto-generated for repos with 200+ source files. Ranked by PageRank-style algorithm. Injected at session start for large repos.</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--orange)">Circuit Breakers</div>
+    <div class="card-detail">If a hook fails 3 times, auto-disables for 60s. State in ~/.claude/circuit_breakers/. Prevents runaway hook execution. Delete state file to reset.</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ Test Results ═══ -->
+<div class="section">
+<h2>Test Results</h2>
+<div class="metric-row">
+  <div class="metric"><div class="metric-value">86</div><div class="metric-label">Total Tests</div></div>
+  <div class="metric"><div class="metric-value" style="color:var(--green)">86</div><div class="metric-label">Passed</div></div>
+  <div class="metric"><div class="metric-value" style="color:var(--green)">0</div><div class="metric-label">Failed</div></div>
+  <div class="metric"><div class="metric-value">10.6s</div><div class="metric-label">Total Runtime</div></div>
+</div>
+<table>
+  <tr><th>Test Suite</th><th>Tests</th><th>Status</th><th>Coverage</th></tr>
+  <tr><td>test_palace_integration.py <span class="badge badge-new">NEW</span></td><td>30</td><td><span class="badge badge-pass">PASS</span></td><td>palace_init, SubagentStop store, SubagentStart inject, end-to-end flow, project isolation, latency, token budget</td></tr>
+  <tr><td>test_aaak_integration.py</td><td>17</td><td><span class="badge badge-pass">PASS</span></td><td>AAAK compress, compress_sections, fail-open, benchmarks</td></tr>
+  <tr><td>test_real_simulation.py</td><td>39</td><td><span class="badge badge-pass">PASS</span></td><td>Real pipeline simulation across 22 projects, CLAUDE.md compression, aggregate cost</td></tr>
+</table>
+
+<h3>Latency Benchmarks</h3>
+<table>
+  <tr><th>Operation</th><th>Latency</th><th>Blocking?</th><th>Token Cost</th></tr>
+  <tr><td>SubagentStart KG inject</td><td>89ms</td><td>Yes (sync)</td><td>~222 tokens injected</td></tr>
+  <tr><td>SubagentStop palace store</td><td>994ms</td><td>No (async)</td><td>0 API tokens</td></tr>
+  <tr><td>ChromaDB search (28K drawers)</td><td>~195ms</td><td>—</td><td>0 API tokens</td></tr>
+  <tr><td>KG query (SQLite)</td><td>&lt;1ms</td><td>—</td><td>0 API tokens</td></tr>
+  <tr><td>AAAK compress()</td><td>181&mu;s</td><td>—</td><td>0 API tokens</td></tr>
+</table>
+</div>
+
+<!-- ═══ File Structure ═══ -->
+<div class="section">
+<h2>New Files (v4.1)</h2>
+<table>
+  <tr><th>File</th><th>Purpose</th><th>Lines</th></tr>
+  <tr><td><code>global-hooks/framework/memory/palace_init.py</code></td><td>Shared utility: project-local .mempalace/, fail-open KG/ChromaDB access via subprocess</td><td>~170</td></tr>
+  <tr><td><code>global-hooks/framework/memory/subagent_palace_store.py</code></td><td>SubagentStop hook: store agent output + extract decisions</td><td>~115</td></tr>
+  <tr><td><code>global-hooks/framework/memory/subagent_kg_inject.py</code></td><td>SubagentStart hook: inject KG decisions as additionalContext</td><td>~119</td></tr>
+  <tr><td><code>tests/test_palace_integration.py</code></td><td>30 integration tests for mempalace hooks</td><td>~420</td></tr>
+</table>
+
+<h3>Modified Files</h3>
+<table>
+  <tr><th>File</th><th>Change</th></tr>
+  <tr><td><code>kg_session_context.py</code></td><td>Switched from global KG to project-local via palace_init</td></tr>
+  <tr><td><code>auto_memory_writer.py</code></td><td>Diary entries now use project-local KG</td></tr>
+  <tr><td><code>pre_compact_preserve.py</code></td><td>Decision extraction uses project-local KG</td></tr>
+  <tr><td><code>researcher.md</code></td><td>Added mempalace_search + mempalace_kg_query MCP tools</td></tr>
+  <tr><td><code>settings.json.template</code></td><td>Registered 2 new hooks (SubagentStart + SubagentStop)</td></tr>
+  <tr><td><code>.gitignore</code></td><td>Added .mempalace/</td></tr>
+  <tr><td><code>generate_docs.py</code></td><td>Added mempalace subsystem + new hooks to docs</td></tr>
+</table>
+</div>
+
+<!-- ═══ Commands & Skills ═══ -->
+<div class="section">
+<h2>Commands (16)</h2>
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:1rem 0;">
+  <code>/arch-map</code> <code>/commit</code> <code>/costs</code> <code>/debug</code>
+  <code>/fusion</code> <code>/kr</code> <code>/loadbundle</code> <code>/orchestrate</code>
+  <code>/plan</code> <code>/prime</code> <code>/refine</code> <code>/research</code>
+  <code>/review</code> <code>/rlm</code> <code>/test</code> <code>/worktree</code>
+</div>
+
+<h2>Skills (20)</h2>
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:1rem 0;">
+  <code>arch-map</code> <code>change-validator</code> <code>code-review</code> <code>docs</code>
+  <code>error-analyzer</code> <code>facts</code> <code>issue-scoper</code> <code>knowledge-db</code>
+  <code>makeskill</code> <code>orchestrate</code> <code>project-adapter</code> <code>refactoring-assistant</code>
+  <code>rollback</code> <code>security-scanner</code> <code>skill-builder</code> <code>solve</code>
+  <code>test-generator</code> <code>test-scout</code> <code>tidy</code> <code>worktree</code>
+</div>
+</div>
+
+<!-- ═══ Footer ═══ -->
+<div style="margin-top:4rem;padding-top:1rem;border-top:1px solid var(--border);color:#8b949e;font-size:0.8rem;">
+  <p>Claude Agentic Framework v4.1 | Generated 2026-04-08 | 14 agents, 16 commands, 20 skills, 41 hooks</p>
+  <p>Repository: <code>abujiletsgo/claude-agentic-framework</code> | Branch: <code>main</code></p>
+</div>
+
+</body>
+</html>

@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-24 (16:12 UTC) · @Tom Kwon
-**Commit:** docs: add HTML docs link table to README (9d2dc82) by Tom Kwon
-**Changed:**
-  README.md                | 13 +++++++++++++
-  scripts/generate_docs.py | 13 +++++++++++++
-  2 files changed, 26 insertions(+)
-
 ## 2026-02-25 (07:19 UTC) · @Tom Kwon
 **Commit:** chore: update session memory files (fed7e58) by Tom Kwon
 **Changed:**
@@ -293,3 +286,18 @@
   install.sh                                   | 16 ++++++++++------
   tests/test_aaak_integration.py               |  9 ++++++---
   4 files changed, 38 insertions(+), 15 deletions(-)
+
+## 2026-04-08 (03:15 UTC) · @Tom Kwon
+**Commit:** feat: project-local mempalace integration — SubagentStop storage + SubagentStart KG inject (f544ef8) by Tom Kwon
+**Changed:**
+  .gitignore                                         |   3 +
+  CLAUDE.md                                          |   2 +-
+  README.md                                          |   6 +-
+  global-agents/researcher.md                        |   2 +-
+  .../framework/context/pre_compact_preserve.py      |  17 +-
+  .../framework/memory/auto_memory_writer.py         |  16 +-
+  .../framework/memory/kg_session_context.py         |  20 +-
+  global-hooks/framework/memory/palace_init.py       | 192 +++++++
+  .../framework/memory/subagent_kg_inject.py         | 118 ++++
+  .../framework/memory/subagent_palace_store.py      | 114 ++++
+  ... and 3 more files
