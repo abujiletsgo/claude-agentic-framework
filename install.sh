@@ -239,8 +239,15 @@ for event, matchers in data.get('hooks', {}).items():
     for matcher in matchers:
         for hook in matcher.get('hooks', []):
             cmd = hook.get('command', '')
-            # extract the python file path from 'uv run /path/to/file.py [args]'
             parts = cmd.split()
+            # Check for Rust binary: path/to/caf-hooks <subcommand>
+            if 'caf-hooks' in cmd and '/target/release/caf-hooks' in cmd:
+                for p in parts:
+                    if p.endswith('caf-hooks') and '/' in p:
+                        print(p)
+                        break
+                continue
+            # Python hooks: extract .py file path
             for p in parts:
                 if p.endswith('.py'):
                     print(p)

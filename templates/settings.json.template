@@ -88,9 +88,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/epistemic_guard.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks epistemic-guard",
             "timeout": 5,
-            "_comment": "Inject epistemic discipline reminder for analysis/interpretation prompts"
+            "_comment": "Rust: Inject epistemic discipline reminder for analysis/interpretation prompts"
           }
         ]
       },
@@ -98,9 +98,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/enforce_orchestrate.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks enforce-orchestrate",
             "timeout": 5,
-            "_comment": "Enforce Skill tool invocation when /orchestrate is detected"
+            "_comment": "Rust: Enforce Skill tool invocation when /orchestrate is detected"
           }
         ]
       }
@@ -133,8 +133,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/damage-control/unified-damage-control.py",
-            "timeout": 5
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks damage-control",
+            "timeout": 5,
+            "_comment": "Rust: 10.6x faster security gate"
           }
         ]
       },
@@ -165,10 +166,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/context-bundle-logger.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks context-bundle-logger",
             "timeout": 8,
             "async": true,
-            "_comment": "ASYNC: bundle logging doesn't need to block"
+            "_comment": "Rust: ASYNC bundle logging (CB built-in)"
           }
         ]
       },
@@ -177,8 +178,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_error_analyzer.py",
-            "timeout": 8
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-error-analyzer",
+            "timeout": 8,
+            "_comment": "Rust: error classification (CB built-in)"
           }
         ]
       },
@@ -187,8 +189,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_refine.py",
-            "timeout": 6
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-refine",
+            "timeout": 6,
+            "_comment": "Rust: auto-refine suggestions (CB built-in)"
           }
         ]
       },
@@ -277,9 +280,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/auto_memory_writer.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-memory-writer",
             "timeout": 10,
-            "_comment": "Layer 2: write session summary to .claude/MEMORY.md"
+            "_comment": "Rust: write session summary to .claude/MEMORY.md"
           }
         ]
       },
@@ -318,10 +321,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/voice_done.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
             "timeout": 5,
             "async": true,
-            "_comment": "ASYNC: voice notification is fire-and-forget"
+            "_comment": "Rust: ASYNC voice notification is fire-and-forget"
           }
         ]
       }
@@ -333,9 +336,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/stop_failure_recovery.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks stop-failure-recovery",
             "timeout": 5,
-            "_comment": "v4.0: Handle all API failures with typed recovery advice"
+            "_comment": "Rust: Handle all API failures with typed recovery advice"
           }
         ]
       }
@@ -424,9 +427,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/task_quality_gate.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks task-quality-gate",
             "timeout": 10,
-            "_comment": "v4.0: Validate task completion criteria before marking done"
+            "_comment": "Rust: Validate task completion criteria before marking done"
           }
         ]
       }
@@ -451,10 +454,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/file_watcher.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks file-watcher",
             "timeout": 10,
             "async": true,
-            "_comment": "v4.0: React to dependency file changes"
+            "_comment": "Rust: React to dependency file changes"
           }
         ]
       }
@@ -491,10 +494,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/context/post_compact_verify.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks post-compact-verify",
             "timeout": 5,
             "async": true,
-            "_comment": "v4.0: Verify critical state survived compaction"
+            "_comment": "Rust: Verify critical state survived compaction"
           }
         ]
       }

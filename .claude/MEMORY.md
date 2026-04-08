@@ -2,15 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (07:39 UTC) · @Tom Kwon
-**Commit:** docs: fix stale agent/hook counts, add RLM explanation, update roles doc (3de4b38) by Tom Kwon
-**Changed:**
-  docs/2026_UPGRADE_GUIDE.md         |  26 +--
-  docs/ROLES_AND_RESPONSIBILITIES.md | 425 +++++++++----------------------------
-  docs/agents.html                   |  84 ++++++++
-  guides/RLM_ARCHITECTURE.md         |   2 +-
-  4 files changed, 197 insertions(+), 340 deletions(-)
-
 ## 2026-02-25 (08:06 UTC) · @Tom Kwon
 **Commit:** docs: fix stale references across guides and docs (5092a90) by Tom Kwon
 **Changed:**
@@ -304,3 +295,9 @@
   .claude/MEMORY.md            |  17 ++--
   docs/framework-guide-ko.html | 203 +++++++++++++++++++++++++++++++++++--------
   2 files changed, 179 insertions(+), 41 deletions(-)
+
+## 2026-04-08 (09:01 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (bf704b6) by Tom Kwon
+**Changed:**
+  README.md | 6 +++---
+  1 file changed, 3 insertions(+), 3 deletions(-)
