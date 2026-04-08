@@ -1,61 +1,95 @@
-# CAF Team — Sprint System + Research Intelligence
+# Claude Agentic Framework
 
-## What This Is
+v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 
-Implementation of CAF v5.0: Sprint System + Research Intelligence upgrade.
-The full plan is in `PLAN.md` — read it before doing anything.
-
-## Project Structure
+## Structure
 
 ```
-PLAN.md                          ← definitive implementation plan (read first)
-CLAUDE.md                        ← this file
-
-# Implementation targets (to be created):
-bin/                             ← shell scripts (gstack-bridge, sprint-event, tmux-sprint)
-lib/                             ← Python utilities (toon_utils.py)
-dashboard/                       ← Textual TUI app
-  widgets/                       ← TUI widget modules
-data/                            ← config YAML files
-global-skills/                   ← skill definitions (sprint, research-*)
-global-agents/                   ← agent definitions (sprint-lead, code-researcher, academic-researcher)
-global-hooks/                    ← hook scripts (SessionStart, SubagentStart, SubagentStop)
+global-hooks/        45 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:0, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:7, hooks_StopFailure:1, hooks_SubagentStart:4, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
+global-agents/       15 agents (15 root + 0 team)
+global-commands/     16 commands
+global-skills/       25 skills
+data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
+templates/           settings.json.template (edit this, run install.sh)
 ```
+
+## Mode: Yolo
+
+`"allow": ["*"]` — full autonomy. Security: damage-control hooks (100+ patterns) > permissions > SHA-256 skill integrity > path protection (zero-access/read-only/no-delete).
+
+## Model Tiers
+
+```
+  Opus (2): orchestrator, project-architect
+Sonnet (7): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger, sprint-lead
+ Haiku (3): docs-scraper, validator, agent-watchdog
+```
+
+## Context Discipline
+
+**Direct** (1-2 files, known location): Read. Fix. Done.
+**Delegated** (5+ files, exploration): Grep/Glob first. Sub-agents for analysis. 2-3 sentence summaries only. Parallel.
+
+## Execution Protocol
+
+1. **3+ steps** = TaskList. Mark in_progress/completed.
+2. **Parallel** -- independent subagents in one message. Never serialize parallelizable work.
+3. **Validate** -- always verify implementation (tests, scripts). Never complete without validation.
 
 ## Key Rules
 
-- **Read PLAN.md first** — it has detailed specs for every component
-- `uv run` for all Python — never `pip install`
-- Shell scripts must pass `shellcheck`
-- Hook scripts must `py_compile` cleanly
-- YAML configs must parse: `python3 -c "import yaml; yaml.safe_load(open('file'))"`
-- AAAK is for STORAGE only (mempalace palace writes) — never for prompts, IPC, or anything humans/Claude reads in real-time
-- gstack is NEVER modified — only discovered via `bin/gstack-bridge`
-- All IPC files are plain text / JSON — debuggable with `cat` and `jq`
-- Every component must work when optional dependencies (gstack, tmux, mempalace) are absent
+- **`/orchestrate` is MANDATORY**: When user types `/orchestrate`, IMMEDIATELY call `Skill(skill="orchestrate")` BEFORE any other tool. Never ignore it. Never do the work yourself. Never treat it as decorative text. The orchestrator agent spawns parallel teams — you are not the orchestrator.
+- `uv run` for all Python. Never `pip install`.
+- Edit `templates/settings.json.template` → `bash install.sh`. Never edit settings.json directly.
+- Never delete hook files settings.json references. Stub first, delete after reinstall.
+- Never move framework directory without updating settings.json paths first.
+- Big outputs (>1000 tokens) → save to `/tmp/claude/` and reference.
+- When context compacts: preserve task list, modified files, test commands, key decisions.
 
-## Build Order
+## Auto-Prime Context
 
-Phase 1 (parallel): sprint_config.yaml, gstack-bridge, sprint-event
-Phase 2 (depends on 1): tmux-sprint
-Phase 3 (depends on 1, parallel to 2): sprint skill, sprint-lead agent, hooks
-Phase 4 (depends on 1, parallel to 2-3): TUI dashboard
-Phase 5 (fully parallel): TOON utils, research agents, research skills
-Phase 6 (depends on all): integration into CAF (caddy, model_tiers, settings.json.template)
-Phase 7: validation
+At session start, `session_startup.py` injects `.claude/PROJECT_CONTEXT.md` as authoritative project context. Use it immediately. Don't re-read files for info already in primed context.
 
-## Fork Architecture
+## Memory (On-Demand)
 
-caf-team is a **private fork** of claude-agentic-framework.
+Session start is lean. Only PROJECT_CONTEXT.md auto-injected. Read episodic memory when needed:
+- `.claude/FACTS.md` — verified facts (CONFIRMED > GOTCHAS > PATHS > PATTERNS)
+- `.claude/MEMORY.md` — recent session summaries (git-diff-based, max 30 entries)
 
+Memory writes are automatic: `auto_fact_extractor.py` (PostToolUse) → FACTS.md, `auto_memory_writer.py` (Stop) → MEMORY.md, `validate_facts.py` (Stop) → prunes >90 days.
+
+Trust: CONFIRMED facts > CLAUDE.md rules > inference. Local agents/skills override global.
+
+## Epistemic Discipline
+
+When making claims about data, results, or system behavior, you MUST distinguish between what the data shows and what you are inferring. This is non-negotiable.
+
+**Three-tier labeling:**
+- **OBSERVED** -- directly visible in data, logs, output, or source code. Cite the source (file:line, command output, data point).
+- **INFERRED** -- a conclusion you drew from observations. State the reasoning chain: "X was observed, which suggests Y because Z." Always flag with "This is an inference" or equivalent.
+- **SPECULATIVE** -- a hypothesis without strong supporting evidence. Flag explicitly: "Speculation:" or "One possible explanation:" -- never present as established fact.
+
+**Hard rules:**
+1. Never state an inference as if it were an observation. If you didn't directly see it in the data, say so.
+2. When presenting a narrative that connects multiple data points, explicitly flag which connections are observed vs. inferred.
+3. If you catch yourself building a confident-sounding story, pause and ask: "What does the data actually show vs. what am I adding?" Restructure if needed.
+4. When reversing a previous position, acknowledge the reversal explicitly and explain what new evidence changed your view. Never quietly replace one confident narrative with another.
+5. Quantitative claims require citing the actual numbers. "X has 73% accuracy" requires showing the calculation or source, not just stating it.
+6. When the data is ambiguous or insufficient, say so directly. "The data doesn't clearly show X" is always better than fabricating a confident interpretation.
+
+**Format for analytical responses:**
 ```
-caf-team (this repo)
-├── upstream remote "caf": claude-agentic-framework (public)
-├── git subtree at global-skills/gstack/: gstack repo (when added)
-└── private additions: sprint system, research agents, configs
+What the data shows: [observations with citations]
+What this suggests: [inferences with reasoning]
+What remains uncertain: [gaps, alternative explanations]
 ```
 
-### Syncing
-- Pull CAF updates: `git pull caf main`
-- Pull gstack updates: `git subtree pull --prefix=global-skills/gstack gstack main --squash`
-- Never push private sprint/research code to CAF upstream
+## Mistake Prevention
+
+- **Edit settings.json directly?** → Stop. Edit template, run install.sh.
+- **Delete a hook file?** → Stop. Stub it first (exit 0), reinstall, then delete.
+- **Move framework directory?** → Stop. Update settings.json paths first.
+- **Hook errors everywhere?** → Check `~/.claude/circuit_breakers/`. Delete state file or wait 60s.
+- **`pip install` in a hook?** → Stop. Use `uv run` instead.
+
+Full guide: `docs/framework-guide-ko.html` | Architecture: `.claude/ARCHITECTURE.md`

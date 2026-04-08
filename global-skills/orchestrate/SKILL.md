@@ -117,3 +117,54 @@ When a specialized workflow outperforms a generic builder:
 ```
 
 See `global-agents/orchestrator.md` for the full reference protocol (if using Claude Agentic Framework).
+
+## Sprint Strategy
+
+When the task is **massive** (complexity score > 8, or user explicitly requests `/sprint`), escalate from ORCHESTRATE to SPRINT:
+
+### When to Escalate
+
+| Signal | Action |
+|--------|--------|
+| User says `/sprint` | Use sprint directly |
+| Complexity > 8 AND tmux available | Recommend sprint |
+| Complexity > 8 AND no tmux | Use agents-only sprint mode |
+| Multiple workstreams (3+ independent tracks) | Recommend sprint |
+
+### Sprint Dispatch
+
+When escalating to sprint:
+1. Hand off to `/sprint` skill — it handles PM → Lead → Worker hierarchy
+2. The orchestrator becomes the PM role within the sprint
+3. Each lead gets its own tmux pane (or Agent() in agents-only mode)
+4. Waves: Plan(W0) → Build(W1) → Validate(W2) → Ship(W3)
+
+See `global-skills/sprint/SKILL.md` for the full protocol.
+
+### Staying in Orchestrate
+
+For tasks below sprint threshold, continue with the standard ORCHESTRATE strategy (researcher → builder → validator waves).
+
+## Research Dispatch
+
+Route research queries to the correct tool/agent based on the domain:
+
+| Query Domain | Primary Route | Fallback | Agent |
+|-------------|--------------|----------|-------|
+| Academic papers, citations | `mcp__papers__*` | `mcp__papersflow__*` | academic-researcher |
+| Code patterns, cross-repo search | `mcp__sourcegraph__*` | WebSearch | code-researcher |
+| Library docs, API reference | `mcp__context7__*` | WebFetch | (inline, haiku) |
+| Current events, news | WebSearch | WebFetch | (inline) |
+
+### Research Skills (user-invocable)
+
+| Skill | Route |
+|-------|-------|
+| `/research-academic` | academic-researcher via papers MCP |
+| `/research-code` | code-researcher via sourcegraph MCP |
+| `/research-docs` | context7 MCP or WebFetch (haiku) |
+| `/research-news` | WebSearch + WebFetch |
+
+### Data Format
+
+Research agents return results in **TOON encoding** (Token-Oriented Object Notation) for uniform lists — `[N,{fields}]` header + CSV rows. Falls back to compact JSON for nested/mixed data. See `lib/toon_utils.py`.

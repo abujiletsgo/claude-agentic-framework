@@ -1,4 +1,4 @@
-<!-- GIT_HASH: 45cfaf15185ea53c7eca91145f82c8914529a1a3 -->
+<!-- GIT_HASH: 1097c55918e4d55ed6d311a8a5f3815e91271bda -->
 <!-- GENERATED: 2026-04-09 -->
 <!-- PRIME_VERSION: 2.0 -->
 
@@ -8,37 +8,26 @@
 - **Name**: CAF Team (CAF v5.0 — Sprint System + Research Intelligence)
 - **Type**: Private fork of claude-agentic-framework with sprint orchestration + research intelligence
 - **Primary Languages**: Bash (bin scripts), Python (lib, hooks, dashboard), YAML (configs), Markdown (skills, agents)
-- **Tech Stack**: tmux, Textual TUI, mempalace/AAAK, gstack (subtree), MCP servers (paper-search, sourcegraph, papersflow, context7)
-- **Status**: BUILD COMPLETE — 28 files, all validated. Next: restructure as CAF fork + gstack subtree.
+- **Tech Stack**: tmux, Textual TUI, mempalace/AAAK, gstack (subtree, pending), MCP servers (paper-search, sourcegraph, papersflow, context7)
+- **Status**: FORK RESTRUCTURE COMPLETE — CAF upstream merged, dirs renamed, all validated.
 
 ## Build Status
-28 files built across Phases 1-6 + fixes. All passing validation.
-- Phase 1: sprint_config.yaml, gstack-bridge, sprint-event
-- Phase 2: tmux-sprint (8 commands)
-- Phase 3: sprint SKILL.md, sprint-lead.md, 3 hooks
-- Phase 4: TUI dashboard (7 files)
-- Phase 5: toon_utils.py, researcher.md, code-researcher.md, academic-researcher.md, 4 research skills
-- Phase 6: caddy_config.yaml, model_tiers.yaml, mempalace.yaml, settings.json.template
+28 sprint/research files built. Fork restructure done:
+- Directories renamed: skills/→global-skills/, agents/→global-agents/, hooks/→global-hooks/
+- CAF upstream merged (7 conflicts resolved, kept ours)
+- gstack-bridge updated for new paths
+- CLAUDE.md updated for fork architecture
 
-## Architecture Decision: Private Fork
-- caf-team = private fork of claude-agentic-framework (upstream remote "caf")
-- gstack = git subtree at global-skills/gstack/ (upstream remote "gstack")
+## Architecture: Private Fork
+- caf-team = private fork of claude-agentic-framework (remote "caf")
+- gstack = git subtree at global-skills/gstack/ (PENDING — need repo URL)
 - Private additions (sprint, research) are commits on top
-- `git pull caf main` updates CAF; `git subtree pull` updates gstack
+- `git pull caf main` updates CAF upstream
 
-## Next Task: Fork Restructure
-Rename directories to match CAF layout:
-- skills/ → global-skills/
-- agents/ → global-agents/
-- hooks/ → global-hooks/
-- bin/, lib/, data/, dashboard/, templates/ stay the same
-Then set up remotes and merge CAF history.
-
-## Outstanding Items (post-restructure)
-- global-skills/worktree/SKILL.md — add /worktree sprint subcommand
-- global-skills/orchestrate/SKILL.md — add sprint strategy + research dispatch table
-- scripts/generate_docs.py — register new skills/agents
-- gstack-bridge: update to look in global-skills/gstack/ first
+## Remaining Items
+- gstack subtree: need repo URL to add
+- Run generate_docs.py after all edits finalized
+- Test sprint system end-to-end when tmux environment available
 
 ## Key Constraints
 - AAAK for storage only, never IPC/prompts
