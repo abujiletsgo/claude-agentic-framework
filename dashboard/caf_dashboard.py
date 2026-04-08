@@ -6,7 +6,11 @@ WaveProgress, and RightSidebar into a single Textual application.
 """
 import argparse
 import os
+import sys
 from pathlib import Path
+
+# Ensure repo root is on sys.path regardless of how this file is invoked
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
