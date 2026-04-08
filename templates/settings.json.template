@@ -362,6 +362,16 @@
             "_comment": "Track orchestration nesting depth for tool guard"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/subagent_kg_inject.py",
+            "timeout": 5,
+            "_comment": "v4.1: Inject project-local KG decisions into agent context"
+          }
+        ]
       }
     ],
 
@@ -393,6 +403,17 @@
             "timeout": 8,
             "async": true,
             "_comment": "ASYNC: reads agent transcript + records cost — fire-and-forget"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/subagent_palace_store.py",
+            "timeout": 8,
+            "async": true,
+            "_comment": "v4.1: ASYNC — store agent results in project-local mempalace"
           }
         ]
       }

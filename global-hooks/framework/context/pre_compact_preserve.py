@@ -465,15 +465,16 @@ def _save_decisions_to_kg(instructions: str):
     Fail-open: if mempalace unavailable or no decisions found, does nothing.
     """
     try:
-        import glob
-        base = os.path.expanduser("~/Documents/mempalace/.venv/lib")
-        matches = glob.glob(os.path.join(base, "python3.*/site-packages"))
-        if not matches:
+        # Use project-local KG via palace_init
+        memory_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'memory')
+        if memory_dir not in sys.path:
+            sys.path.insert(0, memory_dir)
+        from palace_init import get_project_kg
+
+        cwd = os.getcwd()
+        kg = get_project_kg(cwd)
+        if kg is None:
             return
-        if matches[0] not in sys.path:
-            sys.path.insert(0, matches[0])
-        from mempalace.knowledge_graph import KnowledgeGraph
-        kg = KnowledgeGraph()
 
         # Extract decision lines (keyword heuristic from existing _DECISION_SIGNALS)
         decision_signals = ["decided", "chose", "switched", "reverted", "approved", "rejected", "confirmed"]

@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Token-efficient research agent. Checks existing context layers BEFORE reading files. Uses index-then-read strategy. Reports concise summaries only.
-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
+tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, mcp__mempalace__mempalace_search, mcp__mempalace__mempalace_kg_query
 disallowedTools: [Write, Edit]
 color: Blue
 model: sonnet

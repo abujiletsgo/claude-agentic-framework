@@ -53,6 +53,9 @@ out/
 .uv/
 .python-version
 
+# Project-local mempalace (per-project knowledge store)
+.mempalace/
+
 .claude/PROJECT_CONTEXT.md
 .claude/settings.json
 

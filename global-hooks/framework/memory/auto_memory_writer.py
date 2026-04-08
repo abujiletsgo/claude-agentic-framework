@@ -211,23 +211,15 @@ def ensure_memory_file(path: Path, project: str) -> str:
 def _write_diary_entry(entry_text: str, cwd: str):
     """Write session summary as a mempalace diary entry. Fail-open."""
     try:
-        import glob
-        base = os.path.expanduser("~/Documents/mempalace/.venv/lib")
-        matches = glob.glob(os.path.join(base, "python3.*/site-packages"))
-        if not matches:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from palace_init import get_project_kg
+        kg = get_project_kg(cwd)
+        if kg is None:
             return
-        if matches[0] not in sys.path:
-            sys.path.insert(0, matches[0])
-
-        # Use the Palace to store the diary entry
-        from mempalace.knowledge_graph import KnowledgeGraph
-        kg = KnowledgeGraph()
 
         project_name = os.path.basename(cwd) if cwd else "unknown"
         today = __import__("datetime").date.today().isoformat()
 
-        # Write the session summary as a KG triple
-        # subject=project, predicate=session_summary, object=entry text (first 500 chars)
         summary = entry_text[:500] if entry_text else "empty session"
         kg.add_triple(
             subject=project_name,

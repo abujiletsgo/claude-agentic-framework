@@ -10,24 +10,18 @@ Fail-open: if mempalace is unavailable or KG is empty, emits no message.
 Runs as a sub-hook in session_startup.py chain.
 """
 
-import glob
 import json
 import os
 import sys
 from datetime import date
 
 
-def _get_kg():
-    """Import and return a KnowledgeGraph instance. Returns None if unavailable."""
+def _get_kg(cwd=None):
+    """Import and return a project-local KnowledgeGraph. Returns None if unavailable."""
     try:
-        base = os.path.expanduser("~/Documents/mempalace/.venv/lib")
-        matches = glob.glob(os.path.join(base, "python3.*/site-packages"))
-        if not matches:
-            return None
-        if matches[0] not in sys.path:
-            sys.path.insert(0, matches[0])
-        from mempalace.knowledge_graph import KnowledgeGraph
-        return KnowledgeGraph()
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from palace_init import get_project_kg
+        return get_project_kg(cwd)
     except Exception:
         return None
 
@@ -38,8 +32,10 @@ def main():
     except Exception:
         hook_input = {}
 
+    cwd = hook_input.get("cwd", os.getcwd())
+
     try:
-        kg = _get_kg()
+        kg = _get_kg(cwd)
         if kg is None:
             print(json.dumps({}))
             sys.exit(0)
