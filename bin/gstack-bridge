@@ -3,7 +3,16 @@
 # Part of CAF v5.0 Sprint System
 set -euo pipefail
 
-GSTACK_PATH="${HOME}/.claude/skills/gstack"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Discover gstack: git subtree location → standalone install → legacy location
+if [[ -d "${SCRIPT_DIR}/../global-skills/gstack" ]]; then
+  GSTACK_PATH="$(cd "${SCRIPT_DIR}/../global-skills/gstack" && pwd)"
+elif [[ -d "${HOME}/.gstack" ]]; then
+  GSTACK_PATH="${HOME}/.gstack"
+else
+  GSTACK_PATH="${HOME}/.claude/skills/gstack"
+fi
 CACHE_FILE="/tmp/caf_gstack_status.json"
 CACHE_TTL=60
 UPDATE_THRESHOLD_DAYS=7

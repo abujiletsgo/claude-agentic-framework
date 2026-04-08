@@ -17,9 +17,9 @@ lib/                             ← Python utilities (toon_utils.py)
 dashboard/                       ← Textual TUI app
   widgets/                       ← TUI widget modules
 data/                            ← config YAML files
-skills/                          ← skill definitions (sprint, research-*)
-agents/                          ← agent definitions (sprint-lead, code-researcher, academic-researcher)
-hooks/                           ← hook scripts (SessionStart, SubagentStart, SubagentStop)
+global-skills/                   ← skill definitions (sprint, research-*)
+global-agents/                   ← agent definitions (sprint-lead, code-researcher, academic-researcher)
+global-hooks/                    ← hook scripts (SessionStart, SubagentStart, SubagentStop)
 ```
 
 ## Key Rules
@@ -44,16 +44,18 @@ Phase 5 (fully parallel): TOON utils, research agents, research skills
 Phase 6 (depends on all): integration into CAF (caddy, model_tiers, settings.json.template)
 Phase 7: validation
 
-## After Build
+## Fork Architecture
 
-All outputs from this repo need to be copied to their final locations in
-`~/Documents/claude-agentic-framework/`:
-- `bin/*` → `bin/`
-- `data/*` → `data/`
-- `skills/*` → `global-skills/`
-- `agents/*` → `global-agents/`
-- `hooks/*` → `global-hooks/`
-- `lib/*` → `lib/`
-- `dashboard/*` → `dashboard/`
+caf-team is a **private fork** of claude-agentic-framework.
 
-Then run `bash install.sh` in the CAF repo to apply settings changes.
+```
+caf-team (this repo)
+├── upstream remote "caf": claude-agentic-framework (public)
+├── git subtree at global-skills/gstack/: gstack repo (when added)
+└── private additions: sprint system, research agents, configs
+```
+
+### Syncing
+- Pull CAF updates: `git pull caf main`
+- Pull gstack updates: `git subtree pull --prefix=global-skills/gstack gstack main --squash`
+- Never push private sprint/research code to CAF upstream
