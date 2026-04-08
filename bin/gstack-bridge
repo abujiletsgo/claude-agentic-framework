@@ -224,8 +224,10 @@ cmd_check() {
     all_ok=3
   fi
 
-  # 3. Check ~/.gstack/ directory exists
-  if [[ -d "${HOME}/.gstack" ]]; then
+  # 3. Check gstack home — only required for standalone installs, not subtree
+  if [[ "$GSTACK_PATH" == *"global-skills/gstack"* ]]; then
+    printf '[check] gstack source: subtree (OK)\n' >&2
+  elif [[ -d "${HOME}/.gstack" ]]; then
     printf '[check] ~/.gstack/: OK\n' >&2
   else
     printf '[check] ~/.gstack/: MISSING\n' >&2
