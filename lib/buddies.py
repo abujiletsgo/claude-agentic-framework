@@ -1,35 +1,162 @@
-"""Buddy definitions — ASCII art companions for the cteam dashboard."""
+"""Buddy definitions — Animated ASCII art companions for the cteam dashboard.
+
+Each mood has a list of frames that cycle for idle animation.
+Reaction moods have multi-frame sequences that play once then return to idle.
+"""
 
 BUDDIES = {
     "cat": {
         "name": "Neko",
+        # --- Looping animations (cycle continuously) ---
         "idle": [
-            r"  /\_/\  ",
-            r" ( o.o ) ",
-            r"  > ^ <  ",
+            [  # frame 0: neutral
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ^ <  ",
+            ],
+            [  # frame 1: blink
+                r"  /\_/\  ",
+                r" ( -.- ) ",
+                r"  > ^ <  ",
+            ],
+            [  # frame 2: tail right
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ^ < ~",
+            ],
+            [  # frame 3: neutral
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ^ <  ",
+            ],
+            [  # frame 4: tail left
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"~ > ^ <  ",
+            ],
         ],
         "happy": [
-            r"  /\_/\  ",
-            r" ( ^.^ ) ",
-            r"  > ~ <  ",
+            [
+                r"  /\_/\  ",
+                r" ( ^.^ ) ",
+                r"  > ~ <  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( ^.^ ) ",
+                r" ~> ~ <  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( ^.^ ) ",
+                r"  > ~ <~ ",
+            ],
         ],
         "sleep": [
-            r"  /\_/\  ",
-            r" ( -.- ) ",
-            r"  > _ <  ",
-            r"    z z  ",
-        ],
-        "alert": [
-            r"  /\_/\  ",
-            r" ( O.O ) ",
-            r"  > ! <  ",
+            [
+                r"  /\_/\  ",
+                r" ( -.- ) ",
+                r"  > _ <  ",
+                r"         ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( -.- ) ",
+                r"  > _ <  ",
+                r"      z  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( -.- ) ",
+                r"  > _ <  ",
+                r"     z z ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( -.- ) ",
+                r"  > _ <  ",
+                r"    z z z",
+            ],
         ],
         "think": [
-            r"  /\_/\  ",
-            r" ( ?.? ) ",
-            r"  > ~ <  ",
-            r"    ...  ",
+            [
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ~ <  ",
+                r"   .     ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ~ <  ",
+                r"   . .   ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ~ <  ",
+                r"   . . . ",
+            ],
         ],
+        # --- One-shot animations (play once, return to idle) ---
+        "alert": [
+            [  # ears up, eyes wide
+                r"  /!_!\  ",
+                r" ( O.O ) ",
+                r"  > ! <  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( O.O ) ",
+                r"  > ! <  ",
+            ],
+            [  # settles
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ^ <  ",
+            ],
+        ],
+        "pounce": [
+            [  # crouch
+                r"  /\_/\  ",
+                r" ( O.O ) ",
+                r"  >___<  ",
+            ],
+            [  # leap
+                r"    /\_/\ ",
+                r"   ( >.< )",
+                r"  ~/ ^ \~",
+            ],
+            [  # land
+                r"      /\_/\ ",
+                r"     ( ^.^ )",
+                r"      >w<   ",
+            ],
+            [  # return
+                r"  /\_/\  ",
+                r" ( ^.^ ) ",
+                r"  > ^ <  ",
+            ],
+        ],
+        "startle": [
+            [
+                r"  /!\!\  ",
+                r" (O . O) ",
+                r"  >   <  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( O.O ) ",
+                r"  > ! <  ",
+            ],
+            [
+                r"  /\_/\  ",
+                r" ( o.o ) ",
+                r"  > ^ <  ",
+            ],
+        ],
+        # --- Mood → animation type mapping ---
+        "oneshot_moods": ["alert", "pounce", "startle"],
         "messages": {
             "idle": [
                 "purrrr...",
@@ -72,35 +199,132 @@ BUDDIES = {
     "dog": {
         "name": "Byte",
         "idle": [
-            r" /^ ^\  ",
-            r"/ 0  0 \ ",
-            r"V\ == /V ",
-            r"  \__/   ",
+            [
+                r" /^ ^\  ",
+                r"/ 0  0 \ ",
+                r"V\ == /V ",
+                r"  \__/   ",
+            ],
+            [  # blink
+                r" /^ ^\  ",
+                r"/ -  - \ ",
+                r"V\ == /V ",
+                r"  \__/   ",
+            ],
+            [  # pant
+                r" /^ ^\  ",
+                r"/ 0  0 \ ",
+                r"V\ == /V ",
+                r"  \__/ P ",
+            ],
+            [
+                r" /^ ^\  ",
+                r"/ 0  0 \ ",
+                r"V\ == /V ",
+                r"  \__/   ",
+            ],
         ],
         "happy": [
-            r" /^ ^\  ",
-            r"/ ^  ^ \ ",
-            r"V\ == /V ",
-            r"  \__/ ~ ",
+            [
+                r" /^ ^\  ",
+                r"/ ^  ^ \ ",
+                r"V\ == /V ",
+                r"  \__/ ~ ",
+            ],
+            [  # tail other side
+                r" /^ ^\  ",
+                r"/ ^  ^ \ ",
+                r"V\ == /V ",
+                r"~ \__/   ",
+            ],
+            [  # wiggle
+                r"  /^ ^\ ",
+                r" / ^  ^ \ ",
+                r" V\ == /V",
+                r"   \__/ ~",
+            ],
         ],
         "sleep": [
-            r" /v v\  ",
-            r"/ -  - \ ",
-            r"V\ -- /V ",
-            r"  \__/   ",
+            [
+                r" /v v\  ",
+                r"/ -  - \ ",
+                r"V\ -- /V ",
+                r"  \__/   ",
+            ],
+            [
+                r" /v v\  ",
+                r"/ -  - \ ",
+                r"V\ -- /V ",
+                r"  \__/ z ",
+            ],
+            [
+                r" /v v\  ",
+                r"/ -  - \ ",
+                r"V\ -- /V ",
+                r"  \__/z z",
+            ],
         ],
         "alert": [
-            r" /! !\  ",
-            r"/ O  O \ ",
-            r"V\ == /V ",
-            r"  \__/ ! ",
+            [
+                r" /! !\  ",
+                r"/ O  O \ ",
+                r"V\ == /V ",
+                r"  \__/ ! ",
+            ],
+            [
+                r" /^ ^\  ",
+                r"/ O  O \ ",
+                r"V\ == /V ",
+                r"  \__/   ",
+            ],
+            [
+                r" /^ ^\  ",
+                r"/ 0  0 \ ",
+                r"V\ == /V ",
+                r"  \__/   ",
+            ],
         ],
         "think": [
-            r" /^ ^\  ",
-            r"/ o  o \ ",
-            r"V\ .. /V ",
-            r"  \__/   ",
+            [
+                r" /^ ^\  ",
+                r"/ o  o \ ",
+                r"V\ .. /V ",
+                r"  \__/   ",
+            ],
+            [
+                r" /^ ^\  ",
+                r"/ o  o \ ",
+                r"V\ .. /V ",
+                r"  \__/ ? ",
+            ],
         ],
+        "zoomies": [
+            [
+                r"     /^ ^\  ",
+                r"    / ^  ^ \ ",
+                r"   V\ == /V ",
+                r" ~~  \__/   ",
+            ],
+            [
+                r"         /^ ^\ ",
+                r"        / ^  ^ \ ",
+                r"       V\ == /V ",
+                r"   ~~   \__/   ",
+            ],
+            [
+                r"  /^ ^\       ",
+                r" / ^  ^ \     ",
+                r" V\ == /V     ",
+                r"   \__/   ~~  ",
+            ],
+            [
+                r" /^ ^\  ",
+                r"/ ^  ^ \ ",
+                r"V\ == /V ",
+                r"  \__/ ~ ",
+            ],
+        ],
+        "oneshot_moods": ["alert", "zoomies"],
         "messages": {
             "idle": [
                 "*wag wag*",
@@ -141,30 +365,81 @@ BUDDIES = {
     "owl": {
         "name": "Sage",
         "idle": [
-            r" {o,o} ",
-            r" |)__) ",
-            r' -"-"- ',
+            [
+                r" {o,o} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [  # blink
+                r" {-,-} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [
+                r" {o,o} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [  # head tilt
+                r"  {o,o}",
+                r"  |)__)",
+                r'  -"-"-',
+            ],
         ],
         "happy": [
-            r" {^,^} ",
-            r" |)__) ",
-            r' -"-"- ',
+            [
+                r" {^,^} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [  # ruffle
+                r" {^,^} ",
+                r" |)~~) ",
+                r' -"-"- ',
+            ],
         ],
         "sleep": [
-            r" {-,-} ",
-            r" |)__) ",
-            r' -"-"- ',
+            [
+                r" {-,-} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [
+                r" {-,-} ",
+                r" |)__) ",
+                r' -"-"-z',
+            ],
         ],
         "alert": [
-            r" {O,O} ",
-            r" |)__) ",
-            r' -"-"- ',
+            [
+                r" {O,O} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [  # head spin
+                r" {O,O} ",
+                r" (__(| ",
+                r' -"-"- ',
+            ],
+            [
+                r" {o,o} ",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
         ],
         "think": [
-            r" {o,o}?",
-            r" |)__) ",
-            r' -"-"- ',
+            [
+                r" {o,o}?",
+                r" |)__) ",
+                r' -"-"- ',
+            ],
+            [
+                r" {o,o} ",
+                r" |)__)?",
+                r' -"-"- ',
+            ],
         ],
+        "oneshot_moods": ["alert"],
         "messages": {
             "idle": [
                 "hoo...",
@@ -203,40 +478,160 @@ BUDDIES = {
     "ghost": {
         "name": "Cinder",
         "idle": [
-            r"   ___  ",
-            r"  / o \ ",
-            r" | . . |",
-            r"  \___/ ",
-            r"   ~~~  ",
+            [
+                r"   ___  ",
+                r"  / o \ ",
+                r" | . . |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [  # flicker
+                r"   ___  ",
+                r"  /   \ ",
+                r" | o.o |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [  # drift right
+                r"    ___ ",
+                r"   / o \ ",
+                r"  | . . |",
+                r"   \___/",
+                r"    ~~~ ",
+            ],
+            [  # back
+                r"   ___  ",
+                r"  / o \ ",
+                r" | . . |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [  # drift left
+                r"  ___   ",
+                r" / o \  ",
+                r"| . . | ",
+                r" \___/  ",
+                r"  ~~~   ",
+            ],
         ],
         "happy": [
-            r"   ___  ",
-            r"  / ^ \ ",
-            r" | ^.^ |",
-            r"  \___/ ",
-            r"   ~~~  ",
+            [
+                r"   ___  ",
+                r"  / ^ \ ",
+                r" | ^.^ |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [  # float up
+                r"   ___  ",
+                r"  / ^ \ ",
+                r" | ^.^ |",
+                r"  \___/ ",
+                r"        ",
+                r"   ~~~  ",
+            ],
+            [  # float down
+                r"        ",
+                r"   ___  ",
+                r"  / ^ \ ",
+                r" | ^.^ |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
         ],
         "sleep": [
-            r"   ___  ",
-            r"  / _ \ ",
-            r" | -.- |",
-            r"  \___/ ",
-            r"   ~~~  ",
+            [
+                r"   ___  ",
+                r"  / _ \ ",
+                r" | -.- |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [  # fade
+                r"   ___  ",
+                r"  /   \ ",
+                r" | -.- |",
+                r"  \___/ ",
+                r"   ...  ",
+            ],
         ],
         "alert": [
-            r"   ___  ",
-            r"  / ! \ ",
-            r" | O O |",
-            r"  \___/ ",
-            r"   ~~~  ",
+            [  # bright flash
+                r"  *___* ",
+                r" */ ! \*",
+                r"*| O O |*",
+                r" *\___/*",
+                r"   ~~~  ",
+            ],
+            [
+                r"   ___  ",
+                r"  / ! \ ",
+                r" | O O |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [
+                r"   ___  ",
+                r"  / o \ ",
+                r" | . . |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
         ],
         "think": [
-            r"   ___  ",
-            r"  / ? \ ",
-            r" | o.o |",
-            r"  \___/ ",
-            r"   ~~.  ",
+            [
+                r"   ___  ",
+                r"  / ? \ ",
+                r" | o.o |",
+                r"  \___/ ",
+                r"   ~~.  ",
+            ],
+            [
+                r"   ___  ",
+                r"  / ? \ ",
+                r" | o.o |",
+                r"  \___/ ",
+                r"   ~..  ",
+            ],
         ],
+        "phase": [
+            [  # going transparent
+                r"   ___  ",
+                r"  / o \ ",
+                r" | . . |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+            [
+                r"   . .  ",
+                r"  .   . ",
+                r" .  .  .",
+                r"  . . . ",
+                r"   . .  ",
+            ],
+            [  # gone
+                r"        ",
+                r"        ",
+                r"    .   ",
+                r"        ",
+                r"        ",
+            ],
+            [  # reappear
+                r"   . .  ",
+                r"  .   . ",
+                r" .  .  .",
+                r"  . . . ",
+                r"   . .  ",
+            ],
+            [
+                r"   ___  ",
+                r"  / o \ ",
+                r" | . . |",
+                r"  \___/ ",
+                r"   ~~~  ",
+            ],
+        ],
+        "oneshot_moods": ["alert", "phase"],
         "messages": {
             "idle": [
                 "*floats quietly*",
@@ -275,30 +670,113 @@ BUDDIES = {
     "robot": {
         "name": "Chip",
         "idle": [
-            r" [._.]  ",
-            r" /|__|\ ",
-            r"  d  b  ",
+            [
+                r" [._.]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [  # antenna blink
+                r" [._.]° ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [
+                r" [._.]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [  # shift weight
+                r" [._.]  ",
+                r" /|__|\ ",
+                r"  d   b ",
+            ],
         ],
         "happy": [
-            r" [^.^]  ",
-            r" /|__|\ ",
-            r"  d  b  ",
+            [
+                r" [^.^]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [  # arms up
+                r" [^.^]  ",
+                r"\|__|/  ",
+                r"  d  b  ",
+            ],
+            [
+                r" [^.^]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
         ],
         "sleep": [
-            r" [-.-]  ",
-            r" /|__|\ ",
-            r"  d  b  ",
+            [
+                r" [-.-]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [
+                r" [-.-]  ",
+                r" /|__|\ ",
+                r"  d  b z",
+            ],
         ],
         "alert": [
-            r" [!.!]  ",
-            r" /|__|\ ",
-            r"  d  b  ",
+            [  # alarm
+                r"![!.!]! ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [
+                r" [!.!]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [
+                r" [._.]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
         ],
         "think": [
-            r" [o.o]? ",
-            r" /|__|\ ",
-            r"  d  b  ",
+            [
+                r" [o.o]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+            [  # processing
+                r" [o.o]  ",
+                r" /|##|\ ",
+                r"  d  b  ",
+            ],
+            [
+                r" [o.o]? ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
         ],
+        "dance": [
+            [
+                r" [^.^]  ",
+                r"\|__|/  ",
+                r" d    b ",
+            ],
+            [
+                r"  [^.^] ",
+                r" /|__|\  ",
+                r"  d  b  ",
+            ],
+            [
+                r" [^.^]  ",
+                r"\|__|/  ",
+                r"  b    d",
+            ],
+            [
+                r" [^.^]  ",
+                r" /|__|\ ",
+                r"  d  b  ",
+            ],
+        ],
+        "oneshot_moods": ["alert", "dance"],
         "messages": {
             "idle": [
                 "beep boop",
@@ -334,6 +812,25 @@ BUDDIES = {
             ],
         },
     },
+}
+
+# State → mood + animation type mapping
+STATE_MOOD_MAP = {
+    "idle":         ("idle", "loop"),
+    "sprint_start": ("alert", "oneshot"),
+    "sprint_done":  ("happy", "loop"),
+    "sprint_fail":  ("alert", "oneshot"),
+    "build":        ("think", "loop"),
+    "long_idle":    ("sleep", "loop"),
+}
+
+# Special reaction animations per buddy (triggered on state change)
+STATE_REACTION_MAP = {
+    "cat":   {"sprint_start": "pounce",   "sprint_fail": "startle"},
+    "dog":   {"sprint_start": "zoomies",  "sprint_done": "zoomies"},
+    "ghost": {"sprint_fail":  "phase",    "long_idle": "phase"},
+    "robot": {"sprint_done":  "dance",    "sprint_start": "dance"},
+    "owl":   {},
 }
 
 BUDDY_LIST = list(BUDDIES.keys())
