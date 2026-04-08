@@ -40,7 +40,7 @@ user-invocable: true
    - **Python**: `pyproject.toml`, `uv.lock`, `setup.py`, `setup.cfg`, `requirements.txt`, `*.toml` (root-level), `*.lock` (root-level)
    - **Rust**: `Cargo.toml`, `Cargo.lock`
    - **Node**: `package.json`, `package-lock.json`, `yarn.lock`, `tsconfig.json`
-   - **Framework-specific**: `ADMIN.md`, `QUICKSTART.md`, `FRAMEWORK_REFERENCE.md`, `install.sh`, `uninstall.sh`
+   - **Framework-specific**: `ADMIN.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `install.sh`, `uninstall.sh`
    - **Entry points**: any file explicitly listed in CLAUDE.md's structure as belonging in root (e.g., `bot.py`, `monitor.py`, `dashboard.py`, `app.py`, `main.py`, `manage.py`)
    - **Dotfiles**: any file starting with `.` (e.g., `.env`, `.editorconfig`, `.prettierrc`)
    
@@ -116,7 +116,7 @@ PROTECTED="README.md CLAUDE.md .gitignore .DS_Store Makefile Dockerfile justfile
 PROTECTED="$PROTECTED pyproject.toml uv.lock setup.py setup.cfg requirements.txt"
 PROTECTED="$PROTECTED Cargo.toml Cargo.lock package.json package-lock.json yarn.lock tsconfig.json"
 # Framework-specific
-PROTECTED="$PROTECTED ADMIN.md QUICKSTART.md FRAMEWORK_REFERENCE.md install.sh uninstall.sh"
+PROTECTED="$PROTECTED ADMIN.md QUICKSTART.md CONTRIBUTING.md install.sh uninstall.sh"
 
 # Add files from CLAUDE.md that are explicitly listed at root level
 # (Parse the structure section for files without a directory prefix)
@@ -153,7 +153,7 @@ ls -1 . | while read f; do
     README.md|CLAUDE.md|.gitignore|Makefile|Dockerfile|justfile|LICENSE) continue;;
     pyproject.toml|uv.lock|setup.py|setup.cfg|requirements.txt) continue;;
     Cargo.toml|Cargo.lock|package.json|package-lock.json|yarn.lock|tsconfig.json) continue;;
-    ADMIN.md|QUICKSTART.md|FRAMEWORK_REFERENCE.md|install.sh|uninstall.sh) continue;;
+    ADMIN.md|QUICKSTART.md|CONTRIBUTING.md|install.sh|uninstall.sh) continue;;
     *.toml|*.lock) continue;;           # Root-level config files
   esac
   

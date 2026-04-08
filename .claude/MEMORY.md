@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (08:09 UTC) · @Tom Kwon
-**Commit:** docs: warn about moving framework directory breaking all tools (9e946e6) by Tom Kwon
-**Changed:**
-  ADMIN.md  | 41 +++++++++++++++++++++++++++++++++++++++++
-  CLAUDE.md |  1 +
-  2 files changed, 42 insertions(+)
-
 ## 2026-02-25 (08:16 UTC) · @Tom Kwon
 **Commit:** docs: auto-regenerate from repo state (483dfd1) by Tom Kwon
 **Changed:**
@@ -298,3 +291,18 @@
   install.sh                       |  9 ++++++-
   templates/settings.json.template | 51 +++++++++++++++++++++-------------------
   3 files changed, 41 insertions(+), 34 deletions(-)
+
+## 2026-04-08 (10:24 UTC) · @Tom Kwon
+**Commit:** feat: 8 new Rust hooks, /doctor diagnostic (22 checks), token optimization (1966f33) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                              |  19 +-
+  CLAUDE.md                                      |   4 +-
+  README.md                                      |  10 +-
+  caf-hooks/src/hooks/audit_config_change.rs     | 121 ++++
+  caf-hooks/src/hooks/auto_error_analyzer.rs     |   9 +-
+  caf-hooks/src/hooks/auto_escalate.rs           | 242 +++++++
+  caf-hooks/src/hooks/auto_fact_extractor.rs     | 534 +++++++++++++++
+  caf-hooks/src/hooks/doctor.rs                  | 882 +++++++++++++++++++++++++
+  caf-hooks/src/hooks/enforce_orchestrate.rs     |  22 +-
+  caf-hooks/src/hooks/epistemic_guard.rs         |  24 +
+  ... and 17 more files

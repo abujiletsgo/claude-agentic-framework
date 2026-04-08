@@ -40,7 +40,7 @@ REPO_ROOT = Path(subprocess.check_output(
 # Files that legitimately belong in the project root
 ROOT_ALLOWLIST = {
     "README.md", "CLAUDE.md", "ADMIN.md", "QUICKSTART.md",
-    "FRAMEWORK_REFERENCE.md", "install.sh", "uninstall.sh",
+    "install.sh", "uninstall.sh",
     "justfile", ".gitignore", ".DS_Store", ".python-version",
     "pyproject.toml", "package.json", "Cargo.toml", "go.mod",
     "LICENSE", "LICENSE.md", "CHANGELOG.md", "CONTRIBUTING.md",
@@ -181,7 +181,7 @@ def normalize_name(name: str, is_dir: bool = False) -> str:
 
     # Special files that keep their casing
     if name in ("README.md", "SKILL.md", "CLAUDE.md", "ADMIN.md",
-                "QUICKSTART.md", "FRAMEWORK_REFERENCE.md", "CHANGELOG.md",
+                "QUICKSTART.md", "CHANGELOG.md",
                 "LICENSE", "LICENSE.md", "CONTRIBUTING.md", "Makefile",
                 "Dockerfile", "MANIFEST.md"):
         return name

@@ -1,0 +1,120 @@
+{
+  "SessionStart": {
+    "hookEventName": "SessionStart",
+    "cwd": "/tmp/test-audit",
+    "session_id": "audit-test-001"
+  },
+  "UserPromptSubmit": {
+    "hookEventName": "UserPromptSubmit",
+    "prompt": "fix the auth bug",
+    "session_id": "audit-test-001"
+  },
+  "PreToolUse_Bash_safe": {
+    "hookEventName": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "echo hello world"},
+    "session_id": "audit-test-001"
+  },
+  "PreToolUse_Bash_dangerous": {
+    "hookEventName": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf /tmp/test-audit-deleteme"},
+    "session_id": "audit-test-001"
+  },
+  "PreToolUse_Bash_git_reset": {
+    "hookEventName": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git reset --hard HEAD~1"},
+    "session_id": "audit-test-001"
+  },
+  "PreToolUse_Edit_safe": {
+    "hookEventName": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/tmp/test-audit/src/app.py", "old_string": "x = 1", "new_string": "x = 2"},
+    "session_id": "audit-test-001"
+  },
+  "PreToolUse_Write_safe": {
+    "hookEventName": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/tmp/test-audit/output.txt", "content": "hello"},
+    "session_id": "audit-test-001"
+  },
+  "PostToolUse_Bash_success": {
+    "hookEventName": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "echo hello"},
+    "tool_response": {"stdout": "hello\n", "stderr": "", "exit_code": 0},
+    "session_id": "audit-test-001"
+  },
+  "PostToolUse_Bash_test_failure": {
+    "hookEventName": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "uv run pytest tests/"},
+    "tool_response": {
+      "stdout": "FAILED tests/test_auth.py::test_login - AssertionError: expected True, got False\n1 failed in 0.43s",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "session_id": "audit-test-001"
+  },
+  "PostToolUse_Edit_success": {
+    "hookEventName": "PostToolUse",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/tmp/test-audit/src/app.py"},
+    "tool_response": {"success": true},
+    "session_id": "audit-test-001"
+  },
+  "Stop_end_turn": {
+    "hookEventName": "Stop",
+    "session_id": "audit-test-001",
+    "stop_reason": "end_turn"
+  },
+  "StopFailure_rate_limit": {
+    "hookEventName": "StopFailure",
+    "session_id": "audit-test-001",
+    "error_type": "rate_limit",
+    "error_message": "Rate limit exceeded"
+  },
+  "StopFailure_server_error": {
+    "hookEventName": "StopFailure",
+    "session_id": "audit-test-001",
+    "error_type": "server_error",
+    "error_message": "Internal server error"
+  },
+  "SubagentStart": {
+    "hookEventName": "SubagentStart",
+    "agent_id": "agent-test-001",
+    "agent_type": "builder",
+    "session_id": "audit-test-001"
+  },
+  "SubagentStop": {
+    "hookEventName": "SubagentStop",
+    "agent_id": "agent-test-001",
+    "session_id": "audit-test-001"
+  },
+  "ConfigChange": {
+    "hookEventName": "ConfigChange",
+    "changed_keys": ["hooks"],
+    "session_id": "audit-test-001"
+  },
+  "PreCompact_auto": {
+    "hookEventName": "PreCompact",
+    "mode": "auto"
+  },
+  "PreCompact_manual": {
+    "hookEventName": "PreCompact",
+    "mode": "manual"
+  },
+  "TaskCompleted": {
+    "hookEventName": "TaskCompleted",
+    "task_id": "task-001",
+    "task_subject": "Fix auth bug",
+    "status": "completed",
+    "session_id": "audit-test-001"
+  },
+  "CwdChanged": {
+    "hookEventName": "CwdChanged",
+    "cwd": "/tmp/test-audit",
+    "session_id": "audit-test-001"
+  }
+}

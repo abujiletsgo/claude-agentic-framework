@@ -189,7 +189,7 @@ User prompt → [Caddy classifies task] → Claude processes
 → Session start → [Inject past learnings + RepoMap for large repos]
 ```
 
-See `FRAMEWORK_REFERENCE.md` for the complete technical reference.
+See `docs/framework-guide-ko.html` for the complete framework guide.
 
 ## What Fires When
 
@@ -291,7 +291,7 @@ The installer:
 
 | File | Contents |
 |------|---------|
-| `FRAMEWORK_REFERENCE.md` | Complete technical reference — start here as a new installer |
+| `docs/framework-guide-ko.html` | Complete framework guide — start here as a new installer |
 | `CLAUDE.md` | Claude Code execution protocol |
 | `global-hooks/damage-control/README.md` | What commands are blocked and why |
 | `global-hooks/framework/caddy/INTEGRATION.md` | Caddy classifier architecture |
