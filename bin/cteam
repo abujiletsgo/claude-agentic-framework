@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# cteam — Launch CAF Team workspace with tmux dashboard + session sidebar
+# cteam — Launch CAF Team workspace with tmux dashboard + session sidebar + buddy
 set -euo pipefail
 
 SESSION="caf-team"
 CAF_DIR="${HOME}/Documents/caf-team"
 SIDEBAR="${CAF_DIR}/bin/cteam-sidebar"
 BUDDY="${CAF_DIR}/bin/cteam-buddy"
-DASHBOARD="${CAF_DIR}/dashboard/sprint_tui.py"
 
 # Already inside this session? Just restart dashboard pane if needed.
 if [[ "${TMUX_SESSION:-}" == "$SESSION" ]]; then
@@ -23,32 +22,37 @@ fi
 # │                      │  Sessions   │
 # │    Claude Code       │  (sidebar)  │
 # │    (main)            ├─────────────┤
-# │                      │  🐱 Buddy   │
+# │                      │  Buddy      │
 # ├──────────────────────┴─────────────┤
-# │  Dashboard / Sprint TUI            │
+# │  Dashboard                         │
 # └────────────────────────────────────┘
 
-# Create session with main pane
+# Step 1: Create session — single pane (will become top-left / Claude)
 tmux new-session -d -s "$SESSION" -c "$CAF_DIR" -x "$(tput cols)" -y "$(tput lines)"
 
-# Bottom pane: dashboard (25% height, full width)
-tmux split-window -t "$SESSION:0.0" -v -l '25%' -c "$CAF_DIR" \
+# Step 2: Split bottom for dashboard (25% height)
+# Layout: [main] on top, [dashboard] on bottom
+tmux split-window -t "${SESSION}:0" -v -l '25%' -c "$CAF_DIR" \
   "python3 ${CAF_DIR}/bin/cteam-dashboard"
 
-# Right sidebar: session manager (22% width, top area only)
-tmux split-window -t "$SESSION:0.0" -h -l '22%' -c "$CAF_DIR" \
+# Step 3: Split the top pane (main) horizontally for sidebar (22% width)
+# Target pane 0 = top pane (main). After split: [main | sidebar] on top, [dashboard] on bottom
+tmux split-window -t "${SESSION}:0.0" -h -l '22%' -c "$CAF_DIR" \
   "python3 ${SIDEBAR}"
 
-# Buddy pane: below sidebar (30% of right column height)
-tmux split-window -t "$SESSION:0.1" -v -l '30%' -c "$CAF_DIR" \
+# Step 4: Now panes are: 0=main, 1=sidebar, 2=dashboard
+# Split the SIDEBAR pane vertically for buddy (40% of sidebar height)
+tmux split-window -t "${SESSION}:0.1" -v -l '40%' -c "$CAF_DIR" \
   "python3 ${BUDDY}"
 
-# Enable mouse (clickable panes, sidebar, scroll)
+# Now panes are: 0=main(claude), 1=sidebar, 2=buddy, 3=dashboard
+
+# Enable mouse
 tmux set-option -t "$SESSION" -g mouse on
 
-# Select main pane (top-left) and launch Claude
-tmux select-pane -t "$SESSION:0.0"
-tmux send-keys -t "$SESSION:0.0" "claude" Enter
+# Launch Claude in the main pane
+tmux select-pane -t "${SESSION}:0.0"
+tmux send-keys -t "${SESSION}:0.0" "claude" Enter
 
 # Set env for sprint system
 tmux set-environment -t "$SESSION" CAF_DIR "$CAF_DIR"

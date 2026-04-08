@@ -1,5 +1,5 @@
 SprintTUI {
-    background: #1a1a1a;
+    background: transparent;
 }
 
 #main-panels {
@@ -8,39 +8,37 @@ SprintTUI {
 
 #lead-panel {
     width: 30%;
-    border: solid #333;
+    border: tall $accent;
 }
 
 #log-viewer {
     width: 42%;
-    border: solid #333;
+    border: tall $accent;
 }
 
 #report-panel {
     width: 28%;
-    border: solid #333;
+    border: tall $accent;
 }
 
 #wave-progress {
     height: 5;
-    background: #111;
-    border-top: solid #444;
+    background: transparent;
+    border-top: tall $accent;
     padding: 0 1;
 }
 
 .panel-title {
     text-align: center;
-    background: #2a2a2a;
-    color: #999;
+    background: transparent;
     text-style: bold;
     height: 1;
 }
 
 #log-filter {
     height: 1;
-    background: #222;
-    border: solid #555;
-    color: #ccc;
+    background: transparent;
+    border: tall $accent;
 }
 
 .wave-container {
@@ -50,13 +48,12 @@ SprintTUI {
 
 .wave-label {
     text-align: center;
-    color: #888;
+    text-style: dim;
     height: 1;
 }
 
 DataTable {
-    background: #1a1a1a;
-    color: #ccc;
+    background: transparent;
 }
 
 ProgressBar {
