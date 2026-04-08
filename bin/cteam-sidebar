@@ -1,247 +1,436 @@
-#!/usr/bin/env bash
-# cteam-sidebar — Interactive session/project manager panel
-set -euo pipefail
+#!/usr/bin/env python3
+"""cteam-sidebar — Clickable session/project manager panel for tmux."""
+import curses
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
-CAF_DIR="${HOME}/Documents/caf-team"
-SESSIONS_FILE="${CAF_DIR}/.claude/sessions.json"
-PROJECTS_FILE="${CAF_DIR}/.claude/projects.json"
+CAF_DIR = Path.home() / "Documents" / "caf-team"
+SESSIONS_FILE = CAF_DIR / ".claude" / "sessions.json"
+PROJECTS_FILE = CAF_DIR / ".claude" / "projects.json"
+SPRINT_DIR = Path("/tmp/caf_sprint")
 
-# Ensure files exist
-mkdir -p "$(dirname "$SESSIONS_FILE")"
-[[ -f "$SESSIONS_FILE" ]] || printf '{}\n' > "$SESSIONS_FILE"
-[[ -f "$PROJECTS_FILE" ]] || cat > "$PROJECTS_FILE" <<'EOF'
-[
-  {"key": "1", "name": "caf-team", "path": "~/Documents/caf-team"},
-  {"key": "2", "name": "caf (upstream)", "path": "~/Documents/claude-agentic-framework"},
-  {"key": "3", "name": "gstack", "path": "~/Documents/caf-team/global-skills/gstack"}
+DEFAULT_PROJECTS = [
+    {"key": "1", "name": "caf-team", "path": "~/Documents/caf-team"},
+    {"key": "2", "name": "caf (upstream)", "path": "~/Documents/claude-agentic-framework"},
+    {"key": "3", "name": "gstack", "path": "~/Documents/caf-team/global-skills/gstack"},
 ]
-EOF
 
-_expand() { eval echo "$1"; }
 
-_refresh() {
-  clear
-  printf '\033[1m  CAF Sessions\033[0m\n'
-  printf '  ─────────────────────────\n'
+def ensure_files():
+    SESSIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not SESSIONS_FILE.exists():
+        SESSIONS_FILE.write_text("{}\n")
+    if not PROJECTS_FILE.exists():
+        PROJECTS_FILE.write_text(json.dumps(DEFAULT_PROJECTS, indent=2) + "\n")
 
-  tmux list-windows -F '#{window_index}|#{window_name}|#{window_active}|#{pane_current_command}' 2>/dev/null | while IFS='|' read -r idx name active cmd; do
-    local marker=" "
-    [[ "$active" == "1" ]] && marker=">"
 
-    # Look up custom label + project
-    local info
-    info="$(python3 -c "
-import json
-try:
-    d = json.load(open('$SESSIONS_FILE'))
-    e = d.get(str($idx), {})
-    if isinstance(e, str): print(e + '||')  # legacy: just a name
-    else: print(e.get('name','') + '|' + e.get('project','') + '|')
-except: print('||')
-" 2>/dev/null)" || info="||"
+def load_json(path, default=None):
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return default if default is not None else {}
 
-    local label project
-    label="$(echo "$info" | cut -d'|' -f1)"
-    project="$(echo "$info" | cut -d'|' -f2)"
 
-    if [[ -n "$label" ]]; then
-      if [[ -n "$project" ]]; then
-        printf '  %s \033[36m%s\033[0m  \033[1m%s\033[0m \033[2m[%s]\033[0m\n' "$marker" "$idx" "$label" "$project"
-      else
-        printf '  %s \033[36m%s\033[0m  \033[1m%s\033[0m \033[2m(%s)\033[0m\n' "$marker" "$idx" "$label" "$cmd"
-      fi
-    else
-      printf '  %s \033[36m%s\033[0m  %s \033[2m(%s)\033[0m\n' "$marker" "$idx" "$name" "$cmd"
-    fi
-  done
+def save_json(path, data):
+    path.write_text(json.dumps(data, indent=2) + "\n")
 
-  printf '\n  ─────────────────────────\n'
-  printf '  \033[2m[n]ew session  [r]ename\033[0m\n'
-  printf '  \033[2m[d]elete      [p]rojects\033[0m\n'
-  printf '  \033[2m[0-9] switch  [q]uit\033[0m\n'
-  printf '  ─────────────────────────\n'
 
-  # Sprint status
-  local sprint_dir="/tmp/caf_sprint"
-  if [[ -d "$sprint_dir" ]]; then
-    local found=0
-    local sprint_id
-    for sprint_id in "$sprint_dir"/*/; do
-      [[ -f "${sprint_id}status.json" ]] || continue
-      found=1
-      local sid
-      sid="$(basename "$sprint_id")"
-      printf '\n  \033[33m⚡ Sprint: %s\033[0m\n' "$sid"
-      python3 -c "
-import json
-try:
-    d = json.load(open('${sprint_id}status.json'))
-    for role, info in d.items():
-        st = info.get('status', '?')
-        sym = {'running':'●','done':'✓','failed':'✗'}.get(st, '○')
-        print(f'    {sym} {role}: {st}')
-except: pass
-" 2>/dev/null || true
-    done
-    (( found )) || true
-  fi
-}
+def tmux(*args):
+    try:
+        return subprocess.run(
+            ["tmux", *args], capture_output=True, text=True, timeout=3
+        ).stdout.strip()
+    except Exception:
+        return ""
 
-_pick_project() {
-  printf '\n  \033[1mSelect project:\033[0m\n'
-  python3 -c "
-import json
-try:
-    projects = json.load(open('$PROJECTS_FILE'))
-    for p in projects:
-        print(f\"  [{p['key']}] {p['name']}  \033[2m{p['path']}\033[0m\")
-except: pass
-" 2>/dev/null || true
-  printf '  [c] custom path\n'
-  printf '  > '
-  read -rsn1 choice
 
-  if [[ "$choice" == "c" ]]; then
-    printf '\n  Path: '
-    read -r custom_path
-    _expand "$custom_path"
-    return
-  fi
+def get_windows():
+    raw = tmux("list-windows", "-F", "#{window_index}|#{window_name}|#{window_active}|#{pane_current_command}")
+    if not raw:
+        return []
+    windows = []
+    sessions = load_json(SESSIONS_FILE, {})
+    for line in raw.splitlines():
+        parts = line.split("|", 3)
+        if len(parts) < 4:
+            continue
+        idx, name, active, cmd = parts
+        info = sessions.get(idx, {})
+        if isinstance(info, str):
+            info = {"name": info, "project": ""}
+        windows.append({
+            "idx": idx,
+            "name": info.get("name") or name,
+            "project": info.get("project", ""),
+            "active": active == "1",
+            "cmd": cmd,
+        })
+    return windows
 
-  # Look up project by key
-  local path
-  path="$(python3 -c "
-import json
-try:
-    projects = json.load(open('$PROJECTS_FILE'))
-    for p in projects:
-        if p['key'] == '$choice':
-            print(p['path'])
-            break
-except: pass
-" 2>/dev/null)" || path=""
 
-  if [[ -n "$path" ]]; then
-    _expand "$path"
-  else
-    echo "$CAF_DIR"
-  fi
-}
+def get_sprints():
+    sprints = []
+    if not SPRINT_DIR.is_dir():
+        return sprints
+    for d in SPRINT_DIR.iterdir():
+        status_file = d / "status.json"
+        if status_file.exists():
+            try:
+                data = json.loads(status_file.read_text())
+                sprints.append({"id": d.name, "leads": data})
+            except Exception:
+                pass
+    return sprints
 
-_save_session() {
-  local idx="$1" name="$2" project="${3:-}"
-  python3 -c "
-import json
-f = '$SESSIONS_FILE'
-try: d = json.load(open(f))
-except: d = {}
-d[str($idx)] = {'name': '$name', 'project': '$project'}
-json.dump(d, open(f, 'w'), indent=2)
-" 2>/dev/null || true
-}
 
-_new_window() {
-  printf '  Session name: '
-  read -r label
+def expand_path(p):
+    return str(Path(os.path.expanduser(p)).resolve())
 
-  local project_path project_name
-  project_path="$(_pick_project)"
-  project_name="$(basename "$project_path")"
 
-  [[ -d "$project_path" ]] || { printf '  \033[31mPath not found: %s\033[0m\n' "$project_path"; sleep 1; return; }
+class Sidebar:
+    def __init__(self, stdscr):
+        self.stdscr = stdscr
+        self.selected = 0
+        self.mode = "main"  # main, new_session, projects, rename
+        self.input_buf = ""
+        self.input_label = ""
+        self.input_callback = None
+        self.new_session_name = ""
+        self.new_session_project = ""
+        self.message = ""
+        self.message_timer = 0
 
-  local idx
-  idx="$(tmux new-window -t caf-team -c "$project_path" -P -F '#{window_index}')"
+    def run(self):
+        curses.curs_set(0)
+        curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+        curses.mouseinterval(0)
+        self.stdscr.timeout(2000)  # refresh every 2s
+        # Enable mouse tracking
+        print("\033[?1003h", end="", flush=True)
 
-  local display_name="${label:-$project_name}"
-  tmux rename-window -t "caf-team:${idx}" "$display_name"
-  _save_session "$idx" "$display_name" "$project_name"
+        # Colors
+        curses.start_color()
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_CYAN, -1)     # index
+        curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)  # selected
+        curses.init_pair(3, curses.COLOR_YELLOW, -1)    # sprint
+        curses.init_pair(4, curses.COLOR_GREEN, -1)     # done
+        curses.init_pair(5, curses.COLOR_RED, -1)       # failed
+        curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_WHITE)  # button
+        curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_GREEN)  # active button
+        curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_CYAN)   # hover
 
-  # Auto-launch claude in the new window
-  tmux send-keys -t "caf-team:${idx}" "claude" Enter
-}
+        while True:
+            try:
+                self.draw()
+                key = self.stdscr.getch()
+                if key == -1:
+                    continue
+                self.handle_input(key)
+            except KeyboardInterrupt:
+                break
+            except curses.error:
+                pass
 
-_rename_window() {
-  printf '  Window #: '
-  read -r idx
-  printf '  New name: '
-  read -r label
-  if [[ -n "$idx" && -n "$label" ]]; then
-    tmux rename-window -t "caf-team:${idx}" "$label" 2>/dev/null || true
-    # Preserve project info
-    local project
-    project="$(python3 -c "
-import json
-try:
-    d = json.load(open('$SESSIONS_FILE'))
-    e = d.get(str($idx), {})
-    print(e.get('project','') if isinstance(e, dict) else '')
-except: print('')
-" 2>/dev/null)" || project=""
-    _save_session "$idx" "$label" "$project"
-  fi
-}
+    def draw(self):
+        self.stdscr.erase()
+        h, w = self.stdscr.getmaxyx()
+        self.clickable = []  # (y, x_start, x_end, action, data)
 
-_del_window() {
-  printf '  Window # to close: '
-  read -r idx
-  if [[ -n "$idx" ]]; then
-    tmux kill-window -t "caf-team:${idx}" 2>/dev/null || printf '  (not found)\n'
-    python3 -c "
-import json
-f = '$SESSIONS_FILE'
-try: d = json.load(open(f))
-except: d = {}
-d.pop(str($idx), None)
-json.dump(d, open(f, 'w'), indent=2)
-" 2>/dev/null || true
-  fi
-}
+        if self.mode == "main":
+            self.draw_main(h, w)
+        elif self.mode == "projects":
+            self.draw_projects(h, w)
+        elif self.mode == "input":
+            self.draw_input(h, w)
 
-_manage_projects() {
-  printf '\n  \033[1mProjects:\033[0m\n'
-  python3 -c "
-import json
-try:
-    projects = json.load(open('$PROJECTS_FILE'))
-    for p in projects:
-        print(f\"  [{p['key']}] {p['name']}  \033[2m{p['path']}\033[0m\")
-except: pass
-" 2>/dev/null || true
-  printf '\n  [a]dd  [b]ack\n  > '
-  read -rsn1 choice
-  if [[ "$choice" == "a" ]]; then
-    printf '\n  Name: '
-    read -r pname
-    printf '  Path: '
-    read -r ppath
-    printf '  Key (single char): '
-    read -rsn1 pkey
-    python3 -c "
-import json
-f = '$PROJECTS_FILE'
-try: projects = json.load(open(f))
-except: projects = []
-projects.append({'key': '$pkey', 'name': '$pname', 'path': '$ppath'})
-json.dump(projects, open(f, 'w'), indent=2)
-" 2>/dev/null || true
-    printf '\n  Added.\n'
-    sleep 0.5
-  fi
-}
+        self.stdscr.refresh()
 
-# Main loop
-while true; do
-  _refresh
-  printf '\n  > '
-  read -rsn1 key
-  case "$key" in
-    n) _new_window ;;
-    r) _rename_window ;;
-    d) _del_window ;;
-    p) _manage_projects ;;
-    q) exit 0 ;;
-    [0-9]) tmux select-window -t "caf-team:${key}" 2>/dev/null || true ;;
-    *) ;; # refresh
-  esac
-done
+    def draw_main(self, h, w):
+        y = 0
+        # Header
+        self.safe_addstr(y, 1, " Sessions ", curses.A_BOLD | curses.A_REVERSE)
+        y += 2
+
+        windows = get_windows()
+        for i, win in enumerate(windows):
+            if y >= h - 10:
+                break
+            marker = "▸" if win["active"] else " "
+            attr = curses.color_pair(2) | curses.A_BOLD if i == self.selected else curses.A_NORMAL
+
+            label = f" {marker} {win['idx']}  {win['name']}"
+            if win["project"]:
+                label += f"  [{win['project']}]"
+
+            self.safe_addstr(y, 0, label.ljust(w), attr)
+            self.clickable.append((y, 0, w, "select_window", {"index": i, "win_idx": win["idx"]}))
+            y += 1
+
+        # Buttons
+        y += 1
+        buttons = [
+            (" + New ", "new"),
+            (" Rename ", "rename"),
+            (" Delete ", "delete"),
+            (" Projects ", "projects"),
+        ]
+        x = 1
+        for label, action in buttons:
+            if x + len(label) + 1 >= w:
+                y += 1
+                x = 1
+            self.safe_addstr(y, x, label, curses.color_pair(6))
+            self.clickable.append((y, x, x + len(label), "button", action))
+            x += len(label) + 1
+
+        # Sprint status
+        y += 2
+        sprints = get_sprints()
+        if sprints:
+            self.safe_addstr(y, 1, "⚡ Sprints", curses.color_pair(3) | curses.A_BOLD)
+            y += 1
+            for sprint in sprints:
+                if y >= h - 2:
+                    break
+                self.safe_addstr(y, 1, f"  {sprint['id']}", curses.color_pair(3))
+                y += 1
+                for role, info in sprint["leads"].items():
+                    if y >= h - 2:
+                        break
+                    st = info.get("status", "?") if isinstance(info, dict) else "?"
+                    sym = {"running": "●", "done": "✓", "failed": "✗"}.get(st, "○")
+                    color = {
+                        "done": curses.color_pair(4),
+                        "failed": curses.color_pair(5),
+                        "running": curses.color_pair(3),
+                    }.get(st, curses.A_DIM)
+                    self.safe_addstr(y, 3, f"{sym} {role}: {st}", color)
+                    y += 1
+
+        # Message
+        if self.message and self.message_timer > 0:
+            self.safe_addstr(h - 1, 1, self.message[:w-2], curses.A_DIM)
+            self.message_timer -= 1
+
+    def draw_projects(self, h, w):
+        y = 0
+        self.safe_addstr(y, 1, " Projects ", curses.A_BOLD | curses.A_REVERSE)
+        y += 2
+
+        projects = load_json(PROJECTS_FILE, DEFAULT_PROJECTS)
+        for i, p in enumerate(projects):
+            if y >= h - 4:
+                break
+            attr = curses.color_pair(2) if i == self.selected else curses.A_NORMAL
+            label = f"  [{p['key']}] {p['name']}"
+            self.safe_addstr(y, 0, label.ljust(w), attr)
+            y += 1
+            self.safe_addstr(y, 4, p["path"][:w-5], curses.A_DIM)
+            self.clickable.append((y-1, 0, w, "pick_project", {"index": i}))
+            y += 1
+
+        y += 1
+        self.safe_addstr(y, 1, " + Add ", curses.color_pair(6))
+        self.clickable.append((y, 1, 8, "button", "add_project"))
+        self.safe_addstr(y, 10, " ← Back ", curses.color_pair(6))
+        self.clickable.append((y, 10, 18, "button", "back"))
+
+    def draw_input(self, h, w):
+        y = h // 3
+        self.safe_addstr(y, 1, self.input_label, curses.A_BOLD)
+        y += 2
+        curses.curs_set(1)
+        self.safe_addstr(y, 1, "> " + self.input_buf + "█", curses.A_NORMAL)
+
+    def handle_input(self, key):
+        if key == curses.KEY_MOUSE:
+            try:
+                _, mx, my, _, bstate = curses.getmouse()
+                for cy, x1, x2, action, data in self.clickable:
+                    if my == cy and x1 <= mx < x2:
+                        self.handle_click(action, data)
+                        return
+            except curses.error:
+                pass
+            return
+
+        if self.mode == "input":
+            self.handle_text_input(key)
+            return
+
+        if self.mode == "main":
+            windows = get_windows()
+            if key == curses.KEY_UP or key == ord("k"):
+                self.selected = max(0, self.selected - 1)
+            elif key == curses.KEY_DOWN or key == ord("j"):
+                self.selected = min(len(windows) - 1, self.selected + 1)
+            elif key == ord("\n") or key == ord(" "):
+                if 0 <= self.selected < len(windows):
+                    tmux("select-window", "-t", f"caf-team:{windows[self.selected]['idx']}")
+            elif key == ord("n"):
+                self.start_new_session()
+            elif key == ord("r"):
+                self.start_rename()
+            elif key == ord("d"):
+                self.delete_selected(windows)
+            elif key == ord("p"):
+                self.mode = "projects"
+                self.selected = 0
+            elif key == ord("q"):
+                print("\033[?1003l", end="", flush=True)
+                sys.exit(0)
+            elif ord("0") <= key <= ord("9"):
+                tmux("select-window", "-t", f"caf-team:{chr(key)}")
+
+        elif self.mode == "projects":
+            projects = load_json(PROJECTS_FILE, DEFAULT_PROJECTS)
+            if key == curses.KEY_UP or key == ord("k"):
+                self.selected = max(0, self.selected - 1)
+            elif key == curses.KEY_DOWN or key == ord("j"):
+                self.selected = min(len(projects) - 1, self.selected + 1)
+            elif key == ord("\n"):
+                if 0 <= self.selected < len(projects):
+                    self.finish_project_pick(projects[self.selected])
+            elif key == 27 or key == ord("b"):  # ESC or b for back
+                self.mode = "main"
+                self.selected = 0
+
+    def handle_text_input(self, key):
+        if key == 27:  # ESC
+            curses.curs_set(0)
+            self.mode = "main"
+        elif key in (curses.KEY_BACKSPACE, 127, 8):
+            self.input_buf = self.input_buf[:-1]
+        elif key == ord("\n"):
+            curses.curs_set(0)
+            if self.input_callback:
+                self.input_callback(self.input_buf)
+            self.mode = "main"
+        elif 32 <= key < 127:
+            self.input_buf += chr(key)
+
+    def handle_click(self, action, data):
+        if action == "select_window":
+            self.selected = data["index"]
+            tmux("select-window", "-t", f"caf-team:{data['win_idx']}")
+        elif action == "button":
+            if data == "new":
+                self.start_new_session()
+            elif data == "rename":
+                self.start_rename()
+            elif data == "delete":
+                self.delete_selected(get_windows())
+            elif data == "projects":
+                self.mode = "projects"
+                self.selected = 0
+            elif data == "back":
+                self.mode = "main"
+                self.selected = 0
+            elif data == "add_project":
+                self.start_add_project()
+        elif action == "pick_project":
+            projects = load_json(PROJECTS_FILE, DEFAULT_PROJECTS)
+            idx = data["index"]
+            if 0 <= idx < len(projects):
+                self.finish_project_pick(projects[idx])
+
+    def start_new_session(self):
+        self.mode = "input"
+        self.input_buf = ""
+        self.input_label = "Session name:"
+        self.input_callback = self._after_session_name
+
+    def _after_session_name(self, name):
+        self.new_session_name = name
+        self.mode = "projects"
+        self.selected = 0
+
+    def finish_project_pick(self, project):
+        name = self.new_session_name or project["name"]
+        path = expand_path(project["path"])
+        if not os.path.isdir(path):
+            self.message = f"Path not found: {path}"
+            self.message_timer = 3
+            self.mode = "main"
+            return
+
+        result = tmux("new-window", "-t", "caf-team", "-c", path, "-P", "-F", "#{window_index}")
+        if result:
+            tmux("rename-window", "-t", f"caf-team:{result}", name)
+            sessions = load_json(SESSIONS_FILE, {})
+            sessions[result] = {"name": name, "project": project["name"]}
+            save_json(SESSIONS_FILE, sessions)
+            tmux("send-keys", "-t", f"caf-team:{result}", "claude", "Enter")
+
+        self.new_session_name = ""
+        self.mode = "main"
+        self.selected = 0
+
+    def start_rename(self):
+        self.mode = "input"
+        self.input_buf = ""
+        self.input_label = "New name:"
+        self.input_callback = self._do_rename
+
+    def _do_rename(self, name):
+        windows = get_windows()
+        if 0 <= self.selected < len(windows):
+            win = windows[self.selected]
+            tmux("rename-window", "-t", f"caf-team:{win['idx']}", name)
+            sessions = load_json(SESSIONS_FILE, {})
+            old = sessions.get(win["idx"], {})
+            project = old.get("project", "") if isinstance(old, dict) else ""
+            sessions[win["idx"]] = {"name": name, "project": project}
+            save_json(SESSIONS_FILE, sessions)
+
+    def delete_selected(self, windows):
+        if 0 <= self.selected < len(windows):
+            win = windows[self.selected]
+            tmux("kill-window", "-t", f"caf-team:{win['idx']}")
+            sessions = load_json(SESSIONS_FILE, {})
+            sessions.pop(win["idx"], None)
+            save_json(SESSIONS_FILE, sessions)
+            self.selected = max(0, self.selected - 1)
+
+    def start_add_project(self):
+        self.mode = "input"
+        self.input_buf = ""
+        self.input_label = "Project name:"
+        self.input_callback = self._after_project_name
+
+    def _after_project_name(self, name):
+        self._add_project_name = name
+        self.mode = "input"
+        self.input_buf = ""
+        self.input_label = "Path:"
+        self.input_callback = self._after_project_path
+
+    def _after_project_path(self, path):
+        projects = load_json(PROJECTS_FILE, DEFAULT_PROJECTS)
+        key = str(len(projects) + 1)
+        projects.append({"key": key, "name": self._add_project_name, "path": path})
+        save_json(PROJECTS_FILE, projects)
+        self.mode = "projects"
+
+    def safe_addstr(self, y, x, text, attr=curses.A_NORMAL):
+        h, w = self.stdscr.getmaxyx()
+        if y < 0 or y >= h or x >= w:
+            return
+        try:
+            self.stdscr.addnstr(y, x, text, w - x - 1, attr)
+        except curses.error:
+            pass
+
+
+def main(stdscr):
+    ensure_files()
+    sidebar = Sidebar(stdscr)
+    sidebar.run()
+
+
+if __name__ == "__main__":
+    curses.wrapper(main)

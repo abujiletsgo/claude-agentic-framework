@@ -40,6 +40,9 @@ tmux split-window -t "$SESSION:0.0" -v -l '28%' -c "$CAF_DIR" \
 tmux split-window -t "$SESSION:0.0" -h -l '22%' -c "$CAF_DIR" \
   "bash ${SIDEBAR}"
 
+# Enable mouse (clickable panes, sidebar, scroll)
+tmux set-option -t "$SESSION" -g mouse on
+
 # Select main pane (top-left) and launch Claude
 tmux select-pane -t "$SESSION:0.0"
 tmux send-keys -t "$SESSION:0.0" "claude" Enter
