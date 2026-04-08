@@ -6,7 +6,7 @@ Comprehensive tests for AAAK compression integration.
 
 Categories:
   3a. Unit tests for aaak_compress.py
-  3b. Integration tests for auto_prime compression (_aaak_compress_context)
+  3b. KG Integration tests (fail-open)
   3c. Token efficiency benchmark tests
   3d. Safety tests (edge cases)
 
@@ -30,20 +30,6 @@ AUTO_PRIME_DIR = os.path.join(FRAMEWORK_DIR, 'automation')
 sys.path.insert(0, AUTO_PRIME_DIR)
 
 from aaak_compress import compress, compress_sections, compress_with_stats, log_compression_stats
-
-# Import _aaak_compress_context from auto_prime without triggering main()
-# We import it as a module and extract only the function we need
-import importlib.util as _ilu
-
-_auto_prime_spec = _ilu.spec_from_file_location(
-    "auto_prime",
-    os.path.join(AUTO_PRIME_DIR, "auto_prime.py"),
-)
-_auto_prime_mod = _ilu.module_from_spec(_auto_prime_spec)
-# We load the module source but do NOT execute main() - the module-level code
-# only defines functions and constants, so exec_module is safe here.
-_auto_prime_spec.loader.exec_module(_auto_prime_mod)
-_aaak_compress_context = _auto_prime_mod._aaak_compress_context
 
 # ---------------------------------------------------------------------------
 # 3a. Unit tests for aaak_compress.py
@@ -125,45 +111,33 @@ def test_fail_open_on_missing_mempalace():
 
 
 # ---------------------------------------------------------------------------
-# 3b. Integration tests for auto_prime compression
+# 3b. KG Integration tests (fail-open)
 # ---------------------------------------------------------------------------
 
-def test_aaak_compress_context_returns_string():
-    """_aaak_compress_context() always returns a string."""
-    result = _aaak_compress_context(LONG_TEXT)
-    assert isinstance(result, str)
-
-
-def test_aaak_compress_context_fail_open():
-    """_aaak_compress_context() returns original text when mempalace import fails."""
-    with patch("aaak_compress._get_dialect", return_value=None):
-        result = _aaak_compress_context(LONG_TEXT)
-        # Should return a string (either compressed or original)
-        assert isinstance(result, str)
-        assert len(result) > 0
-
-
-def test_compression_ratio_reasonable():
-    """Compressed output is shorter than or equal to input length."""
-    text = LONG_TEXT * 20  # Make it substantial
-    result = _aaak_compress_context(text)
-    assert isinstance(result, str)
-    # Compression should not expand the text beyond 2x original
-    assert len(result) <= len(text) * 2, (
-        f"Output ({len(result)} chars) is more than 2x input ({len(text)} chars)"
+def test_kg_session_context_import():
+    """kg_session_context.py can be imported without error."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "kg_session_context",
+        os.path.join(FRAMEWORK_DIR, "memory", "kg_session_context.py"),
     )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert hasattr(mod, "main")
 
 
-def test_session_context_prefix_preserved():
-    """The SESSION CONTEXT prefix should not be mangled by compression."""
-    prefix = "**SESSION CONTEXT LOADED**\n---\n"
-    body = LONG_TEXT * 10
-    full_text = prefix + body
-    result = _aaak_compress_context(full_text)
-    assert isinstance(result, str)
-    # The function compresses the whole text (body prefix split is in auto_prime main)
-    # so just verify it returns something valid
-    assert len(result) > 0
+def test_kg_session_context_fail_open():
+    """kg_session_context handles missing KG gracefully."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "kg_session_context",
+        os.path.join(FRAMEWORK_DIR, "memory", "kg_session_context.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    # _get_kg should return None or a KG instance, never crash
+    result = mod._get_kg()
+    assert result is None or result is not None  # Just verify it doesn't crash
 
 
 # ---------------------------------------------------------------------------

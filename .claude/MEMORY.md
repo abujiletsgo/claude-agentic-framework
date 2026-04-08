@@ -275,3 +275,21 @@
   .claude/MEMORY.md | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
   mempalace.yaml    | 34 ++++++++++++++++++++++++
   2 files changed, 112 insertions(+)
+
+## 2026-04-07 (17:34 UTC) · @Tom Kwon
+**Commit:** feat: add AAAK session-start compression for all projects (a2355bf) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                               |   7 +
+  global-hooks/framework/automation/auto_prime.py |  25 ++
+  install.sh                                      |  35 ++-
+  tests/test_aaak_integration.py                  | 319 ++++++++++++++++++++++++
+  4 files changed, 384 insertions(+), 2 deletions(-)
+
+## 2026-04-08 (02:43 UTC) · @Tom Kwon
+**Commit:** fix: auto-detect mempalace Python version instead of hardcoding 3.12 (4f4e944) by Tom Kwon
+**Changed:**
+  global-hooks/framework/aaak_compress.py      | 14 +++++++++++---
+  global-hooks/framework/facts/fact_kg_sync.py | 14 +++++++++++---
+  install.sh                                   | 16 ++++++++++------
+  tests/test_aaak_integration.py               |  9 ++++++---
+  4 files changed, 38 insertions(+), 15 deletions(-)

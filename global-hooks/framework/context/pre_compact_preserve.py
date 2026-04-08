@@ -459,6 +459,52 @@ def build_preservation_instructions(context: dict, trigger: str) -> str:
     return "\n".join(lines)
 
 
+def _save_decisions_to_kg(instructions: str):
+    """Extract key decisions from compaction context and save to mempalace KG.
+
+    Fail-open: if mempalace unavailable or no decisions found, does nothing.
+    """
+    try:
+        import glob
+        base = os.path.expanduser("~/Documents/mempalace/.venv/lib")
+        matches = glob.glob(os.path.join(base, "python3.*/site-packages"))
+        if not matches:
+            return
+        if matches[0] not in sys.path:
+            sys.path.insert(0, matches[0])
+        from mempalace.knowledge_graph import KnowledgeGraph
+        kg = KnowledgeGraph()
+
+        # Extract decision lines (keyword heuristic from existing _DECISION_SIGNALS)
+        decision_signals = ["decided", "chose", "switched", "reverted", "approved", "rejected", "confirmed"]
+        today = __import__("datetime").date.today().isoformat()
+        count = 0
+
+        for line in instructions.split("\n"):
+            line_lower = line.lower().strip()
+            if not line_lower or len(line_lower) < 20:
+                continue
+            if any(signal in line_lower for signal in decision_signals):
+                # Write as a triple: "session" → "decided" → "<decision text>"
+                decision_text = line.strip()[:200]  # Cap length
+                kg.add_triple(
+                    subject="session",
+                    predicate="decided",
+                    obj=decision_text,
+                    valid_from=today,
+                    source_file="pre_compact_preserve",
+                )
+                count += 1
+                if count >= 10:  # Cap to avoid flooding KG
+                    break
+
+        if count > 0:
+            print(f"[KG] Saved {count} decision(s) to knowledge graph", file=sys.stderr)
+
+    except Exception as e:
+        print(f"[KG] Decision save failed (non-blocking): {e}", file=sys.stderr)
+
+
 def main():
     try:
         input_data = json.load(sys.stdin)
@@ -489,6 +535,8 @@ def main():
             sys.exit(0)
 
         instructions = build_preservation_instructions(context, trigger)
+
+        _save_decisions_to_kg(instructions)
 
         # --- AAAK compression for token efficiency ---
         try:
