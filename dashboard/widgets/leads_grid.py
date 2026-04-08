@@ -7,7 +7,7 @@ from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import Static, Label
 from textual.containers import Grid
-from textual.worker import work
+from textual import work
 
 
 LEADS = [
