@@ -425,12 +425,13 @@
     <p class="section-desc">하나의 저장소, 하나의 설치, 하나의 진실 소스. Opus-first 아키텍처로 Max plan에서 최적 성능을 발휘합니다.</p>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num">41</div><div class="stat-label">Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">42</div><div class="stat-label">Hooks</div></div>
       <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Events</div></div>
       <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Async Hooks</div></div>
-      <div class="stat-card"><div class="stat-num">14</div><div class="stat-label">Agents</div></div>
+      <div class="stat-card"><div class="stat-num">15</div><div class="stat-label">Agents</div></div>
       <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Commands</div></div>
       <div class="stat-card"><div class="stat-num">20</div><div class="stat-label">Skills</div></div>
+      <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">Rust Hooks</div></div>
     </div>
 
     <div class="flow">
@@ -444,7 +445,7 @@
         </div>
         <div class="gl-card global">
           <h3>global-agents/</h3>
-          <div class="gl-item"><div class="gl-item-name">14개 에이전트</div><div class="gl-item-desc">4 Opus + 6 Sonnet + 3 Haiku</div></div>
+          <div class="gl-item"><div class="gl-item-name">15개 에이전트</div><div class="gl-item-desc">4 Opus + 6 Sonnet + 3 Haiku + 2 Reference</div></div>
         </div>
         <div class="gl-card global">
           <h3>global-commands/</h3>
@@ -462,6 +463,12 @@
         <div class="gl-card local">
           <h3>templates/</h3>
           <div class="gl-item"><div class="gl-item-name">settings.json.template</div><div class="gl-item-desc">단일 진실 소스</div></div>
+        </div>
+        <div class="gl-card local">
+          <h3>caf-hooks/</h3>
+          <div class="gl-item"><div class="gl-item-name">Rust 바이너리</div><div class="gl-item-desc">19개 훅 — Python 대비 6-32x 빠른 실행</div></div>
+          <div class="gl-item"><div class="gl-item-name">src/hooks/</div><div class="gl-item-desc">각 훅별 .rs 모듈</div></div>
+          <div class="gl-item"><div class="gl-item-name">doctor</div><div class="gl-item-desc">22개 환경 진단 체크</div></div>
         </div>
       </div>
     </div>
@@ -509,8 +516,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="hooks">
     <div class="eyebrow-sm">이벤트 시스템</div>
-    <h2>Hook System &mdash; 16 Events, 41 Hooks</h2>
-    <p class="section-desc">Claude Code의 모든 생명주기 이벤트에 훅이 연결됩니다. 11개의 비동기 훅은 성능 저하 없이 백그라운드에서 실행됩니다.</p>
+    <h2>Hook System &mdash; 16 Events, 42 Hooks</h2>
+    <p class="section-desc">Claude Code의 모든 생명주기 이벤트에 훅이 연결됩니다. 11개의 비동기 훅은 성능 저하 없이 백그라운드에서 실행됩니다. 19개의 훅은 Rust 바이너리(caf-hooks)로 실행되어 6-32x 빠른 성능을 제공합니다.</p>
 
     <!-- All 16 events -->
     <div class="lifecycle" style="margin-bottom:36px;">
@@ -537,7 +544,7 @@
           <li><span class="ev-hook">auto_prime_inject.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">PROJECT_CONTEXT</span></li>
           <li><span class="ev-hook">analyze_request.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">Caddy 분류</span></li>
           <li><span class="ev-hook">auto_delegate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">전략 라우팅</span></li>
-          <li><span class="ev-hook">enforce_orchestrate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">/orchestrate 강제</span></li>
+          <li><span class="ev-hook">enforce_orchestrate <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">/orchestrate 강제</span></li>
         </ul>
       </div>
 
@@ -545,9 +552,9 @@
         <div class="phase-head"><div class="phase-icon">4</div><div><div class="phase-name">PreToolUse</div><div class="phase-trigger">4 hooks</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">동시성 방지</span></li>
-          <li><span class="ev-hook">unified-damage-control.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">위험 차단</span></li>
+          <li><span class="ev-hook">damage_control <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l1">위험 차단</span></li>
           <li><span class="ev-hook">auto_review_team.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">위험 Bash 검토</span></li>
-          <li><span class="ev-hook">orchestrator_tool_guard.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이터 직접 사용 차단</span></li>
+          <li><span class="ev-hook">orchestrator_tool_guard <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이터 직접 사용 차단</span></li>
         </ul>
       </div>
 
@@ -555,23 +562,23 @@
         <div class="phase-head"><div class="phase-icon">5</div><div><div class="phase-name">PostToolUse</div><div class="phase-trigger">9 hooks (5 async)</div></div></div>
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 관리</span></li>
-          <li><span class="ev-hook">context-bundle-logger.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">번들 기록</span></li>
+          <li><span class="ev-hook">context_bundle_logger <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">번들 기록</span></li>
           <li><span class="ev-hook">auto_cost_warnings.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">비용 경고</span></li>
-          <li><span class="ev-hook">auto_error_analyzer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오류 분석</span></li>
-          <li><span class="ev-hook">auto_refine.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">코드 개선</span></li>
+          <li><span class="ev-hook">auto_error_analyzer <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">오류 분석 (1500자 제한)</span></li>
+          <li><span class="ev-hook">auto_refine <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">코드 개선</span></li>
           <li><span class="ev-hook">auto_dependency_audit.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">의존성 감사</span></li>
           <li><span class="ev-hook">auto_context_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">70% 시 압축</span></li>
-          <li><span class="ev-hook">auto_escalate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">에스컬레이션</span></li>
+          <li><span class="ev-hook">auto_escalate <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">에스컬레이션</span></li>
           <li><span class="ev-hook">auto_voice_notifications.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">음성 알림</span></li>
           <li><span class="ev-hook">auto_team_review.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">팀 리뷰</span></li>
-          <li><span class="ev-hook">auto_fact_extractor.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md</span></li>
+          <li><span class="ev-hook">auto_fact_extractor <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md</span></li>
         </ul>
       </div>
 
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">6</div><div><div class="phase-name">PostToolUseFailure</div><div class="phase-trigger">1 hook</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">auto_error_analyzer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">오류 분석</span></li>
+          <li><span class="ev-hook">auto_error_analyzer <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l1">오류 분석</span></li>
         </ul>
       </div>
 
@@ -580,18 +587,18 @@
         <ul class="ev-list">
           <li><span class="ev-hook">session_lock_manager.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">잠금 해제</span></li>
           <li><span class="ev-hook">check_lthread_progress.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">진행 확인</span></li>
-          <li><span class="ev-hook">auto_memory_writer.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">MEMORY.md</span></li>
+          <li><span class="ev-hook">auto_memory_writer <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l2">MEMORY.md</span></li>
           <li><span class="ev-hook">validate_facts.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">FACTS.md 정리</span></li>
           <li><span class="ev-hook">auto_skill_generator.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">스킬 자동 생성</span></li>
           <li><span class="ev-hook">auto_dependency_audit.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">의존성 감사</span></li>
-          <li><span class="ev-hook">voice_done.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">완료 알림</span></li>
+          <li><span class="ev-hook">voice_done <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">컨텍스트 TTS 알림</span></li>
         </ul>
       </div>
 
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">8</div><div><div class="phase-name">StopFailure</div><div class="phase-trigger">1 hook</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">stop_failure_recovery.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l1">복구</span></li>
+          <li><span class="ev-hook">stop_failure_recovery <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l1">복구</span></li>
           <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
             rate_limit, auth_failed, billing, server_error, max_output_tokens 처리
           </li>
@@ -601,26 +608,27 @@
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">9</div><div><div class="phase-name">SubagentStart</div><div class="phase-trigger">3 hooks</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">서브에이전트 추적</span></li>
-          <li><span class="ev-hook">orch_depth_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이션 깊이</span></li>
+          <li><span class="ev-hook">subagent_tracker <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">서브에이전트 추적</span></li>
+          <li><span class="ev-hook">orch_depth_tracker <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">오케스트레이션 깊이</span></li>
           <li><span class="ev-hook">subagent_kg_inject.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">KG 결정 주입 <span class="tag new">NEW</span></span></li>
         </ul>
       </div>
 
       <div class="phase">
-        <div class="phase-head"><div class="phase-icon">10</div><div><div class="phase-name">SubagentStop</div><div class="phase-trigger">4 hooks (2 async)</div></div></div>
+        <div class="phase-head"><div class="phase-icon">10</div><div><div class="phase-name">SubagentStop</div><div class="phase-trigger">5 hooks (2 async)</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">subagent_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">추적 완료</span></li>
-          <li><span class="ev-hook">orch_depth_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">깊이 추적</span></li>
-          <li><span class="ev-hook">session_cost_tracker.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">비용 추적</span></li>
-          <li><span class="ev-hook">subagent_palace_store.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">Mempalace 저장 <span class="tag new">NEW</span></span></li>
+          <li><span class="ev-hook">subagent_tracker <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">추적 완료</span></li>
+          <li><span class="ev-hook">orch_depth_tracker <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">깊이 추적</span></li>
+          <li><span class="ev-hook">session_cost_tracker <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">비용 추적</span></li>
+          <li><span class="ev-hook">subagent_palace_store.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">Mempalace 저장</span></li>
+          <li><span class="ev-hook">voice_done <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">컨텍스트 TTS 알림 <span class="tag new">NEW</span></span></li>
         </ul>
       </div>
 
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">11</div><div><div class="phase-name">TaskCompleted</div><div class="phase-trigger">1 hook</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">task_quality_gate.py</span><span class="ev-arr">&rarr;</span><span class="ev-target l2">품질 게이트</span></li>
+          <li><span class="ev-hook">task_quality_gate <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target l2">품질 게이트</span></li>
         </ul>
       </div>
 
@@ -637,7 +645,7 @@
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">13</div><div><div class="phase-name">FileChanged</div><div class="phase-trigger">1 hook <span class="tag async">async</span></div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">file_watcher.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">파일 감시</span></li>
+          <li><span class="ev-hook">file_watcher <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">파일 감시</span></li>
           <li style="font-size:10px; color:var(--muted); padding:4px 0; display:block; border-bottom:none;">
             package.json, pyproject.toml 등 변경 감시
           </li>
@@ -647,7 +655,7 @@
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">14</div><div><div class="phase-name">ConfigChange</div><div class="phase-trigger">1 hook</div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">audit_config_change.py</span><span class="ev-arr">&rarr;</span><span class="ev-target">설정 감사</span></li>
+          <li><span class="ev-hook">audit_config_change <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target">설정 감사</span></li>
         </ul>
       </div>
 
@@ -661,7 +669,7 @@
       <div class="phase">
         <div class="phase-head"><div class="phase-icon">16</div><div><div class="phase-name">PostCompact</div><div class="phase-trigger">1 hook <span class="tag async">async</span> <span class="tag new">NEW</span></div></div></div>
         <ul class="ev-list">
-          <li><span class="ev-hook">post_compact_verify.py</span><span class="ev-arr">&rarr;</span><span class="ev-target async">보존 검증</span></li>
+          <li><span class="ev-hook">post_compact_verify <span class="tag l0">Rust</span></span><span class="ev-arr">&rarr;</span><span class="ev-target async">보존 검증</span></li>
         </ul>
       </div>
     </div>
@@ -670,9 +678,9 @@
     <h2 style="font-size:20px; margin-bottom:24px;">4가지 Hook 유형</h2>
     <div class="gl-grid" style="margin-bottom:36px;">
       <div class="gl-card global">
-        <h3>command <span class="tag l1">200-500ms</span></h3>
+        <h3>command <span class="tag l1">5-500ms</span></h3>
         <div style="font-size:13px; color:var(--muted); line-height:1.7;">
-          셸 스크립트 또는 Python 스크립트를 직접 실행합니다. stdin으로 JSON 입력, stdout으로 결과 반환. 대부분의 Hook이 이 유형입니다.
+          셸 스크립트, Python 스크립트, 또는 Rust 바이너리를 직접 실행합니다. stdin으로 JSON 입력, stdout으로 결과 반환. 19개의 훅은 <code>caf-hooks</code> Rust 바이너리로 실행되어 5-30ms (Python 대비 6-32x 빠름).
         </div>
       </div>
       <div class="gl-card global">
@@ -738,7 +746,7 @@
           <div class="flow-step">
             <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">!</div>
             <div class="flow-content">
-              <div class="flow-hook">PreToolUse &rarr; unified-damage-control.py</div>
+              <div class="flow-hook">PreToolUse &rarr; caf-hooks damage-control <span class="tag l0">Rust</span></div>
               <div class="flow-desc">
                 1. Quoted content stripping: 따옴표/heredoc 내용 제거<br>
                 2. Pattern matching: <code>\bgit\s+push\s+--force\b</code> &rarr; <strong style="color:var(--accent);">매칭!</strong><br>
@@ -781,7 +789,7 @@
               <div class="flow-desc">
                 <code>~/.claude/circuit_breakers/auto_cost_warnings.json</code> 파일 생성<br>
                 상태: <strong style="color:var(--accent);">OPEN</strong> &mdash; 해당 훅 비활성화<br>
-                나머지 36개 훅은 정상 작동 유지
+                나머지 41개 훅은 정상 작동 유지
               </div>
             </div>
           </div>
@@ -807,6 +815,57 @@
         </div>
       </div>
     </details>
+    <!-- Rust Hooks (caf-hooks) -->
+    <h2 style="font-size:20px; margin-bottom:12px;">caf-hooks &mdash; Rust 바이너리 (19 Hooks)</h2>
+    <p class="section-desc">Python <code>uv run</code> 대비 6-32x 빠른 실행. 단일 바이너리, 서브커맨드 방식으로 19개 훅을 처리합니다.</p>
+
+    <div class="gl-grid" style="margin-bottom:24px;">
+      <div class="gl-card global">
+        <h3>Phase 1 — 구현 완료 (5개)</h3>
+        <div class="gl-item"><div class="gl-item-name">post_compact_verify</div><div class="gl-item-desc">PostCompact: 요약 보존 검증</div></div>
+        <div class="gl-item"><div class="gl-item-name">file_watcher</div><div class="gl-item-desc">FileChanged: 의존성 파일 변경 감시</div></div>
+        <div class="gl-item"><div class="gl-item-name">voice_done</div><div class="gl-item-desc">Stop/SubagentStop: 컨텍스트 TTS (research done, build done 등)</div></div>
+        <div class="gl-item"><div class="gl-item-name">stop_failure_recovery</div><div class="gl-item-desc">StopFailure: API 오류 분류 및 복구 안내</div></div>
+        <div class="gl-item"><div class="gl-item-name">task_quality_gate</div><div class="gl-item-desc">TaskCompleted: 테스트 관련 품질 게이트</div></div>
+      </div>
+      <div class="gl-card global">
+        <h3>Phase 2 — Medium (8개)</h3>
+        <div class="gl-item"><div class="gl-item-name">enforce_orchestrate</div><div class="gl-item-desc">Caddy 캐싱으로 중복 분류 제거</div></div>
+        <div class="gl-item"><div class="gl-item-name">epistemic_guard</div><div class="gl-item-desc">액션 동사 단문 자동 스킵</div></div>
+        <div class="gl-item"><div class="gl-item-name">auto_refine</div><div class="gl-item-desc">PostToolUse: /refine 제안</div></div>
+        <div class="gl-item"><div class="gl-item-name">context_bundle_logger</div><div class="gl-item-desc">세션 컨텍스트 번들 기록</div></div>
+        <div class="gl-item"><div class="gl-item-name">auto_error_analyzer</div><div class="gl-item-desc">오류 패턴 추출 (1500자 주입 제한)</div></div>
+        <div class="gl-item"><div class="gl-item-name">auto_escalate</div><div class="gl-item-desc">복잡도 임계값 기반 에스컬레이션</div></div>
+        <div class="gl-item"><div class="gl-item-name">auto_fact_extractor</div><div class="gl-item-desc">Bash 출력에서 팩트 추출 → FACTS.md</div></div>
+        <div class="gl-item"><div class="gl-item-name">auto_memory_writer</div><div class="gl-item-desc">Stop 시 세션 요약 → MEMORY.md</div></div>
+      </div>
+      <div class="gl-card local">
+        <h3>Phase 3 — Complex + New (6개)</h3>
+        <div class="gl-item"><div class="gl-item-name">damage_control</div><div class="gl-item-desc">100+ 패턴 보안 차단 (exit 2)</div></div>
+        <div class="gl-item"><div class="gl-item-name">orchestrator_tool_guard</div><div class="gl-item-desc">오케스트레이터 파일 도구 직접 사용 차단 (exit 2)</div></div>
+        <div class="gl-item"><div class="gl-item-name">subagent_tracker</div><div class="gl-item-desc">서브에이전트 메타데이터 추적 및 이상 감지</div></div>
+        <div class="gl-item"><div class="gl-item-name">orch_depth_tracker</div><div class="gl-item-desc">오케스트레이션 깊이 관리</div></div>
+        <div class="gl-item"><div class="gl-item-name">session_cost_tracker</div><div class="gl-item-desc">트랜스크립트 파싱 → 비용 계산</div></div>
+        <div class="gl-item"><div class="gl-item-name">audit_config_change</div><div class="gl-item-desc">민감한 설정 변경 감사 기록</div></div>
+      </div>
+    </div>
+
+    <div class="gl-grid" style="margin-bottom:24px;">
+      <div class="gl-card global">
+        <h3>토큰 최적화</h3>
+        <div class="gl-item"><div class="gl-item-name">auto_error_analyzer</div><div class="gl-item-desc">주입 제한 1500자 (무제한 → 캡)</div></div>
+        <div class="gl-item"><div class="gl-item-name">epistemic_guard</div><div class="gl-item-desc">액션 동사 + 80자 미만 프롬프트 자동 스킵</div></div>
+        <div class="gl-item"><div class="gl-item-name">enforce_orchestrate</div><div class="gl-item-desc">Caddy 결과 캐싱 → 짧은 리마인더로 대체</div></div>
+      </div>
+      <div class="gl-card local">
+        <h3>/doctor &mdash; 22개 환경 진단</h3>
+        <div class="gl-item"><div class="gl-item-name">Core</div><div class="gl-item-desc">uv, Python ≥3.10, Git, Claude CLI, Cargo, OfficeCLI</div></div>
+        <div class="gl-item"><div class="gl-item-name">Config</div><div class="gl-item-desc">settings.json, PATH, 42 hook scripts, 50 symlinks</div></div>
+        <div class="gl-item"><div class="gl-item-name">Dirs</div><div class="gl-item-desc">required dirs, circuit breakers, /tmp/claude, FACTS+MEMORY</div></div>
+        <div class="gl-item"><div class="gl-item-name">Integrations</div><div class="gl-item-desc">mempalace MCP, AAAK compression</div></div>
+        <div class="gl-item"><div class="gl-item-name">Runtime</div><div class="gl-item-desc">pyyaml+pydantic, anthropic SDK, hook smoke test</div></div>
+      </div>
+    </div>
   </section>
 
   <!-- ════════════════════════════════════════════ -->
@@ -814,8 +873,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="agents">
     <div class="eyebrow-sm">에이전트</div>
-    <h2>Agent System &mdash; 14 Agents</h2>
-    <p class="section-desc">4개의 Opus, 6개의 Sonnet, 3개의 Haiku 에이전트. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
+    <h2>Agent System &mdash; 15 Agents</h2>
+    <p class="section-desc">4개의 Opus, 6개의 Sonnet, 3개의 Haiku 에이전트 + 2개의 Reference 문서. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
 
     <div class="gl-grid" style="margin-bottom:12px;">
       <div class="gl-card global">
