@@ -1,52 +1,52 @@
 Screen {
-    background: transparent;
+    background: $background;
 }
 
 SprintTUI {
-    background: transparent;
+    background: $background;
 }
 
 #main-panels {
     height: 1fr;
-    background: transparent;
+    background: $background;
 }
 
 #lead-panel {
     width: 30%;
-    border: round ansi_default;
-    background: transparent;
+    border: round $accent;
+    background: $background;
 }
 
 #log-viewer {
     width: 42%;
-    border: round ansi_default;
-    background: transparent;
+    border: round $accent;
+    background: $background;
 }
 
 #report-panel {
     width: 28%;
-    border: round ansi_default;
-    background: transparent;
+    border: round $accent;
+    background: $background;
 }
 
 #wave-progress {
     height: 5;
-    border-top: hkey ansi_default;
+    border-top: hkey $accent;
     padding: 0 1;
-    background: transparent;
+    background: $background;
 }
 
 .panel-title {
     text-align: center;
     text-style: bold;
     height: 1;
-    background: transparent;
+    background: $background;
 }
 
 #log-filter {
     height: 1;
-    border: tall ansi_default;
-    background: transparent;
+    border: tall $accent;
+    background: $background;
 }
 
 .wave-container {
@@ -61,26 +61,30 @@ SprintTUI {
 }
 
 RichLog {
-    background: transparent;
+    background: $background;
 }
 
 Static {
-    background: transparent;
+    background: $background;
 }
 
 Input {
-    background: transparent;
+    background: $background;
 }
 
 ProgressBar {
     height: 1;
-    background: transparent;
+    background: $background;
 }
 
 Vertical {
-    background: transparent;
+    background: $background;
 }
 
 Horizontal {
-    background: transparent;
+    background: $background;
+}
+
+Label {
+    background: $background;
 }
