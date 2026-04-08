@@ -47,6 +47,17 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SessionStart/launch_live_tui.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: auto-launch live agents TUI in tmux pane if inside tmux"
+          }
+        ]
       }
     ],
 
