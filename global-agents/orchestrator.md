@@ -114,10 +114,11 @@ Agent(name="log-compactor", model="haiku", maxTurns=5,
 |------|-------|
 | Understand code / find files | `Agent(name="researcher-N", model="sonnet", ...)` |
 | Implement / edit code | `Agent(name="builder-N", model="sonnet"/"haiku", ...)` |
-| Run tests / verify | `Agent(name="validator-N", model="haiku", ...)` |
+| Run tests / verify (mechanical) | `Agent(name="validator-N", model="haiku", ...)` |
+| Quality gate (is this actually good?) | `Agent(name="evaluator-N", subagent_type="critical-analyst", model="sonnet", ...)` |
 | Diagnose failure | `Agent(name="debugger-N", model="sonnet", ...)` |
-| Complex sub-problem | `Agent(subagent_type="solve", name="solve-N", ...)` |
-| Broad codebase exploration | `Agent(subagent_type="rlm-root", ...)` |
+| Deep iterative debugging | Kill-and-reassign: fresh builder with dead-end context (see [orchestrator-reference.md](orchestrator-reference.md#kill-and-reassign)) |
+| Broad codebase exploration | Follow RLM Pyramid phases inline (survey → fan-out Haiku readers → synthesize) — see RLM section below |
 | Git operations | `Agent(name="git-N", model="haiku", ...)` |
 | Specialized workflow | `Agent(name="skill-N", ..., prompt="Use Skill(skill='...')")` |
 
@@ -133,7 +134,7 @@ Before planning, spawn parallel haiku chunk-readers to load verified context. Sk
 |---|---|
 | Any task at all | 1 researcher + 1 builder + 1 validator = **3 minimum** |
 | Moderate/complex | 2 parallel researchers + 2 parallel builders + 1 validator + watchdog |
-| Broad scope / "entire codebase" | RLM root + 2 researchers + multiple builders + validator |
+| Broad scope / "entire codebase" | RLM Pyramid (Haiku reader fan-out) + builder team + validator |
 | Critical quality | 3 parallel builders (Fusion) + 1 validator |
 
 **If you complete a task having spawned fewer than 3 agents, you failed.**
@@ -160,6 +161,15 @@ Every builder -> automatic validator. This is not optional.
 If a validator catches failure -> spawn debugger. Debugger writes fix plan -> spawn new builder.
 Loop continues (max 5 iterations). Never skip validation to "save time."
 
+**Quality gate (evaluator)**: After validator PASS on complex or critical tasks, spawn a critical-analyst as evaluator. It checks: does this actually solve the problem? Edge cases? Simpler approach? Blast radius? See [orchestrator-reference.md](orchestrator-reference.md#recovery-loop-protocol) for the full pipeline.
+
+```
+build → validate (haiku, PASS/FAIL) → evaluate (sonnet, APPROVE/CONCERNS/REJECT) → commit
+                                       ↑ only on complex/critical tasks
+```
+
+Skip the evaluator for simple/mechanical tasks (haiku builder, trivial changes). Always run it for: security changes, architectural modifications, 3+ files changed, critical quality.
+
 **Background guardian**: When the task modifies existing code (not pure greenfield), spawn a background guardian alongside the watchdog at loop start. The guardian runs tests after each builder completes — silently on success, alerts on regression. See [orchestrator-reference.md](orchestrator-reference.md#background-guardian-protocol) for the full template and token cost analysis.
 
 ### Rule 6: Match strategy to task complexity — escalate on failure
@@ -180,33 +190,12 @@ critical task   -> Fusion (3 parallel builders) + validator
 
 ```
 builder fails once    -> debugger -> new builder -> re-validate
-2nd failure           -> Agent(subagent_type="solve", ...) — autonomous solver
-scope expands         -> Agent(subagent_type="rlm-root", ...) — full exploration
+2nd failure           -> kill-and-reassign: fresh builder with dead-end context (see orchestrator-reference.md)
+scope expands         -> Follow RLM Pyramid phases inline (survey → fan-out Haiku readers → synthesize)
 still failing         -> Fusion: 3 parallel approaches, pick best
 ```
 
-**When to spawn `solve` instead of another builder:**
-
-| Keep building | Escalate to solve |
-|---|---|
-| Clear plan, known files | Cause unclear, needs investigation |
-| 1-3 files, straightforward | 5+ files, architectural |
-| Expect to pass in 1-2 tries | Already failed twice |
-| No hypothesis testing | Multiple possible root causes |
-
-```python
-Agent(
-    subagent_type="solve",
-    name="solve-auth-bug",
-    prompt=f"""Sub-problem from orchestrator: [specific sub-problem]
-
-Context from this session: /tmp/caf_{SESSION_ID}_context.md
-Session ID: {SESSION_ID}
-
-Solve this sub-problem. Do not re-interview the user.
-Return your result and all changed files in your final message."""
-)
-```
+**Spiral detection** applies to the recovery loop — see [orchestrator-reference.md](orchestrator-reference.md#spiral-detection-critical) for the 5 hard rules (test regression, same-file, same-approach, blast radius, no-progress).
 
 **When to spawn skills dynamically:**
 
@@ -414,11 +403,21 @@ When you identify project-specific operations, create focused one-off agents. Se
 
 ---
 
-### Ralph Loop (RLM)
+### RLM Pyramid Protocol
 
 **When**: Auto-triggered for unknown scope, broad scope + review/research/audit, massive complexity.
 
-Spawn `rlm-root` with pre-digested context, exploration task, known facts, and specific gaps. After RLM returns, synthesize findings and proceed to orchestrate implementation if needed. See [orchestrator-reference.md](orchestrator-reference.md#rlm-example) for the template.
+**CRITICAL**: Do NOT spawn `rlm-root` as a subagent. Subagents cannot spawn further agents, so RLM-as-subagent is broken by design. Instead, execute the RLM protocol directly as root:
+
+1. **Survey**: Grep/Glob to find all relevant files, group into chunks (~100-200 lines each)
+2. **Fan-out**: Spawn many Haiku reader agents in ONE message (parallel). Each reads one chunk, returns 2-3 sentence summary. Use Sonnet readers only for security/architecture analysis.
+3. **Gap analysis**: Read all summaries. If gaps or contradictions, spawn more targeted readers.
+4. **Synthesize**: You (root Opus) connect findings across modules and produce the answer.
+5. **Proceed**: If implementation needed, continue to orchestrate builders as normal.
+
+Do NOT call `Skill("rlm")` from within orchestration — just follow these phases inline. `/rlm` is for direct user invocation only.
+
+**Cost**: 10 Haiku readers ≈ 0.2x the cost of one Opus reader. Pyramid is ~60% cheaper than all-Opus exploration.
 
 ---
 

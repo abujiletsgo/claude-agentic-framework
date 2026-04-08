@@ -95,6 +95,37 @@ while iteration <= MAX:
         validate_status = read STATUS from /tmp/caf_{SESSION_ID}_validate_{iteration}.md
 
     if validate_status == "PASS":
+        # QUALITY GATE: critical-analyst reviews on complex/critical tasks
+        if quality_need in ["critical", "high"] or complexity in ["complex", "massive"]:
+            Agent(name=f"evaluator-{iteration}", subagent_type="critical-analyst", model="sonnet", maxTurns=20,
+                prompt=f"""Post-build quality review. You are the quality gate between validator PASS and commit.
+
+Read these files:
+1. /tmp/caf_{SESSION_ID}_plan.md — original goals and acceptance criteria
+2. /tmp/caf_{SESSION_ID}_build_{iteration}.md — what was built
+3. /tmp/caf_{SESSION_ID}_validate_{iteration}.md — validator results
+4. Run `git diff` to see actual changes
+
+Evaluate:
+1. Does the change ACTUALLY solve the stated problem, or just pass the tests?
+2. Are there edge cases the acceptance criteria missed?
+3. Is there a simpler way to achieve this?
+4. Blast radius — did we change more than necessary?
+5. Any security, performance, or maintainability concerns?
+
+Output to /tmp/caf_{SESSION_ID}_evaluate_{iteration}.md:
+STATUS: APPROVE | CONCERNS | REJECT
+[If CONCERNS: list specific issues, but don't block commit]
+[If REJECT: explain what's wrong — this triggers a debug cycle]""")
+
+            eval_status = read STATUS from /tmp/caf_{SESSION_ID}_evaluate_{iteration}.md
+
+            if eval_status == "REJECT":
+                # Treat as validation failure — enter debug cycle
+                # Copy evaluator concerns to validate file so debugger sees them
+                continue  # back to debug wave
+
+        # All gates passed — commit
         Agent(name="git-commit", model="haiku", maxTurns=5,
             prompt=f"Run: git add -A && git commit -m 'orchestrate: iteration {iteration} passed'. Return the commit hash.")
         SendMessage(to="watchdog", message="WATCHDOG_STOP")
@@ -129,6 +160,71 @@ Last error: {one line from validate_N.md}
 Rollback available: git reset --hard {GIT_ROLLBACK_BASE}
 ```
 Then auto-run: `Skill("rollback", args=SESSION_ID)`
+
+---
+
+## Adaptive Iteration Budget
+
+Don't use a flat max. Estimate complexity after research phase and set the budget:
+
+| Complexity | Max iterations | Criteria |
+|---|---|---|
+| Simple | 3 | Clear error message, one file, obvious fix path |
+| Medium | 6 | Multiple files, unclear cause, needs investigation |
+| Hard | 10 | Architectural, no clear error, cross-cutting concern |
+
+Write the budget to the plan file. If you hit the budget, stop — don't auto-extend.
+
+---
+
+## Spiral Detection (CRITICAL)
+
+Track a health check after each build→validate iteration: files modified, tests before/after, worse Y/N, approach category.
+
+**Hard rules:**
+
+1. **Test regression → immediate revert.** Tests went DOWN → `git revert HEAD` and rethink. Do NOT "fix the fix."
+2. **Same-file spiral.** Same file modified 3+ times across iterations → stop and ask user.
+3. **Same-approach spiral.** Same approach category 3 times → stop and ask user.
+4. **Blast radius creep.** Total modified files > 5 and unsolved → stop and ask user.
+5. **No-progress detector.** Last 2 iterations produced no new verified info → stop and ask user.
+
+### Kill-and-Reassign (instead of just escalating)
+
+When spiral is detected: write a `DEAD_END` entry to plan file (what was tried, why it failed, what was learned), then spawn a **fresh builder** with ONLY the verified facts. The fresh builder reads DEAD_END entries to avoid repeating mistakes:
+
+```python
+Agent(name="fresh-builder", model="sonnet", maxTurns=20,
+  prompt=f"Previous approach failed. Read /tmp/caf_{SESSION_ID}_plan.md for dead ends to avoid. "
+         f"Verified facts: [list only confirmed facts with citations]. "
+         f"Find a NEW approach to: [problem]. Do not retry: [dead end approaches].")
+```
+
+### Blast Radius Control
+
+Before editing any file:
+1. Use Grep to find imports and references — check what depends on it
+2. If more than 3 files depend on it, explain blast radius to user before proceeding
+3. Prefer adding new code over modifying existing code when both work
+4. When modifying shared code, run FULL test suite after
+
+---
+
+## Pre-Edit Gate (for builders)
+
+Include in builder prompts when editing existing code (not greenfield). Before every Edit/Write, builders must:
+
+1. **Grounding check**: "file:line X proves this change is correct because [reason]." If you cannot write this sentence, go back to research.
+2. **Duplication check**: Grep for the function name first. Exact duplicate: reuse. Near duplicate: extend.
+3. **Redundancy check**: After edit, verify no redundant imports or dead code left over.
+
+For changes affecting shared code (3+ dependents), spawn a haiku guardian:
+```python
+Agent(model="haiku", prompt="Validate this change is correct.
+File: [path], Lines: [range], Change: [description]
+Check: 1) Does function still exist at cited location? 2) Does change match intent? 3) Obvious errors?
+Reply: VALID or INVALID with reason.")
+```
 
 ---
 

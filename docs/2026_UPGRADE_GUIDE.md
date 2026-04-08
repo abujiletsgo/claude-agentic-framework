@@ -27,9 +27,9 @@ Run `uv run scripts/generate_docs.py` to verify against live repo state.
 
 | Tier | Agents | Use For |
 |------|--------|---------|
-| Opus (3) | orchestrator, project-architect, critical-analyst | Planning, architecture, security, complex reasoning |
-| Sonnet (4) | researcher, meta-agent, scout-report-suggest, rlm-root | Implementation, research, analysis, recursive exploration |
-| Haiku (1) | docs-scraper | Scraping, read-only ops, fast cheap tasks |
+| Opus (2) | orchestrator, project-architect | Planning, architecture, coordination |
+| Sonnet (6) | researcher, meta-agent, scout-report-suggest, critical-analyst, builder, debugger | Implementation, research, analysis, quality evaluation |
+| Haiku (3) | docs-scraper, validator, agent-watchdog | Scraping, validation, monitoring |
 
 Config: `data/model_tiers.yaml`
 

@@ -222,7 +222,7 @@ def extract_target_agent(tool_args: dict) -> Optional[str]:
     # Try to detect agent names in description
     known_agents = [
         "builder", "validator", "researcher", "context-manager",
-        "project-skill-generator", "orchestrator", "rlm-root",
+        "project-skill-generator", "orchestrator",
     ]
 
     for known_agent in known_agents:

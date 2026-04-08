@@ -750,20 +750,24 @@ Opus (3 agents — 37.5%):
       - project-architect (system design)
       - critical-analyst (risk analysis)
 
-Sonnet (4 agents — 50%):
+Sonnet (6 agents — 55%):
   - Reason: Good balance of speed, quality, cost for implementation
   - Cost: Medium
   - Agents:
-      - rlm-root (recursive codebase exploration)
       - researcher (information gathering)
       - meta-agent (agent generation)
       - scout-report-suggest (read-only analysis)
+      - critical-analyst (quality evaluation)
+      - builder (code implementation)
+      - debugger (diagnosis)
 
-Haiku (1 agent — 12.5%):
+Haiku (3 agents — 27%):
   - Reason: Fast, cheap, sufficient for mechanical tasks
   - Cost: Lowest
   - Agents:
       - docs-scraper (doc fetching)
+      - validator (build verification)
+      - agent-watchdog (batch monitoring)
 ```
 
 ### Model Selection Decision Tree
@@ -781,7 +785,7 @@ graph TD
     Q4 -->|No| Sonnet1[Sonnet<br/>fallback for complex]
 
     Q1 -->|No| Q5{Implementation/<br/>synthesis work?}
-    Q5 -->|Yes| Sonnet2[Sonnet<br/>rlm-root/researcher/meta-agent]
+    Q5 -->|Yes| Sonnet2[Sonnet<br/>researcher/builder/meta-agent]
     Q5 -->|No| Q6{Mechanical/<br/>validation task?}
     Q6 -->|Yes| Haiku1[Haiku<br/>validator/assistant]
     Q6 -->|No| Sonnet3[Sonnet<br/>default]

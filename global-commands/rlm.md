@@ -1,117 +1,173 @@
-# RLM: Recursive Language Model Controller
+# RLM: Recursive Language Model — Pyramid Protocol
 
 ## Instructions
 
-You are now operating in **RLM Mode** (Recursive Language Model). You are the **Root Controller**. You do NOT read data directly. You write code to explore and delegate.
+You are now operating in **RLM Pyramid Mode**. You are the **Root Controller** (Opus). You coordinate cheap reader agents and synthesize their findings. You do NOT read large files yourself.
 
 **Target**: $ARGUMENTS
 
 ---
 
-## Your Constraints
+## Your Role
 
-1. **You CANNOT paste or read large file contents into your context window**
-2. **You MUST use code to explore data programmatically** (Grep, Glob, targeted Read)
-3. **You MUST delegate analysis of specific chunks to sub-agents** (Task tool)
-4. **Your context window contains ONLY your code logic and sub-agent summaries**
-
----
-
-## Your Tools (The REPL Primitives)
-
-### 1. `peek(path, lines)` → Read tool
-Read a small slice of a file (max 50 lines at a time). Use for orientation only.
-
-### 2. `search(pattern, path)` → Grep tool
-Find relevant sections across the codebase. Returns file paths and line numbers. Use to locate targets before reading.
-
-### 3. `find(glob_pattern)` → Glob tool
-Discover files by pattern. Use to understand codebase structure.
-
-### 4. `sub_llm(instruction, context_slice)` → Task tool (general-purpose)
-Spawn a fresh, stateless sub-agent that sees ONLY the specific context you pass it. The sub-agent analyzes the slice and returns a summary. **This is your primary analysis tool.**
-
-### 5. `answer(result)` → Final output
-When you have synthesized all sub-agent results, produce the final answer.
+You are the brain. Haiku/Sonnet readers are your eyes. You:
+1. **Search** to find targets (Grep, Glob)
+2. **Spawn** many cheap readers in parallel (Agent tool, Haiku model)
+3. **Synthesize** their summaries into insight (your Opus reasoning)
+4. **Repeat** if gaps remain
 
 ---
 
-## Execution Workflow
+## Phase 1: Survey (this turn)
 
-### Turn 1: Orient (Structure Discovery)
-```
-# What are we working with?
-find("**/*.py")           # or relevant extension
-find("**/package.json")   # understand project structure
-peek("README.md", 30)     # quick orientation
-```
+Map the territory. Do NOT read files — just locate them.
 
-### Turn 2: Target (Locate Relevant Sections)
 ```
-# Find the specific areas related to the task
-search("auth", "src/")
-search("login|session|token", "**/*.py")
-# Returns: file paths + line numbers
+Grep(pattern="<keywords from target>", output_mode="files_with_matches")
+Glob(pattern="**/*.{py,ts,rs,go,js}")  # adjust to project
 ```
 
-### Turn 3: Delegate (Sub-Agent Analysis)
-```
-# For each relevant section, spawn a sub-agent
-sub_llm(
-    instruction="Analyze this auth module for the race condition bug",
-    context_slice="Read src/auth/session.py lines 40-120"
+Group results into chunks of ~100-200 lines. Each chunk becomes one reader task.
+
+---
+
+## Phase 2: Fan-Out Readers (next turn — ALL in ONE message)
+
+Spawn Haiku readers for each chunk. **Every reader in a SINGLE message** for true parallelism.
+
+### Reader Template
+
+```python
+Agent(
+    name="reader-N",
+    model="haiku",  # or "sonnet" for security/architecture
+    prompt="""Read <file> lines <start>-<end> using the Read tool.
+Answer ONLY: <specific question related to $ARGUMENTS>
+Rules:
+- Cite file:line for every claim
+- Max 3 sentences
+- No preamble, no hedging"""
 )
-
-sub_llm(
-    instruction="Check if this token refresh logic handles concurrent requests",
-    context_slice="Read src/auth/token.py lines 1-80"
-)
 ```
 
-### Turn 4: Synthesize
-```
-# Combine sub-agent findings into final answer
-# Sub-agent 1 found: "Race condition in session creation at line 67"
-# Sub-agent 2 found: "Token refresh is thread-safe, no issue"
+### Model Selection for Readers
 
-answer({
-    "finding": "Race condition in session.py:67",
-    "root_cause": "...",
-    "fix": "..."
-})
+| Reading task | Model |
+|---|---|
+| Code structure, function signatures, imports | haiku |
+| Business logic summarization | haiku |
+| Test file contents | haiku |
+| Config/data files | haiku |
+| Security analysis, auth flows | sonnet |
+| Architecture decisions, design patterns | sonnet |
+| Performance bottleneck analysis | sonnet |
+
+### Scaling Guide
+
+| Codebase scope | Readers per round |
+|---|---|
+| Focused (1-3 files) | 3-5 haiku |
+| Module-level (5-15 files) | 8-12 haiku + 1-2 sonnet |
+| Broad (15+ files) | 15-20 haiku + 2-3 sonnet |
+| Massive (entire codebase) | 20+ haiku in multiple rounds |
+
+---
+
+## Phase 3: Gap Analysis (after readers return)
+
+Read all reader summaries. Check:
+1. Unanswered questions from $ARGUMENTS?
+2. Files referenced in summaries but not yet read?
+3. Contradictions between readers?
+
+**If gaps**: Go back to Phase 2 with targeted follow-up readers.
+**If complete**: Proceed to Phase 4.
+
+---
+
+## Phase 4: Synthesize (final turn)
+
+You (Opus) now hold all distilled context. Connect the dots:
+
+```markdown
+## RLM Synthesis
+
+**Query**: $ARGUMENTS
+
+### Key Findings
+1. [finding + file:line]
+2. [finding + file:line]
+
+### Cross-Cutting Insights
+- [what no single reader could see]
+
+### Answer
+[direct answer]
+
+### Implementation Plan (if applicable)
+[what to build/fix — ready for builder agents]
 ```
 
 ---
 
 ## Rules
 
-1. **Never load more than 50 lines at a time into your own context**
-2. **Use search to find, then delegate analysis to sub-agents**
-3. **Sub-agents are stateless** - give them everything they need in the prompt
-4. **Your job is coordination, not analysis** - you write the exploration plan, sub-agents do the reading
-5. **Aggregate sub-agent summaries** (2-3 sentences each) into your final answer
-6. **Launch independent sub-agents in parallel** (single message, multiple Task calls)
+1. **Never load >50 lines into root context** — that's what readers are for
+2. **All independent readers in ONE message** — parallel is non-negotiable
+3. **Haiku by default** — only use Sonnet readers for security/architecture
+4. **Root synthesizes** — never delegate the final answer to a reader
+5. **2-3 rounds max** — if still unclear after 3 fan-out rounds, report what you know + what's uncertain
+6. **Specific reader questions** — "What does this function do?" not "Analyze this file"
 
 ---
 
-## Anti-Patterns (DO NOT)
+## Anti-Patterns
 
-- DO NOT: `Read entire file (2000 lines)` → Context rot
-- DO NOT: Analyze code yourself when a sub-agent could do it
-- DO NOT: Load multiple large files sequentially
-- DO NOT: Keep raw code in your context between turns
+```
+BAD:  Root reads 5 files (10,000 tokens of code in context)
+GOOD: Root spawns 5 haiku readers, gets 15 sentences back (~500 tokens)
 
-## Correct Patterns (DO)
+BAD:  One mega-reader: "Read src/ and summarize everything"
+GOOD: 10 focused readers, each with one file and one question
 
-- DO: `Grep for pattern → Read 30 targeted lines → Delegate to sub-agent`
-- DO: Launch 3 sub-agents in parallel for independent code sections
-- DO: Keep only sub-agent summaries (not raw code) in your working memory
-- DO: Use search to narrow before reading
+BAD:  Opus reader for every file (expensive)
+GOOD: Haiku for 80%, Sonnet only where reasoning matters
+
+BAD:  Sequential: reader-1 → wait → reader-2 → wait
+GOOD: reader-1 through reader-10 in ONE Agent message
+```
+
+---
+
+## Cost Model
+
+| Component | Model | Tokens (typical) | Cost weight |
+|---|---|---|---|
+| Root coordination (3-4 turns) | Opus | ~2,000 | 1.0x |
+| 10 Haiku readers | Haiku | ~15,000 total | 0.02x each |
+| 2 Sonnet readers | Sonnet | ~4,000 total | 0.2x each |
+| **Total** | Mixed | ~21,000 | **~60% cheaper than all-Opus** |
+
+---
+
+## Integration with Orchestrator
+
+When `/orchestrate` selects RLM strategy (broad scope, massive complexity), the root agent follows these phases **inline** — it does NOT call `/rlm` as a separate skill. The phases ARE orchestration work (searching + spawning + synthesizing). After RLM synthesis, orchestrator continues to spawn builders for implementation.
+
+### With Fusion
+
+Multiple RLM passes with different search strategies, then fuse:
+```
+Pass 1: search by error patterns → fan-out readers
+Pass 2: search by data flow → fan-out readers
+Pass 3: search by dependency graph → fan-out readers
+→ Root synthesizes all three passes
+```
 
 ---
 
 ## Begin
 
-Start the RLM workflow now for: **$ARGUMENTS**
+Start the RLM Pyramid workflow now for: **$ARGUMENTS**
 
-Phase 1: Orient the codebase structure. Use Glob and targeted Reads (max 30 lines each).
+Phase 1: Survey the codebase. Use Grep and Glob to find all files relevant to the target. Group into reader chunks.

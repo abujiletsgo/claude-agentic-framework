@@ -79,15 +79,15 @@ DELEGATION_PLANS = {
     "rlm": {
         "strategy": "rlm",
         "description": (
-            "Iterative exploration for large codebases "
-            "using search-isolate-delegate-synthesize"
+            "Pyramid exploration for large codebases — "
+            "root fans out cheap Haiku readers, synthesizes with Opus"
         ),
         "steps": [
-            "Search for relevant patterns across codebase",
-            "Isolate specific sections (max 50 lines each)",
-            "Delegate analysis of each section to sub-agents",
-            "Synthesize findings",
-            "If more exploration needed, repeat",
+            "Survey: Grep/Glob to find all relevant files",
+            "Fan-out: Spawn Haiku readers in parallel (one per chunk)",
+            "Gap analysis: Check summaries for missing context",
+            "Synthesize: Root Opus connects findings across modules",
+            "If gaps remain, fan-out more targeted readers",
             "Produce final consolidated answer",
         ],
         "agents_needed": 5,

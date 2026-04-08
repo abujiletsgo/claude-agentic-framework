@@ -2,6 +2,7 @@
 name: makeskill
 description: "Autonomous project analyzer that generates project-specific skills and agents. Use when: 'analyze this project', 'generate skills', 'what skills would help', 'makeskill', 'create project skills', 'skill recommendations'. Scans code structure, git history, Claude memory, and recurring pain points to propose and create targeted local skills and agents."
 user-invocable: true
+scope: global
 ---
 
 # MakeSkill — Project Skill Factory

@@ -251,17 +251,20 @@ Source of truth is the repo. The installer symlinks into `~/.claude/`.
 
 ```
 Repo: ~/Documents/claude-agentic-framework/
-├── global-agents/                     # 8 agents (3 Opus + 4 Sonnet + 1 Haiku)
+├── global-agents/                     # 12 agents (2 Opus + 6 Sonnet + 3 Haiku + reference docs)
 │   ├── orchestrator.md                # Lead coordinator (Opus)
 │   ├── project-architect.md           # System design (Opus)
 │   ├── critical-analyst.md            # Risk analysis (Opus)
 │   ├── researcher.md                  # Research specialist (Sonnet)
 │   ├── meta-agent.md                  # Agent generation (Sonnet)
 │   ├── scout-report-suggest.md        # Read-only analysis (Sonnet)
-│   ├── rlm-root.md                    # Recursive controller (Sonnet)
+│   ├── builder.md                     # Code implementation (Sonnet)
+│   ├── debugger.md                    # Diagnosis (Sonnet)
+│   ├── validator.md                   # Build verification (Haiku)
+│   ├── agent-watchdog.md              # Batch monitoring (Haiku)
 │   └── docs-scraper.md                # Documentation fetching (Haiku)
 │
-├── global-commands/                   # 14 slash commands
+├── global-commands/                   # 16 slash commands
 │   ├── prime.md, research.md
 │   ├── orchestrate.md, fusion.md, rlm.md
 │   ├── plan.md, refine.md, review.md

@@ -173,8 +173,11 @@ graph LR
         GA4["researcher (Sonnet)"]
         GA5["meta-agent (Sonnet)"]
         GA6["scout-report-suggest (Sonnet)"]
-        GA7["rlm-root (Sonnet)"]
-        GA8["docs-scraper (Haiku)"]
+        GA7["builder (Sonnet)"]
+        GA8["debugger (Sonnet)"]
+        GA9["docs-scraper (Haiku)"]
+        GA10["validator (Haiku)"]
+        GA11["agent-watchdog (Haiku)"]
     end
 
     subgraph LOCAL["Local Agents (.claude/agents/)"]

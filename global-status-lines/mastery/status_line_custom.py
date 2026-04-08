@@ -34,7 +34,7 @@ AGENT_ACTIONS = {
     "researcher": "🔬",        # Researching/analyzing
     "project-architect": "📐", # Designing/architecting
     "critical-analyst": "🔍",  # Deep analysis/investigating
-    "rlm-root": "🔄",          # Recursing/iterating
+    # rlm-root removed — RLM is now /rlm command, not an agent
     "meta-agent": "⚙️",        # Generating/configuring
     "scout-report-suggest": "🗺️", # Exploring/mapping
     "docs-scraper": "📄",      # Fetching documents

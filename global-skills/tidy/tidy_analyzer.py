@@ -113,6 +113,11 @@ def run_git(*args: str) -> str:
         return ""
 
 
+def is_caf_project(repo_root: Path) -> bool:
+    """Check if this is a Claude Agentic Framework project."""
+    return (repo_root / "global-agents").is_dir()
+
+
 def is_kebab_case(name: str) -> bool:
     """Check if a name follows kebab-case convention."""
     return bool(re.match(r'^[a-z0-9]+(-[a-z0-9]+)*$', name))
@@ -234,6 +239,10 @@ def find_misplaced_root_files() -> list[dict]:
 def find_naming_violations() -> list[dict]:
     """Find directories and files that violate naming conventions."""
     issues = []
+
+    if not is_caf_project(REPO_ROOT):
+        return issues
+
     check_dirs = ["global-agents", "global-commands", "global-hooks", "global-skills"]
 
     for dir_name in check_dirs:
@@ -310,6 +319,9 @@ def find_stale_files(days: int = 90) -> list[dict]:
 
 def check_doc_counts() -> dict:
     """Compare CLAUDE.md declared counts vs actual filesystem counts."""
+    if not is_caf_project(REPO_ROOT):
+        return {"actual": {}, "declared": {}, "stale": {}}
+
     actual = {}
 
     # Count agents

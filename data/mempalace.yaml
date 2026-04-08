@@ -4,7 +4,7 @@ rooms:
   description: Project structure, directory layout, file relationships, and dependency graph
 
 - name: agents
-  description: 14 specialized agents — orchestrator, builder, validator, researcher, debugger, solve, rlm-root, project-architect, critical-analyst, meta-agent, scout-report-suggest, docs-scraper, agent-watchdog
+  description: 12 specialized agents — orchestrator, builder, validator, researcher, debugger, project-architect, critical-analyst, meta-agent, scout-report-suggest, docs-scraper, agent-watchdog (rlm-root and solve removed — protocols folded into orchestrator)
 
 - name: hooks
   description: 39 hooks across 16 event types — lifecycle automation, damage control, context management, fact extraction, memory writing

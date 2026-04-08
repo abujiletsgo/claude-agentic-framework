@@ -48,11 +48,21 @@ Agent(name="builder-2", model="haiku", prompt="Read /tmp/caf_plan.md section 2..
 Agent(name="validator-1", model="haiku", prompt="Verify the changes match the plan...")
 ```
 
+### 4b. Quality gate — after validator PASS on complex/critical tasks
+
+```python
+Agent(name="evaluator-1", subagent_type="critical-analyst", model="sonnet",
+      prompt="Post-build quality review. Read plan, build output, validator results, and git diff. "
+             "Does this actually solve the problem? Edge cases? Simpler approach? Blast radius? "
+             "Output: APPROVE / CONCERNS / REJECT")
+```
+Skip for simple/mechanical tasks. Always run for: security, architecture, 3+ files, critical quality.
+
 ### 5. On failure — escalate dynamically
 
 - 1st failure: spawn debugger, then new builder
-- 2nd failure: spawn `Agent(subagent_type="solve", ...)`
-- Broad/unknown scope: spawn `Agent(subagent_type="rlm-root", ...)`
+- 2nd failure: kill-and-reassign — fresh builder with dead-end context
+- Broad/unknown scope: follow RLM Pyramid phases inline (survey → fan-out Haiku readers → synthesize) — do NOT call Skill("rlm"), just do the phases directly
 
 ## Hard rules
 
@@ -78,7 +88,7 @@ When a specialized workflow outperforms a generic builder:
 
 | Situation | Spawn |
 |---|---|
-| Build keeps failing | `Agent(subagent_type="solve", ...)` |
+| Build keeps failing | Kill-and-reassign: fresh builder with dead-end context |
 | Need tests first | `Agent(name="test-gen", prompt="Use Skill('test-generator', ...)")` |
 | Security-sensitive | `Agent(name="sec-scan", prompt="Use Skill('security-scanner', ...)")` |
 | Complex refactoring | `Agent(name="refactor", prompt="Use Skill('refactoring-assistant', ...)")` |
@@ -106,4 +116,4 @@ When a specialized workflow outperforms a generic builder:
 [PASS/FAIL]
 ```
 
-See `global-agents/orchestrator.md` for the full reference protocol.
+See `global-agents/orchestrator.md` for the full reference protocol (if using Claude Agentic Framework).

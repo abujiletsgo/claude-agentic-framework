@@ -1,7 +1,10 @@
 ---
 name: facts
 description: Manage FACTS.md — the project's living episodic memory layer. Use to add, list, retire, or inspect verified project facts.
+scope: framework
 ---
+
+> **Requires**: Claude Agentic Framework. This skill manages `.claude/FACTS.md` using the framework's fact_manager.py.
 
 # Facts — Episodic Memory Manager
 
@@ -91,10 +94,19 @@ When invoked, parse the user's message to determine the sub-command:
 - `/facts summary` → call count_facts() + estimate tokens
 - `/facts purge-stale` → remove STALE section entries
 
-The fact_manager library is at:
-`{REPO}/global-hooks/framework/facts/fact_manager.py`
+The fact_manager library is at `global-hooks/framework/facts/fact_manager.py` relative to the project root.
 
-Import it with `sys.path.insert(0, path_to_facts_dir)` then `from fact_manager import ...`
+Discover it at runtime:
+```python
+import os
+# Walk up from __file__ or use the project root (cwd when Claude runs)
+project_root = os.getcwd()  # CAF sets cwd to the project root
+facts_dir = os.path.join(project_root, "global-hooks", "framework", "facts")
+if not os.path.isfile(os.path.join(facts_dir, "fact_manager.py")):
+    raise FileNotFoundError(f"fact_manager.py not found at {facts_dir}. Is this a CAF project?")
+```
+
+Import it with `sys.path.insert(0, facts_dir)` then `from fact_manager import ...`
 
 ---
 

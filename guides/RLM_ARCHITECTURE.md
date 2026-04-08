@@ -1,6 +1,6 @@
 # RLM Architecture: Recursive Language Model
 
-> **2026 Update**: The RLM root controller (`rlm-root`) is assigned to the **Sonnet** tier. Sub-agents spawned by RLM use general-purpose agents (Sonnet) for cost efficiency. See [../docs/2026_UPGRADE_GUIDE.md](../docs/2026_UPGRADE_GUIDE.md).
+> **2026 Update**: The `rlm-root` agent has been removed. RLM is now a **root-agent protocol** (`/rlm` command) — the root Opus agent coordinates directly, spawning many Haiku readers for cheap wide-scan context compaction ("Pyramid Protocol"). When the orchestrator needs RLM, it follows the phases inline rather than spawning a separate agent. See [../global-commands/rlm.md](../global-commands/rlm.md).
 
 ## The Paradigm Shift
 

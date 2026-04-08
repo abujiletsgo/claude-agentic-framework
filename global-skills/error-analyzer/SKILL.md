@@ -48,10 +48,14 @@ Read the file at the error location using the Read tool with the file path and l
 
 ### Step 4: Correlate with Known Patterns
 
+**If the CAF knowledge-db skill is available** (`~/.claude/skills/knowledge-db/` exists):
+
 Check the knowledge database for previously seen errors:
 ```bash
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py search "<error-type>" --category error
 ```
+
+Skip this step if knowledge-db is not installed.
 
 ### Step 5: Generate Analysis Report
 
@@ -76,6 +80,8 @@ Format as:
 
 ### Step 6: Store for Future Reference
 
+**If the CAF knowledge-db skill is available** (`~/.claude/skills/knowledge-db/` exists):
+
 If this is a novel error pattern, store it in the knowledge database:
 ```bash
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
@@ -84,6 +90,8 @@ uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
   --content "<root cause and fix>" \
   --tags "<language>,<framework>,<error-type>"
 ```
+
+Skip this step if knowledge-db is not installed.
 
 ## Common Error Patterns
 
@@ -99,7 +107,7 @@ uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
 - `SyntaxError: Unexpected token`: JSON parse failure, template literal issues
 - `ENOENT`: File path issues, missing build artifacts
 
-### Shell/Hooks
+### Shell/Hooks (CAF-specific — skip in non-framework projects)
 - Exit code 2: Hook blocked the operation (check patterns.yaml)
 - `uv run` failures: Missing pyproject.toml, dependency issues
 - JSON parse errors: Invalid stdin to hook scripts

@@ -2,28 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (08:16 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (483dfd1) by Tom Kwon
-**Changed:**
-  CLAUDE.md | 1 -
-  1 file changed, 1 deletion(-)
-
-## 2026-03-04 (07:13 UTC) · @Tom Kwon
-**Commit:** docs: persist framework-move warning through auto-doc regeneration (3a0a13a) by Tom Kwon
-**Changed:**
-  CLAUDE.md                | 1 +
-  scripts/generate_docs.py | 1 +
-  2 files changed, 2 insertions(+)
-
-## 2026-03-09 (05:53 UTC) · @Tom Kwon
-**Commit:** fix: deduplicate memory entries, auto-install prerequisites (093d268) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md                                   |   3 +-
-  .claude/MEMORY.md                                  | 288 +++------------------
-  .../framework/memory/auto_memory_writer.py         |  41 ++-
-  install.sh                                         |  77 +++++-
-  4 files changed, 152 insertions(+), 257 deletions(-)
-
 ## 2026-03-27 (01:30 UTC) · @Tom Kwon
 **Commit:** feat: add arch-map command/skill, update prime with caching improvements (eb5971b) by Tom Kwon
 **Changed:**
@@ -306,3 +284,30 @@
   caf-hooks/src/hooks/enforce_orchestrate.rs     |  22 +-
   caf-hooks/src/hooks/epistemic_guard.rs         |  24 +
   ... and 17 more files
+
+## 2026-04-08 (10:28 UTC) · @Tom Kwon
+**Commit:** chore: remove FRAMEWORK_REFERENCE.md and framework-report.html (749b85e) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                            |   22 +-
+  FRAMEWORK_REFERENCE.md                       | 1041 --------------------------
+  README.md                                    |    4 +-
+  caf-hooks/.claude/FACTS.md                   |   17 +
+  caf-hooks/.claude/MEMORY.md                  |   11 +
+  caf-hooks/.claude/settings.json              |    7 +
+  docs/framework-report.html                   |  403 ----------
+  global-skills/tidy/SKILL.md                  |    6 +-
+  global-skills/tidy/tidy_analyzer.py          |    4 +-
+  scripts/generate_docs.py                     |    4 +-
+  ... and 20 more files
+
+## 2026-04-08 (10:51 UTC) · @Tom Kwon
+**Commit:** docs: update framework-guide-ko.html for v4.2 (1a3a036) by Tom Kwon
+**Changed:**
+  docs/framework-guide-ko.html | 127 +++++++++++++++++++++++++++++++------------
+  1 file changed, 93 insertions(+), 34 deletions(-)
+
+## 2026-04-08 (13:21 UTC) · @Tom Kwon
+**Commit:** docs: add 20 skill workflow diagrams + mempalace/AAAK sections to guide (074d3c5) by Tom Kwon
+**Changed:**
+  docs/framework-guide-ko.html | 1375 ++++++++++++++++++++++++++++++++++++++++++
+  1 file changed, 1375 insertions(+)

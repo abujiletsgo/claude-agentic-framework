@@ -105,7 +105,7 @@ User: "The chart in report.xlsx is showing wrong data"
 
 Invoke pattern:
 ```
-Agent(subagent_type="solve", prompt="Fix chart data in report.xlsx. 
+Agent(subagent_type="builder", model="sonnet", prompt="Fix chart data in report.xlsx. 
 Inspection output: <paste officecli view output here>. 
 Use officecli MCP tools to read and correct the chart data source.")
 ```

@@ -426,7 +426,121 @@ if [ -f templates/settings.json.template ]; then
 fi
 ```
 
-If `--docs-only` flag: only run this phase.
+**4h. Doc Staleness Audit** — Detect docs referencing deleted/renamed entities or stale counts.
+
+Works in any project. Adapts to whatever structure exists.
+
+**Step 1: Find the deleted-entities file (if any)**
+
+Projects can maintain a list of deleted entities at any of these paths (first found wins):
+```bash
+for f in .deleted_entities data/deleted_entities.txt .claude/deleted_entities.txt; do
+  [ -f "$f" ] && DELETED_FILE="$f" && break
+done
+```
+Format: one entry per line, `type:name` (e.g., `module:auth-v1`, `class:OldParser`, `route:/api/v1/users`). Lines starting with `#` are comments.
+
+**Step 2: If no deleted-entities file, detect ghosts automatically**
+
+This works in ANY project by comparing what docs reference vs what exists:
+
+```bash
+# Strategy: find all doc-like files, extract "entity-like" references,
+# then check if those entities exist as files/directories/symbols
+
+# Find documentation files (adapt to project structure)
+DOC_FILES=$(find . -maxdepth 3 -type f \( -name '*.md' -o -name '*.html' -o -name '*.rst' -o -name '*.txt' \) \
+  -not -path './.git/*' -not -path './node_modules/*' -not -path './archive/*' \
+  -not -path './*venv*/*' -not -path './__pycache__/*' 2>/dev/null)
+
+# Project-specific ghost detection (only check what exists in the project):
+#
+# Python: classes/modules referenced in docs but missing from source
+#   grep -oP '`[A-Z][a-zA-Z]+`' docs/*.md | sort -u → check if class exists via grep
+#
+# Framework (global-agents/ exists): agents in docs but no .md file
+#   grep -oP '(?:agent|subagent)[:\s]+[a-z-]+' $DOC_FILES → check global-agents/{name}.md
+#
+# Node (package.json exists): exported modules in docs but removed from src/
+#   grep -oP '(?:import|require)\s+.*from\s+["\x27]([^"]+)' → check file exists
+#
+# Generic: any backtick-quoted `identifier` in docs → check if grep finds it in source
+```
+
+**Step 3: Scan docs for stale references**
+
+```bash
+# Read deleted names from file or ghost detection
+if [ -n "$DELETED_FILE" ]; then
+  deleted_names=$(grep -v '^#' "$DELETED_FILE" | cut -d: -f2 | tr -d ' ')
+fi
+
+# Scan ALL doc-like files (not just docs/ — adapt to project)
+STALE_FOUND=0
+for name in $deleted_names; do
+  [ -z "$name" ] && continue
+  hits=$(grep -rn "\b${name}\b" $DOC_FILES 2>/dev/null | grep -v 'archive/' | grep -v 'CHANGELOG' | head -5)
+  if [ -n "$hits" ]; then
+    echo "STALE: '$name' (deleted) still referenced in:"
+    echo "$hits"
+    STALE_FOUND=$((STALE_FOUND + 1))
+  fi
+done
+```
+
+**Step 4: Detect stale counts in prose**
+
+Compares numeric claims in docs against reality. Adapts to what the project has:
+
+```bash
+# Build actual counts from whatever exists
+declare -A ACTUAL_COUNTS
+
+# Generic patterns (work in any project)
+[ -d src ] && ACTUAL_COUNTS[modules]=$(find src -name '*.py' -o -name '*.ts' -o -name '*.rs' -o -name '*.go' 2>/dev/null | wc -l | tr -d ' ')
+[ -d tests ] && ACTUAL_COUNTS[tests]=$(find tests -name 'test_*' -o -name '*_test.*' -o -name '*.test.*' 2>/dev/null | wc -l | tr -d ' ')
+
+# Framework-specific (only if dirs exist)
+[ -d global-agents ] && ACTUAL_COUNTS[agents]=$(ls -1 global-agents/*.md 2>/dev/null | grep -v reference | wc -l | tr -d ' ')
+[ -d global-commands ] && ACTUAL_COUNTS[commands]=$(ls -1 global-commands/*.md 2>/dev/null | wc -l | tr -d ' ')
+[ -d global-skills ] && ACTUAL_COUNTS[skills]=$(ls -1d global-skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+
+# Scan docs for numeric claims about these entities
+for entity in "${!ACTUAL_COUNTS[@]}"; do
+  actual=${ACTUAL_COUNTS[$entity]}
+  # Match patterns like "14 agents", "8 specialized agents", "23 test files"
+  for doc in $DOC_FILES; do
+    grep -nP "\b\d+\s+(?:specialized\s+)?${entity}\b" "$doc" 2>/dev/null | while read line; do
+      claimed=$(echo "$line" | grep -oP '\d+(?=\s+(?:specialized\s+)?'"${entity}"')')
+      if [ -n "$claimed" ] && [ "$claimed" != "$actual" ]; then
+        echo "STALE COUNT: $doc — claims $claimed $entity, actual is $actual"
+        echo "  $line"
+      fi
+    done
+  done
+done
+```
+
+**Output**: Append a `### Doc Staleness` section to the Tidy Report:
+
+```markdown
+### Doc Staleness Audit
+| Entity | Status | Referenced In | Action |
+|--------|--------|---------------|--------|
+| `old-module` | DELETED | docs/API.md:42, README.md:15 | Update or archive |
+| "14 agents" | STALE COUNT | docs/guide.html:100 (actual: 11) | Update number |
+
+⚠️ N stale references found. These require manual updates — prose can't be auto-generated.
+```
+
+**Rules**:
+- **Never auto-edit prose docs** — only report what's stale. These need human judgment.
+- **Flag but don't block** — staleness is a warning, not a tidy failure.
+- **Include file:line** so the user can jump directly to the stale reference.
+- **Adapt to project** — only run checks that make sense (don't look for `global-agents/` in a Django project).
+- If no deleted-entities file exists and ghosts are found, create the file and suggest the user maintain it.
+
+If `--docs-only` flag: only run this phase (4a through 4h).
 
 ---
 

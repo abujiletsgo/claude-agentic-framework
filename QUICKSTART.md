@@ -113,9 +113,9 @@ You (Claude Code)
  |
  +-- /research, /orchestrate, /rlm spawn sub-agents
  |     |
- |     +-- Opus tier:   orchestrator, architect, analyst, rlm-root
- |     +-- Sonnet tier: researcher, meta-agent, scout
- |     +-- Haiku tier:  docs-scraper, validators
+ |     +-- Opus tier:   orchestrator, project-architect
+ |     +-- Sonnet tier: researcher, critical-analyst, builder, debugger, meta-agent, scout
+ |     +-- Haiku tier:  docs-scraper, validator, agent-watchdog
  |
  +-- Hooks run automatically:
  |     +-- PreToolUse:   damage control (security)
