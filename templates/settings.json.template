@@ -393,6 +393,17 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStart/write_agent_live.py",
+            "timeout": 3,
+            "async": true,
+            "_comment": "ASYNC: write agent status to /tmp/caf_live_agents.json for dashboard"
+          }
+        ]
       }
     ],
 
@@ -444,6 +455,17 @@
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/sprint_palace_store.py",
             "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/write_agent_live.py",
+            "timeout": 3,
+            "async": true,
+            "_comment": "ASYNC: mark agent done in /tmp/caf_live_agents.json"
           }
         ]
       },
