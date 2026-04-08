@@ -49,6 +49,9 @@ out/
 *.db-wal
 *.db-shm
 
+# Rust
+caf-hooks/target/
+
 # Astral UV
 .uv/
 .python-version

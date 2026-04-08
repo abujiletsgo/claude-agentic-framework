@@ -192,6 +192,25 @@ echo "$UV_WARMUP_OPT" > "$OPT_FILE"
 uv run --no-project "$OPT_FILE" 2>/dev/null || echo "  Optional deps (anthropic): skipped (install later if needed)"
 rm -f "$WARMUP_FILE" "$OPT_FILE"
 
+# Rust / cargo — optional, for caf-hooks binary (6-32x faster hook execution)
+CAF_HOOKS_AVAILABLE=false
+if [ -d "$REPO_DIR/caf-hooks" ]; then
+  if command -v cargo >/dev/null 2>&1; then
+    echo "  cargo: OK ($(cargo --version))"
+    echo "  Building caf-hooks binary (release mode)..."
+    if (cd "$REPO_DIR/caf-hooks" && cargo build --release 2>/dev/null); then
+      CAF_HOOKS_AVAILABLE=true
+      CAF_HOOKS_BIN="$REPO_DIR/caf-hooks/target/release/caf-hooks"
+      echo "  caf-hooks: built ($CAF_HOOKS_BIN)"
+    else
+      echo "  WARNING: caf-hooks build failed. Falling back to Python hooks."
+    fi
+  else
+    echo "  cargo: not found (optional) — Python hooks will be used"
+    echo "           To enable Rust hooks (6-32x faster): curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  fi
+fi
+
 # Check mempalace availability (optional — auto-detects any Python 3.x venv)
 MEMPALACE_VENV=""
 for _sp in "$HOME"/Documents/mempalace/.venv/lib/python3.*/site-packages; do
@@ -439,6 +458,7 @@ fi
 
 echo ""
 echo "Optional features:"
+echo "  Rust hooks (caf-hooks): $([ "$CAF_HOOKS_AVAILABLE" = true ] && echo 'enabled (6-32x faster)' || echo 'disabled (install cargo to enable)')"
 echo "  AAAK compression: $([ "$MEMPALACE_AVAILABLE" = true ] && echo 'enabled' || echo 'disabled (install mempalace to enable)')"
 
 echo ""

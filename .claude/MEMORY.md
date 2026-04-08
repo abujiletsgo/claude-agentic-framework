@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (07:29 UTC) · @Tom Kwon
-**Commit:** chore: ignore generated .claude/settings.json, update memory (520dcd3) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md | 68 +++++++++++++++++++++++--------------------------------
-  .gitignore        |  1 +
-  2 files changed, 29 insertions(+), 40 deletions(-)
-
 ## 2026-02-25 (07:39 UTC) · @Tom Kwon
 **Commit:** docs: fix stale agent/hook counts, add RLM explanation, update roles doc (3de4b38) by Tom Kwon
 **Changed:**
@@ -304,3 +297,10 @@
   docs/framework-report.html            | 403 ++++++++++++++++++++++++++++++++++
   scripts/generate_docs.py              |  19 +-
   5 files changed, 446 insertions(+), 17 deletions(-)
+
+## 2026-04-08 (08:11 UTC) · @Tom Kwon
+**Commit:** docs: complete framework-guide-ko.html v4.1 update (f3b8091) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md            |  17 ++--
+  docs/framework-guide-ko.html | 203 +++++++++++++++++++++++++++++++++++--------
+  2 files changed, 179 insertions(+), 41 deletions(-)

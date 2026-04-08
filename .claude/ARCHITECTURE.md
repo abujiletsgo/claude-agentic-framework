@@ -1,5 +1,5 @@
 # Claude Agentic Framework v4.0 — Architecture & Dependency Map
-<!-- Generated: 2026-03-30 | Git: pending-commit -->
+<!-- Generated: 2026-04-08 | Git: caf-hooks Rust binary added -->
 <!-- Regenerate: /arch-map -->
 
 ## Sections (read only what you need — discard after use)
@@ -30,6 +30,8 @@
 | `.claude/PROJECT_CONTEXT.md` | Written by `/prime` command. Read by `auto_prime_inject.py` at SessionStart. Git-hash validated — auto-invalidates on commit. | `/prime` to regenerate |
 | `install.sh` | Reads template, validates all hook .py files exist, creates symlinks for agents/commands/skills to `~/.claude/`, writes `~/.claude/settings.json`, installs git pre-push hook. | `bash install.sh` |
 | `scripts/generate_docs.py` | Reads `global-agents/`, `global-commands/`, `global-skills/`, `guides/`, `docs/`, `templates/settings.json.template`, `data/model_tiers.yaml`. Writes `README.md` + `CLAUDE.md`. | `uv run scripts/generate_docs.py` |
+| `caf-hooks/src/**/*.rs` | Rust hook implementations. After changes, rebuild binary. If adding new hook subcommand, wire into `main.rs` + `hooks/mod.rs`. | `cd caf-hooks && cargo build --release` |
+| `caf-hooks/Cargo.toml` | Rust dependency changes. Rebuild binary after editing. | `cd caf-hooks && cargo build --release` |
 | Any `global-agents/*.md` | Run `bash install.sh` to re-symlink to `~/.claude/agents/`. Run `uv run scripts/generate_docs.py` to update counts. | `bash install.sh && uv run scripts/generate_docs.py` |
 | Any `global-commands/*.md` | Run `bash install.sh` to re-symlink to `~/.claude/commands/`. Run `uv run scripts/generate_docs.py` to update counts. | `bash install.sh && uv run scripts/generate_docs.py` |
 | Any `global-skills/*/` | Run `bash install.sh` to re-symlink to `~/.claude/skills/`. Run `uv run scripts/generate_docs.py` to update counts. | `bash install.sh && uv run scripts/generate_docs.py` |
@@ -46,6 +48,19 @@
 
 ```mermaid
 flowchart TD
+
+  subgraph RUST["🦀 Rust Binary (caf-hooks, 2.0MB)"]
+    RUST_BIN["`**caf-hooks**
+    12 hooks, 3040 LOC
+    ~6-32x faster than Python`"]
+    RUST_CB["`**circuit_breaker.rs**
+    built-in CB (no wrapper)`"]
+    RUST_TYPES["`**types.rs + io.rs**
+    shared JSON I/O`"]
+    RUST_HOOKS["`**hooks/**
+    damage_control, memory_writer
+    fact_extractor, epistemic_guard...`"]
+  end
 
   subgraph CONFIG["Configuration Layer"]
     TEMPLATE["`**settings.json.template**
@@ -201,6 +216,14 @@ flowchart TD
   %% Cross-layer dependencies
   FACTS_EXT -.->|"imports"| FACT_MGR["`**fact_manager.py**`"]
   FACT_MGR --> FACTS_FILE
+
+  %% Rust binary replaces Python hooks (6-32x speedup)
+  RUST_BIN -.->|"replaces"| POST
+  RUST_BIN -.->|"replaces"| GUARD
+  RUST_BIN -.->|"replaces"| STOP_HOOKS
+  RUST_CB -.->|"replaces"| CB_WRAP
+  RUST_HOOKS -->|"writes"| FACTS_FILE
+  RUST_HOOKS -->|"writes"| MEMORY_FILE
 ```
 
 ---
@@ -372,7 +395,14 @@ bash install.sh
 - **Derived**: `README.md` + `CLAUDE.md` (via `generate_docs.py`)
 - **Risk**: Editing YAML without re-running `generate_docs.py` causes stale docs.
 
-### 7. Damage Control Patterns Location
+### 7. Python ↔ Rust Hook Duality (NEW)
+- **Python**: `global-hooks/framework/` (original implementations)
+- **Rust**: `caf-hooks/src/hooks/` (12 hooks ported, 25 remaining)
+- **Both read the same stdin JSON and produce the same stdout JSON**
+- **Risk**: Behavior divergence if Python hook is updated but Rust port is not. During transition, settings.json.template still points to Python. Switch to Rust by changing command paths.
+- **Benchmark**: Rust is 6-32x faster (see `/tmp/caf_rust_benchmark_results.md`)
+
+### 8. Damage Control Patterns Location
 - **Primary**: `global-hooks/damage-control/patterns.yaml`
 - **Fallback**: `.claude/skills/damage-control/patterns.yaml` (project-local skill copy)
 - **Loaded by**: `unified-damage-control.py` (checks project dir first, then skill dir)
