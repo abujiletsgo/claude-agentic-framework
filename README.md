@@ -38,7 +38,7 @@ global-commands/     16 commands
 global-skills/       20 skills
 global-hooks/        41 hooks across 16 events
 guides/              10 engineering guides
-docs/                4 reference docs
+docs/                5 reference docs
 data/                model_tiers.yaml + knowledge-db/
 templates/           settings.json.template
 apps/observability/  Vue 3 + Bun (ports 4000/5173)
@@ -222,7 +222,7 @@ The installer:
 | `global-hooks/framework/caddy/INTEGRATION.md` | Caddy classifier architecture |
 | `global-hooks/framework/knowledge/README.md` | Knowledge pipeline details |
 | `guides/` | 10 engineering guides (context, multi-agent, RLM, etc.) |
-| `docs/` | 4 reference documents |
+| `docs/` | 5 reference documents |
 
 ## HTML Docs
 
@@ -237,7 +237,7 @@ Interactive documentation (Korean):
 
 ## Guides
 
-See `guides/` for 10 comprehensive engineering guides and `docs/` for 4 reference documents.
+See `guides/` for 10 comprehensive engineering guides and `docs/` for 5 reference documents.
 
 ## Contributing
 
