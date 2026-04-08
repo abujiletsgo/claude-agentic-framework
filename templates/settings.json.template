@@ -6,7 +6,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ANTHROPIC_CUSTOM_HEADERS": "anthropic-beta: extended-cache-ttl-2025-04-11"
   },
-  "model": "opus",
+  "model": "sonnet",
   "permissions": {
     "allow": [
       "Bash(*)",
@@ -112,9 +112,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orchestrator_tool_guard.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orchestrator-tool-guard",
             "timeout": 5,
-            "_comment": "Block orchestrator from using file/search/exec tools directly — forces delegation to subagents"
+            "_comment": "Rust: Block orchestrator from using file/search/exec tools directly — forces delegation to subagents"
           }
         ]
       },
@@ -210,10 +210,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_escalate.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks --cb auto-escalate",
             "timeout": 5,
             "async": true,
-            "_comment": "ASYNC: escalation advice delivered on next turn"
+            "_comment": "Rust: ASYNC: escalation advice delivered on next turn"
           }
         ]
       },
@@ -246,10 +246,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/facts/auto_fact_extractor.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks --cb auto-fact-extractor",
             "timeout": 5,
             "async": true,
-            "_comment": "ASYNC: fact extraction writes to disk, result delivered next turn"
+            "_comment": "Rust: ASYNC: fact extraction writes to disk, result delivered next turn"
           }
         ]
       }
@@ -349,10 +349,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks subagent-tracker",
             "timeout": 5,
             "async": true,
-            "_comment": "v4.0: Track subagent spawning with agent_id/agent_type"
+            "_comment": "Rust: v4.0: Track subagent spawning with agent_id/agent_type"
           }
         ]
       },
@@ -360,9 +360,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orch_depth_tracker.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orch-depth-tracker",
             "timeout": 5,
-            "_comment": "Track orchestration nesting depth for tool guard"
+            "_comment": "Rust: Track orchestration nesting depth for tool guard"
           }
         ]
       },
@@ -383,7 +383,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/subagent_tracker.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks subagent-tracker",
             "timeout": 5
           }
         ]
@@ -392,9 +392,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/orch_depth_tracker.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orch-depth-tracker",
             "timeout": 5,
-            "_comment": "Track orchestration nesting depth for tool guard"
+            "_comment": "Rust: Track orchestration nesting depth for tool guard"
           }
         ]
       },
@@ -402,10 +402,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/monitoring/session_cost_tracker.py",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks session-cost-tracker",
             "timeout": 8,
             "async": true,
-            "_comment": "ASYNC: reads agent transcript + records cost — fire-and-forget"
+            "_comment": "Rust: ASYNC: reads agent transcript + records cost — fire-and-forget"
           }
         ]
       },
@@ -417,6 +417,17 @@
             "timeout": 8,
             "async": true,
             "_comment": "v4.1: ASYNC — store agent results in project-local mempalace"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
+            "timeout": 5,
+            "async": true,
+            "_comment": "Rust: ASYNC contextual voice notification on subagent completion"
           }
         ]
       }
@@ -468,8 +479,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/security/audit_config_change.py",
-            "timeout": 5
+            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks audit-config-change",
+            "timeout": 5,
+            "_comment": "Rust: Audit configuration changes for security"
           }
         ]
       }

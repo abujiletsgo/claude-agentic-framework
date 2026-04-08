@@ -47,6 +47,8 @@ fn is_test_command(command: &str) -> bool {
     test_patterns().iter().any(|pat| pat.is_match(&lower))
 }
 
+const MAX_INJECTION_CHARS: usize = 1500;
+
 const ERROR_KEYWORDS: &[&str] = &[
     "error", "exception", "traceback", "failed", "assert", "expected", "got", "stack trace",
 ];
@@ -179,7 +181,12 @@ pub fn run() {
     }
 
     let effective_exit_code = exit_code.unwrap_or(1);
-    let error_context = extract_error_context(stderr, stdout, effective_exit_code);
+    let raw_context = extract_error_context(stderr, stdout, effective_exit_code);
+    let error_context = if raw_context.len() > MAX_INJECTION_CHARS {
+        format!("{}... [truncated]", &raw_context[..MAX_INJECTION_CHARS])
+    } else {
+        raw_context
+    };
 
     eprintln!();
     eprintln!("{}", "=".repeat(60));

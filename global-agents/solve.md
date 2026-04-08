@@ -50,143 +50,38 @@ You (root) are opus. You synthesize, decide, and direct. Sub-agents do the heavy
 
 ## Parallel Orchestration Engine
 
-**This is your primary advantage.** You are not a single-threaded debugger — you are a team coordinator who spawns many agents working simultaneously.
+**This is your primary advantage.** You are a team coordinator — spawn many agents working simultaneously, not a single-threaded debugger.
 
 ### Task-List-Driven Coordination
 
-Every piece of work gets a task. Tasks drive visibility, dependencies, and progress:
+Every piece of work gets a task. Create all tasks upfront with dependencies, then spawn ALL independent agents in a single message for true parallelism. Mark tasks in_progress/completed as agents return results. Check TaskList after each phase to find newly unblocked work.
 
-```
-# 1. Create all tasks upfront with dependencies
-TaskCreate(subject="Research error trace", description="Follow stack trace to root cause")
-TaskCreate(subject="Research data flow", description="Trace input → transform → output")
-TaskCreate(subject="Research git history", description="git log/blame for recent changes")
-TaskCreate(subject="Synthesize findings", description="Combine all research into hypotheses")
-TaskUpdate(taskId="4", addBlockedBy=["1", "2", "3"])  # synthesis waits for research
-
-# 2. Spawn agents for independent tasks IN ONE MESSAGE (parallel!)
-Agent(name="trace-researcher", model="sonnet", prompt="Task 1: ...")
-Agent(name="flow-researcher", model="sonnet", prompt="Task 2: ...")
-Agent(name="history-researcher", model="sonnet", prompt="Task 3: ...")
-```
-
-### Parallel Fan-Out Patterns
-
-**Research fan-out** — spawn 3-5 researcher agents simultaneously, each investigating a different angle:
-```
-# ALL in one message block = truly parallel
-Agent(name="r1", model="sonnet", prompt="Angle 1: error trace analysis. Write to /tmp/solve_r1.md")
-Agent(name="r2", model="sonnet", prompt="Angle 2: data flow analysis. Write to /tmp/solve_r2.md")
-Agent(name="r3", model="sonnet", prompt="Angle 3: git history analysis. Write to /tmp/solve_r3.md")
-Agent(name="r4", model="sonnet", prompt="Angle 4: dependency analysis. Write to /tmp/solve_r4.md")
-Agent(name="r5", model="haiku", prompt="Angle 5: test coverage scan. Write to /tmp/solve_r5.md")
-```
-
-**Hypothesis fan-out** — spawn independent hypothesis generators that cross-pollinate:
-```
-Agent(name="h1", model="sonnet", prompt="Propose solution A. Read /tmp/solve_shared.md first.")
-Agent(name="h2", model="sonnet", prompt="Propose solution B. Read /tmp/solve_shared.md first.")
-Agent(name="h3", model="sonnet", prompt="Propose solution C. Read /tmp/solve_shared.md first.")
-```
-
-**Validation fan-out** — verify multiple things simultaneously:
-```
-Agent(name="v1", model="haiku", prompt="Verify function X exists at file:line")
-Agent(name="v2", model="haiku", prompt="Verify no other callers of Y")
-Agent(name="v3", model="haiku", prompt="Run test suite Z and report pass/fail")
-```
-
-### Inter-Agent Communication via SendMessage
-
-Named agents can communicate. Use this for real-time coordination:
-
-```
-# Root sends task assignments
-SendMessage(to="trace-researcher", summary="new lead found", message="Also check config.py:42, found related error path")
-
-# Root broadcasts to all agents
-SendMessage(to="*", summary="shared finding", message="Root cause narrowed to auth module. Focus there.")
-```
+Fan-out patterns: research (3-5 sonnet per angle), hypothesis (2-3 sonnet, each a different approach), validation (haiku per claim). Always in one message. For full code examples, see [solve-reference.md](solve-reference.md).
 
 ### Orchestration Rules
 
-Follow the parallel execution rules from [orchestrator.md](orchestrator.md) (Rules 3-4). Additionally for solve:
 - **Fan-in after fan-out**: YOU (root opus) synthesize — never delegate synthesis to a sub-agent
 - **No limit on concurrent agents**: 3 minimum for non-trivial, 5-8 common, 10+ for architectural
 - **Task status drives workflow**: check TaskList after agents complete to find newly unblocked tasks
 
 ### Background Monitors: Watchdog + Guardian
 
-At the start of every solve session that spawns 2+ parallel agents, spawn BOTH monitors in the same message as your first agent batch:
+At the start of every solve session with 2+ parallel agents, spawn BOTH in the same message as your first agent batch:
 
-**Watchdog** — spawn per [orchestrator.md](orchestrator.md#watchdog-protocol) watchdog protocol. Use `root name: 'solve'` instead of `'orchestrator'`.
+**Watchdog** — spawn per [orchestrator.md](orchestrator.md#watchdog-protocol). Use `root name: 'solve'`.
 
-**Guardian** (catches test regressions, blast radius violations):
-```
-Agent(name="guardian", model="haiku", run_in_background=true,
-  prompt="You are the continuous validation guardian. Run in a loop:
-  1. Watch /tmp/solve_state.md for new iterations
-  2. After each iteration checkpoint, run the test suite
-  3. Verify no regressions: compare test counts to baseline in state file
-  4. Check blast radius: grep for imports/references of modified files
-  5. Write validation report to /tmp/solve_guardian_report.md
-  6. If regression detected, immediately alert root via SendMessage(to='solve')
+**Guardian** (haiku, run_in_background) — watches `/tmp/solve_state.md`, runs test suite after each checkpoint, alerts root via SendMessage if regression detected or blast radius exceeded. Prompt template in [solve-reference.md](solve-reference.md).
 
-  Baseline tests passing: [N]. Files under watch: [list].
-  Run tests after every checkpoint commit.")
-```
-
-**Division of responsibility:**
 | Monitor | Catches | Model | When to spawn |
 |---------|---------|-------|---------------|
-| `watchdog` | Silent failures, stuck agents, empty outputs, errors | haiku | Always — any parallel batch |
-| `guardian` | Test regressions, blast radius creep | haiku | When implementation changes are expected |
+| `watchdog` | Silent failures, stuck agents, empty outputs | haiku | Always — any parallel batch |
+| `guardian` | Test regressions, blast radius creep | haiku | When implementation changes expected |
 
-**When watchdog alerts arrive** (SendMessage from "watchdog"):
-- Check which agent failed and what it was supposed to produce
-- If the output is a blocker: cancel the batch, kill and re-spawn the failed agent alone
-- If non-critical: let others finish, re-queue the failed agent with a simpler prompt
-- Never spawn a replacement that does the same thing the same way — the watchdog caught it failing for a reason
-
-**Guardian responsibilities:**
-- Runs tests after every checkpoint commit — catches regressions before they compound
-- Monitors blast radius — flags when changes ripple beyond expected scope
-- Validates state file health — detects spiral patterns (same file 3x, same approach 3x)
-- Reports via SendMessage if something goes wrong — root can revert immediately
+**When watchdog alerts arrive**: check which agent failed. Blocker → cancel batch, re-spawn failed agent alone. Non-critical → let others finish, re-queue. Never re-spawn with same approach.
 
 ### Eval Agent (Dynamic Test Harness Builder)
 
-For complex problems, spawn an eval agent alongside the guardian. The eval agent **creates a validation harness** specific to the problem being solved:
-
-```
-Agent(name="eval-builder", model="sonnet", run_in_background=true,
-  prompt="You are the eval harness builder. Your job:
-  1. Read /tmp/solve_state.md to understand the problem and expected behavior
-  2. Create a focused test/eval script at /tmp/solve_eval.sh that:
-     - Tests the SPECIFIC behavior the user reported as broken
-     - Tests edge cases around the fix
-     - Produces a clear PASS/FAIL output
-  3. Run the eval after each checkpoint (watch /tmp/solve_state.md for updates)
-  4. Report results to /tmp/solve_eval_results.md
-  5. If FAIL, SendMessage to root with details
-
-  The eval should be lightweight, fast, and targeted — not a full test suite.
-  Think: 'what would a QA engineer write to verify THIS specific fix?'")
-```
-
-**When to spawn the eval agent:**
-- Problem has clear expected vs actual behavior → always
-- Bug fix with reproduction steps → always
-- Refactoring with no behavior change → skip (guardian + existing tests are enough)
-- New feature → spawn eval to verify acceptance criteria
-
-**Eval vs Guardian division:**
-| Agent | Purpose | Model | Runs |
-|-------|---------|-------|------|
-| `guardian` | Regression detection — existing tests | haiku | After every checkpoint |
-| `eval-builder` | Problem-specific validation — custom tests | sonnet | Creates once, runs after each checkpoint |
-
-Together they provide **continuous validation**: the guardian catches regressions while the eval verifies the fix actually works.
+For problems with clear expected vs actual behavior, spawn an eval agent (sonnet, run_in_background) that creates a targeted PASS/FAIL test script at `/tmp/solve_eval.sh` and reruns it after each checkpoint. Prompt template in [solve-reference.md](solve-reference.md). Skip for pure refactoring — guardian + existing tests are enough.
 
 ## Adaptive Iteration Budget
 
@@ -204,62 +99,23 @@ Write the budget to the state file. If you hit the budget, stop — don't auto-e
 
 ### Atomic Commit Checkpoints
 
-Do NOT use `git stash`. Use atomic commits — cleaner, granular rollback.
-
-**Before any code changes:**
-```bash
-git rev-parse HEAD  # Save as ROLLBACK_BASE in state file
-```
-
-**After each SUCCESSFUL iteration (tests pass, no regressions):**
-```bash
-git add <specific changed files>
-git commit -m "solve: checkpoint N - <what was fixed>"
-```
-
-**If something goes wrong:**
-```bash
-git revert HEAD          # Undo last checkpoint cleanly
-# OR for full rollback:
-git reset --hard <ROLLBACK_BASE>  # Only with user permission
-```
+Do NOT use `git stash`. Use atomic commits — cleaner, granular rollback. Before changes: `git rev-parse HEAD` → save as ROLLBACK_BASE. After each successful iteration: `git add <files> && git commit -m "solve: checkpoint N - <what was fixed>"`. On failure: `git revert HEAD` (clean undo) or `git reset --hard <ROLLBACK_BASE>` (full rollback, only with user permission).
 
 ### Spiral Detection
 
-Track in state file after each iteration:
-```
-**Health check**:
-- Files modified this iteration: [list]
-- Total files modified across all iterations: [count]
-- Tests passing before: N -> Tests passing after: M
-- Did this iteration make things WORSE? YES/NO
-- Approach category: [e.g., "timestamp parsing", "config change", "data flow fix"]
-- Agents spawned this iteration: [count] (names: [list])
-- Agents running in background: [count] (names: [list])
-```
+Track a health check in the state file after each iteration: files modified, tests before/after, worse Y/N, approach category, agents spawned.
 
 **Hard rules:**
 
 1. **Test regression → immediate revert.** Tests went DOWN → `git revert HEAD` and rethink. Do NOT "fix the fix."
 2. **Same-file spiral.** Same file modified 3+ times across iterations → stop and ask user.
-3. **Same-approach spiral.** Same approach category 3 times → spiraling even if different files. **Stop and ask user.**
+3. **Same-approach spiral.** Same approach category 3 times → stop and ask user.
 4. **Blast radius creep.** Total modified files > 5 and unsolved → stop and ask user.
-5. **No-progress detector.** Last 2 iterations produced no new verified info → looping. Stop and ask user.
+5. **No-progress detector.** Last 2 iterations produced no new verified info → stop and ask user.
 
 ### Kill-and-Reassign (instead of just stopping)
 
-When spiral is detected, don't just stop — **kill the stuck approach and start fresh:**
-
-1. Write a `DEAD_END` entry to state file with: what was tried, why it failed, what was learned
-2. Spawn a **new** agent with ONLY the verified facts — not the failed reasoning context
-3. The new agent reads the state file's `DEAD_END` entries to avoid repeating mistakes
-4. Failed reasoning pollutes context. Fresh start with just the facts is cheaper and more effective.
-
-```
-Agent(name="fresh-solver", model="sonnet", prompt="Previous approach failed. Read /tmp/solve_state.md for dead ends to avoid.
-Verified facts: [list only confirmed facts with citations].
-Find a NEW approach to: [problem]. Do not retry: [dead end approaches].")
-```
+When spiral is detected: write a `DEAD_END` entry to state file (what was tried, why it failed, what was learned), then spawn a fresh agent with ONLY the verified facts. The fresh agent reads DEAD_END entries to avoid repeating mistakes. Prompt template in [solve-reference.md](solve-reference.md).
 
 ### Blast Radius Control
 
@@ -286,40 +142,13 @@ State: "file:line X proves this change is correct because [reason]."
 If you cannot write this sentence with a real citation, you are not ready to edit. Go back to research.
 
 ### 2. Duplication check
-Before adding new code, grep for:
-- The function/class name you're about to create — does it already exist?
-- The logic you're about to write — is it already implemented elsewhere?
-- Similar patterns — could you reuse an existing function instead?
-
-```
-Grep(pattern="function_name_you_plan_to_add")
-Grep(pattern="the key logic pattern")
-```
-
-If a duplicate exists:
-- **Exact duplicate**: reuse it, don't recreate
-- **Near duplicate**: refactor to share, or extend the existing one
-- **Dead duplicate** (unused old version): note it in report for cleanup, use the active one
+Grep for the function name and key logic pattern before adding new code. If an exact duplicate exists: reuse it. Near duplicate: extend it. Dead duplicate: note for cleanup, use the active one.
 
 ### 3. Redundancy check
-After implementing, verify you didn't introduce redundancy:
-- Did you add an import that's already imported?
-- Did you add a variable that duplicates an existing one?
-- Did you add error handling that duplicates a caller's error handling?
-- Is there dead code left over from your change that should be removed?
+After implementing: verify no redundant imports, duplicate variables, or dead code left over.
 
 ### 4. Guardian validation (for risky edits)
-For changes that affect shared code (3+ dependents) or core logic, spawn a haiku guardian:
-
-```
-Agent(model="haiku", prompt="Validate this change is correct.
-File: [path], Lines: [range]
-Change: [description]
-Check: 1) Does function X still exist at the cited location? 2) Does the change match the stated intent? 3) Are there obvious errors?
-Reply: VALID or INVALID with reason.")
-```
-
-Only proceed if guardian says VALID. This catches hallucinated edits cheaply.
+For changes affecting shared code (3+ dependents) or core logic, spawn a haiku guardian to validate the change is correct before proceeding. Prompt template in [solve-reference.md](solve-reference.md). Only proceed if guardian says VALID.
 
 ## Workflow
 
@@ -355,205 +184,37 @@ find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.go' -o -name '*.
 
 ### Phase 1: Research (Parallel Fan-Out)
 
-**Start simple for simple problems.** If the bug has a clear stack trace pointing to one file, just read and fix it.
+**Start simple for simple problems.** Clear stack trace pointing to one file → just read and fix it.
 
-**Default to parallel for everything else.** Create tasks for each research angle, then spawn ALL researcher agents + the watchdog in a single message:
+**Default to parallel for everything else.** Create tasks per angle, then spawn watchdog + ALL researcher agents in a single message. Every agent writes status to `/tmp/caf_watchdog.md`. Each researcher writes findings to `/tmp/solve_research_<angle>.md` and cites file:line for every claim.
 
-**Watchdog state protocol**: Every agent writes status to `/tmp/caf_watchdog.md` per the standard protocol (see [orchestrator-reference.md](orchestrator-reference.md#watchdog-protocol)).
+Common angles: error trace, data flow, git history, test analysis, dependency map. For complex sub-problems, use RLM recursion — each sub-agent can spawn its own sub-agents. Full batch example in [solve-reference.md](solve-reference.md).
 
-```
-# Create tasks first for visibility
-TaskCreate(subject="Research: error trace", description="Follow stack trace to root cause")
-TaskCreate(subject="Research: data flow", description="Trace input → transform → output")
-TaskCreate(subject="Research: git history", description="git log/blame for recent changes")
-TaskCreate(subject="Research: test analysis", description="Find and run related tests")
-TaskCreate(subject="Research: dependency map", description="What depends on the affected code")
+### Phase 2: Hypothesize (Parallel Fusion)
 
-# Spawn watchdog + ALL researchers in ONE message = true parallelism
-Agent(name="watchdog", subagent_type="agent-watchdog", model="haiku", run_in_background=true,
-  prompt="Monitor parallel batch for solve agent (root name: 'solve').
-  Agents: trace-researcher, flow-researcher, history-researcher, test-researcher, dep-researcher.
-  Expected outputs: /tmp/solve_research_trace.md, /tmp/solve_research_flow.md, /tmp/solve_research_history.md, /tmp/solve_research_tests.md, /tmp/solve_research_deps.md
-  Alert via SendMessage(to='solve') if any agent errors, stalls, or produces no output within 3 minutes.
-  State file: /tmp/caf_watchdog.md")
-
-Agent(name="trace-researcher", model="sonnet", subagent_type="researcher",
-  prompt="Task: error trace analysis. Follow the stack trace to source.
-  Cite file:line for every finding. Write to /tmp/solve_research_trace.md
-  Status protocol: append to /tmp/caf_watchdog.md — STARTED at begin, PROGRESS every 2 min, COMPLETED/FAILED at end.")
-
-Agent(name="flow-researcher", model="sonnet", subagent_type="researcher",
-  prompt="Task: data flow analysis. Trace input → transformation → output.
-  Cite file:line for every finding. Write to /tmp/solve_research_flow.md
-  Status protocol: append to /tmp/caf_watchdog.md — STARTED at begin, PROGRESS every 2 min, COMPLETED/FAILED at end.")
-
-Agent(name="history-researcher", model="sonnet", subagent_type="researcher",
-  prompt="Task: git history analysis. Use git log/blame to understand recent changes.
-  Cite file:line for every finding. Write to /tmp/solve_research_history.md
-  Status protocol: append to /tmp/caf_watchdog.md — STARTED at begin, PROGRESS every 2 min, COMPLETED/FAILED at end.")
-
-Agent(name="test-researcher", model="sonnet", subagent_type="researcher",
-  prompt="Task: test analysis. Find related tests, run them, report pass/fail.
-  Write to /tmp/solve_research_tests.md
-  Status protocol: append to /tmp/caf_watchdog.md — STARTED at begin, PROGRESS every 2 min, COMPLETED/FAILED at end.")
-
-Agent(name="dep-researcher", model="sonnet", subagent_type="researcher",
-  prompt="Task: dependency analysis. What imports/calls the affected code?
-  Write to /tmp/solve_research_deps.md
-  Status protocol: append to /tmp/caf_watchdog.md — STARTED at begin, PROGRESS every 2 min, COMPLETED/FAILED at end.")
-```
-
-**Mark tasks as agents complete.** Update TaskList as each agent returns results.
-
-**For very complex problems**, use RLM-style recursion — each sub-agent can spawn its own sub-agents:
-```
-Agent(name="sub-solver-1", model="sonnet", prompt="Sub-problem: [specific sub-problem].
-Break this down further if needed. Spawn your own sub-agents for independent parts.
-Write verified findings to /tmp/solve_sub_1.md. Every claim must cite file:line.")
-```
-
-### Phase 2: Hypothesize (Parallel Fusion with Cross-Pollination)
-
-**Synthesize research first** (you, root opus — never delegate synthesis). Read all `/tmp/solve_research_*.md` files. Then spawn parallel hypothesis generators:
-
-```
-# Spawn ALL hypothesis agents in ONE message
-Agent(name="hypothesis-A", model="sonnet",
-  prompt="Given findings in /tmp/solve_research_*.md, propose solution approach A.
-  Read /tmp/solve_shared_findings.md first. Write to /tmp/solve_approach_A.md.
-  Append new discoveries to /tmp/solve_shared_findings.md.")
-
-Agent(name="hypothesis-B", model="sonnet",
-  prompt="Same problem, DIFFERENT angle from approach A.
-  Read /tmp/solve_shared_findings.md first. Write to /tmp/solve_approach_B.md.
-  Append new discoveries to /tmp/solve_shared_findings.md.")
-
-Agent(name="hypothesis-C", model="sonnet",
-  prompt="Propose the most unconventional/lateral approach.
-  Read /tmp/solve_shared_findings.md first. Write to /tmp/solve_approach_C.md.
-  Append new discoveries to /tmp/solve_shared_findings.md.")
-```
-
-For straightforward problems with clear root cause, skip fusion — one hypothesis is enough.
+YOU (root opus) synthesize research first — never delegate synthesis. Read all `/tmp/solve_research_*.md`, then spawn 2-3 parallel hypothesis agents, each proposing a different approach and reading a shared findings file to cross-pollinate. For clear root cause, one hypothesis is enough.
 
 ### Phase 3: Challenge (Parallel Validation)
 
-Spawn parallel challengers — one per hypothesis — in a single message:
-
-```
-# Challenge ALL hypotheses simultaneously
-Agent(name="challenger-A", model="sonnet", subagent_type="critical-analyst",
-  prompt="Challenge hypothesis A in /tmp/solve_approach_A.md.
-  Find counter-examples, edge cases, and disproving evidence. Write to /tmp/solve_challenge_A.md")
-
-Agent(name="challenger-B", model="sonnet", subagent_type="critical-analyst",
-  prompt="Challenge hypothesis B in /tmp/solve_approach_B.md.
-  Find counter-examples, edge cases, and disproving evidence. Write to /tmp/solve_challenge_B.md")
-
-Agent(name="challenger-C", model="sonnet", subagent_type="critical-analyst",
-  prompt="Challenge hypothesis C in /tmp/solve_approach_C.md.
-  Find counter-examples, edge cases, and disproving evidence. Write to /tmp/solve_challenge_C.md")
-```
-
-You (root opus) read all challenge reports and pick the surviving hypothesis. If all die, loop back to Phase 1 with what you learned.
+Spawn one `critical-analyst` challenger per hypothesis in a single message. Each finds counter-examples and disproving evidence. You (root) pick the surviving hypothesis. If all die, loop back to Phase 1 with what you learned.
 
 ### Phase 4: Implement via Recovery Loop
 
-You (root opus) never write implementation code directly. Delegate to the role-based team.
+You never write implementation code directly. Delegate to the role-based team.
 
-#### Step 1: Write the Plan File
+**Step 1**: Record `git rev-parse HEAD` as GIT_ROLLBACK_BASE, then write `/tmp/caf_plan.md` with: TASK, CREATED, CURRENT_ITERATION, MAX_ITERATIONS, GIT_ROLLBACK_BASE, Goals, Acceptance Criteria, Build Task(s), Dead Ends (empty), Iteration History table. Template in [solve-reference.md](solve-reference.md).
 
-Record rollback base, then write `/tmp/caf_plan.md`:
+**Step 2**: Follow the recovery loop protocol from [orchestrator-reference.md](orchestrator-reference.md#recovery-loop-protocol): spawn watchdog + builder-1 in one message, loop build → validate → debug → re-plan (max 5 iterations). On PASS: checkpoint commit, proceed to Phase 5. On ESCALATE/DEAD_END: update state file, ask user.
 
-```bash
-git rev-parse HEAD  # Save as GIT_ROLLBACK_BASE
-```
-
-```markdown
-# CAF Plan
-TASK: [one sentence from your hypothesis]
-CREATED: [ISO timestamp]
-CURRENT_ITERATION: 1
-MAX_ITERATIONS: 5
-GIT_ROLLBACK_BASE: [hash]
-
-## Goals
-[What the surviving hypothesis from Phase 3 says must be true]
-
-## Acceptance Criteria 1
-[Every check the hypothesis implies — run tests, verify file contents, etc.]
-
-## Build Task 1
-[Specific file:line changes from the challenger-approved hypothesis]
-
-## Dead Ends
-[Empty at start — populated after each failed iteration]
-
-## Iteration History
-| N | Build | Validate | Debug | Approach |
-|---|-------|----------|-------|----------|
-```
-
-#### Step 2: Execute Recovery Loop
-
-Follow the orchestrator recovery loop protocol (see [orchestrator-reference.md](orchestrator-reference.md#recovery-loop-protocol)):
-- Spawn watchdog (root name: `'solve'`) + builder-1 in one message
-- Loop: build -> validate -> debug -> re-plan (max 5 iterations)
-- On PASS: checkpoint commit and proceed to Phase 5
-- On ESCALATE/DEAD_END: update state file, ask user with full history
-
-**Role discipline**: You own the plan file. Builder/validator/debugger own their output files. The plan changes only after a debugger produces a `FIX_READY` report and you merge it.
+**Role discipline**: You own the plan file. Builder/validator/debugger own their output files. Plan changes only after debugger produces FIX_READY.
 
 ### Phase 5: Verify & Improve (Parallel Validation)
 
-After a successful fix, fan-out validation in parallel:
+After a successful fix, fan-out in parallel (all one message): test-runner (haiku), regression-checker (haiku), cleanup-checker (haiku: dead code, unused imports, duplicate logic in changed files).
 
-```
-# ALL in one message = parallel verification
-Agent(name="test-runner", model="haiku", prompt="Run full test suite for [affected area]. Report pass/fail counts.")
-Agent(name="regression-checker", model="haiku", prompt="Check for regressions: run broader test suite, compare to baseline.")
-Agent(name="cleanup-checker", model="haiku", prompt="Post-edit redundancy check: dead code, unused imports, duplicate logic in [changed files].")
-```
+**Auto-skill-creation**: After each iteration, update Skill Tracker in `/tmp/solve_state.md`. When any pattern hits count=2 or clearly recurs, spawn `auto-skill-builder` (sonnet) to create a skill at `~/.claude/skills/auto-generated/`. Token budget: ~1500-2000 tokens per creation — only trigger if saves 500+ tokens per use AND expected 3+ uses. Full protocol and agent prompt in [solve-reference.md](solve-reference.md).
 
-**Auto-skill-creation protocol** (tracks state, invokes skill-builder automatically):
-
-At the end of each iteration, evaluate and update the skill tracker in `/tmp/solve_state.md`:
-
-```markdown
-## Skill Tracker
-| Pattern | Count | Description |
-|---------|-------|-------------|
-| [approach-category] | N | [one sentence: what the reusable operation is] |
-```
-
-**Rules:**
-1. After each iteration, ask: "Did I repeat an operation that could be a reusable skill?" If yes, add or increment its row in the tracker.
-2. **Auto-trigger threshold**: When any pattern reaches count=2, OR when you detect a pattern that will clearly recur in future sessions (e.g., a project-specific validation, a repeated transform), invoke skill-builder immediately:
-
-```python
-Agent(name="auto-skill-builder", model="sonnet", maxTurns=15,
-  prompt=f"""You are invoking the skill-builder skill.
-  
-  Create a skill based on this repeated pattern:
-  Pattern: [name from tracker]
-  Description: [one sentence from tracker]
-  What it does: [concrete steps — extracted from the iterations where this pattern appeared]
-  Scope: global (place in ~/.claude/skills/auto-generated/)
-  
-  Read the skill-builder guide at global-skills/skill-builder/SKILL.md for format rules.
-  Generate the skill, write it to ~/.claude/skills/auto-generated/[skill-name]/SKILL.md.
-  Validate per the guide. Report DONE or FAILED."""
-)
-```
-
-3. **Token budget**: Skill creation costs ~1500-2000 tokens. Only trigger if the skill saves ~500+ tokens per future use AND is expected to be used 3+ times. When in doubt, don't create.
-4. **Skip for one-off patterns**: If the pattern is specific to this exact bug/task and won't recur, log it as "one-off, not creating skill" in the tracker.
-5. Record created skills in the Solve Report under `**Tools/skills created**`.
-
-**Other improvements:**
-- Should a test be added? **Write it.**
-- Should CLAUDE.md be updated? **Propose it.**
-- Deeper architectural issue? **Document in report, don't fix without asking.**
+Other improvements: add a test if missing, propose CLAUDE.md update if relevant, document deeper architectural issues in report (don't fix without asking).
 
 ### Phase 6: Report
 
@@ -578,38 +239,11 @@ Agent(name="auto-skill-builder", model="sonnet", maxTurns=15,
 
 ### Session State: `/tmp/solve_state.md`
 
-Read at start of every invocation. Append after each iteration:
-```
-## Iteration N
-**ROLLBACK_BASE**: <git hash at start>
-**Checkpoint**: <commit hash after this iteration, if successful>
-**Complexity**: simple | medium | hard
-**Iteration budget**: N / max M
-**Tried**: <what — specific enough to detect same-approach spirals>
-**Approach category**: <one phrase>
-**Learned**: <verified facts with citations>
-**Dead ends**: <what failed and why>
-**Health check**: files modified, tests before/after, worse? Y/N
-**Pre-edit checks**: grounding Y/N, duplication Y/N, guardian Y/N
-**Skill-tracker-update**: pattern=[name], count=[N], action=[none|increment|AUTO_CREATE]
-**Next**: <plan>
-**Status**: IN_PROGRESS | SOLVED | BLOCKED | REVERTING | DEAD_END
-```
+Read at start of every invocation. Append after each iteration with: ROLLBACK_BASE, Checkpoint hash, Complexity, Iteration budget, Tried, Approach category, Learned (with citations), Dead ends, Health check (files modified, tests before/after, worse Y/N), Pre-edit checks (grounding/duplication/guardian Y/N), Skill-tracker-update, Next, Status (IN_PROGRESS | SOLVED | BLOCKED | REVERTING | DEAD_END). Full template in [solve-reference.md](solve-reference.md).
 
 ### Persistent Memory: `.claude/solve-history/`
 
-After solving (Status: SOLVED), save summary to `.claude/solve-history/<date>-<problem-slug>.md`:
-```
----
-date: YYYY-MM-DD
-problem: <one line>
-root_cause: <one line>
-files_changed: [list]
-iterations: N
-complexity: simple | medium | hard
----
-<Non-obvious insight that solved it. What would you tell a future agent facing a similar problem?>
-```
+After solving, save a brief summary with date, problem, root_cause, files_changed, iterations, complexity, and the non-obvious insight that solved it. Full template in [solve-reference.md](solve-reference.md).
 
 ## When to Use Sub-Agents vs Direct Tools
 

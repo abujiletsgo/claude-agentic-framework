@@ -42,6 +42,14 @@ static ANALYSIS_PATTERNS_STR: &[&str] = &[
     r"(?i)\b(?:significant|meaningful|negligible|marginal)\b",
 ];
 
+// Action verbs that indicate simple imperative prompts — if prompt starts with one of these
+// AND is under 80 chars, skip epistemic injection entirely.
+static ACTION_VERBS: &[&str] = &[
+    "fix", "add", "create", "update", "delete", "remove", "rename", "move", "install",
+    "upgrade", "run", "execute", "build", "test", "deploy", "push", "pull", "merge",
+    "revert", "undo",
+];
+
 // Skip patterns — mirrors Python SKIP_PATTERNS list
 static SKIP_PATTERNS_STR: &[&str] = &[
     r"^/",
@@ -75,6 +83,22 @@ fn is_analysis_request(prompt: &str) -> bool {
 
     if stripped.len() < 20 {
         return false;
+    }
+
+    // Action-verb short-prompt skip: if prompt starts with an action verb and is under 80 chars
+    if stripped.len() < 80 {
+        let lower = stripped.to_lowercase();
+        for verb in ACTION_VERBS {
+            if lower.starts_with(verb)
+                && lower[verb.len()..]
+                    .chars()
+                    .next()
+                    .map(|c| !c.is_alphabetic())
+                    .unwrap_or(true)
+            {
+                return false;
+            }
+        }
     }
 
     // Check skip patterns first

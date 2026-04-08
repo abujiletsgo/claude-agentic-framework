@@ -69,6 +69,10 @@ enum HookCommand {
     /// PostToolUse: auto context manager / transcript parser
     AutoContextManager,
 
+    // ── Diagnostic subcommand ─────────────────────────────────────────────────
+    /// Run environment health checks (does not read stdin)
+    Doctor,
+
     // ── Other hooks (not yet implemented) ─────────────────────────────────────
     /// SessionStart: orchestrate sub-hooks
     SessionStartup,
@@ -148,6 +152,9 @@ fn main() {
         HookCommand::StopFailureRecovery => hooks::stop_failure_recovery::run(),
         HookCommand::TaskQualityGate => hooks::task_quality_gate::run(),
 
+        // ── Diagnostic ───────────────────────────────────────────────────────
+        HookCommand::Doctor => hooks::doctor::run(),
+
         // ── Not yet implemented ───────────────────────────────────────────────
         HookCommand::KrMode => not_implemented("kr-mode"),
         HookCommand::EnforceOrchestrate => hooks::enforce_orchestrate::run(),
@@ -155,8 +162,8 @@ fn main() {
         HookCommand::AutoRefine => hooks::auto_refine::run(),
         HookCommand::ContextBundleLogger => hooks::context_bundle_logger::run(),
         HookCommand::AutoErrorAnalyzer => hooks::auto_error_analyzer::run(),
-        HookCommand::AutoEscalate => not_implemented("auto-escalate"),
-        HookCommand::AutoFactExtractor => not_implemented("auto-fact-extractor"),
+        HookCommand::AutoEscalate => hooks::auto_escalate::run(),
+        HookCommand::AutoFactExtractor => hooks::auto_fact_extractor::run(),
         HookCommand::DamageControl => hooks::damage_control::run(),
         HookCommand::AutoMemoryWriter => hooks::auto_memory_writer::run(),
         HookCommand::AutoContextManager => not_implemented("auto-context-manager"),
@@ -168,14 +175,14 @@ fn main() {
         HookCommand::AutoDependencyAudit => not_implemented("auto-dependency-audit"),
         HookCommand::AutoSkillGenerator => not_implemented("auto-skill-generator"),
         HookCommand::CheckLthreadProgress => not_implemented("check-lthread-progress"),
-        HookCommand::SubagentTracker => not_implemented("subagent-tracker"),
-        HookCommand::OrchDepthTracker => not_implemented("orch-depth-tracker"),
+        HookCommand::SubagentTracker => hooks::subagent_tracker::run(),
+        HookCommand::OrchDepthTracker => hooks::orch_depth_tracker::run(),
         HookCommand::SubagentKgInject => not_implemented("subagent-kg-inject"),
-        HookCommand::SessionCostTracker => not_implemented("session-cost-tracker"),
+        HookCommand::SessionCostTracker => hooks::session_cost_tracker::run(),
         HookCommand::SubagentPalaceStore => not_implemented("subagent-palace-store"),
-        HookCommand::OrchestratorToolGuard => not_implemented("orchestrator-tool-guard"),
+        HookCommand::OrchestratorToolGuard => hooks::orchestrator_tool_guard::run(),
         HookCommand::ProjectFingerprint => not_implemented("project-fingerprint"),
-        HookCommand::AuditConfigChange => not_implemented("audit-config-change"),
+        HookCommand::AuditConfigChange => hooks::audit_config_change::run(),
         HookCommand::PreCompactPreserve => not_implemented("pre-compact-preserve"),
         HookCommand::AnalyzeRequest => not_implemented("analyze-request"),
         HookCommand::AutoDelegate => not_implemented("auto-delegate"),
@@ -187,6 +194,7 @@ fn main() {
 /// Return a stable string key for each subcommand (used as CB hook_cmd key).
 fn subcommand_name(cmd: &HookCommand) -> &'static str {
     match cmd {
+        HookCommand::Doctor => "doctor",
         HookCommand::PostCompactVerify => "post-compact-verify",
         HookCommand::FileWatcher => "file-watcher",
         HookCommand::VoiceDone => "voice-done",

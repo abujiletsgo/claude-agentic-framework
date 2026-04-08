@@ -2,17 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-02-25 (08:06 UTC) · @Tom Kwon
-**Commit:** docs: fix stale references across guides and docs (5092a90) by Tom Kwon
-**Changed:**
-  docs/SECURITY_BEST_PRACTICES.md | 21 ++++++------
-  docs/WORKTREE_TEST.md           |  4 ++-
-  guides/AGENT_TEAMS.md           |  2 +-
-  guides/AGENT_TEAMS_SETUP.md     |  2 +-
-  guides/MASTER_SUMMARY.md        | 73 ++++++++++++++++++++---------------------
-  guides/MISSION_CONTROL.md       |  2 +-
-  6 files changed, 51 insertions(+), 53 deletions(-)
-
 ## 2026-02-25 (08:09 UTC) · @Tom Kwon
 **Commit:** docs: warn about moving framework directory breaking all tools (9e946e6) by Tom Kwon
 **Changed:**
@@ -301,3 +290,11 @@
 **Changed:**
   README.md | 6 +++---
   1 file changed, 3 insertions(+), 3 deletions(-)
+
+## 2026-04-08 (10:17 UTC) · @Tom Kwon
+**Commit:** feat: wire 12 Rust hooks into settings.json.template (235717f) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                | 15 +++++-------
+  install.sh                       |  9 ++++++-
+  templates/settings.json.template | 51 +++++++++++++++++++++-------------------
+  3 files changed, 41 insertions(+), 34 deletions(-)

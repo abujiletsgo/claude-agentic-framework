@@ -12,6 +12,10 @@ use std::sync::OnceLock;
 use crate::io::{read_stdin_value, write_output};
 use crate::types::HookOutput;
 
+const ORCHESTRATE_ENFORCEMENT_SHORT: &str = "\
+[ORCHESTRATE] Call Skill(skill=\"orchestrate\") FIRST — do NOT read/write/run before the skill loads.
+Spawn parallel Agent() calls; never do the work yourself.";
+
 const ORCHESTRATE_ENFORCEMENT: &str = "\
 [ORCHESTRATE ENFORCEMENT — BLOCKING REQUIREMENT]
 The user has requested /orchestrate. You MUST:
@@ -40,6 +44,17 @@ fn orchestrate_intent() -> &'static Regex {
     })
 }
 
+/// Returns true if /tmp/caf_caddy_result.json exists and contains strategy == "orchestrate".
+fn caddy_already_says_orchestrate() -> bool {
+    let path = "/tmp/caf_caddy_result.json";
+    if let Ok(contents) = std::fs::read_to_string(path) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&contents) {
+            return v.get("strategy").and_then(|s| s.as_str()) == Some("orchestrate");
+        }
+    }
+    false
+}
+
 fn needs_orchestrate_enforcement(prompt: &str) -> bool {
     let stripped = prompt.trim();
     if stripped.is_empty() {
@@ -63,7 +78,12 @@ pub fn run() {
         .unwrap_or("");
 
     if needs_orchestrate_enforcement(prompt) {
-        let output = HookOutput::inject_context("UserPromptSubmit", ORCHESTRATE_ENFORCEMENT);
+        let message = if caddy_already_says_orchestrate() {
+            ORCHESTRATE_ENFORCEMENT_SHORT
+        } else {
+            ORCHESTRATE_ENFORCEMENT
+        };
+        let output = HookOutput::inject_context("UserPromptSubmit", message);
         write_output(&output);
     } else {
         write_output(&serde_json::json!({}));
