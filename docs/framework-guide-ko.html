@@ -1424,6 +1424,1145 @@
         <div class="gl-item"><div class="gl-item-name">기능</div><div class="gl-item-desc">SKILL.md 템플릿 기반 빠른 스킬 스캐폴딩</div></div>
       </div>
     </div>
+
+    <!-- ── Skill Workflow Details (20 skills) ──────────────────────────── -->
+    <h3 style="margin-top:36px; margin-bottom:24px; font-size:18px;">스킬 워크플로우 상세 (20개)</h3>
+
+    <details class="example-toggle">
+      <summary>arch-map — 코드베이스 의존성 지도 및 아키텍처 문서 자동 생성</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /arch-map 또는 "map the dependencies", "architecture diagram"</div>
+              <div class="flow-desc">3개 이상 상호연결된 모듈 존재 시, 온보딩 시, 주요 리팩터링 후 자동 호출</div>
+            </div>
+          </div>
+          <!-- Step 0 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 0 — 기존 맵 확인</div>
+              <div class="flow-desc">.claude/ARCHITECTURE.md 존재 여부 및 현재 git HEAD와 날짜 비교. 최신이면 사용자에게 재생성 여부 질문</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 1 — 프로젝트 구조 병렬 탐색</div>
+              <div class="flow-desc">git ls-files, 패키지 매니페스트(package.json, pyproject.toml, Cargo.toml 등), 데이터/설정 파일, 레이어 타입 식별을 동시에 실행</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon opus">E</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 2 — Explore 서브에이전트: 의존성 그래프 매핑</div>
+              <div class="flow-desc">주요 20개 파일에 대해 각 파일이 READ, WRITE, IMPORT, EXPORT하는 대상을 구조화된 목록으로 반환</div>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 3 — 핵심 관계 식별</div>
+              <div class="flow-desc">가장 많이 읽히는 파일(critical nodes), 출력 노드, 중복 정의(기술 부채), 하드코딩된 경로(취약 의존성) 추출</div>
+            </div>
+          </div>
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 4 — ARCHITECTURE.md 생성 (6개 섹션)</div>
+              <div class="flow-desc">① 블래스트 레이디어스 표 ② Mermaid 의존성 다이어그램 ③ 주요 워크플로우 경로 ④ 데이터 파일 계보 ⑤ 중복 경고 ⑥ 모듈 import 트리</div>
+            </div>
+          </div>
+          <!-- Step 5 -->
+          <div class="flow-step">
+            <div class="flow-icon l1">5</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 5 — 프로젝트 메모리 업데이트</div>
+              <div class="flow-desc">MEMORY.md에 아키텍처 참조 추가, CLAUDE.md 키 파일 섹션 업데이트, PROJECT_CONTEXT.md 프라임 캐시 무효화</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">.claude/ARCHITECTURE.md (6개 섹션) + 사용자에게 파일/레이어 수, 중복 경고 수, 핵심 경로 수, 주요 발견 3가지 요약 출력</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>change-validator — 커밋 전 변경사항 검증 및 컨벤션 위반 자동 수정</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /change-validator [--staged] [--fix]</div>
+              <div class="flow-desc">커밋 또는 핸드오프 전 변경사항 검증, 컨벤션 준수 확인, 테스트 통과 여부 확인</div>
+            </div>
+          </div>
+          <!-- Step 0 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">사전 조건: /tmp/caf_project_context.md 존재 여부</div>
+              <div class="flow-desc">없으면 project-adapter 스킬을 먼저 실행</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Haiku 에이전트 스폰 (maxTurns=12) — 6가지 병렬 검사</div>
+              <div class="flow-desc">① git diff로 파일 분류(의도적/비의도적) ② 컨벤션 위반 grep(file:line) ③ Known Gotcha 트리거 확인 ④ 블래스트 레이디어스(3+ 의존자 플래그) ⑤ 테스트 실행 ⑥ 플랜 정렬 확인</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">/tmp/caf_change_validation.md 작성</div>
+              <div class="flow-desc">DECISION: GO | WARN | NO-GO 결정 및 사용자에게 표시</div>
+            </div>
+          </div>
+          <!-- Decision -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">--fix 플래그 + 위반 사항 존재?</div>
+              <div class="flow-desc">YES: /tmp/caf_fix_plan.md 작성 후 builder 서브에이전트(maxTurns=15) 스폰 → 수정 후 재검증. NO: DECISION 표시 후 종료</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">/tmp/caf_change_validation.md (GO/WARN/NO-GO 결정, 위반 사항, 미계획 변경, 블래스트 레이디어스, 테스트 결과, 플랜 정렬)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>code-review — 5가지 차원의 코드 품질 리뷰 (정확성, 보안, 성능, 유지보수성, 스타일)</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: "review this code", "check this PR", "quality check"</div>
+              <div class="flow-desc">주요 변경사항 머지 전, 복잡한 버그 디버깅 시, 대규모 리팩터링 후</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 1 — 스코프 파악</div>
+              <div class="flow-desc">git diff --name-only HEAD~1 (단일 커밋) 또는 git diff --name-only main...HEAD (PR) 또는 특정 파일 직접 지정</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 2 — 5가지 차원 체크리스트 적용</div>
+              <div class="flow-desc">Correctness(논리/엣지케이스) · Security(인젝션/인증) · Performance(N+1/메모리) · Maintainability(함수 &gt;50줄 경고, 복잡도 &gt;10 경고) · Style(포매팅/컨벤션)</div>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 3 — 리뷰 리포트 생성</div>
+              <div class="flow-desc">Critical Issues (file:line + 영향 + 수정) / Warnings / Suggestions / Positive Observations 순서로 마크다운 렌더링</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">심각도별 이슈 마크다운 리포트 (서브에이전트 없음 — 자체 완결형 스킬)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>docs — OfficeCLI 기반 Word/Excel/PowerPoint 문서 편집 및 생성</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: .docx/.xlsx/.pptx 파일 참조, "edit the report", "update the chart", /docs</div>
+              <div class="flow-desc">Word, Excel, PowerPoint 관련 작업 또는 슬라이드 덱/워크북 생성/편집 요청 시</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 1 — 항상 먼저 파일 구조 확인</div>
+              <div class="flow-desc">officecli view &lt;file&gt; --mode outline|stats 실행. 구조를 추측하지 않음 — 항상 먼저 읽기</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 2 — 레이어 선택</div>
+              <div class="flow-desc">L1(읽기/검사) → L2(get/set/add/remove/move/batch) → L3(raw XML, 최후 수단). 항상 L1부터 시작</div>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-icon l1">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 3 — 5회 이상 편집 시 Resident 모드</div>
+              <div class="flow-desc">officecli open &lt;file&gt; → 모든 작업 수행 → officecli close. 12분 idle watchdog, 거의 0ms 지연</div>
+            </div>
+          </div>
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 4 — 편집 후 검증</div>
+              <div class="flow-desc">officecli validate &lt;file&gt; 실행. not_found → outline 재읽기 후 재시도. invalid_val → 포맷 수정. unsupported → L3 에스컬레이션</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">수정/생성된 Office 문서 + 검증 확인. 멀티파일 작업 시 /orchestrate와 연계 (파일당 에이전트 1개 병렬)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>error-analyzer — 스택 트레이스 분석, 루트 원인 파악, knowledge-db 연동</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: 스택 트레이스 붙여넣기, 빌드/컴파일 실패, 런타임 예외, 테스트 실패</div>
+              <div class="flow-desc">Claude Code 프레임워크의 훅/스크립트 오류 포함</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 1 — 에러 분류</div>
+              <div class="flow-desc">Syntax/Type/Runtime/Import/Network/Permission/Configuration/Resource 카테고리 결정 (priority: high/medium/critical)</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 2 — 스택 트레이스 파싱</div>
+              <div class="flow-desc">에러 타입/메시지, 발생 프레임, 콜 체인, 컨텍스트 변수, file:line 추출</div>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 3 — 루트 원인 조사</div>
+              <div class="flow-desc">Read로 에러 발생 파일의 해당 라인 읽기 + Grep으로 유사 패턴 검색 + git log로 최근 변경 확인</div>
+            </div>
+          </div>
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 4 — knowledge-db 패턴 조회</div>
+              <div class="flow-desc">knowledge_cli.py search "&lt;error-type&gt;" --category error 실행. 기존 패턴 발견 시 알려진 수정 적용</div>
+            </div>
+          </div>
+          <!-- Step 5 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">5</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 5 — 분석 리포트 생성</div>
+              <div class="flow-desc">Error(타입/위치) + Root Cause(설명) + Fix(구체적 코드 변경) + Prevention(재발 방지) 마크다운 형식</div>
+            </div>
+          </div>
+          <!-- Step 6 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">Step 6 — 신규 패턴이면 knowledge-db에 저장</div>
+              <div class="flow-desc">knowledge_cli.py store --category error 실행. 향후 세션에서 동일 오류 즉시 해결 가능</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">마크다운 에러 분석 리포트 + (신규 패턴 시) knowledge-db 저장 확인</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>facts — .claude/FACTS.md 에피소딕 메모리 관리 (추가/조회/만료/정리)</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /facts, /facts list, /facts add, /facts stale, /facts init, /facts summary, /facts purge-stale</div>
+              <div class="flow-desc">프로젝트별 검증된 사실을 기록/조회/관리할 때 호출</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">서브커맨드 분기</div>
+              <div class="flow-desc">list → FACTS.md 전체 표시 | add → fact_manager.py add(CATEGORY, text) | stale → STALE 섹션으로 이동 | init → 파일 생성 | summary → 카테고리별 수 + 토큰 비용 추정 | purge-stale → STALE 섹션 제거</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">fact_manager.py 실행 (uv run)</div>
+              <div class="flow-desc">카테고리: CONFIRMED / GOTCHAS / PATHS / PATTERNS. 90일 초과 항목은 validate_facts.py(Stop 훅)가 자동 정리</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">서브커맨드에 따라: FACTS.md 전체 / 추가 확인 / stale 이동 확인 / 생성 확인 / 요약 테이블(토큰 추정 포함) / 삭제 수 확인</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>issue-scoper — 이슈 범위 분석 및 /tmp/caf_issue_context.md 생성 (빌더 스폰 전 선행)</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: 사용자가 이슈/태스크를 설명하거나 빌더 스폰 전 오케스트레이터가 호출</div>
+              <div class="flow-desc">file:line + 명확한 변경 설명이 이미 있으면 전체 스킵 ("Issue already specific — skipping")</div>
+            </div>
+          </div>
+          <!-- Step 0 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">사전 조건: /tmp/caf_project_context.md 존재 여부</div>
+              <div class="flow-desc">없으면 project-adapter 실행 (Haiku, maxTurns=10)</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon opus">S</div>
+            <div class="flow-content">
+              <div class="flow-hook">Sonnet 에이전트 스폰 (issue-scoper, maxTurns=15)</div>
+              <div class="flow-desc">5가지 검색 단계 수행: ① 핵심 용어/함수명 grep → 상위 5개 관련 파일 ② 테스트 디렉터리에서 영향받는 이름 grep ③ .claude/solve-history/ 유사 과거 수정 최대 3개 ④ 각 파일의 importer 수 → 5+ 의존자 "high blast radius" 플래그 ⑤ 에러 문자열 grep → 발생 file:line</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">/tmp/caf_issue_context.md 작성 후 즉시 종료</div>
+              <div class="flow-desc">타임스탬프, 이슈 설명, COMPLEXITY_ESTIMATE(simple/medium/hard), 관련 파일 표, 테스트 표, 유사 수정, 에러 발생지, 블래스트 레이디어스 경고, 접근 방법 제안 포함</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">/tmp/caf_issue_context.md + 사용자에게 복잡도 추정 표시. simple=1파일, medium=2-5파일, hard=횡단적/불명확</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>knowledge-db — SQLite FTS5 기반 지식 데이터베이스 저장/검색/관리</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: 기억 저장, 지식 검색, 과거 결정 조회, 학습 내용 보관 요청</div>
+              <div class="flow-desc">session_start.py, pre_compact.py, stop.py 훅에 의해 프레임워크에서 자동 호출되기도 함</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">작업 타입 결정</div>
+              <div class="flow-desc">store / search / recent / update / expire / purge-expired / export / import-json 중 선택</div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">knowledge_cli.py 서브커맨드 라우팅 (uv run)</div>
+              <div class="flow-desc">store: --category, --title, --content, --tags, --project, --confidence 제공. search: BM25 랭킹 결과 반환. recent: created_at DESC LIMIT N. export: 최대 10,000행 JSON</div>
+            </div>
+          </div>
+          <!-- Decision -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">카테고리 선택이 핵심</div>
+              <div class="flow-desc">decision / learning / pattern / error / context / preference — 카테고리가 향후 검색 방식 결정. project=NULL이면 글로벌 스코프</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">~/.claude/data/knowledge-db/knowledge.db (SQLite FTS5) + JSONL 내구성 로그. 파일 권한 mode 600 강제 적용</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>makeskill — 프로젝트 분석 후 맞춤형 스킬/에이전트 자동 생성 팩토리</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /makeskill [--auto] [--refresh] [--list]</div>
+              <div class="flow-desc">"analyze this project", "generate skills", "what skills would help" 등. --list: 매니페스트 표시 후 즉시 종료</div>
+            </div>
+          </div>
+          <!-- Phase 0 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 0 — 사전 조건</div>
+              <div class="flow-desc">/tmp/caf_project_context.md 없으면 project-adapter(Haiku) 스폰. --refresh이면 git diff로 변경 파일 목록 + 캐시 초기화</div>
+            </div>
+          </div>
+          <!-- Phase 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 1 — 4개 Haiku 스카우트 병렬 스폰 (ONE 메시지)</div>
+              <div class="flow-desc">code-structure-analyzer / git-history-analyzer / memory-analyzer / pattern-detector → 각각 /tmp/caf_makeskill_*.md 작성</div>
+            </div>
+          </div>
+          <!-- Phase 1b -->
+          <div class="flow-step">
+            <div class="flow-icon opus">O</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 1 후속 — Opus deep-reviewer (순차, maxTurns=20)</div>
+              <div class="flow-desc">2개 이상 스카우트 신호 교차 참조, 실제 파일 확인, 빈도 + 토큰 절감 정량화. /tmp/caf_makeskill_deep_review.md 작성</div>
+            </div>
+          </div>
+          <!-- Phase 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l2">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 2 — 루트 에이전트 합성</div>
+              <div class="flow-desc">5개 출력 파일 읽기 → 중복 제거 → SKILL/AGENT 분류 → P1(복수 신호)/P2(단일 강한 신호)/P3 우선순위 → /tmp/caf_makeskill_proposals.md 작성 후 사용자 표시</div>
+            </div>
+          </div>
+          <!-- Phase 3 -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">--auto 플래그?</div>
+              <div class="flow-desc">YES: 사용자 승인 없이 Phase 3 진행. NO: 사용자 승인 대기</div>
+            </div>
+          </div>
+          <!-- Phase 3 builders -->
+          <div class="flow-step">
+            <div class="flow-icon opus">S</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 3 — N개 Sonnet 빌더 병렬 스폰 (ONE 메시지)</div>
+              <div class="flow-desc">승인된 제안당 빌더 1개. SKILL → .claude/skills/&lt;name&gt;/SKILL.md, AGENT → .claude/agents/&lt;name&gt;.md</div>
+            </div>
+          </div>
+          <!-- Phase 3.5 -->
+          <div class="flow-step">
+            <div class="flow-icon l1">V</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 3.5 — Haiku 검증자 (maxTurns=8)</div>
+              <div class="flow-desc">frontmatter 유효성, 보안 위반(eval/exec/curl|bash/rm -rf), 워크플로우 완성도, 예시 2개 이상, 파일 크기 &lt;2000 토큰. FAIL 시 재실행 없이 사람 리뷰 요청</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">.claude/skills/ 및 .claude/agents/ 파일 + makeskill-manifest.json + makeskill-changelog.json + CLAUDE.md 업데이트 + 완료 리포트</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>orchestrate — 복잡한 멀티스텝 태스크를 웨이브 기반 에이전트 팀으로 병렬 실행</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <!-- Trigger -->
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /orchestrate — 루트 에이전트가 반드시 즉시 이 스킬을 호출해야 함</div>
+              <div class="flow-desc">루트 에이전트는 절대 직접 작업하지 않음. 항상 서브에이전트에게 위임 (Read/Edit/Bash 직접 사용 금지)</div>
+            </div>
+          </div>
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">복잡도 분석 및 에이전트 구성 계획</div>
+              <div class="flow-desc">simple(3 에이전트) / moderate(5-6) / complex(8+) / massive(RLM + 팀). 에이전트 역할 목록 및 웨이브 의존성 매핑</div>
+            </div>
+          </div>
+          <!-- Wave 0 -->
+          <div class="flow-step">
+            <div class="flow-icon opus">R</div>
+            <div class="flow-content">
+              <div class="flow-hook">Wave 0 — Sonnet 리서처 에이전트 병렬 스폰 (ONE 메시지)</div>
+              <div class="flow-desc">모든 리서처를 단일 메시지로 동시 스폰. 완료 후 루트가 결과 합성 → /tmp/caf_plan.md 작성</div>
+            </div>
+          </div>
+          <!-- Wave 1 -->
+          <div class="flow-step">
+            <div class="flow-icon opus">B</div>
+            <div class="flow-content">
+              <div class="flow-hook">Wave 1 — 빌더 에이전트 병렬 스폰 (ONE 메시지)</div>
+              <div class="flow-desc">Haiku: 정확한 내용/경로/라인이 명확한 경우. Sonnet: 개방형 구현 또는 2개 이상 상호의존 파일. 보안/인증/암호화는 항상 Sonnet</div>
+            </div>
+          </div>
+          <!-- Wave 2 -->
+          <div class="flow-step">
+            <div class="flow-icon l1">V</div>
+            <div class="flow-content">
+              <div class="flow-hook">Wave 2 — Haiku 검증자 스폰 (필수)</div>
+              <div class="flow-desc">PASS → 완료 리포트 출력. FAIL 1회 → debugger + 새 빌더 스폰. FAIL 2회 → solve 서브에이전트. 광범위한 스코프 → rlm-root 서브에이전트</div>
+            </div>
+          </div>
+          <!-- Decision -->
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">2-strike 에스컬레이션 규칙</div>
+              <div class="flow-desc">1차 실패: debugger 스폰 후 새 빌더. 2차 실패: solve 서브에이전트. 광범위/불명확 스코프: rlm-root 서브에이전트로 에스컬레이션</div>
+            </div>
+          </div>
+          <!-- Output -->
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">완료된 구현 + 완료 리포트 (수행 내용, 변경 파일, 에이전트 팀 성과, PASS/FAIL 검증 결과)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+
+    <details class="example-toggle">
+      <summary>project-adapter — 프로젝트 컨텍스트를 자동 감지하여 /tmp/caf_project_context.md 생성</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /project-adapter 호출 또는 다른 스킬이 자동 호출</div>
+              <div class="flow-desc">makeskill, orchestrate 등이 /tmp/caf_project_context.md 파일이 없을 때 자동으로 실행. <code>/project-adapter refresh</code>로 강제 재생성 가능.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">refresh 플래그?</div>
+              <div class="flow-desc">있으면 기존 /tmp/caf_project_context.md 삭제 후 재생성. 없으면 바로 Haiku 에이전트 생성.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Haiku 에이전트 생성 (maxTurns=10)</div>
+              <div class="flow-desc">빠르고 저렴한 Haiku를 사용해 메인 컨텍스트 오염을 방지. 모든 파일 읽기와 쓰기를 에이전트 내부에서 처리.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">스택 감지 (우선순위 순서)</div>
+              <div class="flow-desc">package.json → pyproject.toml → Cargo.toml → go.mod → pom.xml → mix.exs 순서로 확인. 첫 번째 발견 시 중단. 이름, 버전, 언어, 상위 5개 의존성 추출.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">CLAUDE.md / FACTS.md / ARCHITECTURE.md 읽기</div>
+              <div class="flow-desc">테스트·빌드·lint 명령, 컨벤션, 금지 패턴 추출. FACTS.md에서 CONFIRMED 사실과 GOTCHA 추출. ARCHITECTURE.md에서 엔트리포인트와 디렉토리 구조 추출.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">CLAUDE.md 없음?</div>
+              <div class="flow-desc">디렉토리 구조(테스트 디렉토리, 엔트리포인트, 설정 파일)에서 추론 + <code>git log --oneline -5</code> 실행.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">/tmp/caf_project_context.md 작성 (목표: 2,200–3,000 토큰)</div>
+              <div class="flow-desc">Project, Stack, Commands, Key Paths, Conventions, Known Gotchas, Confirmed Facts, Recent Activity 섹션 포함. Sonnet 4.6의 2,048 토큰 캐시 최솟값을 넘겨 다운스트림 에이전트 캐시 히트 보장. 실제 파일에서 읽지 않은 항목은 [not found] 표시 — 내용 조작 금지.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">/tmp/caf_project_context.md 생성 완료. 루트 에이전트가 파일 작성을 확인하고 첫 20줄을 사용자에게 표시.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>refactoring-assistant — 테스트 보호 아래 단계별 안전 리팩토링 실행</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: "refactor", "clean up", "simplify", "restructure" 요청</div>
+              <div class="flow-desc">코드 스멜 발견 시, 피처 추가 전 준비 작업, 기술 부채 감소 작업 중에도 자동 트리거.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">평가 — 대상 파일 읽기, 의존성 매핑, 테스트 커버리지 확인</div>
+              <div class="flow-desc">현재 테스트 존재 여부와 커버리지를 먼저 파악. 리팩토링 범위와 위험도를 사전 파악.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">테스트 없음 또는 불충분?</div>
+              <div class="flow-desc">리팩토링 전 현재 동작에 대한 테스트를 반드시 먼저 작성하고 커밋. 테스트 없는 리팩토링은 절대 금지.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">원자적 변경 계획 수립 (위험도 순위 포함)</div>
+              <div class="flow-desc">한 번에 한 가지 리팩토링 유형만: Extract Method (함수 30줄 초과), Replace Magic Numbers, Introduce Parameter Object (매개변수 4개 초과), Decompose Conditional, Extract Class.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">실행 루프 — 단일 변경 → 테스트 실행</div>
+              <div class="flow-desc">각 단계: 단일 변경 적용 → 테스트 실행 → PASS시 git commit → FAIL시 즉시 git revert 후 재평가. 디버그-재시도 없이 즉시 롤백.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">검증 — 모든 테스트 통과, 새 경고 없음, 코드 개선 확인</div>
+              <div class="flow-desc">최종 상태에서 전체 테스트 스위트 통과 확인. 각 단계별 독립 커밋으로 세분화된 롤백 가능.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">통과 테스트와 함께 리팩토링된 코드. 단계별 커밋 히스토리. 테스트 없었던 경우 테스트 파일 추가 포함.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>rollback — 실패한 세션의 변경사항을 파일별로 안전하게 되돌리기</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: orchestrator 에스컬레이션 시 자동 호출 또는 /rollback [SESSION_ID]</div>
+              <div class="flow-desc">오케스트레이터 2-strike 실패 후 자동 실행. 또는 수동으로 특정 세션 ID를 지정해 호출 가능.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">플랜 파일에서 GIT_ROLLBACK_BASE 해시 추출</div>
+              <div class="flow-desc">SESSION_ID 제공 시: /tmp/caf_{SESSION_ID}_plan.md 읽기. 미제공 시: <code>ls -t /tmp/caf_*_plan.md | head -1</code>으로 최신 플랜 파일 사용. 해시 없으면 즉시 중단 후 <code>git log --oneline -10</code> 제안.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">현재 상태 확인 — git status, git diff --stat HEAD</div>
+              <div class="flow-desc">워킹 트리가 clean이면 "롤백할 내용 없음"으로 즉시 중단.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">변경 파일 10개 초과?</div>
+              <div class="flow-desc">목록을 사용자에게 표시하고 명시적 확인을 기다린 후 진행. CLAUDE.md, FACTS.md, .claude/ 디렉토리는 절대 롤백 불가.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">롤백 실행 — 파일별 checkout (기본값)</div>
+              <div class="flow-desc">기본: <code>git checkout {BASE} -- {file1} {file2} ...</code>으로 파일별 복원 (무관한 작업 보존). <code>reset --hard</code>는 사용자가 명시적으로 요청하거나 모든 변경 파일이 해당 세션 소유일 때만 사용.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">롤백 리포트: 세션 ID, 복원된 해시, 복원된 파일 목록, 보존된 파일 목록, 롤백 후 git status, /orchestrate 재실행 제안.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>security-scanner — OWASP Top 10 기반 보안 취약점 스캔 및 의존성 감사</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: "security audit", "vulnerability scan", "보안 검사" 요청</div>
+              <div class="flow-desc">프로덕션 배포 전, auth/authorization 코드 추가 후, 사용자 입력·네트워크 작업 처리 시 자동 트리거. orchestrate에서 보안 민감 작업 시 동적 호출.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">스캔 범위 결정</div>
+              <div class="flow-desc">full audit / targeted scan / deps-only / secret detection 중 선택. 이후 실행할 단계를 결정하는 핵심 분기점.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">코드 분석 — 주입 취약점, 인증 허점, 데이터 노출, 설정 오류</div>
+              <div class="flow-desc">SQL Injection, XSS, Command Injection, Path Traversal, YAML/XML Injection 스캔. OWASP Top 10 전체 커버리지: Broken Access Control, Cryptographic Failures, Injection, Insecure Design 등.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">패턴 감지 — 알려진 취약점 패턴 Grep (코드베이스 전체)</div>
+              <div class="flow-desc">시크릿 감지 포함: 하드코딩된 비밀번호, API 키, 토큰 패턴. git 히스토리 내 시크릿 패턴도 검색.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">의존성 감사 (언어별 도구)</div>
+              <div class="flow-desc">Node: <code>npm audit</code> / Python: <code>pip-audit</code> / Rust: <code>cargo audit</code> / Go: <code>govulncheck</code>. 언어 감지 후 해당 도구 실행.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">심각도별 취약점 리포트: file:line 참조, 영향 설명, 각 항목별 remediation 단계, OWASP Top 10 커버리지 요약.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>skill-builder — 반복 워크플로우를 SKILL.md 파일로 코드화하는 스킬 팩토리</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /skill-builder, "create a skill", "automate this workflow"</div>
+              <div class="flow-desc">반복되는 워크플로우를 코드화할 때 사용. 한 줄 설명으로도 기본값 추론 후 확인 가능.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">요구사항 수집 — 5가지 질문</div>
+              <div class="flow-desc">자동화 대상, 트리거 조건, 필요 도구, 입력값, 성공 기준. 한 줄 설명 제공 시 기본값 추론 후 확인 요청.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">프로젝트 컨텍스트 분석</div>
+              <div class="flow-desc">언어/프레임워크 감지 (package.json, pyproject.toml, Cargo.toml 등), 기존 스킬(.claude/skills/, ~/.claude/skills/) 확인, 프로젝트 .md 구조 스캔.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">SKILL.md 생성 — 보안 규칙 + 품질 규칙 적용</div>
+              <div class="flow-desc">보안 금지: eval/exec, shell injection, 하드코딩 시크릿, 무제한 파괴 명령, curl|bash, 상대 경로. 품질 규칙: 멱등성, 검증 가능한 단계, 에러 처리, 스킬당 하나의 워크플로우.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">프로젝트 범위 vs 글로벌 범위?</div>
+              <div class="flow-desc">사용자에게 확인: .claude/skills/name/ (프로젝트) 또는 ~/.claude/skills/name/ (글로벌). 기본값은 프로젝트 수준. 자동 트리거 요청 시 hooks 생성 워크플로우로 리다이렉트.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">파일 작성 — mkdir -p + Write 도구</div>
+              <div class="flow-desc">선택된 경로에 SKILL.md 작성. 보안 위반 발견 시 수정 전까지 쓰기 차단.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">5</div>
+            <div class="flow-content">
+              <div class="flow-hook">검증 — frontmatter, 보안, 단계 수, 예시, 드라이런</div>
+              <div class="flow-desc">YAML frontmatter 파싱, 보안 위반 없음, 단계 2개 이상, 예시 1개 이상, 샘플 입력으로 정신적 드라이런 통과 확인.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">선택된 범위 경로에 설치된 SKILL.md 파일 + 검증 리포트 (PASS/FAIL 항목별 결과).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>solve — orchestrator에게 즉시 위임하는 얇은 리다이렉트 레이어</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /solve &lt;message&gt;</div>
+              <div class="flow-desc">사용자의 전체 메시지와 인수를 그대로 오케스트레이터에게 전달. solve 레이어 자체에는 결정 로직이 없음.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon opus">→</div>
+            <div class="flow-content">
+              <div class="flow-hook">Agent(subagent_type="orchestrator") 즉시 호출</div>
+              <div class="flow-desc">/solve의 유일한 동작. 사용자 메시지 + 인수를 그대로 전달. 이것이 전체 워크플로우의 전부.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">오케스트레이터가 전부 처리: interview 모드, RLM 재귀, 병렬 리서치, 복구 루프, guardian 검증, spiral 감지, 자기 교정. solve 레이어는 결과를 그대로 전달.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>test-generator — AAA 패턴으로 5가지 카테고리 테스트 자동 생성</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: "write tests", "generate tests", "TDD", 새 피처 후 / 낮은 커버리지 / 리팩토링 전</div>
+              <div class="flow-desc">대상 모듈/파일 경로 또는 커버리지 갭 설명을 입력으로 받음. TDD 모드는 사용자가 명시적으로 요청 시 활성화.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">테스트 프레임워크 감지</div>
+              <div class="flow-desc"><code>find</code>로 *.test.*, *.spec.*, test_*.py, *_test.go 탐색 (maxdepth 3). package.json 또는 pyproject.toml에서 테스트 러너 확인. 언어별 패턴 결정: pytest / Jest+Vitest / Go table-driven.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">테스트 대상 코드 분석</div>
+              <div class="flow-desc">함수/클래스별: 입력·출력·사이드 이펙트 파악, 해피 패스·엣지 케이스 매핑, 모킹할 의존성 식별, unit vs. integration 경계 결정.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">AAA 패턴으로 5가지 카테고리 테스트 생성</div>
+              <div class="flow-desc">(a) 해피 패스, (b) 엣지 케이스 (empty/null/boundary/max), (c) 에러 케이스 (invalid input/network failure/timeout), (d) 상태 전환, (e) 동시성/race condition (해당 시). Arrange/Act/Assert 구조 준수.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">테스트 품질 체크리스트 적용</div>
+              <div class="flow-desc">서술적 이름, 독립성 (공유 가변 상태 없음), 결정론적 (flaky 없음), 구체적 assertion, 최소 모킹 (외부 의존성만), 프로젝트 컨벤션 준수.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">TDD 모드 요청됨?</div>
+              <div class="flow-desc">실패 테스트 먼저 작성 → 통과를 위한 최소 코드 구현 → 그린 상태에서 리팩토링 → 사이클 반복.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">5가지 카테고리를 포함한 포괄적 테스트 파일. 커버리지 갭 변형의 경우 커버리지 리포트 먼저 생성 후 미커버 경로 테스트 추가.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>test-scout — Haiku 에이전트로 테스트 실행 후 regression delta 리포트 생성</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /test-scout [--baseline|--compare]</div>
+              <div class="flow-desc">빌드 단계 전후에 사용해 회귀를 감지. --baseline: 기존 baseline 삭제 후 재수립. --compare: 마지막 baseline 대비 차이 표시.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon" style="background:#ffebee; border-color:#ef9a9a;">?</div>
+            <div class="flow-content">
+              <div class="flow-hook">/tmp/caf_project_context.md 존재?</div>
+              <div class="flow-desc">없으면 project-adapter 스킬을 먼저 실행. 필수 전제조건.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Haiku 에이전트 생성 (maxTurns=8)</div>
+              <div class="flow-desc">빠른 Haiku 모델로 테스트 실행 및 리포팅 위임. 전체 리포팅 프롬프트와 함께 생성.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">[Haiku 내부] baseline 읽기 + 테스트 실행</div>
+              <div class="flow-desc">/tmp/caf_test_baseline.md 존재 시 이전 통과 수 기록; 없으면 baseline 실행으로 표시. project context의 test: 명령 실행, total/passed/failed/skipped 캡처.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">[Haiku 내부] 실패 분류 — NEW vs. 기존 실패</div>
+              <div class="flow-desc">각 실패 테스트: 이름, file:line, 에러 첫 3줄, baseline 대비 NEW 실패 여부 판단.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">[Haiku 내부] /tmp/caf_test_report.md 작성 후 즉시 종료</div>
+              <div class="flow-desc">STATUS: PASS|FAIL|PARTIAL, 요약 카운트, regression delta, 실패별 상세. baseline 실행이면 /tmp/caf_test_baseline.md도 작성.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">부모 에이전트가 STATUS 줄과 실패 수를 사용자에게 표시. /tmp/caf_test_report.md에 전체 상세 내용 저장.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>tidy — 6단계 파이프라인으로 프로젝트 파일을 자동 정리·재구성·문서화</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /tidy, "tidy up", "clean up the repo", 커밋 전, 세션 종료 시</div>
+              <div class="flow-desc">서브커맨드: /tidy (전체 실행, dry-run 먼저) / --apply (dry-run 건너뜀) / --detect (Phase 1만) / --docs-only (Phase 4만) / --archive (Phase 3만) / --log (최근 로그 표시).</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">1</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 1 — 감지 및 분석 (4개 병렬 스캔)</div>
+              <div class="flow-desc">CLAUDE.md ## Structure 읽어 디렉토리 목적·보호 파일 목록·파일-디렉토리 라우팅 맵 추출. 4개 병렬: (1a) 잘못 배치된 루트 파일, (1b) 명명 규칙 위반, (1c) 세션 신규 파일, (1d) 90일 이상 오래된 파일. tidy_analyzer.py 존재 시 실행. --detect: 여기서 중단.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">2</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 2 — 정리 및 이름 변경 (3-tier 라우팅)</div>
+              <div class="flow-desc">Tier 1 (최우선): CLAUDE.md structure 섹션. Tier 2: 확장자 휴리스틱 (csv→Data/, html→analysis/, __pycache__→DELETE). Tier 3: 프레임워크별 (global-* 디렉토리 있을 때만). 애매한 경우: 사용자에게 질문, 절대 추측 금지. git stash 안전 스냅샷 → git mv (추적 파일) | mv + git add (미추적).</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">3</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 3 — 오래된 파일 아카이브</div>
+              <div class="flow-desc">archive/YYYY-MM-DD/ 생성. git mv로 오래된 파일 이동. MANIFEST.md 작성 (아카이브 이유 + 복원 방법). --archive: 이 단계만 실행 후 중단.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">4</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 4 — 문서 업데이트 (병렬 실행)</div>
+              <div class="flow-desc">CLAUDE.md: Structure 섹션 카운트 업데이트. README.md: scripts/generate_docs.py 실행 또는 수동 업데이트. PROJECT_CONTEXT.md: /prime 제안. FACTS.md: 이동 파일의 PATHS 항목 추가. MEMORY.md: 세션 요약 추가. settings.json.template: 훅 경로 깨짐 확인.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">5</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 5 — 변경 로그 작성</div>
+              <div class="flow-desc">logs/tidy/YYYY-MM-DD-HHMMSS.md에 타임스탬프 로그 작성. --apply 실행에서도 항상 작성. 세션 정보, 이동·이름변경·아카이브 테이블, 자동 업데이트된 참조, 롤백 지침 포함.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">6</div>
+            <div class="flow-content">
+              <div class="flow-hook">Phase 6 — 검증</div>
+              <div class="flow-desc">이전 경로 참조 재검색 → 남은 항목 리포트. settings.json.template 훅 경로 해석 확인. git status + git diff --stat 실행. 최종 요약: 이동·이름변경·아카이브·참조업데이트·문서업데이트·깨진참조 카운트 + 로그 경로.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">재구성된 파일 트리, 업데이트된 문서 (CLAUDE.md, README.md, FACTS.md, MEMORY.md), 아카이브 manifest, logs/tidy/의 타임스탬프 변경 로그.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="example-toggle">
+      <summary>worktree — 5가지 서브커맨드로 병렬 Git 워크트리 세션 관리</summary>
+      <div class="example-content">
+        <div class="flow" style="border:none; padding:16px 0 0;">
+          <div class="flow-step">
+            <div class="flow-icon">T</div>
+            <div class="flow-content">
+              <div class="flow-hook">트리거: /worktree, "parallel session", "work on branch in parallel"</div>
+              <div class="flow-desc">서브커맨드: new &lt;branch&gt; [path] / list / remove &lt;branch&gt; / clean / status. 인수 없으면 list 실행.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">new</div>
+            <div class="flow-content">
+              <div class="flow-hook">new &lt;branch&gt; [path] — 워크트리 생성</div>
+              <div class="flow-desc">이미 체크아웃된 브랜치면 즉시 중단. 경로 미제공 시 ../reponame-branch 자동 생성. 브랜치 신규: <code>git worktree add -b &lt;branch&gt; &lt;path&gt;</code>. 브랜치 기존: <code>git worktree add &lt;path&gt; &lt;branch&gt;</code>. 완료 후 <code>claude --dir &lt;path&gt;</code> 오픈 명령 출력.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">list</div>
+            <div class="flow-content">
+              <div class="flow-hook">list — 모든 워크트리 상태 테이블</div>
+              <div class="flow-desc">git worktree list 실행 후 각 경로별 <code>git -C &lt;path&gt; status --short</code> 병렬 실행. 형식: # | Branch | Path | clean / N modified / MISSING.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l1">remove</div>
+            <div class="flow-content">
+              <div class="flow-hook">remove &lt;branch&gt; — 안전한 워크트리 제거</div>
+              <div class="flow-desc">수정된 파일 존재 시 diff 요약 표시 후 명시적 확인 요구. git worktree remove 실행. 브랜치 삭제 여부를 항상 사용자에게 질문 (자동 삭제 금지). 비병합 브랜치에 -D는 사용자 확인 후만 사용.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">clean</div>
+            <div class="flow-content">
+              <div class="flow-hook">clean — 오래된 항목 정리</div>
+              <div class="flow-desc"><code>git worktree prune --verbose</code> 실행 후 git worktree list로 전후 카운트 표시.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l0">status</div>
+            <div class="flow-content">
+              <div class="flow-hook">status — 전체 워크트리 상태 병렬 확인</div>
+              <div class="flow-desc">git worktree list --porcelain으로 모든 경로 수집. 각 경로별 <code>git -C &lt;path&gt; status --short --branch</code> 병렬 실행. 워크트리별 상태 블록 출력.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-icon l2">OUT</div>
+            <div class="flow-content">
+              <div class="flow-hook">출력</div>
+              <div class="flow-desc">new: 생성된 워크트리 + claude --dir 오픈 명령. list: 브랜치·경로·상태 테이블. remove: 제거 확인 + 브랜치 삭제 여부. clean: 정리된 수 + 남은 워크트리 목록.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+
   </section>
 
   <!-- ════════════════════════════════════════════ -->
@@ -1658,6 +2797,242 @@
       </div>
     </details>
   </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- S7b: MEMPALACE + AAAK                        -->
+  <!-- ════════════════════════════════════════════ -->
+  <!-- ============================================================ -->
+  <!-- SECTION: Memory System + Mempalace Integration              -->
+  <!-- ============================================================ -->
+  <section id="mempalace">
+    <div class="eyebrow-sm">메모리 + 지식 그래프</div>
+    <h2>Memory System &mdash; 4 Layers + Mempalace</h2>
+    <p class="section-desc">4계층 인지 메모리 시스템. Mempalace KG로 세션 간 지식을 영구 보존합니다.</p>
+
+    <!-- 4-Layer Diagram -->
+    <h3>4계층 메모리 모델</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">L0</div>
+        <div class="flow-content">
+          <strong>SENSORY</strong> <span class="tag l0">1 turn</span>
+          <p>현재 tool 출력 — 응답 후 즉시 소멸. 파일 읽기, bash 결과, tool 반환값.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">promotion on repeat (3+) &darr;</div>
+      <div class="flow-step">
+        <div class="flow-icon">L1</div>
+        <div class="flow-content">
+          <strong>WORKING</strong> <span class="tag l1">session</span>
+          <p>TaskList 상태, 수정된 파일 경로, 세션 내 결정 및 오류. 예산: ~1000 tokens. <code>pre_compact_preserve.py</code>가 compaction 시 보존.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">consolidation at session end &darr;</div>
+      <div class="flow-step">
+        <div class="flow-icon">L2</div>
+        <div class="flow-content">
+          <strong>EPISODIC</strong> <span class="tag l2">project</span>
+          <p>프로젝트 수명 동안 유지. <code>FACTS.md</code> (verified facts, on-demand), <code>MEMORY.md</code> (session history, on-demand), <code>PROJECT_CONTEXT.md</code> (auto-injected ~2000 tok). 로컬 agents/skills 포함.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">cross-project patterns &darr;</div>
+      <div class="flow-step">
+        <div class="flow-icon">L3</div>
+        <div class="flow-content">
+          <strong>SEMANTIC</strong> <span class="tag l3">global</span>
+          <p>무기한 유지. <code>~/.claude/memory/MEMORY.md</code> — 전역 규칙 및 패턴. 예산: ~800 tokens. 모든 세션에 항상 주입.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">always injected via CLAUDE.md &uarr;</div>
+    </div>
+
+    <!-- Mempalace Integration Cards -->
+    <h3>Mempalace Integration <span class="tag new">NEW</span></h3>
+    <div class="gl-grid">
+      <div class="gl-card global">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x1F5FA;</span>
+          <strong>Mempalace MCP Server</strong>
+        </div>
+        <p>Knowledge graph + memory palace 메타포. 17개 tool로 세션 간 지식을 영구 저장 및 조회. <code>settings.json</code>에 <code>mempalace.mcp_server</code>로 등록.</p>
+        <span class="tag l2">v2.0.0</span> <span class="tag new">17 tools</span>
+      </div>
+      <div class="gl-card global">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x1F578;</span>
+          <strong>KG Tools</strong>
+        </div>
+        <p>지식 그래프 조작 도구.</p>
+        <div class="trust-chain">
+          <div class="trust-row"><code>kg_add</code> — triple 추가 (subject, predicate, object)</div>
+          <div class="trust-row"><code>kg_query</code> — subject/predicate/object로 조회</div>
+          <div class="trust-row"><code>kg_invalidate</code> — triple 무효화</div>
+          <div class="trust-row"><code>kg_timeline</code> — 시간 순 KG 조회</div>
+          <div class="trust-row"><code>find_tunnels</code> — 개념 간 연결 탐색</div>
+          <div class="trust-row"><code>traverse_graph</code> — 그래프 순회</div>
+        </div>
+      </div>
+      <div class="gl-card local">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x1F4DA;</span>
+          <strong>Memory Tools</strong>
+        </div>
+        <p>Memory palace 조작 도구.</p>
+        <div class="trust-chain">
+          <div class="trust-row"><code>tool_search</code> — 전체 룸에서 기억 검색</div>
+          <div class="trust-row"><code>diary_read / diary_write</code> — 다이어리 항목 읽기/쓰기</div>
+          <div class="trust-row"><code>add_drawer / delete_drawer</code> — 메모리 컨테이너 추가/삭제</div>
+          <div class="trust-row"><code>list_rooms / list_wings</code> — palace 구조 탐색</div>
+        </div>
+      </div>
+      <div class="gl-card local">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x26A1;</span>
+          <strong>AAAK Dialect</strong>
+        </div>
+        <p>mempalace 내장 텍스트 압축 dialect. context 압축 시 사용.</p>
+        <div class="trust-chain">
+          <div class="trust-row"><code>compress(text)</code> — 전체 텍스트 압축</div>
+          <div class="trust-row"><code>compress_sections(text)</code> — 헤더 보존 + 본문 압축 (~3x)</div>
+          <div class="trust-row"><code>get_aaak_spec()</code> — dialect 스펙 조회</div>
+        </div>
+        <span class="tag async">fail-open</span>
+      </div>
+    </div>
+
+    <!-- Data Flow Diagram -->
+    <h3>Hook 연동 데이터 흐름</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">1</div>
+        <div class="flow-content">
+          <strong>SubagentStart</strong> &rarr; <code>subagent_kg_inject.py</code>
+          <p>subagent 시작 시 mempalace KG 조회 &rarr; 관련 triple을 context로 주입. 과거 세션 지식이 subagent에 자동 전달.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step">
+        <div class="flow-icon">2</div>
+        <div class="flow-content">
+          <strong>SubagentStop</strong> &rarr; <code>subagent_palace_store.py</code>
+          <p>subagent 완료 시 출력 결과를 mempalace에 저장. 다음 세션 subagent가 이 지식을 재사용 가능.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step">
+        <div class="flow-icon">3</div>
+        <div class="flow-content">
+          <strong>PreCompact</strong> &rarr; <code>aaak_compress.py</code> &rarr; <code>compress_sections()</code>
+          <p>context 한계 도달 전 cold context를 AAAK으로 압축. ~3x 절감. mempalace 미설치 시 원본 텍스트 그대로 반환 (fail-open).</p>
+        </div>
+      </div>
+    </div>
+
+    <details class="example-toggle">
+      <summary>세션 시작 시 자동 주입 흐름 보기</summary>
+      <div class="example-content">
+        <div class="trust-chain">
+          <div class="trust-row"><span class="tag l3">L3</span> <code>~/.claude/memory/MEMORY.md</code> — CLAUDE.md 통해 항상 존재 (~800 tok)</div>
+          <div class="trust-row"><span class="tag l2">L2</span> <code>PROJECT_CONTEXT.md</code> — <code>session_startup.py</code> 자동 주입 (~2000 tok)</div>
+          <div class="trust-row"><span class="tag l2">L2</span> <code>FACTS.md / MEMORY.md</code> — on-demand (프로젝트 작업 시작 시 수동 읽기)</div>
+        </div>
+        <p>총 자동 주입: ~2800 tokens. 상시 주입 설계 대비 ~2300 tokens 절감.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION: AAAK Compression                                    -->
+  <!-- ============================================================ -->
+  <section id="aaak">
+    <div class="eyebrow-sm">컨텍스트 압축</div>
+    <h2>AAAK Compression</h2>
+    <p class="section-desc">mempalace dialect 기반 텍스트 압축. PreCompact 단계에서 cold context를 ~3x 압축하여 세션 연속성을 보존합니다.</p>
+
+    <!-- What AAAK is -->
+    <h3>AAAK란</h3>
+    <div class="gl-grid">
+      <div class="gl-card global">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x1F4E6;</span>
+          <strong>정의</strong>
+        </div>
+        <p>AAAK는 mempalace에 내장된 dialect 기반 텍스트 압축 시스템입니다. <code>mempalace.dialect.Dialect</code>를 import하여 사용하며, CAF에서는 <code>aaak_compress.py</code> 래퍼를 통해 호출합니다.</p>
+      </div>
+      <div class="gl-card global">
+        <div class="gl-card-header">
+          <span class="gl-card-icon">&#x1F527;</span>
+          <strong>두 가지 압축 모드</strong>
+        </div>
+        <div class="trust-chain">
+          <div class="trust-row"><code>compress(text)</code> — 전체 텍스트를 AAAK dialect으로 압축. 범용.</div>
+          <div class="trust-row"><code>compress_sections(text)</code> — 마크다운 헤더를 그대로 보존하고 본문 단락만 압축. 구조 유지 ~3x 압축비.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Where it's used -->
+    <h3>사용 위치</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">&#x26A1;</div>
+        <div class="flow-content">
+          <strong>PreCompact event</strong> &rarr; <code>pre_compact_preserve.py</code>
+          <p>context 한계 도달 직전 발동. cold context(최근 20+ turn 동안 언급되지 않은 내용)를 <code>compress_sections()</code>으로 압축. 압축된 요약을 compaction prompt에 주입하여 Claude가 세션 연속성 유지.</p>
+          <span class="tag async">PreCompact</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fail-open design -->
+    <h3>Fail-Open 설계</h3>
+    <div class="gl-card local">
+      <div class="gl-card-header">
+        <span class="gl-card-icon">&#x2705;</span>
+        <strong>mempalace 미설치 시 동작</strong>
+      </div>
+      <p><code>aaak_compress.py</code>는 <code>try/except ImportError</code>로 감싸져 있습니다. mempalace MCP server가 설치되지 않은 환경에서도 hook이 실패하지 않고 <strong>원본 텍스트를 그대로 반환</strong>합니다. 압축 없이 정상 작동.</p>
+      <span class="tag async">fail-open</span>
+    </div>
+
+    <!-- What was REJECTED -->
+    <h3>채택하지 않은 방식</h3>
+    <div class="gl-card local">
+      <div class="gl-card-header">
+        <span class="gl-card-icon">&#x274C;</span>
+        <strong>REJECTED: auto_prime context 압축</strong>
+      </div>
+      <p><code>auto_prime_inject.py</code>가 주입하는 <code>PROJECT_CONTEXT.md</code>를 AAAK으로 사전 압축하는 방안을 검토했으나 <strong>철회</strong>했습니다.</p>
+      <p><strong>이유:</strong> AAAK으로 압축된 출력은 Claude가 읽을 수 없는 형식입니다. auto_prime context는 Claude가 직접 소비하는 콘텐츠이므로 압축 적용 불가.</p>
+      <div class="trust-chain">
+        <div class="trust-row">PreCompact cold context 압축 &rarr; <span class="tag l0">OK</span> (compaction 시스템이 처리)</div>
+        <div class="trust-row">auto_prime inject 사전 압축 &rarr; <span class="tag opus">REJECTED</span> (Claude 직접 소비 콘텐츠)</div>
+      </div>
+    </div>
+
+    <details class="example-toggle">
+      <summary>compress_sections() 동작 예시 보기</summary>
+      <div class="example-content">
+        <p><strong>입력 (before):</strong></p>
+        <pre>## Task: Fix authentication bug
+We investigated the login flow and found that the JWT validation was skipping
+the expiry check in certain edge cases when the token was refreshed too quickly.
+The fix involved adding an explicit expiry check before the refresh logic fires.
+
+## Modified Files
+- src/auth/jwt_validator.py — added expiry guard
+- tests/test_auth.py — added regression test for rapid refresh scenario</pre>
+        <p><strong>출력 (after, ~3x 압축):</strong></p>
+        <pre>## Task: Fix authentication bug
+[AAAK: JWT expiry skip on rapid refresh → explicit guard added pre-refresh]
+
+## Modified Files
+[AAAK: jwt_validator.py expiry guard; test_auth.py rapid refresh regression]</pre>
+        <p>헤더(<code>##</code>)는 원형 보존. 본문만 AAAK dialect으로 압축.</p>
+      </div>
+    </details>
+  </section>
+
 
   <!-- ════════════════════════════════════════════ -->
   <!-- S8: CONTEXT ENGINEERING                      -->
