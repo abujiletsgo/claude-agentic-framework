@@ -1,0 +1,34 @@
+[
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "acad711",
+    "agent_type": "general-purpose"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a34e270",
+    "agent_type": "general-purpose"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a7480ad",
+    "agent_type": "general-purpose"
+  },
+  {
+    "session_id": "495f32bd-ee4f-4de3-991c-aaa113346727",
+    "transcript_path": "/Users/tomkwon/.claude/projects/-Users-tomkwon/495f32bd-ee4f-4de3-991c-aaa113346727.jsonl",
+    "cwd": "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/framework/guardrails",
+    "hook_event_name": "SubagentStart",
+    "agent_id": "a4ab5a8",
+    "agent_type": "general-purpose"
+  }
+]

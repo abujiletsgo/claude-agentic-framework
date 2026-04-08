@@ -1,0 +1,250 @@
+# Architecture Team Template
+# 4 architects designing multi-layer system architecture
+
+name: Architecture Design Team
+purpose: Multi-layer architecture design with frontend, backend, data, and infrastructure specialists
+team_type: architecture
+
+# ─── Team Configuration ──────────────────────────────────────────
+
+teammates:
+  - name: frontend-architect
+    model: sonnet
+    focus_area: UI/UX architecture, component design, state management, client-side performance
+    domain:
+      files:
+        - "**/*.tsx"
+        - "**/*.jsx"
+        - "**/*.vue"
+        - "**/*.svelte"
+        - "**/components/**"
+        - "**/pages/**"
+        - "**/app/**"
+      exclude:
+        - "**/node_modules/**"
+        - "**/dist/**"
+    responsibilities:
+      - Design component hierarchy and reusable UI patterns
+      - Define state management architecture (Redux, Zustand, Pinia, etc.)
+      - Plan routing and navigation structure
+      - Design responsive layout system
+      - Define API client architecture and data fetching patterns
+      - Plan client-side caching strategy
+      - Recommend build and bundling optimizations
+    output_format: |
+      ## Frontend Architecture Design
+
+      ### Component Architecture
+      - [Component tree, reusable patterns]
+
+      ### State Management
+      - [Store structure, data flow]
+
+      ### Performance Strategy
+      - [Lazy loading, code splitting, caching]
+
+  - name: backend-architect
+    model: opus
+    focus_area: API design, business logic, service architecture, scalability
+    domain:
+      files:
+        - "**/*.py"
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/*.go"
+        - "**/api/**"
+        - "**/services/**"
+        - "**/controllers/**"
+      exclude:
+        - "**/tests/**"
+        - "**/node_modules/**"
+    responsibilities:
+      - Design API endpoints and REST/GraphQL schema
+      - Define service layer architecture and boundaries
+      - Plan business logic organization
+      - Design authentication and authorization flows
+      - Plan error handling and validation patterns
+      - Define background job and queue architecture
+      - Recommend scaling and load balancing strategies
+    output_format: |
+      ## Backend Architecture Design
+
+      ### API Design
+      - [Endpoints, schemas, versioning]
+
+      ### Service Architecture
+      - [Layers, dependencies, boundaries]
+
+      ### Scalability Plan
+      - [Horizontal scaling, caching, async processing]
+
+  - name: data-architect
+    model: opus
+    focus_area: Database schema, data modeling, migrations, query optimization
+    domain:
+      files:
+        - "**/*.sql"
+        - "**/migrations/**"
+        - "**/models/**"
+        - "**/schema/**"
+      exclude:
+        - "**/node_modules/**"
+    responsibilities:
+      - Design database schema and relationships
+      - Define data models and entity structures
+      - Plan indexing strategy for query performance
+      - Design data migration and versioning approach
+      - Recommend partitioning and sharding strategies
+      - Plan data backup and recovery procedures
+      - Define data validation and constraints
+    output_format: |
+      ## Data Architecture Design
+
+      ### Schema Design
+      - [Tables, relationships, constraints]
+
+      ### Query Optimization
+      - [Indexes, query patterns, N+1 prevention]
+
+      ### Migration Strategy
+      - [Versioning, rollback, zero-downtime deployments]
+
+  - name: infrastructure-architect
+    model: sonnet
+    focus_area: Deployment, CI/CD, monitoring, infrastructure-as-code
+    domain:
+      files:
+        - "**/*.yaml"
+        - "**/*.yml"
+        - "**/Dockerfile"
+        - "**/docker-compose.yml"
+        - "**/.github/workflows/**"
+        - "**/terraform/**"
+        - "**/ansible/**"
+      exclude: []
+    responsibilities:
+      - Design deployment architecture (containers, orchestration)
+      - Plan CI/CD pipeline stages and automation
+      - Define monitoring and observability strategy
+      - Recommend infrastructure-as-code approach
+      - Plan security hardening and secrets management
+      - Design logging and error tracking architecture
+      - Recommend cost optimization strategies
+    output_format: |
+      ## Infrastructure Architecture Design
+
+      ### Deployment Architecture
+      - [Containers, orchestration, cloud services]
+
+      ### CI/CD Pipeline
+      - [Stages, testing, deployment automation]
+
+      ### Observability
+      - [Monitoring, logging, alerting, tracing]
+
+# ─── Coordination Strategy ───────────────────────────────────────
+
+coordination:
+  strategy: iterative_consensus
+  description: Architects design their layers, then iterate to ensure integration points align
+
+  phases:
+    - phase: initial_design
+      agents: [frontend-architect, backend-architect, data-architect, infrastructure-architect]
+      execution: parallel
+      timeout: 600  # 10 minutes per architect
+
+    - phase: integration_review
+      agent: backend-architect  # Leads integration as central coordinator
+      execution: sequential
+      inputs:
+        - frontend-architect.output
+        - data-architect.output
+        - infrastructure-architect.output
+      timeout: 300  # 5 minutes
+
+    - phase: refinement
+      agents: [frontend-architect, backend-architect, data-architect, infrastructure-architect]
+      execution: parallel
+      inputs: [integration_review.output]
+      timeout: 300  # 5 minutes per architect
+
+    - phase: final_synthesis
+      agent: backend-architect
+      execution: sequential
+      inputs: [all_refinements]
+      timeout: 180  # 3 minutes
+
+  conflict_resolution:
+    - Backend-architect arbitrates API contract disputes
+    - Data-architect has final say on schema design
+    - Infrastructure-architect decides on deployment constraints
+    - Frontend-architect owns client-side performance decisions
+
+# ─── Communication Patterns ──────────────────────────────────────
+
+communication:
+  shared_context:
+    project_requirements: High-level feature requirements
+    tech_stack: Approved technologies and frameworks
+    constraints: Budget, timeline, team size, performance SLAs
+    existing_systems: Legacy systems and integration requirements
+
+  handoff_protocol:
+    - "Each architect writes design doc: {name}_design.md"
+    - "Integration review creates: integration_plan.md"
+    - "Final synthesis creates: system_architecture.md"
+
+  output_location: .claude/architecture/
+
+  integration_points:
+    - API contracts (backend → frontend)
+    - Database schema (data → backend)
+    - Deployment specs (infrastructure → backend/frontend)
+    - State shape (frontend → backend)
+
+# ─── Exit Criteria ───────────────────────────────────────────────
+
+exit_criteria:
+  success:
+    - All layers designed with clear boundaries
+    - Integration points defined and validated
+    - No architectural contradictions
+    - Performance and scalability requirements met
+    - Infrastructure costs within budget
+
+  failure:
+    - Timeout exceeded (30 minutes total)
+    - Irreconcilable architectural conflicts
+    - Requirements cannot be met with chosen tech stack
+
+  partial_success:
+    - Some layers complete but integration gaps remain
+    - Architecture viable but needs optimization
+
+# ─── Usage Examples ──────────────────────────────────────────────
+
+usage:
+  command: just team-architecture <requirements-file>
+
+  examples:
+    - description: Design new feature architecture
+      command: just team-architecture docs/requirements/new_feature.md
+
+    - description: Redesign existing module
+      command: just team-architecture --refactor src/legacy_module/
+
+    - description: Full system architecture from scratch
+      command: just team-architecture --new-project docs/product_spec.md
+
+# ─── Metrics & Observability ─────────────────────────────────────
+
+metrics:
+  track:
+    - design_duration_seconds
+    - integration_iterations_count
+    - conflicts_resolved_count
+    - estimated_implementation_hours
+    - estimated_infrastructure_cost_monthly
+
+  emit_to: observability_dashboard

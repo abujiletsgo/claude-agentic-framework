@@ -1,0 +1,21 @@
+{
+  "session_id": "01d47676-ba60-475c-b349-dc3623e7bafe",
+  "prompts": [
+    "yes",
+    "yes create it",
+    "run",
+    "also i realized there are a lot of agents, prompts, hooks, etc that shouldn't be in global but project specific? those should be created in each corresponding project files. no wonder ",
+    "show me what should be global vs project specific",
+    "you look at it with opus, you should know if something is global or project specific. and you move everything that is necessary to the projects and make the claude agentic framework clearn. and it shouldn't even create projects inside this folder, it should be in the project folder in /documents",
+    "execute it but i see there is like youtube visualizer stuff for vaultmind and stuff",
+    "it is vaultmnind sepcific let's move ",
+    "yes",
+    "it's not doing anything",
+    "i did",
+    "i did",
+    "/sentient ",
+    "<task-notification>\n<task-id>b38aed5</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output</output-file>\n<status>killed</status>\n<summary>Background command \"Check running agent tasks\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b38aed5.output",
+    "<task-notification>\n<task-id>b0f0cc2</task-id>\n<output-file>/private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output</output-file>\n<status>killed</status>\n<summary>Background command \"Append complete inventory content to file\" was stopped</summary>\n</task-notification>\nRead the output file to retrieve the result: /private/tmp/claude-501/-Users-tomkwon-Documents/tasks/b0f0cc2.output",
+    "clear context"
+  ]
+}

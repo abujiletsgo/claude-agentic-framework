@@ -1,0 +1,487 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["pyyaml"]
+# ///
+"""
+EVOLVE stage of the Knowledge Pipeline.
+
+Hook: SessionStart
+Retrieves relevant learnings from knowledge.db using FTS5 search
+based on the current working directory and recent file context,
+then injects them into the session via hookSpecificOutput.
+"""
+
+import json
+import os
+import signal
+import sqlite3
+import subprocess
+import sys
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+# Import canonical DB path from the single source of truth
+sys.path.insert(0, str(Path(__file__).parent))
+from knowledge_db import get_canonical_db_path
+
+CONFIG_PATH = Path.home() / ".claude" / "knowledge_pipeline.yaml"
+DB_PATH = get_canonical_db_path()
+DB_DIR = DB_PATH.parent
+
+
+def load_config():
+    """Load pipeline config with safe defaults."""
+    defaults = {
+        "evolve": {
+            "enabled": True,
+            "max_injections": 5,
+            "relevance_threshold": 0.6,
+            "recency_boost": 0.2,
+            "include_categories": ["LEARNED", "PATTERN", "INVESTIGATION"],
+            "lookback_days": 30,
+        }
+    }
+    if CONFIG_PATH.exists():
+        try:
+            import yaml
+            with open(CONFIG_PATH, "r") as f:
+                cfg = yaml.safe_load(f) or {}
+            evolve = cfg.get("evolve", {})
+            for k, v in evolve.items():
+                defaults["evolve"][k] = v
+        except Exception:
+            pass
+    return defaults["evolve"]
+
+
+def now_iso():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def get_db():
+    """Get database connection (read-only mode)."""
+    if not DB_PATH.exists():
+        return None
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
+
+
+# ---------------------------------------------------------------------------
+# Context gathering
+# ---------------------------------------------------------------------------
+
+def get_cwd_context():
+    """Extract search context from the current working directory."""
+    cwd = Path.cwd()
+    terms = []
+
+    # Directory name parts
+    for part in cwd.parts[-3:]:
+        # Split on common separators
+        for word in part.replace("-", " ").replace("_", " ").replace(".", " ").split():
+            if len(word) > 2 and word.lower() not in ("users", "home", "documents", "src", "lib"):
+                terms.append(word.lower())
+
+    # Check for common project files to infer project type
+    project_indicators = {
+        "package.json": ["javascript", "node", "npm"],
+        "Cargo.toml": ["rust", "cargo"],
+        "pyproject.toml": ["python", "pip"],
+        "go.mod": ["golang", "go"],
+        "pom.xml": ["java", "maven"],
+        "Gemfile": ["ruby", "rails"],
+        "CLAUDE.md": ["claude", "agentic"],
+    }
+
+    for filename, keywords in project_indicators.items():
+        if (cwd / filename).exists():
+            terms.extend(keywords)
+            break
+
+    # Check for recent git activity to get context
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-5", "--format=%s"],
+            capture_output=True, text=True, timeout=2, cwd=str(cwd)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            for line in result.stdout.strip().split("\n"):
+                for word in line.split():
+                    if len(word) > 3 and word.isalpha():
+                        terms.append(word.lower())
+    except Exception:
+        pass
+
+    return list(set(terms))[:15]  # Deduplicate and limit
+
+
+def get_recent_files_context():
+    """Get context from recently modified files in cwd."""
+    terms = []
+    cwd = Path.cwd()
+
+    try:
+        # Get recently modified files
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "HEAD~5", "HEAD"],
+            capture_output=True, text=True, timeout=2, cwd=str(cwd)
+        )
+        if result.returncode == 0:
+            for filepath in result.stdout.strip().split("\n")[:10]:
+                if filepath:
+                    # Extract meaningful parts from file paths
+                    p = Path(filepath)
+                    terms.append(p.stem.lower())
+                    if p.suffix:
+                        terms.append(p.suffix.lstrip(".").lower())
+    except Exception:
+        pass
+
+    return list(set(terms))[:10]
+
+
+# ---------------------------------------------------------------------------
+# Knowledge retrieval
+# ---------------------------------------------------------------------------
+
+def _table_exists(conn, table_name):
+    """Check if a table exists in the database."""
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (table_name,),
+        ).fetchone()
+        return row is not None
+    except Exception:
+        return False
+
+
+def _search_knowledge_entries(conn, search_terms, config):
+    """Search the knowledge_entries table (store_learnings.py schema)."""
+    categories = config.get("include_categories", ["LEARNED", "PATTERN", "INVESTIGATION"])
+    max_results = config.get("max_injections", 5)
+    lookback_days = config.get("lookback_days", 30)
+    query = " OR ".join(search_terms[:10])
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    cat_placeholders = ",".join(["?" for _ in categories])
+
+    # Try FTS first (knowledge_entries_fts is the FTS table for knowledge_entries)
+    try:
+        sql = (
+            "SELECT e.id, e.category, e.title, e.content, e.tags, "
+            "e.confidence, e.created_at, e.source, rank "
+            "FROM knowledge_entries_fts f "
+            "JOIN knowledge_entries e ON f.rowid = e.id "
+            "WHERE knowledge_entries_fts MATCH ? "
+            f"AND e.category IN ({cat_placeholders}) "
+            "AND e.created_at > ? "
+            "AND (e.expires_at IS NULL OR e.expires_at > ?) "
+            "ORDER BY rank "
+            f"LIMIT ?"
+        )
+        params = [query] + categories + [cutoff, now_iso(), max_results * 2]
+        rows = conn.execute(sql, params).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        pass
+
+    # Fallback: recent entries without FTS
+    try:
+        sql = (
+            "SELECT id, category, title, content, tags, confidence, created_at, source "
+            "FROM knowledge_entries "
+            f"WHERE category IN ({cat_placeholders}) "
+            "AND created_at > ? "
+            "AND (expires_at IS NULL OR expires_at > ?) "
+            "ORDER BY created_at DESC "
+            f"LIMIT ?"
+        )
+        params = categories + [cutoff, now_iso(), max_results]
+        rows = conn.execute(sql, params).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def _search_knowledge_table(conn, search_terms, config):
+    """Search the knowledge table (knowledge_db.py / extract_learnings.py schema).
+
+    This is the OTHER half of the split-brain fix: extract_learnings.py writes
+    to the 'knowledge' table via knowledge_db.add_knowledge(), so we must also
+    read from it here.
+    """
+    categories = config.get("include_categories", ["LEARNED", "PATTERN", "INVESTIGATION"])
+    max_results = config.get("max_injections", 5)
+    lookback_days = config.get("lookback_days", 30)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    tag_placeholders = ",".join(["?" for _ in categories])
+
+    try:
+        sql = (
+            "SELECT k.id, k.tag AS category, k.content AS title, k.content, "
+            "k.tag AS tags, 0.5 AS confidence, k.timestamp AS created_at, "
+            "'extract_learnings' AS source "
+            "FROM knowledge k "
+            f"WHERE k.tag IN ({tag_placeholders}) "
+            "AND k.timestamp > ? "
+            "ORDER BY k.timestamp DESC "
+            f"LIMIT ?"
+        )
+        params = categories + [cutoff, max_results]
+        rows = conn.execute(sql, params).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def search_knowledge(conn, search_terms, config):
+    """Search knowledge database across BOTH schemas.
+
+    The knowledge pipeline has two writers:
+      1. extract_learnings.py -> knowledge_db.add_knowledge() -> 'knowledge' table
+      2. store_learnings.py -> direct insert -> 'knowledge_entries' table
+
+    This function queries both tables and merges the results so no
+    learnings are invisible to the injection stage.
+    """
+    if not search_terms:
+        return []
+
+    results = []
+
+    # Search knowledge_entries table (store_learnings.py schema)
+    if _table_exists(conn, "knowledge_entries"):
+        results.extend(_search_knowledge_entries(conn, search_terms, config))
+
+    # Search knowledge table (knowledge_db.py / extract_learnings.py schema)
+    if _table_exists(conn, "knowledge"):
+        results.extend(_search_knowledge_table(conn, search_terms, config))
+
+    return results
+
+
+def rank_and_filter(results, config):
+    """Apply recency boost and relevance threshold, return top N."""
+    max_injections = config.get("max_injections", 5)
+    recency_boost = config.get("recency_boost", 0.2)
+
+    scored = []
+    now = datetime.now(timezone.utc)
+
+    for r in results:
+        # Base score from BM25 rank (rank is negative, more negative = better)
+        bm25_score = abs(r.get("rank", 0)) if r.get("rank") else 0.5
+
+        # Recency boost: newer entries get a boost
+        try:
+            created = datetime.fromisoformat(r["created_at"].replace("Z", "+00:00"))
+            age_days = (now - created).total_seconds() / 86400
+            # Exponential decay: recent items get full boost, older items less
+            age_factor = max(0, 1 - (age_days / 30))
+            recency_score = recency_boost * age_factor
+        except Exception:
+            recency_score = 0
+
+        # Confidence boost
+        confidence = r.get("confidence", 0.5)
+
+        # Combined score
+        total_score = bm25_score + recency_score + (confidence * 0.1)
+        r["_score"] = total_score
+        scored.append(r)
+
+    # Sort by score descending
+    scored.sort(key=lambda x: x["_score"], reverse=True)
+
+    return scored[:max_injections]
+
+
+def load_facts_text(cwd: str) -> str:
+    """Read .claude/FACTS.md for the current project. Returns empty string if missing."""
+    try:
+        facts_file = Path(cwd) / ".claude" / "FACTS.md"
+        if facts_file.exists():
+            return facts_file.read_text()
+    except Exception:
+        pass
+    return ""
+
+
+def _words(text: str) -> set:
+    import re
+    return set(re.findall(r"[a-zA-Z0-9_-]+", text.lower()))
+
+
+def filter_facts_duplicates(learnings: list, cwd: str, threshold: float = 0.60) -> list:
+    """
+    Remove knowledge DB entries whose content is already captured in FACTS.md.
+    Uses word-overlap dedup at the same threshold as fact_manager.py (60%).
+    Returns only entries not already represented in the project's fact sheet.
+    """
+    facts_text = load_facts_text(cwd)
+    if not facts_text:
+        return learnings  # No FACTS.md — nothing to dedup against
+
+    # Build word sets for each fact line in FACTS.md
+    fact_lines = [
+        line for line in facts_text.splitlines()
+        if line.strip().startswith("- ")
+    ]
+    fact_word_sets = [_words(line) for line in fact_lines if _words(line)]
+
+    filtered = []
+    for entry in learnings:
+        content = entry.get("content", "")
+        if not content:
+            filtered.append(entry)
+            continue
+
+        entry_words = _words(content)
+        if not entry_words:
+            filtered.append(entry)
+            continue
+
+        # Check if any FACTS.md line has >= threshold word overlap
+        is_dup = False
+        for fact_words in fact_word_sets:
+            overlap = len(entry_words & fact_words) / max(len(entry_words), len(fact_words))
+            if overlap >= threshold:
+                is_dup = True
+                break
+
+        if not is_dup:
+            filtered.append(entry)
+
+    return filtered
+
+
+def format_injection(learnings):
+    """Format learnings as a context injection string."""
+    if not learnings:
+        return ""
+
+    lines = ["## Relevant Knowledge from Previous Sessions", ""]
+
+    for entry in learnings:
+        category = entry.get("category", "LEARNED")
+        content = entry.get("content", "")
+        # Strip the "Context: ..." suffix we added during storage
+        if "\n\nContext: " in content:
+            content = content.split("\n\nContext: ")[0]
+        confidence = entry.get("confidence", 0.5)
+        tags = entry.get("tags", "")
+
+        confidence_label = "high" if confidence >= 0.7 else "medium" if confidence >= 0.4 else "low"
+        lines.append(
+            f"- **{category}** ({confidence_label} confidence): {content}"
+        )
+        if tags:
+            lines.append(f"  _Tags: {tags}_")
+
+    lines.append("")
+    lines.append(
+        "_Knowledge auto-injected by the knowledge pipeline. "
+        f"{len(learnings)} relevant entries found._"
+    )
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def _log(msg):
+    try:
+        from pathlib import Path
+        import datetime
+        with open("/tmp/claude_startup_debug.log", "a") as f:
+            f.write(f"{datetime.datetime.now().isoformat()} [inject] {msg}\n")
+    except Exception:
+        pass
+
+
+def _sigterm_handler(signum, frame):
+    _log("SIGTERM received -- killed by Claude Code timeout")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
+def main():
+    _log("main() started")
+    try:
+        input_data = json.loads(sys.stdin.read())
+    except Exception:
+        _log("stdin read failed, returning")
+        return
+
+    config = load_config()
+
+    if not config.get("enabled", True):
+        return
+
+    # Get database connection
+    conn = get_db()
+    if conn is None:
+        return
+
+    try:
+        # Gather search context
+        cwd_terms = get_cwd_context()
+        file_terms = get_recent_files_context()
+        all_terms = list(set(cwd_terms + file_terms))
+
+        if not all_terms:
+            # No context available, fall back to recent learnings
+            all_terms = ["learned", "pattern", "workflow"]
+
+        # Search knowledge database
+        results = search_knowledge(conn, all_terms, config)
+
+        if not results:
+            return
+
+        # Rank and filter
+        top_learnings = rank_and_filter(results, config)
+
+        if not top_learnings:
+            return
+
+        # Dedup against FACTS.md — skip entries already captured in the project fact sheet
+        cwd = input_data.get("cwd", str(Path.cwd()))
+        top_learnings = filter_facts_duplicates(top_learnings, cwd)
+
+        if not top_learnings:
+            return
+
+        # Format as context injection
+        injection_text = format_injection(top_learnings)
+
+        if injection_text:
+            output = {
+                "hookSpecificOutput": {
+                    "additionalContext": injection_text
+                }
+            }
+            print(json.dumps(output))
+
+    finally:
+        conn.close()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+        _log("main() completed OK")
+    except Exception as _e:
+        _log(f"main() raised: {type(_e).__name__}: {_e}")
+        sys.exit(0)

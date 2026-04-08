@@ -1,0 +1,315 @@
+{
+  "empty_session": {
+    "description": "10-turn session with no tasks or file edits",
+    "messages": [
+      {"role": "user", "content": "what does this project do?"},
+      {"role": "assistant", "content": [{"type": "text", "text": "This project is a Claude Agentic Framework that provides hooks, agents, and skills for orchestrating Claude Code sessions."}]},
+      {"role": "user", "content": "what hooks are available?"},
+      {"role": "assistant", "content": [{"type": "text", "text": "There are 41 hooks across 16 event types including SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, and others."}]},
+      {"role": "user", "content": "how do I install it?"},
+      {"role": "assistant", "content": [{"type": "text", "text": "Run bash install.sh from the repo root. It reads templates/settings.json.template and writes ~/.claude/settings.json."}]},
+      {"role": "user", "content": "what is caddy?"},
+      {"role": "assistant", "content": [{"type": "text", "text": "Caddy is the request classifier. It analyzes incoming prompts and assigns complexity, task_type, and strategy."}]},
+      {"role": "user", "content": "does it support Korean?"},
+      {"role": "assistant", "content": [{"type": "text", "text": "Yes, kr_mode.py detects Korean prompts and adjusts response language accordingly."}]}
+    ]
+  },
+  "active_session": {
+    "description": "40-turn session with 2 in-progress tasks, 5 edited files",
+    "messages": [
+      {"role": "user", "content": "fix the auth bug and add rate limiting"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_001", "name": "TaskCreate", "input": {"subject": "Fix auth bug", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_001", "content": "{\"taskId\": \"task-001\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_002", "name": "TaskCreate", "input": {"subject": "Add rate limiting", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_002", "content": "{\"taskId\": \"task-002\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_003", "name": "Bash", "input": {"command": "grep -r 'authenticate' /src/"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_003", "content": "{\"stdout\": \"/src/auth.py:42:def authenticate(user, pw):\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_004", "name": "Edit", "input": {"file_path": "/src/auth.py", "old_string": "pass", "new_string": "return verify_token(user, pw)"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_004", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "Fixed the auth bug in /src/auth.py. Now working on task-001 completion check and task-002."}
+      ]},
+      {"role": "user", "content": "continue with rate limiting"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_005", "name": "Bash", "input": {"command": "cat /src/middleware.py"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_005", "content": "{\"stdout\": \"class Middleware:\\n    pass\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_006", "name": "Write", "input": {"file_path": "/src/rate_limiter.py", "content": "from collections import defaultdict\\nimport time\\n\\nclass RateLimiter:\\n    def __init__(self, limit=100, window=60):\\n        self.limit = limit\\n        self.window = window\\n        self.requests = defaultdict(list)\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_006", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_007", "name": "Edit", "input": {"file_path": "/src/middleware.py", "old_string": "class Middleware:\\n    pass", "new_string": "from rate_limiter import RateLimiter\\n\\nclass Middleware:\\n    limiter = RateLimiter()"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_007", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_008", "name": "Bash", "input": {"command": "pytest tests/test_auth.py -v"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_008", "content": "{\"stdout\": \"FAILED tests/test_auth.py::test_login - AssertionError\\n\", \"exit_code\": 1}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_009", "name": "Edit", "input": {"file_path": "/src/auth.py", "old_string": "return verify_token(user, pw)", "new_string": "return verify_token(user, pw) if user else False"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_009", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_010", "name": "Bash", "input": {"command": "pytest tests/test_auth.py tests/test_rate_limiter.py -v"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_010", "content": "{\"stdout\": \"2 passed in 0.42s\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "Both tests pass. task-001 (Fix auth bug) is complete. task-002 (Add rate limiting) still in progress — middleware wired, tests pass."}
+      ]},
+      {"role": "user", "content": "update the config too"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_011", "name": "Edit", "input": {"file_path": "/src/config.py", "old_string": "RATE_LIMIT = None", "new_string": "RATE_LIMIT = 100"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_011", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "Config updated. /src/config.py now has RATE_LIMIT = 100. task-002 is complete."}
+      ]},
+      {"role": "user", "content": "looks good"},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "Great! Both tasks are done: task-001 Fix auth bug and task-002 Add rate limiting. Files edited: /src/auth.py, /src/middleware.py, /src/rate_limiter.py, /src/config.py."}
+      ]}
+    ]
+  },
+  "complex_session": {
+    "description": "80-turn session with 5 tasks, 3 completed and cold (not mentioned 20+ turns)",
+    "messages": [
+      {"role": "user", "content": "we need to refactor the database layer, add caching, fix the login flow, update the API docs, and add monitoring"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_001", "name": "TaskCreate", "input": {"subject": "Refactor database layer", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_001", "content": "{\"taskId\": \"task-A\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_002", "name": "TaskCreate", "input": {"subject": "Add caching layer", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_002", "content": "{\"taskId\": \"task-B\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_003", "name": "TaskCreate", "input": {"subject": "Fix login flow", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_003", "content": "{\"taskId\": \"task-C\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_004", "name": "TaskCreate", "input": {"subject": "Update API docs", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_004", "content": "{\"taskId\": \"task-D\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_005", "name": "TaskCreate", "input": {"subject": "Add monitoring", "status": "in_progress"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_005", "content": "{\"taskId\": \"task-E\"}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_006", "name": "Bash", "input": {"command": "find /src/db -name '*.py' | head -20"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_006", "content": "{\"stdout\": \"/src/db/models.py\\n/src/db/queries.py\\n/src/db/connection.py\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_007", "name": "Edit", "input": {"file_path": "/src/db/connection.py", "old_string": "conn = sqlite3.connect(DB_PATH)", "new_string": "conn = sqlite3.connect(DB_PATH, check_same_thread=False)"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_007", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "task-A (Refactor database layer): updated connection.py. task-B (Add caching) starting next."}
+      ]},
+      {"role": "user", "content": "proceed with task-A and task-B"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_008", "name": "Write", "input": {"file_path": "/src/db/repository.py", "content": "class Repository:\\n    def __init__(self, conn):\\n        self.conn = conn\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_008", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_009", "name": "Write", "input": {"file_path": "/src/cache.py", "content": "import functools\\n\\ndef cached(ttl=300):\\n    def decorator(fn):\\n        @functools.lru_cache(maxsize=256)\\n        def wrapper(*args):\\n            return fn(*args)\\n        return wrapper\\n    return decorator\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_009", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "task-A complete: repository.py added. task-B complete: cache.py added. task-C (Fix login flow) next."}
+      ]},
+      {"role": "user", "content": "fix the login flow now"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_010", "name": "Bash", "input": {"command": "grep -n 'login' /src/views/auth_views.py"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_010", "content": "{\"stdout\": \"12:def login_view(request):\\n30:    return redirect('/')\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_011", "name": "Edit", "input": {"file_path": "/src/views/auth_views.py", "old_string": "return redirect('/')", "new_string": "return redirect('/dashboard')"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_011", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_012", "name": "Bash", "input": {"command": "pytest tests/test_login.py -v"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_012", "content": "{\"stdout\": \"3 passed in 0.51s\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "task-C (Fix login flow) complete. Login now redirects to /dashboard. task-D (Update API docs) next."}
+      ]},
+      {"role": "user", "content": "update API docs"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_013", "name": "Write", "input": {"file_path": "/docs/api_reference.md", "content": "# API Reference\\n\\n## Auth\\n### POST /login\\nReturns JWT token.\\n\\n## Rate Limiting\\nDefault: 100 req/min per IP.\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_013", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "task-D (Update API docs) complete. api_reference.md created. Now working on task-E (Add monitoring)."}
+      ]},
+      {"role": "user", "content": "add monitoring"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_014", "name": "Write", "input": {"file_path": "/src/monitoring.py", "content": "import time\\nimport logging\\n\\nlogger = logging.getLogger('monitoring')\\n\\ndef record_metric(name, value, tags=None):\\n    logger.info(f'METRIC {name}={value} tags={tags}')\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_014", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "task-E (Add monitoring) in progress. monitoring.py created with record_metric. Need to wire into middleware."}
+      ]},
+      {"role": "user", "content": "wire monitoring into the request pipeline"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_015", "name": "Edit", "input": {"file_path": "/src/middleware.py", "old_string": "class Middleware:", "new_string": "from monitoring import record_metric\\n\\nclass Middleware:"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_015", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "Monitoring wired into middleware. task-E complete. All 5 tasks done now."}
+      ]},
+      {"role": "user", "content": "run the full test suite"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_016", "name": "Bash", "input": {"command": "pytest tests/ -v --tb=short 2>&1 | tail -30"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_016", "content": "{\"stdout\": \"18 passed, 1 warning in 2.3s\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [
+        {"type": "text", "text": "All 18 tests pass. The session tasks are complete."}
+      ]},
+      {"role": "user", "content": "now let's work on performance improvements — nothing to do with those earlier tasks"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_017", "name": "Bash", "input": {"command": "python -m cProfile -s cumtime /src/main.py 2>&1 | head -20"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_017", "content": "{\"stdout\": \"ncalls  tottime  percall  cumtime  percall filename:lineno(function)\\n1  0.002  0.002  0.234  0.234 main.py:1(<module>)\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Profile shows main.py taking 0.234s cumulative. Let me drill into the hot paths."}]},
+      {"role": "user", "content": "check the query performance"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_018", "name": "Bash", "input": {"command": "python -c \"import timeit; print(timeit.timeit('import /src/db/queries', number=100))\""}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_018", "content": "{\"stdout\": \"0.12\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Query import takes 0.12s over 100 runs. Looking for optimization opportunities in queries.py."}]},
+      {"role": "user", "content": "add indexes to the DB"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_019", "name": "Edit", "input": {"file_path": "/src/db/queries.py", "old_string": "CREATE TABLE users", "new_string": "CREATE TABLE users"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_019", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Index added to users table. Performance should improve for user lookups."}]},
+      {"role": "user", "content": "benchmark again after index"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_020", "name": "Bash", "input": {"command": "pytest tests/test_performance.py -v -s"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_020", "content": "{\"stdout\": \"test_query_speed PASSED (42ms)\\n1 passed in 0.12s\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Query performance test passes at 42ms. Index optimization successful."}]},
+      {"role": "user", "content": "now optimize the cache layer"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_021", "name": "Edit", "input": {"file_path": "/src/cache.py", "old_string": "maxsize=256", "new_string": "maxsize=512"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_021", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Cache LRU size doubled to 512. Should reduce cache miss rate significantly."}]},
+      {"role": "user", "content": "check memory usage"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_022", "name": "Bash", "input": {"command": "python -c \"import tracemalloc; tracemalloc.start(); import src.cache; snap = tracemalloc.take_snapshot(); print(sum(s.size for s in snap.statistics('lineno')[:5]))\""}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_022", "content": "{\"stdout\": \"48291\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Cache module uses ~48KB memory. Acceptable for the 512-entry LRU."}]},
+      {"role": "user", "content": "run final benchmark"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_023", "name": "Bash", "input": {"command": "pytest tests/ -v --benchmark-only 2>&1"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_023", "content": "{\"stdout\": \"5 benchmark tests passed\\nMean: 28.3ms\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "All benchmarks pass. Mean response time 28.3ms. Performance optimization complete. task-E and other earlier tasks remain completed."}]},
+      {"role": "user", "content": "great, let's also add request tracing"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_024", "name": "Write", "input": {"file_path": "/src/tracing.py", "content": "import uuid\\nimport contextvars\\n\\ntrace_id: contextvars.ContextVar[str] = contextvars.ContextVar('trace_id')\\n\\ndef new_trace():\\n    tid = str(uuid.uuid4())[:8]\\n    trace_id.set(tid)\\n    return tid\\n"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_024", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Tracing module created. trace_id uses contextvars for async-safe request correlation."}]},
+      {"role": "user", "content": "wire tracing into the request handlers"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_025", "name": "Edit", "input": {"file_path": "/src/middleware.py", "old_string": "from monitoring import record_metric", "new_string": "from monitoring import record_metric\\nfrom tracing import new_trace"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_025", "content": "{\"success\": true}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "Tracing wired into middleware. new_trace() called on each request. The earlier tasks (task-A through task-E) were all completed in the first half of this session."}]},
+      {"role": "user", "content": "run all tests one more time"},
+      {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "cx_026", "name": "Bash", "input": {"command": "pytest tests/ -v 2>&1"}}
+      ]},
+      {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "cx_026", "content": "{\"stdout\": \"22 passed in 3.1s\\n\", \"exit_code\": 0}"}
+      ]},
+      {"role": "assistant", "content": [{"type": "text", "text": "All 22 tests pass. Session complete."}]},
+      {"role": "user", "content": "perfect"},
+      {"role": "assistant", "content": [{"type": "text", "text": "Done. All performance improvements applied, tracing added, all tests green."}]}
+    ]
+  }
+}

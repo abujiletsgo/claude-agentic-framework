@@ -1,0 +1,126 @@
+# Guardrails System Configuration
+# Anti-loop prevention for Claude Code hooks
+#
+# This configuration controls the circuit breaker system that prevents
+# infinite loops caused by repeatedly failing hooks.
+
+# Circuit Breaker Configuration
+circuit_breaker:
+  # Enable circuit breaker globally
+  # Set to false to disable circuit breaker (not recommended)
+  enabled: true
+
+  # Number of consecutive failures before opening circuit
+  # When a hook fails this many times in a row, it will be disabled
+  # Range: 1-100
+  # Default: 3
+  failure_threshold: 3
+
+  # Cooldown period (seconds) before testing recovery
+  # After a hook is disabled, wait this long before trying again
+  # Range: 0-86400 (0 = no cooldown, 86400 = 24 hours)
+  # Default: 300 (5 minutes)
+  cooldown_seconds: 300
+
+  # Consecutive successes needed to close circuit from half-open state
+  # After cooldown, the hook needs this many successes to be re-enabled
+  # Range: 1-100
+  # Default: 2
+  success_threshold: 2
+
+  # Hooks to exclude from circuit breaker (always execute)
+  # Critical safety hooks should be excluded to prevent disabling them
+  # Format: List of hook script names or full command patterns
+  # Example:
+  #   - "damage-control/bash-tool-damage-control.py"
+  #   - "damage-control/edit-tool-damage-control.py"
+  exclude: []
+
+# Logging Configuration
+logging:
+  # Log file for circuit breaker activity
+  # Supports ~ expansion and environment variables
+  # Default: ~/.claude/logs/circuit_breaker.log
+  file: "~/.claude/logs/circuit_breaker.log"
+
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  # DEBUG: Detailed information for debugging
+  # INFO: General informational messages (recommended)
+  # WARNING: Warning messages only
+  # ERROR: Error messages only
+  # CRITICAL: Critical errors only
+  # Default: INFO
+  level: "INFO"
+
+  # Log format string
+  # Available fields:
+  #   %(asctime)s - Timestamp
+  #   %(levelname)s - Log level (INFO, ERROR, etc.)
+  #   %(hook_cmd)s - Hook command
+  #   %(message)s - Log message
+  # Default: "%(asctime)s | %(levelname)s | %(hook_cmd)s | %(message)s"
+  format: "%(asctime)s | %(levelname)s | %(hook_cmd)s | %(message)s"
+
+# State file location
+# This file stores the circuit breaker state for all hooks
+# Supports ~ expansion and environment variables
+# Default: ~/.claude/hook_state.json
+state_file: "~/.claude/hook_state.json"
+
+# Environment Variable Overrides
+# =============================
+# You can override any configuration value using environment variables.
+# Format: GUARDRAILS_<section>_<key>=<value>
+#
+# Examples:
+#   export GUARDRAILS_CIRCUIT_BREAKER_ENABLED=false
+#   export GUARDRAILS_CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+#   export GUARDRAILS_CIRCUIT_BREAKER_COOLDOWN_SECONDS=600
+#   export GUARDRAILS_LOGGING_LEVEL=DEBUG
+#   export GUARDRAILS_STATE_FILE=/custom/path/state.json
+#
+# Boolean values: true/false, yes/no, 1/0, on/off (case-insensitive)
+# Integer values: numeric strings (e.g., "5", "600")
+# String values: any other value
+
+# Configuration Priority
+# =====================
+# 1. Environment variables (highest priority)
+# 2. This configuration file
+# 3. Built-in defaults (lowest priority)
+#
+# If this file doesn't exist, the system uses built-in defaults.
+# Invalid configuration values will show helpful error messages.
+
+# Safe Defaults
+# =============
+# The default values are chosen to be safe and conservative:
+# - failure_threshold: 3 (prevents false positives from transient errors)
+# - cooldown_seconds: 300 (5 minutes - enough time to fix issues)
+# - success_threshold: 2 (prevents premature re-enabling)
+# - level: INFO (enough visibility without excessive logging)
+#
+# These defaults should work well for most use cases.
+# Tune them based on your specific needs and hook reliability.
+
+# Tuning Guidelines
+# =================
+# For flaky hooks (intermittent failures):
+#   - Increase failure_threshold to 5-10
+#   - Increase success_threshold to 3-5
+#
+# For stable hooks (rarely fail):
+#   - Keep failure_threshold at 3
+#   - Keep success_threshold at 2
+#
+# For critical hooks (must stay enabled):
+#   - Add to exclude list
+#   - Or set failure_threshold very high (50-100)
+#
+# For fast recovery:
+#   - Decrease cooldown_seconds to 60-120
+#   - Keep success_threshold at 2
+#
+# For conservative recovery:
+#   - Increase cooldown_seconds to 600-1800 (10-30 minutes)
+#   - Increase success_threshold to 3-5

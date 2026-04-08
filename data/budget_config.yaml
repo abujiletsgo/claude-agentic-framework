@@ -1,0 +1,36 @@
+# Budget Configuration for Claude Agentic Framework
+# Controls cost alerts and tier usage limits.
+#
+# Used by: /costs command + cost_tracker.py
+# Location: data/budget_config.yaml
+
+budgets:
+  daily: 10.00      # USD per day
+  weekly: 50.00     # USD per week
+  monthly: 150.00   # USD per month
+
+alerts:
+  warning_threshold: 0.75    # Warn at 75% of budget
+  critical_threshold: 0.90   # Critical alert at 90% of budget
+  block_at_limit: false      # If true, block Opus/Sonnet calls when budget exceeded
+
+tier_limits:
+  # Max API calls per day per tier (0 = unlimited)
+  opus_max_daily_calls: 50
+  sonnet_max_daily_calls: 200
+  haiku_max_daily_calls: 0
+
+notification:
+  # Where to surface budget alerts
+  status_line: true          # Show in Claude Code status line
+  session_start: true        # Show budget summary on session start
+  on_threshold: true         # Alert immediately when threshold crossed
+
+cost_reduction_strategies:
+  # When budget is tight, apply these automatically:
+  - tier: opus
+    fallback: sonnet
+    condition: "daily_budget > 90%"
+  - tier: sonnet
+    fallback: haiku
+    condition: "daily_budget > 95%"

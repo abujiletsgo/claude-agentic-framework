@@ -1,0 +1,7 @@
+# Deleted entities — used by /tidy doc staleness audit
+# Format: type:name
+# Types: agent, command, skill, hook
+# Add entries when removing agents/commands/skills so /tidy can flag stale docs
+agent:rlm-root
+agent:solve
+agent:solve-reference

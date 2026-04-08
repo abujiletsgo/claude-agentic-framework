@@ -1,0 +1,21 @@
+{
+  "session_id": "05fe2b0c-a7aa-4d44-b626-460d3a20d77b",
+  "prompts": [
+    "can you go over the whole thing and review the whole process",
+    "clean up those 3 broken symlinks manually",
+    "done, verify no more broken symlinks",
+    "is this all saved in one project file? and if i were to make this claude code ultimate system to another computer what should be the process? ",
+    "clean up those 3 broken symlinks",
+    "done, verify",
+    "done, verify",
+    "done, verify",
+    "done, verify",
+    "commit ",
+    "push it",
+    "restart claude code",
+    "why is there so much loaded. or is this not a lot of tokens. i want to know how efficient our context usage is ",
+    "erorr generation message whatver verbal feeedback, what is this? can you reduce all the verbal messages in to a compact form?",
+    "can you keep opusplan as the default when claude code starts",
+    "push it"
+  ]
+}

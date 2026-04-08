@@ -1,0 +1,279 @@
+# Debug Team Template
+# 3-5 debuggers competing with different hypotheses to find root cause
+
+name: Competing Hypotheses Debug Team
+purpose: Parallel debugging with competing hypotheses to quickly identify root cause
+team_type: debug
+
+# ─── Team Configuration ──────────────────────────────────────────
+
+teammates:
+  - name: hypothesis-1-debugger
+    model: sonnet
+    focus_area: Most obvious/common cause (configuration, environment, dependencies)
+    domain:
+      files:
+        - "**/*.env*"
+        - "**/*.config.*"
+        - "**/package.json"
+        - "**/pyproject.toml"
+        - "**/requirements.txt"
+        - "**/Dockerfile"
+      exclude:
+        - "**/node_modules/**"
+    responsibilities:
+      - Check environment variables and configuration
+      - Verify dependencies and versions
+      - Look for missing or misconfigured settings
+      - Test in different environments (local, staging, prod)
+      - Verify build and deployment configuration
+    hypothesis: Configuration or environment issue
+    output_format: |
+      ## Hypothesis 1: Configuration/Environment
+
+      ### Findings
+      - [What was checked]
+
+      ### Evidence
+      - [Supporting or refuting evidence]
+
+      ### Conclusion
+      - [Confirmed, Refuted, Uncertain]
+
+  - name: hypothesis-2-debugger
+    model: sonnet
+    focus_area: Code logic error (incorrect algorithm, edge case, race condition)
+    domain:
+      files:
+        - "**/*.py"
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/*.go"
+      exclude:
+        - "**/tests/**"
+        - "**/node_modules/**"
+    responsibilities:
+      - Trace code execution path
+      - Identify logic errors and edge cases
+      - Look for race conditions and timing issues
+      - Check for null/undefined handling
+      - Verify loop conditions and recursion termination
+    hypothesis: Code logic or algorithm error
+    output_format: |
+      ## Hypothesis 2: Code Logic Error
+
+      ### Findings
+      - [Code paths analyzed]
+
+      ### Evidence
+      - [Bugs, edge cases, race conditions]
+
+      ### Conclusion
+      - [Confirmed, Refuted, Uncertain]
+
+  - name: hypothesis-3-debugger
+    model: sonnet
+    focus_area: Data issue (corrupt data, schema mismatch, migration problem)
+    domain:
+      files:
+        - "**/*.sql"
+        - "**/migrations/**"
+        - "**/schema/**"
+        - "**/seeds/**"
+      exclude: []
+    responsibilities:
+      - Check database schema and migrations
+      - Look for data corruption or inconsistencies
+      - Verify foreign key constraints
+      - Check for missing or malformed data
+      - Test data serialization/deserialization
+    hypothesis: Data or schema issue
+    output_format: |
+      ## Hypothesis 3: Data/Schema Issue
+
+      ### Findings
+      - [Database state, migrations checked]
+
+      ### Evidence
+      - [Data problems, constraint violations]
+
+      ### Conclusion
+      - [Confirmed, Refuted, Uncertain]
+
+  - name: hypothesis-4-debugger
+    model: haiku
+    focus_area: External dependency (API, service, network, third-party library)
+    domain:
+      files:
+        - "**/api/**"
+        - "**/services/**"
+        - "**/integrations/**"
+      exclude: []
+    responsibilities:
+      - Check external API availability and responses
+      - Verify third-party library versions and behavior
+      - Look for network issues or timeouts
+      - Check authentication tokens and credentials
+      - Verify rate limits and quotas
+    hypothesis: External dependency or integration issue
+    output_format: |
+      ## Hypothesis 4: External Dependency
+
+      ### Findings
+      - [APIs/services checked]
+
+      ### Evidence
+      - [Failures, timeouts, errors]
+
+      ### Conclusion
+      - [Confirmed, Refuted, Uncertain]
+    optional: true  # Only needed for integration bugs
+
+  - name: hypothesis-5-debugger
+    model: haiku
+    focus_area: Resource constraint (memory, CPU, disk, network bandwidth)
+    domain:
+      files:
+        - "**/*"
+      exclude:
+        - "**/node_modules/**"
+        - "**/__pycache__/**"
+    responsibilities:
+      - Check memory usage and leaks
+      - Look for CPU bottlenecks
+      - Verify disk space and I/O performance
+      - Check network bandwidth and latency
+      - Look for resource exhaustion patterns
+    hypothesis: Resource constraint or performance issue
+    output_format: |
+      ## Hypothesis 5: Resource Constraint
+
+      ### Findings
+      - [Resource metrics checked]
+
+      ### Evidence
+      - [Memory/CPU/disk/network issues]
+
+      ### Conclusion
+      - [Confirmed, Refuted, Uncertain]
+    optional: true  # Only needed for performance/stability bugs
+
+# ─── Coordination Strategy ───────────────────────────────────────
+
+coordination:
+  strategy: competing_hypotheses
+  description: All debuggers test their hypotheses in parallel, first to confirm wins
+
+  phases:
+    - phase: parallel_investigation
+      agents: [hypothesis-1-debugger, hypothesis-2-debugger, hypothesis-3-debugger, hypothesis-4-debugger, hypothesis-5-debugger]
+      execution: parallel
+      timeout: 600  # 10 minutes per debugger
+      early_exit: true  # Stop all when one confirms root cause
+
+    - phase: verification
+      agent: hypothesis-N-debugger  # Winner from phase 1
+      execution: sequential
+      inputs: [reproduction_steps, proposed_fix]
+      timeout: 300  # 5 minutes
+
+    - phase: cross_validation
+      agents: [all_other_debuggers]  # Non-winners validate the fix
+      execution: parallel
+      inputs: [proposed_fix]
+      timeout: 180  # 3 minutes
+
+  conflict_resolution:
+    - If multiple debuggers confirm their hypothesis, most specific wins
+    - If no hypotheses confirmed, escalate to deeper investigation
+    - If fix works but root cause unclear, accept pragmatic solution
+
+# ─── Communication Patterns ──────────────────────────────────────
+
+communication:
+  shared_context:
+    bug_report: User-reported issue with reproduction steps
+    error_logs: Stack traces, error messages, logs
+    expected_behavior: What should happen
+    actual_behavior: What actually happens
+    environment: OS, versions, configuration
+
+  handoff_protocol:
+    - "Each debugger writes: hypothesis_{N}_findings.md"
+    - "Winner writes: root_cause_analysis.md + proposed_fix.md"
+    - "Validators write: fix_validation.md"
+
+  output_location: .claude/debug/
+
+  early_exit_protocol:
+    - When debugger confirms hypothesis, broadcast to all
+    - Other debuggers stop investigation immediately
+    - All debuggers switch to validation mode
+
+# ─── Exit Criteria ───────────────────────────────────────────────
+
+exit_criteria:
+  success:
+    - Root cause identified with high confidence
+    - Fix proposed and validated
+    - Fix tested and confirmed working
+
+  failure:
+    - Timeout exceeded (20 minutes total)
+    - All hypotheses refuted (unknown root cause)
+    - Cannot reproduce the bug
+
+  partial_success:
+    - Root cause suspected but not confirmed
+    - Workaround found but not true fix
+    - Bug intermittent or environment-specific
+
+# ─── Usage Examples ──────────────────────────────────────────────
+
+usage:
+  command: just team-debug <bug-report-file>
+
+  examples:
+    - description: Debug from bug report
+      command: just team-debug .claude/bugs/issue_123.md
+
+    - description: Debug from error log
+      command: just team-debug --error-log logs/error.log
+
+    - description: Debug specific failure
+      command: just team-debug --command "npm test" --expected "all pass" --actual "3 tests fail"
+
+    - description: Debug with custom hypotheses
+      command: just team-debug issue_123.md --hypotheses "config,logic,data"
+
+# ─── Hypothesis Selection Guide ──────────────────────────────────
+
+hypothesis_guide:
+  new_feature_bugs:
+    likely: [logic, edge_cases]
+    unlikely: [environment, data]
+
+  intermittent_bugs:
+    likely: [race_conditions, external_dependency, resource_constraint]
+    unlikely: [config, schema]
+
+  production_only_bugs:
+    likely: [environment, external_dependency, resource_constraint]
+    unlikely: [logic]
+
+  after_deploy_bugs:
+    likely: [config, migration, dependency_version]
+    unlikely: [logic]
+
+# ─── Metrics & Observability ─────────────────────────────────────
+
+metrics:
+  track:
+    - debug_duration_seconds
+    - hypotheses_tested_count
+    - root_cause_confirmed  # boolean
+    - fix_proposed  # boolean
+    - fix_validated  # boolean
+    - time_to_root_cause_seconds
+
+  emit_to: observability_dashboard

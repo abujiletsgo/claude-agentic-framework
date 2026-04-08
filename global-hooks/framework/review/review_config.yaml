@@ -1,0 +1,56 @@
+# Continuous Background Review Configuration
+# ============================================
+# Copy to ~/.claude/review_config.yaml to customize.
+#
+# This file controls the roborev-style continuous review system
+# that analyzes every commit in the background.
+
+# Master switch: set to false to disable all review
+enabled: true
+
+# Run reviews asynchronously (non-blocking) vs synchronously
+background: true
+
+# Which analysis types to run (comment out to disable)
+analysis_types:
+  - duplication
+  - complexity
+  - dead_code
+  - architecture
+  - test_coverage
+
+# Complexity analyzer: McCabe cyclomatic complexity threshold
+# Functions above this score generate findings
+complexity_threshold: 10
+
+# Duplication analyzer: minimum token window for comparison
+duplication_tokens: 50
+
+# Duplication analyzer: Jaccard similarity threshold (0.0-1.0)
+duplication_similarity: 0.6
+
+# Architecture analyzer: max top-level definitions per Python module
+god_module_threshold: 20
+
+# Architecture analyzer: max lines per file
+file_length_threshold: 500
+
+# Maximum findings per analyzer per commit (prevents noise)
+max_findings_per_analyzer: 20
+
+# File patterns to exclude from analysis
+exclude_patterns:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/node_modules/**"
+  - "**/migrations/**"
+  - "**/.git/**"
+  - "**/vendor/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/__pycache__/**"
+  - "**/*.min.js"
+  - "**/*.min.css"
+  - "**/package-lock.json"
+  - "**/yarn.lock"
+  - "**/poetry.lock"
