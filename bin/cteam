@@ -5,6 +5,7 @@ set -euo pipefail
 SESSION="caf-team"
 CAF_DIR="${HOME}/Documents/caf-team"
 SIDEBAR="${CAF_DIR}/bin/cteam-sidebar"
+BUDDY="${CAF_DIR}/bin/cteam-buddy"
 DASHBOARD="${CAF_DIR}/dashboard/sprint_tui.py"
 
 # Already inside this session? Just restart dashboard pane if needed.
@@ -19,10 +20,10 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
 fi
 
 # ┌──────────────────────┬─────────────┐
-# │                      │             │
-# │    Claude Code       │  Sidebar    │
-# │    (main)            │  (sessions) │
-# │                      │             │
+# │                      │  Sessions   │
+# │    Claude Code       │  (sidebar)  │
+# │    (main)            ├─────────────┤
+# │                      │  🐱 Buddy   │
 # ├──────────────────────┴─────────────┤
 # │  Dashboard / Sprint TUI            │
 # └────────────────────────────────────┘
@@ -30,15 +31,19 @@ fi
 # Create session with main pane
 tmux new-session -d -s "$SESSION" -c "$CAF_DIR" -x "$(tput cols)" -y "$(tput lines)"
 
-# Bottom pane: dashboard (28% height, full width)
-tmux split-window -t "$SESSION:0.0" -v -l '28%' -c "$CAF_DIR" \
+# Bottom pane: dashboard (25% height, full width)
+tmux split-window -t "$SESSION:0.0" -v -l '25%' -c "$CAF_DIR" \
   "echo '  No active sprint. Dashboard starts with /sprint.'; \
    echo '  Manual: uv run ${DASHBOARD} <sprint-id>'; \
    exec bash"
 
 # Right sidebar: session manager (22% width, top area only)
 tmux split-window -t "$SESSION:0.0" -h -l '22%' -c "$CAF_DIR" \
-  "bash ${SIDEBAR}"
+  "python3 ${SIDEBAR}"
+
+# Buddy pane: below sidebar (40% of right column height)
+tmux split-window -t "$SESSION:0.1" -v -l '40%' -c "$CAF_DIR" \
+  "python3 ${BUDDY}"
 
 # Enable mouse (clickable panes, sidebar, scroll)
 tmux set-option -t "$SESSION" -g mouse on
