@@ -19,6 +19,7 @@ class SprintTUI(App):
 
     CSS_PATH = "sprint_tui.css"
     TITLE = "CAF Sprint Dashboard"
+    ANSI_COLOR = True
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),

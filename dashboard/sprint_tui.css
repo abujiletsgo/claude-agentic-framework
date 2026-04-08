@@ -1,30 +1,38 @@
+Screen {
+    background: transparent;
+}
+
 SprintTUI {
     background: transparent;
 }
 
 #main-panels {
     height: 1fr;
+    background: transparent;
 }
 
 #lead-panel {
     width: 30%;
-    border: tall $accent;
+    border: round ansi_default;
+    background: transparent;
 }
 
 #log-viewer {
     width: 42%;
-    border: tall $accent;
+    border: round ansi_default;
+    background: transparent;
 }
 
 #report-panel {
     width: 28%;
-    border: tall $accent;
+    border: round ansi_default;
+    background: transparent;
 }
 
 #wave-progress {
     height: 5;
     background: transparent;
-    border-top: tall $accent;
+    border-top: hkey ansi_default;
     padding: 0 1;
 }
 
@@ -38,7 +46,7 @@ SprintTUI {
 #log-filter {
     height: 1;
     background: transparent;
-    border: tall $accent;
+    border: tall ansi_default;
 }
 
 .wave-container {
@@ -56,6 +64,32 @@ DataTable {
     background: transparent;
 }
 
+DataTable > .datatable--header {
+    background: transparent;
+    text-style: bold underline;
+}
+
+DataTable > .datatable--cursor {
+    background: ansi_default;
+    text-style: bold reverse;
+}
+
+RichLog {
+    background: transparent;
+}
+
+Markdown {
+    background: transparent;
+}
+
 ProgressBar {
     height: 1;
+}
+
+Input {
+    background: transparent;
+}
+
+Static {
+    background: transparent;
 }

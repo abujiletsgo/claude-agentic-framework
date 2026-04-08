@@ -13,6 +13,11 @@ if [[ "${TMUX_SESSION:-}" == "$SESSION" ]]; then
   exit 0
 fi
 
+# --reset: kill and recreate
+if [[ "${1:-}" == "--reset" ]]; then
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+fi
+
 # Attach if session exists
 if tmux has-session -t "$SESSION" 2>/dev/null; then
   exec tmux attach -t "$SESSION"
