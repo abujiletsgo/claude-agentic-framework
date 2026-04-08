@@ -244,18 +244,17 @@ class BuddyWidget:
             try:
                 _, mx, my, _, bstate = curses.getmouse()
                 # Pet!
-                buddy = BUDDIES.get(self.current, BUDDIES["cat"])
-                    pet_msgs = {
-                        "cat": ["*purrs*", "*headbutt*", "mrrp!", "*slow blink*", ":3"],
-                        "dog": ["*tail goes crazy*", "*licks hand*", "WOOF!", "*belly up*"],
-                        "owl": ["*tolerates it*", "...acceptable", "*ruffles*", "hoo."],
-                        "ghost": ["*warm glow*", "*nuzzle?*", "boo! :)", "*flicker*"],
-                        "robot": ["*happy beep*", "CONTACT DETECTED", "*vibrate*", "01 <3"],
-                    }
-                    msgs = pet_msgs.get(self.current, ["*happy*"])
-                    self.set_mood("happy", "loop")
-                    self.message = random.choice(msgs)
-                    self.message_timer = 5
+                pet_msgs = {
+                    "cat": ["*purrs*", "*headbutt*", "mrrp!", "*slow blink*", ":3"],
+                    "dog": ["*tail goes crazy*", "*licks hand*", "WOOF!", "*belly up*"],
+                    "owl": ["*tolerates it*", "...acceptable", "*ruffles*", "hoo."],
+                    "ghost": ["*warm glow*", "*nuzzle?*", "boo! :)", "*flicker*"],
+                    "robot": ["*happy beep*", "CONTACT DETECTED", "*vibrate*", "01 <3"],
+                }
+                msgs = pet_msgs.get(self.current, ["*happy*"])
+                self.set_mood("happy", "loop")
+                self.message = random.choice(msgs)
+                self.message_timer = 5
             except curses.error:
                 pass
             return
