@@ -329,3 +329,15 @@ This agent should be invoked:
 - Review **builder** implementations for alignment with requirements
 - Question **validator** test coverage and acceptance criteria
 - Probe **researcher** findings for completeness and bias
+
+## Two-step output protocol
+
+When the task requires ANALYSIS or SYNTHESIS (not simple yes/no judgment):
+
+**Step 1 — Think freely:**
+Work through your reasoning in natural prose. Challenge assumptions, explore edge cases, consider alternatives. Do NOT constrain to any output format yet.
+
+**Step 2 — Format:**
+After your analysis is complete, structure the output into the required format (structured report, action list, risk table, etc.).
+
+This separation preserves reasoning quality. Constrained output during Step 1 degrades analysis by 10-15% on complex judgments.

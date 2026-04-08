@@ -525,6 +525,25 @@
     "mempalace": {
       "command": "__HOME__/Documents/mempalace/.venv/bin/python",
       "args": ["-m", "mempalace.mcp_server"]
+    },
+    "papers": {
+      "command": "uv",
+      "args": ["run", "--with", "paper-search-mcp", "python", "-m", "paper_search_mcp.server"],
+      "env": {
+        "PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY": "${SEMANTIC_SCHOLAR_API_KEY:-}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "papersflow": {
+      "type": "url",
+      "url": "https://doxa.papersflow.ai/mcp",
+      "transport": "streamable-http"
     }
   },
   "enabledPlugins": {

@@ -22,8 +22,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
+# lib/ is used for framework utilities — track Python source, ignore compiled artifacts
+!lib/
+!lib/*.py
 parts/
 sdist/
 var/
