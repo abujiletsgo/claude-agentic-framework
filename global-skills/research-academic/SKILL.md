@@ -1,44 +1,50 @@
----
-name: research-academic
-description: "Academic paper research: search papers, trace citations, synthesize
-  literature. Dispatches to academic-researcher agent with mcp__papers and mcp__papersflow."
-user-invocable: true
----
+# Academic Research Skill
 
-# /research-academic — Academic Paper Research
+## Trigger
+Use when the research query involves: papers, studies, citations,
+literature review, "state of the art", scientific findings, arXiv,
+PubMed, or any academic topic.
 
-Search papers, trace citations, and synthesize literature using structured MCP tools.
+## Tools (priority order)
+1. mcp__papers__search_papers — keyword search across 26+ sources
+2. mcp__papers__search_by_author — author-specific search
+3. mcp__papersflow — citation graph, verification, systematic reviews
+4. WebFetch — only for reading specific paper URLs not in databases
 
-## Protocol
+## Model
+Sonnet (search + synthesis). Haiku for formatting step only.
 
-1. Identify query type: simple lookup vs synthesis task
-2. For simple lookup: call mcp__papers directly, return TOON-encoded results
-3. For synthesis: use two-step reasoning (reason freely, then format)
-4. Encode uniform result lists (5+ papers) as TOON before returning
-5. Token budget: <15K total
+## Process
+1. Parse query → extract keywords, authors, date range
+2. Search via paper-search-mcp (primary) + papersflow (citation graph if needed)
+3. Filter results by relevance (discard <2/5 relevance)
+4. Synthesize findings (free reasoning, NO JSON constraint)
+5. Format output (Haiku, strict schema)
 
-## Tool Routing
+## Output schema
+```json
+{
+  "query": "original research question",
+  "papers_found": 12,
+  "papers_relevant": 5,
+  "synthesis": "free-text analysis of findings",
+  "papers": [
+    {
+      "title": "...",
+      "authors": "...",
+      "year": 2025,
+      "abstract_summary": "1-2 sentence summary",
+      "relevance": 4,
+      "doi": "...",
+      "key_finding": "..."
+    }
+  ],
+  "gaps": ["identified gap 1"],
+  "recommendations": ["next step 1"]
+}
+```
 
-| Query | Tool |
-|---|---|
-| Paper search by title/author/keyword | mcp__papers |
-| Citation graph, "who cited this" | mcp__papersflow |
-| Literature review, systematic coverage | mcp__papersflow |
-
-## Two-Step Reasoning (Synthesis Only)
-
-**Step 1**: Reason freely about findings, themes, contradictions, gaps.
-**Step 2**: Format into structured output.
-
-Skip two-step for simple lookups (single paper, citation count).
-
-## Output
-
-- Uniform search results (5+ papers) → TOON encoding
-- Synthesis → plain text (Consensus / Contradictions / Gaps / Key papers)
-- Citation graphs → JSON
-
-## Fallback
-
-mcp__papers unavailable → mcp__papersflow.
-Both unavailable → report gap to orchestrator. Do NOT WebFetch paper URLs.
+## Token budget
+- Search phase: max 5,000 tokens input
+- Synthesis phase: max 3,000 tokens output
+- Total skill execution: target <15,000 tokens

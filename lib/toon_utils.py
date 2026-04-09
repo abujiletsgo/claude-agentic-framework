@@ -1,109 +1,110 @@
-"""TOON (Token-Oriented Object Notation) encoder/decoder.
-
-TOON encodes uniform lists of flat objects as a header + CSV rows,
-achieving ~40% token savings over JSON for 10+ uniform records.
-
-Format:
-    [N,{field1,field2,...}]
-    value1,value2,...
-    value1,value2,...
-
-Falls back to compact JSON for non-eligible data (nested, mixed-schema, non-list).
 """
-import csv
-import io
+TOON (Token-Oriented Object Notation) encoder/decoder for CAF inter-agent data.
+Only use for uniform arrays of objects. Falls back to JSON for everything else.
+
+Usage:
+    from lib.toon_utils import encode_results, decode_results
+
+    # Encode search results for passing to orchestrator
+    toon_str = encode_results(papers_list)
+
+    # Decode back to Python dicts
+    papers = decode_results(toon_str)
+"""
 import json
-import re
 from typing import Any
 
 
-def is_toon_eligible(data: Any) -> bool:
-    """Check if data can be TOON-encoded (uniform list of flat dicts)."""
-    if not isinstance(data, list) or len(data) == 0:
+def is_toon_eligible(data: list[dict]) -> bool:
+    """Check if data is a uniform array of flat objects (TOON sweet spot)."""
+    if not data or not isinstance(data, list):
         return False
     if not all(isinstance(item, dict) for item in data):
         return False
-    # All dicts must have the same keys
     keys = set(data[0].keys())
     if not all(set(item.keys()) == keys for item in data):
         return False
-    # All values must be scalar (not dict or list)
+    # Check all values are primitives (no nesting)
     for item in data:
-        for value in item.values():
-            if isinstance(value, (dict, list)):
+        for v in item.values():
+            if isinstance(v, (dict, list)):
                 return False
     return True
 
 
-def _csv_encode_row(values: list) -> str:
-    """Encode a single row as CSV, handling commas and quotes."""
-    output = io.StringIO()
-    writer = csv.writer(output, lineterminator="")
-    writer.writerow([str(v) if v is not None else "" for v in values])
-    return output.getvalue()
+def encode_results(data: list[dict]) -> str:
+    """Encode uniform list of dicts as TOON. Falls back to compact JSON."""
+    if not is_toon_eligible(data):
+        return json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+
+    keys = list(data[0].keys())
+    header = f"[{len(data)},{{{','.join(keys)}}}]"
+    rows = []
+    for item in data:
+        vals = []
+        for k in keys:
+            v = item[k]
+            if v is None:
+                vals.append("")
+            elif isinstance(v, bool):
+                vals.append("true" if v else "false")
+            elif isinstance(v, str):
+                # Escape commas in values
+                if "," in v or "\n" in v:
+                    vals.append(f'"{v}"')
+                else:
+                    vals.append(v)
+            else:
+                vals.append(str(v))
+        rows.append(",".join(vals))
+
+    return header + "\n" + "\n".join(rows)
+
+
+def decode_results(toon_str: str) -> list[dict]:
+    """Decode TOON back to list of dicts. Handles JSON fallback."""
+    toon_str = toon_str.strip()
+    if toon_str.startswith("[{") or toon_str.startswith('["'):
+        return json.loads(toon_str)
+
+    lines = toon_str.split("\n")
+    header = lines[0]
+
+    # Parse header: [N,{field1,field2,...}]
+    inner = header.strip("[]")
+    count_str, fields_str = inner.split(",{", 1)
+    fields_str = fields_str.rstrip("}")
+    fields = fields_str.split(",")
+
+    results = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        # Simple CSV parse (handles quoted values)
+        vals = _parse_csv_line(line)
+        item = {}
+        for i, field in enumerate(fields):
+            if i < len(vals):
+                item[field] = vals[i] if vals[i] != "" else None
+            else:
+                item[field] = None
+        results.append(item)
+
+    return results
 
 
 def _parse_csv_line(line: str) -> list[str]:
-    """Parse a single CSV line, respecting quoting rules."""
-    reader = csv.reader(io.StringIO(line))
-    for row in reader:
-        return row
-    return []
-
-
-def encode_results(data: Any) -> str:
-    """Encode data as TOON (if eligible) or compact JSON (fallback).
-
-    Args:
-        data: Any serializable Python value. Typically a list of dicts.
-
-    Returns:
-        TOON-encoded string or compact JSON string.
-    """
-    if is_toon_eligible(data):
-        keys = list(data[0].keys())
-        header = f"[{len(data)},{{{','.join(keys)}}}]"
-        rows = [_csv_encode_row([item[k] for k in keys]) for item in data]
-        return header + "\n" + "\n".join(rows)
-    return json.dumps(data, separators=(",", ":"))
-
-
-def decode_results(toon_str: str) -> Any:
-    """Decode a TOON string or JSON string back to Python objects.
-
-    Args:
-        toon_str: Either a TOON-encoded string or a JSON string.
-
-    Returns:
-        List of dicts (from TOON) or whatever the JSON decoded to.
-    """
-    toon_str = toon_str.strip()
-    # Detect TOON: starts with [N,{...}]
-    match = re.match(r"^\[(\d+),\{([^}]+)\}\]", toon_str)
-    if match:
-        count = int(match.group(1))
-        keys = [k.strip() for k in match.group(2).split(",")]
-        lines = toon_str.split("\n")[1:]  # skip header
-        result = []
-        for line in lines[:count]:
-            if not line.strip():
-                continue
-            values = _parse_csv_line(line)
-            # Convert types: int-only digits, booleans, empty→None, else string
-            converted = []
-            for v in values:
-                if re.match(r'^-?\d+$', v):
-                    converted.append(int(v))
-                elif v.lower() == "true":
-                    converted.append(True)
-                elif v.lower() == "false":
-                    converted.append(False)
-                elif v == "":
-                    converted.append(None)
-                else:
-                    converted.append(v)
-            row_dict = dict(zip(keys, converted))
-            result.append(row_dict)
-        return result
-    # Fallback: JSON
-    return json.loads(toon_str)
+    """Parse a CSV line handling quoted values."""
+    vals = []
+    current = ""
+    in_quotes = False
+    for ch in line:
+        if ch == '"':
+            in_quotes = not in_quotes
+        elif ch == "," and not in_quotes:
+            vals.append(current)
+            current = ""
+        else:
+            current += ch
+    vals.append(current)
+    return vals

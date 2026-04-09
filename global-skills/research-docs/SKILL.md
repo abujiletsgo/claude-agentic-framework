@@ -1,36 +1,36 @@
----
-name: research-docs
-description: "Library documentation and API reference lookup. Direct WebFetch to
-  official docs URLs. Fastest and cheapest research skill."
-user-invocable: true
----
+# Documentation Research Skill
 
-# /research-docs — Documentation Lookup
+## Trigger
+Use when the research query involves: library docs, API references,
+framework documentation, "how to use X", configuration reference,
+or any official documentation lookup.
 
-Fast library documentation and API reference lookup via direct URL fetch.
+## Tools (priority order)
+1. WebFetch — direct URL fetch on known docs sites
+2. WebSearch — to find the right docs page
+3. Grep/Glob — if docs are local (node_modules, vendor, etc.)
 
-## Protocol
+## Model
+Haiku (docs extraction is simple, no deep reasoning needed).
 
-1. If docs URL is known or can be inferred: WebFetch directly
-2. If URL unknown: WebSearch "<library> official documentation" → extract URL → WebFetch
-3. Return relevant excerpt with source URL
-4. Token budget: <5K total — be concise
+## Process
+1. Identify the documentation source URL
+2. Fetch the specific page (NOT the whole site)
+3. Extract the relevant section only
+4. Return structured reference
 
-## URL Inference Rules
-
-- Python: docs.python.org or <pkg>.readthedocs.io
-- npm: npmjs.com/package/<pkg> or package homepage
-- GitHub: github.com/<org>/<repo>#readme
-- Major frameworks: well-known URLs (nextjs.org/docs, docs.djangoproject.com, etc.)
-
-## Output
-
+## Output schema
+```json
+{
+  "library": "...",
+  "version": "...",
+  "topic": "...",
+  "reference": "extracted relevant section",
+  "code_example": "if available",
+  "url": "source URL",
+  "related_pages": []
+}
 ```
-**Source**: <url>
-**Relevant section**: <section title>
----
-<relevant docs content>
-```
 
-Model: Haiku — this is extraction, not reasoning.
-No two-step. No TOON — docs content is non-uniform.
+## Token budget
+- Total: target <5,000 tokens (this should be fast and cheap)
