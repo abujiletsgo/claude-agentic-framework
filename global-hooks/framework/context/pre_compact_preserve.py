@@ -459,53 +459,6 @@ def build_preservation_instructions(context: dict, trigger: str) -> str:
     return "\n".join(lines)
 
 
-def _save_decisions_to_kg(instructions: str):
-    """Extract key decisions from compaction context and save to mempalace KG.
-
-    Fail-open: if mempalace unavailable or no decisions found, does nothing.
-    """
-    try:
-        # Use project-local KG via palace_init
-        memory_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'memory')
-        if memory_dir not in sys.path:
-            sys.path.insert(0, memory_dir)
-        from palace_init import get_project_kg
-
-        cwd = os.getcwd()
-        kg = get_project_kg(cwd)
-        if kg is None:
-            return
-
-        # Extract decision lines (keyword heuristic from existing _DECISION_SIGNALS)
-        decision_signals = ["decided", "chose", "switched", "reverted", "approved", "rejected", "confirmed"]
-        today = __import__("datetime").date.today().isoformat()
-        count = 0
-
-        for line in instructions.split("\n"):
-            line_lower = line.lower().strip()
-            if not line_lower or len(line_lower) < 20:
-                continue
-            if any(signal in line_lower for signal in decision_signals):
-                # Write as a triple: "session" → "decided" → "<decision text>"
-                decision_text = line.strip()[:200]  # Cap length
-                kg.add_triple(
-                    subject="session",
-                    predicate="decided",
-                    obj=decision_text,
-                    valid_from=today,
-                    source_file="pre_compact_preserve",
-                )
-                count += 1
-                if count >= 10:  # Cap to avoid flooding KG
-                    break
-
-        if count > 0:
-            print(f"[KG] Saved {count} decision(s) to knowledge graph", file=sys.stderr)
-
-    except Exception as e:
-        print(f"[KG] Decision save failed (non-blocking): {e}", file=sys.stderr)
-
-
 def main():
     try:
         input_data = json.load(sys.stdin)
@@ -536,53 +489,6 @@ def main():
             sys.exit(0)
 
         instructions = build_preservation_instructions(context, trigger)
-
-        _save_decisions_to_kg(instructions)
-
-        # --- AAAK compression for token efficiency ---
-        try:
-            framework_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-            if framework_dir not in sys.path:
-                sys.path.insert(0, framework_dir)
-            from aaak_compress import compress_sections, log_compression_stats
-
-            # Split output into data and rules
-            rules_marker = "COMPACTION RULES:"
-            if rules_marker in instructions:
-                parts = instructions.split(rules_marker, 1)
-                data_part = parts[0]
-                rules_part = rules_marker + parts[1]
-
-                # Compress only the data part
-                original_len = len(data_part)
-                compressed_data = compress_sections(data_part)
-                compressed_len = len(compressed_data)
-
-                instructions = compressed_data + "\n" + rules_part
-
-                # Log stats
-                if original_len > 0:
-                    ratio = original_len / max(compressed_len, 1)
-                    stats = {
-                        "original_chars": original_len,
-                        "compressed_chars": compressed_len,
-                        "ratio": round(ratio, 2),
-                        "original_tokens": original_len // 4,
-                        "compressed_tokens": compressed_len // 4,
-                    }
-                    log_compression_stats(stats, context="pre_compact_preserve")
-                    sys.stderr.write(f"[AAAK] Compaction context: {original_len} → {compressed_len} chars ({ratio:.1f}x)\n")
-            else:
-                # No rules section found — compress entire output
-                original_len = len(instructions)
-                instructions = compress_sections(instructions)
-                compressed_len = len(instructions)
-                if original_len > 0:
-                    ratio = original_len / max(compressed_len, 1)
-                    sys.stderr.write(f"[AAAK] Compaction context: {original_len} → {compressed_len} chars ({ratio:.1f}x)\n")
-        except Exception as e:
-            # Fail-open: use uncompressed output
-            sys.stderr.write(f"[AAAK] Compression skipped: {e}\n")
 
         output = {
             "hookSpecificOutput": {

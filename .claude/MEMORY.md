@@ -2,28 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-03-27 (01:30 UTC) · @Tom Kwon
-**Commit:** feat: add arch-map command/skill, update prime with caching improvements (eb5971b) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md                                |   4 +-
-  .claude/MEMORY.md                               |   9 +
-  CLAUDE.md                                       |   4 +-
-  README.md                                       |  12 +-
-  global-commands/arch-map.md                     |  50 ++++
-  global-commands/prime.md                        |  42 +++
-  global-hooks/framework/automation/auto_prime.py |  65 +++++
-  global-skills/arch-map/SKILL.md                 | 353 ++++++++++++++++++++++++
-  8 files changed, 531 insertions(+), 8 deletions(-)
-
-## 2026-03-29 (16:57 UTC) · @Tom Kwon
-**Commit:** v3.0.2: Regenerate all docs, update FACTS.md, bump version (543e963) by Tom Kwon
-**Changed:**
-  .claude/FACTS.md         | 78 +++++++++++++++++++++++++-----------------------
-  CLAUDE.md                | 76 +++++++++++++++++++++++++++++++++++++++++++---
-  README.md                | 22 +++++++-------
-  scripts/generate_docs.py |  2 +-
-  4 files changed, 125 insertions(+), 53 deletions(-)
-
 ## 2026-03-30 (12:14 UTC) · @Tom Kwon
 **Commit:** v4.0: Major upgrade — 16 events, async hooks, new agents, project cleanup (687c93b) by Tom Kwon
 **Changed:**
@@ -311,3 +289,33 @@
 **Changed:**
   docs/framework-guide-ko.html | 1375 ++++++++++++++++++++++++++++++++++++++++++
   1 file changed, 1375 insertions(+)
+
+## 2026-04-08 (14:50 UTC) · @Tom Kwon
+**Commit:** refactor: remove rlm-root/solve agents, redesign RLM as Pyramid Protocol (a2d915c) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                 |   49 +-
+  CLAUDE.md                                         |    4 +-
+  QUICKSTART.md                                     |    6 +-
+  README.md                                         |    8 +-
+  data/deleted_entities.txt                         |    7 +
+  data/mempalace.yaml                               |    2 +-
+  data/model_tiers.yaml                             |    5 +-
+  docs/2026_UPGRADE_GUIDE.md                        |    6 +-
+  docs/MEMORY_ARCHITECTURE.md                       |    7 +-
+  docs/ROLES_AND_RESPONSIBILITIES.md                |   12 +-
+  ... and 21 more files
+
+## 2026-04-09 (06:21 UTC) · @Tom Kwon
+**Commit:** feat: CAF v5.0 research intelligence upgrade (e4437ca) by Tom Kwon
+**Changed:**
+  .gitignore                                         |   4 +-
+  CLAUDE.md                                          |   5 +-
+  global-agents/academic-researcher.md               |  50 ++++++++++
+  global-agents/code-researcher.md                   |  52 ++++++++++
+  global-agents/critical-analyst.md                  |  12 +++
+  global-agents/meta-agent.md                        |  12 +++
+  global-agents/researcher.md                        |  42 +++++++-
+  global-skills/research-academic/SKILL.md           |  50 ++++++++++
+  .../research-academic/templates/output.json        |  19 ++++
+  global-skills/research-code/SKILL.md               |  54 ++++++++++
+  ... and 8 more files

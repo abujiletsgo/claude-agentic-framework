@@ -51,7 +51,6 @@ def main():
         "security/verify_skills.py",
         "security/validate_docs.py",
         "automation/auto_prime.py",
-        "memory/kg_session_context.py",   # NEW: inject KG facts
     ]
 
     messages = []

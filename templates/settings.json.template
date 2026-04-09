@@ -218,7 +218,7 @@
         ]
       },
       {
-        "matcher": "Bash|Write|Edit",
+        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
@@ -365,16 +365,6 @@
             "_comment": "Rust: Track orchestration nesting depth for tool guard"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/subagent_kg_inject.py",
-            "timeout": 5,
-            "_comment": "v4.1: Inject project-local KG decisions into agent context"
-          }
-        ]
       }
     ],
 
@@ -406,28 +396,6 @@
             "timeout": 8,
             "async": true,
             "_comment": "Rust: ASYNC: reads agent transcript + records cost — fire-and-forget"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/subagent_palace_store.py",
-            "timeout": 8,
-            "async": true,
-            "_comment": "v4.1: ASYNC — store agent results in project-local mempalace"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
-            "timeout": 5,
-            "async": true,
-            "_comment": "Rust: ASYNC contextual voice notification on subagent completion"
           }
         ]
       }
@@ -521,10 +489,6 @@
       "command": "officecli",
       "args": ["mcp"],
       "_comment": "OfficeCLI: create/read/edit Word, Excel, PowerPoint — used by /docs skill"
-    },
-    "mempalace": {
-      "command": "__HOME__/Documents/mempalace/.venv/bin/python",
-      "args": ["-m", "mempalace.mcp_server"]
     },
     "papers": {
       "command": "uv",

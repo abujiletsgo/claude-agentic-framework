@@ -208,32 +208,6 @@ def ensure_memory_file(path: Path, project: str) -> str:
     return header
 
 
-def _write_diary_entry(entry_text: str, cwd: str):
-    """Write session summary as a mempalace diary entry. Fail-open."""
-    try:
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        from palace_init import get_project_kg
-        kg = get_project_kg(cwd)
-        if kg is None:
-            return
-
-        project_name = os.path.basename(cwd) if cwd else "unknown"
-        today = __import__("datetime").date.today().isoformat()
-
-        summary = entry_text[:500] if entry_text else "empty session"
-        kg.add_triple(
-            subject=project_name,
-            predicate="session_summary",
-            obj=summary,
-            valid_from=today,
-            source_file="auto_memory_writer",
-        )
-        print(f"[KG] Session diary entry saved for {project_name}", file=sys.stderr)
-
-    except Exception as e:
-        print(f"[KG] Diary write failed (non-blocking): {e}", file=sys.stderr)
-
-
 def main():
     try:
         data = json.loads(sys.stdin.read())
@@ -252,7 +226,6 @@ def main():
         content = upsert_entry(content, entry, commit_hash)
         content = prune_old_entries(content, MAX_MEMORY_ENTRIES)
         path.write_text(content)
-        _write_diary_entry(entry, str(cwd))
 
     except Exception as e:
         print(f"auto_memory_writer error: {e}", file=sys.stderr)

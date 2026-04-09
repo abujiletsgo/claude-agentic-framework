@@ -211,41 +211,26 @@ if [ -d "$REPO_DIR/caf-hooks" ]; then
   fi
 fi
 
-# Check mempalace availability (optional — auto-detects any Python 3.x venv)
-MEMPALACE_VENV=""
-for _sp in "$HOME"/Documents/mempalace/.venv/lib/python3.*/site-packages; do
-  [ -d "$_sp" ] && MEMPALACE_VENV="$_sp" && break
-done
-
-if [ -n "$MEMPALACE_VENV" ]; then
-    echo "  mempalace: OK ($MEMPALACE_VENV)"
-    MEMPALACE_AVAILABLE=true
-else
-    echo "  mempalace: not found (optional) — AAAK compression will be disabled"
-    echo "             To enable: cd ~/Documents/mempalace && uv sync"
-    MEMPALACE_AVAILABLE=false
-fi
-
 echo ""
 
 # 1. Validate all hook files exist before generating config
 echo "[1/11] Validating hook files..."
 ERRORS=0
 SETTINGS_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/templates/settings.json.template" | sed "s|__HOME__|$HOME|g")
+if [ -z "$SETTINGS_CONTENT" ]; then
+  echo "  ABORT: Failed to read template (missing or unreadable: templates/settings.json.template)"
+  exit 1
+fi
 HOOK_PATHS=$(echo "$SETTINGS_CONTENT" | python3 -c "
-import json, sys, re
+import json, sys
 data = json.load(sys.stdin)
 for event, matchers in data.get('hooks', {}).items():
     for matcher in matchers:
         for hook in matcher.get('hooks', []):
             cmd = hook.get('command', '')
             parts = cmd.split()
-            # Check for Rust binary: path/to/caf-hooks <subcommand>
+            # Skip Rust binary — it's built (or skipped) in step 0c
             if 'caf-hooks' in cmd and '/target/release/caf-hooks' in cmd:
-                for p in parts:
-                    if p.endswith('caf-hooks') and '/' in p:
-                        print(p)
-                        break
                 continue
             # Python hooks: extract .py file path
             for p in parts:
@@ -267,10 +252,10 @@ while IFS= read -r path; do
   fi
 done <<< "$HOOK_PATHS"
 if [ "$ERRORS" -gt 0 ]; then
-  echo "  ABORT: $ERRORS hook file(s) missing. Fix before installing."
+  echo "  ABORT: $ERRORS Python hook file(s) missing. These must exist in the repo."
   exit 1
 fi
-echo "  All hook files verified."
+echo "  All Python hook files verified."
 
 # 2. Generate settings.json from template (with dynamic PATH for uv)
 echo "[2/11] Generating settings.json..."
@@ -304,23 +289,36 @@ data.setdefault('env', {})['PATH'] = hook_path
 json.dump(data, sys.stdout, indent=2)
 ")
 
+if [ -z "$SETTINGS_CONTENT" ]; then
+  echo "  ABORT: Failed to inject PATH into settings.json (python3 error)"
+  exit 1
+fi
+
 SETTINGS_PATH="$CLAUDE_DIR/settings.json"
 echo "$SETTINGS_CONTENT" > "$SETTINGS_PATH"
 echo "  -> $SETTINGS_PATH"
 echo "  -> Hook PATH: $HOOK_PATH"
 
-if [ "$MEMPALACE_AVAILABLE" = false ]; then
-    # Remove mempalace MCP server entry if not installed
+if [ "$CAF_HOOKS_AVAILABLE" = false ]; then
+    # Strip Rust hook entries — binary not built, prevent runtime errors
     python3 -c "
-import json, sys
+import json
 with open('$SETTINGS_PATH') as f:
     cfg = json.load(f)
-mcp = cfg.get('mcpServers', {})
-if 'mempalace' in mcp:
-    del mcp['mempalace']
-    with open('$SETTINGS_PATH', 'w') as f:
-        json.dump(cfg, f, indent=2)
-    print('  Removed mempalace MCP server (not installed)')
+removed = 0
+for event, matchers in cfg.get('hooks', {}).items():
+    cfg['hooks'][event] = [
+        m for m in matchers
+        if not any(
+            'caf-hooks' in h.get('command', '') and '/target/release/caf-hooks' in h.get('command', '')
+            for h in m.get('hooks', [])
+        )
+    ]
+    removed += len(matchers) - len(cfg['hooks'][event])
+with open('$SETTINGS_PATH', 'w') as f:
+    json.dump(cfg, f, indent=2)
+if removed:
+    print(f'  Stripped {removed} Rust hook(s) — cargo not available, install rustup to enable them')
 "
 fi
 
@@ -370,7 +368,7 @@ echo "  -> $(ls "$REPO_DIR"/global-agents/*.md 2>/dev/null | wc -l | tr -d ' ') 
 
 # 6. Generate documentation from repo state
 echo "[6/11] Generating docs..."
-uv run "$REPO_DIR/scripts/generate_docs.py"
+uv run "$REPO_DIR/scripts/generate_docs.py" || echo "  WARNING: Doc generation failed (non-critical). Re-run bash install.sh to retry."
 
 # 7. Write global CLAUDE.md with full-autonomy instructions
 echo "[7/11] Writing global CLAUDE.md..."
@@ -466,7 +464,6 @@ fi
 echo ""
 echo "Optional features:"
 echo "  Rust hooks (caf-hooks): $([ "$CAF_HOOKS_AVAILABLE" = true ] && echo 'enabled (6-32x faster)' || echo 'disabled (install cargo to enable)')"
-echo "  AAAK compression: $([ "$MEMPALACE_AVAILABLE" = true ] && echo 'enabled' || echo 'disabled (install mempalace to enable)')"
 
 echo ""
 echo "Done. Start a new Claude Code session to use the framework."
