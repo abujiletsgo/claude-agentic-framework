@@ -2,21 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-03-30 (12:14 UTC) · @Tom Kwon
-**Commit:** v4.0: Major upgrade — 16 events, async hooks, new agents, project cleanup (687c93b) by Tom Kwon
-**Changed:**
-  .claude/ARCHITECTURE.md                            |  476 +++++
-  .claude/MEMORY.md                                  |    9 +
-  CLAUDE.md                                          |  173 +-
-  README.md                                          |   30 +-
-  archive/docs/FRAMEWORK_GUIDE_KR.md                 | 1116 ++++++++++
-  .../docs}/KNOWLEDGE_DB_VERIFICATION.md             |    0
-  {docs => archive/docs}/KNOWLEDGE_PIPELINE_TEST.md  |    0
-  {docs => archive/docs}/REVIEW_SYSTEM_TEST.md       |    0
-  {docs => archive/docs}/RLM_AUTO_TRIGGERING.md      |    0
-  {docs => archive/docs}/SKILLS_INTEGRITY.md         |    0
-  ... and 42 more files
-
 ## 2026-03-31 (16:29 UTC) · @Tom Kwon
 **Commit:** fix: add --no-project to all uv run hook commands (dc88499) by Tom Kwon
 **Changed:**
@@ -319,3 +304,18 @@
   .../research-academic/templates/output.json        |  19 ++++
   global-skills/research-code/SKILL.md               |  54 ++++++++++
   ... and 8 more files
+
+## 2026-04-09 (08:41 UTC) · @Tom Kwon
+**Commit:** refactor: complete mempalace removal + TTS/voice/install fixes (14b2b66) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |   52 +-
+  CLAUDE.md                                          |    3 +-
+  README.md                                          |   28 +-
+  caf-hooks/.claude/MEMORY.md                        |   15 +
+  caf-hooks/src/hooks/voice_done.rs                  |   98 +-
+  data/mempalace.yaml                                |   34 -
+  docs/framework-guide-ko.html                       |  658 +-----------
+  global-agents/researcher.md                        |   19 +-
+  global-hooks/framework/aaak_compress.py            |  139 ---
+  .../framework/context/pre_compact_preserve.py      |   94 --
+  ... and 20 more files

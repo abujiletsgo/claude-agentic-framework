@@ -736,6 +736,17 @@ def main():
         ]
 
         strategy = select_strategy(complexity, task_type, quality, codebase_scope, prompt)
+
+        # Override: if prompt explicitly requests /orchestrate or orchestration,
+        # never recommend "direct" — it contradicts the enforce_orchestrate hook.
+        _orch_pattern = re.compile(
+            r"(?:^|\s)/orchestrate\b|"
+            r"\b(?:orchestrate\b|run orchestrat\w*|use orchestrat\w*|spawn orchestrat\w*)",
+            re.IGNORECASE,
+        )
+        if strategy == "direct" and _orch_pattern.search(prompt):
+            strategy = "orchestrate"
+
         # Use Haiku's self-reported confidence when available, else keyword estimate
         confidence = haiku_confidence if haiku_confidence is not None else keyword_confidence
 
