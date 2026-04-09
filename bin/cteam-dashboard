@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-# cteam-dashboard — Launch the CAF unified dashboard
-CAF_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-# Discover most recent sprint ID
-SPRINT_ID="${CAF_SPRINT_ID:-$(ls -t /tmp/caf_sprint/ 2>/dev/null | head -1)}"
-exec python3 "$CAF_DIR/dashboard/caf_dashboard.py" ${SPRINT_ID:+--sprint "$SPRINT_ID"}

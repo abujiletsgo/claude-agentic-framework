@@ -21,6 +21,13 @@ bin/gstack-bridge check   # → GSTACK_AVAILABLE (exit 0) or not (exit 1/2/3)
 command -v tmux           # → TMUX_AVAILABLE
 ```
 
+```bash
+# Focus dashboard pane so it's visible when sprint starts
+if [ -n "${TMUX:-}" ]; then
+  tmux select-pane -t caf-team:0.3 2>/dev/null || true
+fi
+```
+
 Determine execution mode:
 
 | tmux | gstack | Mode |

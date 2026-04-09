@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# caf-ref — quick reference: agents + skills in the terminal
+# Usage: caf-ref [agents|skills|all]
+
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+YELLOW="\033[33m"
+GREEN="\033[32m"
+MAGENTA="\033[35m"
+
+AGENTS_DIR="/Users/tomkwon/Documents/caf-team/global-agents"
+SKILLS_DIR="/Users/tomkwon/Documents/caf-team/global-skills"
+
+MODE="${1:-all}"
+
+print_agents() {
+  printf "\n${BOLD}${CYAN}━━━ AGENTS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+  printf "${DIM}  (spawned automatically or via Agent tool — not slash commands)${RESET}\n\n"
+  for f in "$AGENTS_DIR"/*.md; do
+    name=$(basename "$f" .md)
+    desc=$(grep -m1 "^description:" "$f" 2>/dev/null | sed 's/description: *//' | sed 's/^"//;s/"$//')
+    [[ -z "$desc" ]] && desc=$(awk '/^---/{f++; next} f==2 && NF>0{print; exit}' "$f" 2>/dev/null)
+    [[ -z "$desc" ]] && continue
+    # Truncate to 60 chars
+    short="${desc:0:72}"
+    [[ ${#desc} -gt 72 ]] && short="${short}…"
+    printf "  ${YELLOW}%-26s${RESET} %s\n" "$name" "$short"
+  done
+}
+
+print_skills() {
+  printf "\n${BOLD}${MAGENTA}━━━ SKILLS (slash commands) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+  printf "${DIM}  (type /<skill> to invoke, e.g. /orchestrate, /review, /sprint)${RESET}\n\n"
+  for d in "$SKILLS_DIR"/*/; do
+    name=$(basename "$d")
+    [[ "$name" == "gstack" ]] && continue  # subtree, not a skill
+    skill_file="$d/SKILL.md"
+    [[ ! -f "$skill_file" ]] && continue
+    desc=$(grep -m1 "^description:" "$skill_file" 2>/dev/null | sed 's/description: *//' | sed 's/^"//;s/"$//')
+    [[ -z "$desc" ]] && desc=$(awk '/^---/{f++; next} f==2 && NF>0{print; exit}' "$skill_file" 2>/dev/null)
+    [[ -z "$desc" ]] && desc=$(grep -m1 "^#[^#]" "$skill_file" 2>/dev/null | sed 's/^# *//')
+    [[ -z "$desc" ]] && continue
+    short="${desc:0:72}"
+    [[ ${#desc} -gt 72 ]] && short="${short}…"
+    printf "  ${GREEN}%-25s${RESET} %s\n" "/$name" "$short"
+  done
+}
+
+print_header() {
+  printf "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════════╗${RESET}\n"
+  printf "${BOLD}${CYAN}║          CAF Quick Reference — Agents & Skills                   ║${RESET}\n"
+  printf "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════════╝${RESET}\n"
+}
+
+print_header
+
+case "$MODE" in
+  agents) print_agents ;;
+  skills) print_skills ;;
+  *)      print_agents; print_skills ;;
+esac
+
+printf "\n${DIM}  Tip: run 'caf-ref agents' or 'caf-ref skills' to filter${RESET}\n\n"

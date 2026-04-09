@@ -3,3 +3,11 @@ __pycache__/
 .mempalace/
 *.egg-info/
 .DS_Store
+
+# Claude Code local state (generated, not project config)
+.claude/settings.json
+.claude/projects.json
+.claude/sessions.json
+
+# Tidy logs
+logs/
