@@ -1,0 +1,293 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IPC_BASE="/tmp/caf_sprint"
+POLL_INTERVAL=5
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_NAME="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "project")")"
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: cmux-sprint <command> [args]
+
+Commands:
+  create <sprint-id>
+  launch-lead <sprint-id> <lead-role> <wave>
+  poll-wave <sprint-id> <wave>
+  gate <sprint-id> <wave>
+  teardown <sprint-id> [--force]
+  status <sprint-id>
+  list
+EOF
+  exit 1
+}
+
+# Write surface_id for a role
+_save_surface() {
+  local sprint_id="$1" role="$2" surface_id="$3"
+  local file="${IPC_BASE}/${sprint_id}/surfaces.json"
+  local tmp
+  tmp=$(mktemp "${file}.XXXXXX")
+  python3 -c "
+import json, sys
+try:
+    with open('${file}') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+data['${role}'] = '${surface_id}'
+json.dump(data, sys.stdout)
+" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+# Read surface_id for a role
+_get_surface() {
+  local sprint_id="$1" role="$2"
+  python3 -c "
+import json
+try:
+    with open('${IPC_BASE}/${sprint_id}/surfaces.json') as f:
+        data = json.load(f)
+    print(data.get('${role}', ''))
+except Exception:
+    print('')
+"
+}
+
+cmd_create() {
+  local sprint_id="$1"
+  command -v cmux >/dev/null || { echo "cmux not found in PATH" >&2; exit 1; }
+  mkdir -p "${IPC_BASE}/${sprint_id}/logs" \
+           "${IPC_BASE}/${sprint_id}/prompts" \
+           "${IPC_BASE}/${sprint_id}/results"
+  echo '{}' > "${IPC_BASE}/${sprint_id}/status.json"
+  echo '{"unlocked_waves":[]}' > "${IPC_BASE}/${sprint_id}/gate.json"
+  echo '{}' > "${IPC_BASE}/${sprint_id}/surfaces.json"
+  # Record the leader's own surface_id (injected by cmux)
+  if [ -n "${CMUX_SURFACE_ID:-}" ]; then
+    _save_surface "$sprint_id" "leader" "$CMUX_SURFACE_ID"
+  fi
+  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" sprint_initialized
+}
+
+cmd_launch_lead() {
+  local sprint_id="$1"
+  local lead_role="$2"
+  local wave="$3"
+
+  # Write run script to avoid quoting issues
+  local run_script="${IPC_BASE}/${sprint_id}/run_${lead_role}.sh"
+  local prompt_file="${IPC_BASE}/${sprint_id}/prompts/${lead_role}.md"
+  local log_file="${IPC_BASE}/${sprint_id}/logs/${lead_role}.log"
+  local worktree_path="../${REPO_NAME}-sprint-${sprint_id}-${lead_role}"
+
+  # Create git worktree for isolation
+  git worktree add "${worktree_path}" HEAD 2>/dev/null || true
+
+  cat > "$run_script" <<SCRIPT
+#!/usr/bin/env bash
+export CAF_SPRINT_ID="${sprint_id}"
+export CAF_SPRINT_ROLE="${lead_role}"
+cd "${worktree_path}"
+claude --prompt "\$(cat '${prompt_file}')" --allowedTools '*' 2>&1 | tee "${log_file}"
+SCRIPT
+  chmod +x "$run_script"
+
+  # Create split and get new surface_id
+  local surface_id
+  surface_id=$(cmux new-split right 2>/dev/null || cmux new-split down 2>/dev/null)
+  _save_surface "$sprint_id" "$lead_role" "$surface_id"
+
+  # Send the run command to the new pane
+  cmux send-surface "$surface_id" "bash ${run_script}
+"
+
+  # Set initial sidebar status
+  cmux set-status --surface "$surface_id" "${lead_role}: starting" 2>/dev/null || true
+
+  # Update status.json
+  local tmp started
+  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/status.json.XXXXXX")
+  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  python3 -c "
+import json, sys
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+data['${lead_role}'] = {'status': 'running', 'wave': ${wave}, 'started': '${started}', 'surface_id': '${surface_id}'}
+json.dump(data, sys.stdout)
+" > "$tmp"
+  mv "$tmp" "${IPC_BASE}/${sprint_id}/status.json"
+
+  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" lead_started "{\"role\":\"${lead_role}\",\"wave\":${wave},\"surface_id\":\"${surface_id}\"}"
+}
+
+MAX_POLL_SECONDS=1800
+
+cmd_poll_wave() {
+  local sprint_id="$1"
+  local wave="$2"
+  local start_time
+  start_time=$(date +%s)
+  local max_poll=${MAX_POLL_SECONDS:-1800}
+
+  while true; do
+    result=$(python3 -c "
+import json, sys
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+leads = [v for v in data.values() if isinstance(v, dict) and v.get('wave') == ${wave}]
+if not leads:
+    print('waiting')
+elif all(v.get('status') == 'done' for v in leads):
+    print('done')
+elif any(v.get('status') == 'failed' for v in leads):
+    print('failed')
+else:
+    done_count = sum(1 for v in leads if v.get('status') == 'done')
+    total = len(leads)
+    pct = int(done_count * 100 / total) if total else 0
+    print(f'waiting:{pct}')
+")
+    case "$result" in
+      done)   exit 0 ;;
+      failed) exit 1 ;;
+      waiting:*)
+        # Update cmux progress on leader pane
+        local pct="${result#waiting:}"
+        if [ -n "${CMUX_SURFACE_ID:-}" ] && command -v cmux >/dev/null 2>&1; then
+          cmux set-progress "$pct" 2>/dev/null || true
+          cmux set-status "wave ${wave}: ${pct}% complete" 2>/dev/null || true
+        fi
+        local elapsed=$(( $(date +%s) - start_time ))
+        if [ "$elapsed" -ge "$max_poll" ]; then
+          echo "poll-wave: timeout after ${elapsed}s" >&2
+          exit 2
+        fi
+        sleep "${POLL_INTERVAL}"
+        ;;
+      *)
+        local elapsed=$(( $(date +%s) - start_time ))
+        if [ "$elapsed" -ge "$max_poll" ]; then
+          echo "poll-wave: timeout after ${elapsed}s" >&2
+          exit 2
+        fi
+        sleep "${POLL_INTERVAL}"
+        ;;
+    esac
+  done
+}
+
+cmd_gate() {
+  local sprint_id="$1"
+  local wave="$2"
+  local tmp
+  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/gate.json.XXXXXX")
+  python3 -c "
+import json
+with open('${IPC_BASE}/${sprint_id}/gate.json') as f:
+    data = json.load(f)
+waves = set(data.get('unlocked_waves', []))
+waves.add(${wave})
+data['unlocked_waves'] = sorted(waves)
+import sys; json.dump(data, sys.stdout)
+" > "$tmp"
+  mv "$tmp" "${IPC_BASE}/${sprint_id}/gate.json"
+}
+
+cmd_teardown() {
+  local sprint_id="$1"
+  local force="${2:-}"
+  # Archive events first
+  mkdir -p ~/.claude/data/sprint_events
+  cp "${IPC_BASE}/${sprint_id}/events.jsonl" \
+     ~/.claude/data/sprint_events/"${sprint_id}.jsonl" 2>/dev/null || true
+  # Remove worktrees
+  for wt in ../"${REPO_NAME}"-sprint-"${sprint_id}"-*; do
+    if [ -d "$wt" ]; then
+      if [ "$force" = "--force" ]; then
+        git worktree remove --force "$wt" 2>/dev/null || true
+      else
+        git worktree remove "$wt" 2>/dev/null || true
+      fi
+    fi
+  done
+  rm -rf "${IPC_BASE:?}/${sprint_id:?}"
+}
+
+cmd_status() {
+  local sprint_id="$1"
+  python3 -c "
+import json, sys
+
+try:
+    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+
+icons = {'done': '✓ done', 'running': '⟳ running', 'failed': '✗ failed'}
+print(f\"{'Role':<22} {'Wave':<6} {'Status':<12} {'Started'}\")
+print('-' * 70)
+for role, info in data.items():
+    if not isinstance(info, dict):
+        continue
+    wave = f\"W{info.get('wave', '?')}\"
+    status_raw = info.get('status', '?')
+    status = icons.get(status_raw, status_raw)
+    started = info.get('started', '')
+    print(f\"{role:<22} {wave:<6} {status:<12} {started}\")
+"
+}
+
+cmd_list() {
+  command -v cmux >/dev/null || { echo "cmux not found"; return; }
+  cmux list-surfaces 2>/dev/null || echo "No cmux surfaces"
+}
+
+# Main dispatch
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+command_name="$1"
+shift
+
+case "$command_name" in
+  create)
+    [ $# -ge 1 ] || usage
+    cmd_create "$1"
+    ;;
+  launch-lead)
+    [ $# -ge 3 ] || usage
+    cmd_launch_lead "$1" "$2" "$3"
+    ;;
+  poll-wave)
+    [ $# -ge 2 ] || usage
+    cmd_poll_wave "$1" "$2"
+    ;;
+  gate)
+    [ $# -ge 2 ] || usage
+    cmd_gate "$1" "$2"
+    ;;
+  teardown)
+    [ $# -ge 1 ] || usage
+    cmd_teardown "$1" "${2:-}"
+    ;;
+  status)
+    [ $# -ge 1 ] || usage
+    cmd_status "$1"
+    ;;
+  list)
+    cmd_list
+    ;;
+  *)
+    usage
+    ;;
+esac

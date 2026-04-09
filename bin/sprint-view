@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""
+CAF Sprint View — launch the full multi-pane sprint layout in cmux.
+
+Layout:
+  ┌──────────────┬──────────────┬──────────────┐
+  │              │  DASHBOARD   │              │
+  │   LEADER/PM  │  all leads   │    REPORT    │
+  │   (~60% h)   │  even done   │  full height │
+  │              │              │              │
+  ├──────┬───────┼──────┬───────┤              │
+  │  s1  │  s2   │  s3  │  s4   │              │
+  ├──────┼───────┼──────┼───────┤              │
+  │  s5  │  s6   │  s7  │  s8   │              │
+  └──────┴───────┴──────┴───────┴──────────────┘
+
+Usage:
+  python3 bin/sprint-view [sprint_id]      # live mode
+  python3 bin/sprint-view demo             # demo mode (default)
+"""
+import sys, os, json, time, subprocess
+from pathlib import Path
+
+REPO          = Path(__file__).parent.parent
+SURFACES_FILE = Path("/tmp/sprint_view_surfaces.json")
+DASH          = f"python3 {REPO}/dashboard/sprint_dashboard.py"
+REPORT        = f"python3 {REPO}/dashboard/sprint_report.py"
+CMUX          = "/Applications/cmux.app/Contents/Resources/bin/cmux"
+
+RESET = "\033[0m"
+B     = "\033[1m"
+CY    = "\033[36m"
+GR    = "\033[32m"
+RD    = "\033[31m"
+D     = "\033[2m"
+
+def log(msg):    print(f"  {msg}")
+def ok(msg):     print(f"  {GR}✓{RESET}  {msg}")
+def err(msg):    print(f"  {RD}✗{RESET}  {msg}")
+def section(t):  print(f"\n{B}{CY}{t}{RESET}")
+
+
+# ── CLI wrapper ───────────────────────────────────────────────────────────────
+
+def cmux(*args) -> str:
+    """Run cmux CLI, return stdout stripped. Raises on non-zero exit."""
+    result = subprocess.run([CMUX, *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+    return result.stdout.strip()
+
+
+def cmux_split(direction: str, workspace: str, surface: str) -> str:
+    """Split a surface, return the new surface ref."""
+    out = cmux("new-split", direction, "--workspace", workspace, "--surface", surface)
+    # output: "OK surface:N workspace:M"
+    parts = out.split()
+    return parts[1] if len(parts) >= 2 else ""
+
+
+def cmux_send(workspace: str, surface: str, text: str) -> None:
+    cmux("send", "--workspace", workspace, "--surface", surface, text)
+
+
+def cmux_font(workspace: str, surface: str, action: str, times: int) -> None:
+    for _ in range(times):
+        try:
+            cmux("tab-action", "--action", action,
+                 "--workspace", workspace, "--surface", surface)
+        except Exception:
+            pass  # font action may not be available on all surfaces
+
+
+def cmux_resize(workspace: str, pane: str, direction: str, amount: int) -> None:
+    flag = {"right": "-R", "left": "-L", "down": "-D", "up": "-U"}[direction]
+    try:
+        cmux("resize-pane", "--pane", pane, "--workspace", workspace,
+             flag, "--amount", str(amount))
+    except Exception as e:
+        log(f"resize skipped: {e}")
+
+
+def cmux_close(workspace: str, surface: str) -> None:
+    try:
+        cmux("close-surface", "--surface", surface, "--workspace", workspace)
+    except Exception:
+        pass
+
+
+def cmux_tree(workspace: str | None = None) -> str:
+    args = ["tree", "--all"]
+    if workspace:
+        args += ["--workspace", workspace]
+    return cmux(*args)
+
+
+# ── Cleanup ───────────────────────────────────────────────────────────────────
+
+def close_prev(keep_surface: str, workspace: str):
+    """Close surfaces from the previous run."""
+    if not SURFACES_FILE.exists():
+        return
+    try:
+        saved = json.loads(SURFACES_FILE.read_text())
+        closed = 0
+        for ref in saved.get("surfaces", []):
+            if ref and ref != keep_surface:
+                cmux_close(workspace, ref)
+                closed += 1
+        SURFACES_FILE.unlink(missing_ok=True)
+        if closed:
+            ok(f"closed {closed} pane(s) from previous run")
+    except Exception as e:
+        log(f"cleanup: {e}")
+
+
+def save_layout(workspace: str, leader: str, dashboard: str, report: str, slots: list):
+    data = {"workspace": workspace, "surfaces": [leader, dashboard, report] + slots}
+    SURFACES_FILE.write_text(json.dumps(data))
+
+
+# ── Layout builder ────────────────────────────────────────────────────────────
+
+def build_layout(sprint_id: str):
+    WS = os.environ.get("CMUX_WORKSPACE_ID", "")
+    MY = os.environ.get("CMUX_SURFACE_ID", "")
+
+    if not MY:
+        print("ERROR: CMUX_SURFACE_ID not set. Run this from inside a cmux terminal.")
+        sys.exit(1)
+
+    section("Building sprint layout")
+
+    close_prev(MY, WS)
+
+    # ── Step 1: REPORT — right 1/3 full height initially ─────────────────────
+    report_surf = cmux_split("right", WS, MY)
+    time.sleep(0.2)
+    _resize_leader_pane(WS, MY, "right", 309)   # push right: left=2/3, right=1/3
+    ok(f"report column created  [{report_surf}]")
+
+    # ── Step 2: Agent strip — bottom 20% of left 2/3 ─────────────────────────
+    agent_strip = cmux_split("down", WS, MY)
+    time.sleep(0.2)
+    _resize_leader_pane(WS, MY, "down", 379)    # 80/20: grow leader 379px
+    ok(f"agent strip created    [{agent_strip}]")
+
+    # ── Step 2b: Split report at same 80/20 line for full-width divider ───────
+    overview_surf = cmux_split("down", WS, report_surf)
+    time.sleep(0.2)
+    _resize_leader_pane(WS, report_surf, "down", 379)   # match leader's divider
+    ok(f"overview panel created [{overview_surf}]")
+
+    # ── Step 2c: Split agent strip into 2 rows ────────────────────────────────
+    row2 = cmux_split("down", WS, agent_strip)
+    time.sleep(0.2)
+    ok(f"row 2 created          [{row2}]")
+
+    # ── Step 3: DASHBOARD — middle 1/3 beside leader ─────────────────────────
+    dashboard_surf = cmux_split("right", WS, MY)
+    time.sleep(0.2)
+    ok(f"dashboard column created [{dashboard_surf}]")
+
+    # ── Step 4: 8 agent slots — balanced 4-way split per row ─────────────────
+    s2 = cmux_split("right", WS, agent_strip); time.sleep(0.15)
+    s3 = cmux_split("right", WS, s2);          time.sleep(0.15)
+    s4 = cmux_split("right", WS, agent_strip); time.sleep(0.15)
+    s6 = cmux_split("right", WS, row2);        time.sleep(0.15)
+    s7 = cmux_split("right", WS, s6);          time.sleep(0.15)
+    s8 = cmux_split("right", WS, row2);        time.sleep(0.15)
+    ok("8 agent slots created (2 rows × 4 cols)")
+
+    ALL_SLOTS = [agent_strip, s2, s3, s4, row2, s6, s7, s8]
+
+    # ── Step 5: Font sizes — non-leader panes at ~50% ─────────────────────────
+    section("Setting font sizes")
+    # Report is readable text — moderate shrink. Dashboard + slots = 50% smaller.
+    for label, surf, steps in \
+            [("report",    report_surf,    6),
+             ("overview",  overview_surf,  6),
+             ("dashboard", dashboard_surf, 8)] + \
+            [(f"slot {i+1}", s, 8) for i, s in enumerate(ALL_SLOTS)]:
+        cmux_font(WS, surf, "decrease_font_size", steps)
+        ok(f"{label}: font -{steps}")
+    time.sleep(0.1)
+
+    # ── Step 6: Launch scripts ────────────────────────────────────────────────
+    section("Launching scripts")
+
+    cmux_send(WS, dashboard_surf, f"{DASH} {sprint_id}\n")
+    ok(f"dashboard → sprint_dashboard.py {sprint_id}")
+    time.sleep(0.3)
+
+    cmux_send(WS, report_surf, f"{REPORT} {sprint_id}\n")
+    ok(f"report    → sprint_report.py {sprint_id}")
+    time.sleep(0.3)
+
+    OVERVIEW = f"python3 {REPO}/dashboard/sprint_overview.py"
+    cmux_send(WS, overview_surf, f"{OVERVIEW} {sprint_id}\n")
+    ok(f"overview  → sprint_overview.py {sprint_id}")
+    time.sleep(0.2)
+
+    agent_surfs, agent_roles = _assign_slots(ALL_SLOTS, sprint_id)
+    agent_scripts = _make_agent_scripts(sprint_id, agent_roles)
+
+    for surf, role, script in zip(agent_surfs, agent_roles, agent_scripts):
+        if not surf:
+            log(f"slot empty, skipping {role}")
+            continue
+        cmux_send(WS, surf, f"python3 {script}\n")
+        ok(f"agent     → {role}  [{surf}]")
+        time.sleep(0.15)
+
+    # ── Done ──────────────────────────────────────────────────────────────────
+    section("Layout ready")
+    try:
+        print(cmux_tree(WS))
+    except Exception:
+        pass
+
+    print(f"\n  {GR}{B}Sprint view live. Focus any pane to interact.{RESET}\n")
+    save_layout(WS, MY, dashboard_surf, report_surf, [overview_surf] + ALL_SLOTS)
+
+
+def _resize_leader_pane(ws: str, leader_surf: str, direction: str, amount: int):
+    """Find the pane containing leader_surf via identify and resize it."""
+    try:
+        info = json.loads(cmux("--id-format", "both", "identify",
+                               "--surface", leader_surf, "--workspace", ws, "--no-caller"))
+        pane_ref = (info.get("focused") or {}).get("pane_ref")
+        if pane_ref:
+            cmux_resize(ws, pane_ref, direction, amount)
+    except Exception as e:
+        log(f"resize: {e}")
+
+
+# ── Slot assignment ───────────────────────────────────────────────────────────
+
+ALL_ROLES_DEMO = [
+    "planning-lead", "engineering-lead", "review-lead", "qa-lead",
+    "security-lead", "release-lead", "infra-lead", "docs-lead",
+]
+
+
+def _assign_slots(slots: list, sprint_id: str) -> tuple[list, list]:
+    if sprint_id == "demo":
+        roles = ALL_ROLES_DEMO
+    else:
+        try:
+            status = json.loads(Path(f"/tmp/caf_sprint/{sprint_id}/status.json").read_text())
+            roles = [r for r in status.keys() if isinstance(status[r], dict)]
+        except Exception:
+            roles = ["planning-lead", "engineering-lead", "review-lead", "qa-lead"]
+    assigned = [slots[i % len(slots)] for i in range(len(roles))]
+    return assigned, list(roles)
+
+
+def _make_agent_scripts(sprint_id: str, roles: list) -> list[str]:
+    paths = []
+    for role in roles:
+        if sprint_id == "demo":
+            src_path = Path(f"/tmp/cmux_agent_{role}.py")
+            if not src_path.exists():
+                src_path.write_text(_demo_agent_script(role))
+        else:
+            src_path = Path(f"/tmp/caf_sprint/{sprint_id}/run_{role}.sh")
+        paths.append(str(src_path))
+    return paths
+
+
+def _demo_agent_script(role: str) -> str:
+    tasks = {
+        "planning-lead":    [("review auth design", 1.0), ("draft ADR-012", 1.2), ("publish plan", 0.8)],
+        "engineering-lead": [("scaffold jwt_handler.py", 0.8), ("update middleware.py", 1.0), ("run tests", 1.2)],
+        "review-lead":      [("read diff", 0.6), ("check expiry handling", 0.9), ("approve", 0.5)],
+        "qa-lead":          [("boot env", 0.8), ("E2E: login", 0.7), ("E2E: refresh", 0.9), ("regression", 1.0)],
+        "security-lead":    [("scan dependencies", 0.7), ("audit JWT config", 0.9), ("sign-off", 0.5)],
+        "release-lead":     [("tag v2.1.0", 0.5), ("build docker image", 1.0), ("push to registry", 0.8)],
+        "infra-lead":       [("update terraform", 0.8), ("plan apply", 0.9), ("verify health", 0.7)],
+        "docs-lead":        [("update API docs", 0.7), ("write changelog", 0.6), ("publish", 0.5)],
+    }.get(role, [("work", 1.0)])
+
+    mission = {
+        "planning-lead":    "Synthesize architecture decisions for auth refactor",
+        "engineering-lead": "Implement auth/jwt_handler.py and update middleware",
+        "review-lead":      "Code review auth changes for correctness and security",
+        "qa-lead":          "End-to-end QA: login, token refresh, logout flows",
+        "security-lead":    "Security audit and sign-off for auth changes",
+        "release-lead":     "Tag, build, and push v2.1.0 release",
+        "infra-lead":       "Apply terraform changes for Redis blacklist",
+        "docs-lead":        "Update API docs and publish changelog",
+    }.get(role, "Complete assigned tasks")
+
+    lines = [
+        "#!/usr/bin/env python3",
+        "import sys, time, os",
+        f"sys.path.insert(0, '{REPO}')",
+        f"os.environ.setdefault('CAF_SPRINT_ID', 'sprint-demo-001')",
+        "import lib.agent_display as m",
+        f"d = m.LeadDisplay({repr(role)}, {repr(mission)})",
+        "time.sleep(0.3)",
+    ]
+    total = len(tasks)
+    for i, (task, delay) in enumerate(tasks):
+        lines += [
+            f"d.task({repr(task)}, 'running')",
+            f"time.sleep({delay})",
+            f"d.task({repr(task)}, 'done')",
+            f"d.progress({int((i+1)/total*100)}, '{i+1}/{total}')",
+        ]
+    mission_done = {
+        "planning-lead":    "ADR-012 written. JWT RS256 selected.",
+        "engineering-lead": "3 files changed. 12/12 tests green.",
+        "review-lead":      "LGTM. 2 nits filed. Approved.",
+        "qa-lead":          "All 6 E2E + 14 regression passed.",
+        "security-lead":    "0 critical findings. JWT config approved.",
+        "release-lead":     "v2.1.0 tagged and pushed to registry.",
+        "infra-lead":       "Terraform applied. Redis healthy.",
+        "docs-lead":        "Docs published. Changelog live.",
+    }.get(role, "Complete.")
+    lines.append(f"d.done({repr(mission_done)})")
+    return "\n".join(lines) + "\n"
+
+
+if __name__ == "__main__":
+    sprint_id = sys.argv[1] if len(sys.argv) > 1 else "demo"
+    build_layout(sprint_id)

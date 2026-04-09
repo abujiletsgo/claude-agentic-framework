@@ -13,6 +13,14 @@ sprint:
     layout: "tiled"
     dashboard_pane_width_pct: 28
 
+  # cmux (highest priority when available — native macOS, richest visuals)
+  cmux:
+    socket_path: "~/Library/Application Support/cmux/cmux.sock"   # overridable via CMUX_SOCKET_PATH
+    default_split_direction: "right"
+    fallback_split_direction: "down"
+    sidebar_progress: true                    # use set-progress API
+    sidebar_status: true                      # use set-status API
+
   # IPC filesystem
   ipc:
     base_dir: "/tmp/caf_sprint"
@@ -92,6 +100,8 @@ sprint:
 
   # graceful degradation
   fallback:
-    no_tmux: "sequential_agents"    # leads run as Agent() calls (lose hierarchy depth)
-    no_gstack: "caf_skills"         # leads use CAF-native skills only
-    no_both: "orchestrate"          # equivalent to /orchestrate
+    no_cmux_no_tmux: "sequential_agents"   # leads run as Agent() calls
+    no_cmux: "tmux"                        # fallback to tmux when cmux absent
+    no_tmux: "sequential_agents"           # existing behavior
+    no_gstack: "caf_skills"
+    no_both: "orchestrate"

@@ -17,6 +17,9 @@ in mempalace for cross-sprint memory.
 Check available infrastructure:
 
 ```bash
+# Detect cmux (highest priority — richest visuals)
+[ -n "${CMUX_SURFACE_ID:-}" ] && command -v cmux >/dev/null 2>&1 && CMUX_AVAILABLE=true || CMUX_AVAILABLE=false
+
 bin/gstack-bridge check   # → GSTACK_AVAILABLE (exit 0) or not (exit 1/2/3)
 command -v tmux           # → TMUX_AVAILABLE
 ```
@@ -30,12 +33,14 @@ fi
 
 Determine execution mode:
 
-| tmux | gstack | Mode |
-|------|--------|------|
-| yes  | yes    | **full** — PM → Lead panes → Workers. Full 3-tier hierarchy. |
-| yes  | no     | **tmux-only** — Lead panes use CAF skills (researcher, builder, validator) |
-| no   | yes    | **agents-only** — Leads run as sequential Agent() calls. Lose hierarchy depth. |
-| no   | no     | **minimal** — Equivalent to /orchestrate. Skip sprint structure. |
+| cmux | tmux | gstack | Mode |
+|------|------|--------|------|
+| yes  | -    | yes    | **cmux-full** — `bin/cmux-sprint` + gstack leads |
+| yes  | -    | no     | **cmux-only** — `bin/cmux-sprint` + CAF agents |
+| no   | yes  | yes    | **tmux-full** — `bin/tmux-sprint` + gstack leads |
+| no   | yes  | no     | **tmux-only** — `bin/tmux-sprint` + CAF agents |
+| no   | no   | yes    | **agents-only** — sequential Agent() calls |
+| no   | no   | no     | **minimal** — /orchestrate equivalent |
 
 Log mode selection to events.jsonl via `bin/sprint-event`.
 
@@ -93,6 +98,16 @@ Mark done: write {"status":"done"} to /tmp/caf_sprint/<id>/<role>.status
 ~500 tokens per prompt.
 
 ## Step 4: Execute Waves
+
+### cmux-full / cmux-only mode:
+Use `bin/cmux-sprint` instead of `bin/tmux-sprint`. Same wave/gate logic applies:
+1. Filter leads assigned to this wave (from sprint_config.yaml)
+2. `bin/cmux-sprint launch-lead <id> <role> <wave>` for each (parallel within wave)
+3. `bin/cmux-sprint poll-wave <id> <wave>` — blocks until all done or any failed
+4. Read results from `results/`
+5. Synthesize wave summary (3-5 sentences), append to `report.md`
+6. `bin/cmux-sprint gate <id> <wave>` — unlock next wave
+7. On failure: retry once with additional context, then escalate to user
 
 ### Full / tmux-only mode:
 For each wave (0 → 3):
