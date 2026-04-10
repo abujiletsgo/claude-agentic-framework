@@ -4,10 +4,14 @@ __pycache__/
 *.egg-info/
 .DS_Store
 
+# Rust build artifacts
+caf-hooks/target/
+
 # Claude Code local state (generated, not project config)
 .claude/settings.json
 .claude/projects.json
 .claude/sessions.json
+global-skills/gstack/.claude/
 
 # Tidy logs
 logs/

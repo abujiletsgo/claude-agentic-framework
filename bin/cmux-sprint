@@ -1,295 +1,274 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""
+cmux-sprint — launch and coordinate sprint leads as real cmux panes.
 
-IPC_BASE="/tmp/caf_sprint"
-POLL_INTERVAL=5
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_NAME="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "project")")"
+Subcommands:
+  launch-lead <sprint_id> <role> <wave>   Open a new pane with an interactive claude session
+  poll-wave   <sprint_id> <wave>          Poll until all roles in the wave are done/failed
+  gate        <sprint_id> <wave>          Unlock the next wave in gate.json
+"""
 
-usage() {
-  cat >&2 <<'EOF'
-Usage: cmux-sprint <command> [args]
-
-Commands:
-  create <sprint-id>
-  launch-lead <sprint-id> <lead-role> <wave>
-  poll-wave <sprint-id> <wave>
-  gate <sprint-id> <wave>
-  teardown <sprint-id> [--force]
-  status <sprint-id>
-  list
-EOF
-  exit 1
-}
-
-# Write surface_id for a role
-_save_surface() {
-  local sprint_id="$1" role="$2" surface_id="$3"
-  local file="${IPC_BASE}/${sprint_id}/surfaces.json"
-  local tmp
-  tmp=$(mktemp "${file}.XXXXXX")
-  python3 -c "
-import json, sys
-try:
-    with open('${file}') as f:
-        data = json.load(f)
-except Exception:
-    data = {}
-data['${role}'] = '${surface_id}'
-json.dump(data, sys.stdout)
-" > "$tmp"
-  mv "$tmp" "$file"
-}
-
-# Read surface_id for a role
-_get_surface() {
-  local sprint_id="$1" role="$2"
-  python3 -c "
+import sys
+import os
 import json
-try:
-    with open('${IPC_BASE}/${sprint_id}/surfaces.json') as f:
-        data = json.load(f)
-    print(data.get('${role}', ''))
-except Exception:
-    print('')
-"
+import time
+import subprocess
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Bootstrap: add lib/ to sys.path so we can import cmux_client
+# ---------------------------------------------------------------------------
+CAF_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(CAF_DIR / "lib"))
+import cmux_client as cmux  # noqa: E402 (after sys.path manipulation)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+SPRINT_BASE = Path("/tmp/caf_sprint")
+
+WAVE_ROLES: dict[int, list[str]] = {
+    0: ["planning-lead"],
+    1: ["engineering-lead", "frontend-lead", "review-lead"],
+    2: ["qa-lead", "security-lead"],
+    3: ["release-lead", "docs-lead"],
 }
 
-cmd_create() {
-  local sprint_id="$1"
-  command -v cmux >/dev/null || { echo "cmux not found in PATH" >&2; exit 1; }
-  mkdir -p "${IPC_BASE}/${sprint_id}/logs" \
-           "${IPC_BASE}/${sprint_id}/prompts" \
-           "${IPC_BASE}/${sprint_id}/results"
-  echo '{}' > "${IPC_BASE}/${sprint_id}/status.json"
-  echo '{"unlocked_waves":[]}' > "${IPC_BASE}/${sprint_id}/gate.json"
-  echo '{}' > "${IPC_BASE}/${sprint_id}/surfaces.json"
-  # Record the leader's own surface_id (injected by cmux)
-  if [ -n "${CMUX_SURFACE_ID:-}" ]; then
-    _save_surface "$sprint_id" "leader" "$CMUX_SURFACE_ID"
-  fi
-  # Dashboard pane (sprint_report.py idle) is always open via cteam — it auto-detects
-  # the sprint from status.json and switches to live mode on its own poll cycle.
-  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" sprint_initialized
-}
+POLL_INTERVAL = 5        # seconds between status checks
+POLL_TIMEOUT  = 30 * 60  # 30-minute hard timeout
 
-cmd_launch_lead() {
-  local sprint_id="$1"
-  local lead_role="$2"
-  local wave="$3"
 
-  # Write run script to avoid quoting issues
-  local run_script="${IPC_BASE}/${sprint_id}/run_${lead_role}.sh"
-  local prompt_file="${IPC_BASE}/${sprint_id}/prompts/${lead_role}.md"
-  local log_file="${IPC_BASE}/${sprint_id}/logs/${lead_role}.log"
-  local worktree_path="../${REPO_NAME}-sprint-${sprint_id}-${lead_role}"
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-  # Create git worktree for isolation
-  git worktree add "${worktree_path}" HEAD 2>/dev/null || true
+def sprint_dir(sprint_id: str) -> Path:
+    return SPRINT_BASE / sprint_id
 
-  cat > "$run_script" <<SCRIPT
-#!/usr/bin/env bash
-export CAF_SPRINT_ID="${sprint_id}"
-export CAF_SPRINT_ROLE="${lead_role}"
-cd "${worktree_path}"
-claude --prompt "\$(cat '${prompt_file}')" --allowedTools '*' 2>&1 | tee "${log_file}"
-SCRIPT
-  chmod +x "$run_script"
 
-  # Create split and get new surface_id
-  local surface_id
-  surface_id=$(cmux new-split right 2>/dev/null || cmux new-split down 2>/dev/null)
-  _save_surface "$sprint_id" "$lead_role" "$surface_id"
+def status_path(sprint_id: str, role: str) -> Path:
+    return sprint_dir(sprint_id) / f"{role}.status"
 
-  # Send the run command to the new pane
-  cmux send-surface "$surface_id" "bash ${run_script}
-"
 
-  # Set initial sidebar status
-  cmux set-status --surface "$surface_id" "${lead_role}: starting" 2>/dev/null || true
+def read_status(sprint_id: str, role: str) -> str | None:
+    """Return status string or None if the file is missing / unreadable."""
+    p = status_path(sprint_id, role)
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())["status"]
+    except Exception:
+        return None
 
-  # Update status.json
-  local tmp started
-  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/status.json.XXXXXX")
-  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  python3 -c "
-import json, sys
-try:
-    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
-        data = json.load(f)
-except Exception:
-    data = {}
-data['${lead_role}'] = {'status': 'running', 'wave': ${wave}, 'started': '${started}', 'surface_id': '${surface_id}'}
-json.dump(data, sys.stdout)
-" > "$tmp"
-  mv "$tmp" "${IPC_BASE}/${sprint_id}/status.json"
 
-  "${SCRIPT_DIR}/sprint-event" "${sprint_id}" lead_started "{\"role\":\"${lead_role}\",\"wave\":${wave},\"surface_id\":\"${surface_id}\"}"
-}
+def write_status(sprint_id: str, role: str, status: str) -> None:
+    path = status_path(sprint_id, role)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"status": status}))
 
-MAX_POLL_SECONDS=1800
 
-cmd_poll_wave() {
-  local sprint_id="$1"
-  local wave="$2"
-  local start_time
-  start_time=$(date +%s)
-  local max_poll=${MAX_POLL_SECONDS:-1800}
+def call_sprint_event(sprint_id: str, event_type: str, payload: str = "") -> None:
+    event_bin = CAF_DIR / "bin" / "sprint-event"
+    cmd = [str(event_bin), sprint_id, event_type]
+    if payload:
+        cmd.append(payload)
+    try:
+        subprocess.run(cmd, check=False)
+    except Exception as exc:
+        print(f"[cmux-sprint] sprint-event call failed: {exc}", file=sys.stderr)
 
-  while true; do
-    result=$(python3 -c "
-import json, sys
-try:
-    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
-        data = json.load(f)
-except Exception:
-    data = {}
-leads = [v for v in data.values() if isinstance(v, dict) and v.get('wave') == ${wave}]
-if not leads:
-    print('waiting')
-elif all(v.get('status') == 'done' for v in leads):
-    print('done')
-elif any(v.get('status') == 'failed' for v in leads):
-    print('failed')
-else:
-    done_count = sum(1 for v in leads if v.get('status') == 'done')
-    total = len(leads)
-    pct = int(done_count * 100 / total) if total else 0
-    print(f'waiting:{pct}')
-")
-    case "$result" in
-      done)   exit 0 ;;
-      failed) exit 1 ;;
-      waiting:*)
-        # Update cmux progress on leader pane
-        local pct="${result#waiting:}"
-        if [ -n "${CMUX_SURFACE_ID:-}" ] && command -v cmux >/dev/null 2>&1; then
-          cmux set-progress "$pct" 2>/dev/null || true
-          cmux set-status "wave ${wave}: ${pct}% complete" 2>/dev/null || true
-        fi
-        local elapsed=$(( $(date +%s) - start_time ))
-        if [ "$elapsed" -ge "$max_poll" ]; then
-          echo "poll-wave: timeout after ${elapsed}s" >&2
-          exit 2
-        fi
-        sleep "${POLL_INTERVAL}"
-        ;;
-      *)
-        local elapsed=$(( $(date +%s) - start_time ))
-        if [ "$elapsed" -ge "$max_poll" ]; then
-          echo "poll-wave: timeout after ${elapsed}s" >&2
-          exit 2
-        fi
-        sleep "${POLL_INTERVAL}"
-        ;;
-    esac
-  done
-}
 
-cmd_gate() {
-  local sprint_id="$1"
-  local wave="$2"
-  local tmp
-  tmp=$(mktemp "${IPC_BASE}/${sprint_id}/gate.json.XXXXXX")
-  python3 -c "
-import json
-with open('${IPC_BASE}/${sprint_id}/gate.json') as f:
-    data = json.load(f)
-waves = set(data.get('unlocked_waves', []))
-waves.add(${wave})
-data['unlocked_waves'] = sorted(waves)
-import sys; json.dump(data, sys.stdout)
-" > "$tmp"
-  mv "$tmp" "${IPC_BASE}/${sprint_id}/gate.json"
-}
+def get_sprint_cwd(sprint_id: str) -> str:
+    cwd_file = sprint_dir(sprint_id) / "cwd"
+    if cwd_file.exists():
+        return cwd_file.read_text().strip()
+    return os.environ.get("PWD", str(Path.cwd()))
 
-cmd_teardown() {
-  local sprint_id="$1"
-  local force="${2:-}"
-  # Archive events first
-  mkdir -p ~/.claude/data/sprint_events
-  cp "${IPC_BASE}/${sprint_id}/events.jsonl" \
-     ~/.claude/data/sprint_events/"${sprint_id}.jsonl" 2>/dev/null || true
-  # Remove worktrees
-  for wt in ../"${REPO_NAME}"-sprint-"${sprint_id}"-*; do
-    if [ -d "$wt" ]; then
-      if [ "$force" = "--force" ]; then
-        git worktree remove --force "$wt" 2>/dev/null || true
-      else
-        git worktree remove "$wt" 2>/dev/null || true
-      fi
-    fi
-  done
-  rm -rf "${IPC_BASE:?}/${sprint_id:?}"
-}
 
-cmd_status() {
-  local sprint_id="$1"
-  python3 -c "
-import json, sys
+# ---------------------------------------------------------------------------
+# Subcommand: launch-lead
+# ---------------------------------------------------------------------------
 
-try:
-    with open('${IPC_BASE}/${sprint_id}/status.json') as f:
-        data = json.load(f)
-except Exception:
-    data = {}
+def cmd_launch_lead(sprint_id: str, role: str, wave: int) -> None:
+    sd = sprint_dir(sprint_id)
+    prompt_path = sd / "prompts" / f"{role}.md"
 
-icons = {'done': '✓ done', 'running': '⟳ running', 'failed': '✗ failed'}
-print(f\"{'Role':<22} {'Wave':<6} {'Status':<12} {'Started'}\")
-print('-' * 70)
-for role, info in data.items():
-    if not isinstance(info, dict):
-        continue
-    wave = f\"W{info.get('wave', '?')}\"
-    status_raw = info.get('status', '?')
-    status = icons.get(status_raw, status_raw)
-    started = info.get('started', '')
-    print(f\"{role:<22} {wave:<6} {status:<12} {started}\")
-"
-}
+    if not prompt_path.exists():
+        print(f"[cmux-sprint] prompt not found: {prompt_path}", file=sys.stderr)
+        sys.exit(1)
 
-cmd_list() {
-  command -v cmux >/dev/null || { echo "cmux not found"; return; }
-  cmux list-surfaces 2>/dev/null || echo "No cmux surfaces"
-}
+    prompt_text = prompt_path.read_text()
 
-# Main dispatch
-if [ $# -eq 0 ]; then
-  usage
-fi
+    # Mark as running before we open the pane
+    write_status(sprint_id, role, "running")
+    call_sprint_event(sprint_id, "lead_started")
 
-command_name="$1"
-shift
+    # Remember the calling surface so we can focus back later
+    original_sid = os.environ.get("CMUX_SURFACE_ID", "")
 
-case "$command_name" in
-  create)
-    [ $# -ge 1 ] || usage
-    cmd_create "$1"
-    ;;
-  launch-lead)
-    [ $# -ge 3 ] || usage
-    cmd_launch_lead "$1" "$2" "$3"
-    ;;
-  poll-wave)
-    [ $# -ge 2 ] || usage
-    cmd_poll_wave "$1" "$2"
-    ;;
-  gate)
-    [ $# -ge 2 ] || usage
-    cmd_gate "$1" "$2"
-    ;;
-  teardown)
-    [ $# -ge 1 ] || usage
-    cmd_teardown "$1" "${2:-}"
-    ;;
-  status)
-    [ $# -ge 1 ] || usage
-    cmd_status "$1"
-    ;;
-  list)
-    cmd_list
-    ;;
-  *)
-    usage
-    ;;
-esac
+    # Split right to get a new pane
+    try:
+        new_sid = cmux.new_split(direction="right")
+    except Exception as exc:
+        print(f"[cmux-sprint] surface.split failed: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if not new_sid:
+        print("[cmux-sprint] surface.split returned no surface_id", file=sys.stderr)
+        sys.exit(1)
+
+    # cd to sprint cwd then launch claude interactively
+    cwd = get_sprint_cwd(sprint_id)
+    cmux.send_surface(new_sid, f"cd {cwd}\n")
+    cmux.send_surface(new_sid, "claude\n")
+
+    # Give claude time to initialise before sending the prompt
+    time.sleep(1)
+
+    # Send the prompt text followed by Enter so claude starts processing
+    cmux.send_surface(new_sid, prompt_text + "\n")
+
+    # Return focus to the pane that called us
+    if original_sid:
+        try:
+            cmux.focus_surface(original_sid)
+        except Exception:
+            pass  # non-fatal
+
+    print(f"[cmux-sprint] launched {role} (wave {wave}) in pane {new_sid}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: poll-wave
+# ---------------------------------------------------------------------------
+
+def cmd_poll_wave(sprint_id: str, wave: int) -> None:
+    roles = WAVE_ROLES.get(wave)
+    if roles is None:
+        print(f"[cmux-sprint] unknown wave: {wave}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"[cmux-sprint] polling wave {wave} roles: {', '.join(roles)}")
+    deadline = time.time() + POLL_TIMEOUT
+
+    while True:
+        if time.time() > deadline:
+            print(
+                f"[cmux-sprint] WARNING: poll-wave {wave} timed out after 30 minutes.",
+                file=sys.stderr,
+            )
+            return
+
+        statuses = {role: read_status(sprint_id, role) for role in roles}
+        terminal = {"done", "failed"}
+        pending = [r for r, s in statuses.items() if s not in terminal]
+
+        if not pending:
+            failed = [r for r, s in statuses.items() if s == "failed"]
+            if failed:
+                print(
+                    f"[cmux-sprint] WARNING: wave {wave} completed with failures: {', '.join(failed)}",
+                    file=sys.stderr,
+                )
+            else:
+                print(f"[cmux-sprint] wave {wave} complete — all roles done.")
+            return
+
+        print(
+            f"[cmux-sprint] wave {wave}: waiting on {', '.join(pending)} …",
+            flush=True,
+        )
+        time.sleep(POLL_INTERVAL)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: gate
+# ---------------------------------------------------------------------------
+
+def cmd_gate(sprint_id: str, wave: int) -> None:
+    sd = sprint_dir(sprint_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    gate_path = sd / "gate.json"
+
+    if gate_path.exists():
+        try:
+            gate = json.loads(gate_path.read_text())
+        except Exception:
+            gate = {}
+    else:
+        gate = {}
+
+    unlocked: list[int] = gate.get("unlocked_waves", [])
+    next_wave = wave + 1
+
+    if next_wave not in unlocked:
+        unlocked.append(next_wave)
+
+    gate["unlocked_waves"] = unlocked
+    gate_path.write_text(json.dumps(gate, indent=2))
+
+    call_sprint_event(sprint_id, "gate_unlocked", json.dumps({"wave": next_wave}))
+    print(f"[cmux-sprint] gate: wave {next_wave} unlocked. gate.json -> {gate}")
+
+
+# ---------------------------------------------------------------------------
+# Usage / dispatch
+# ---------------------------------------------------------------------------
+
+USAGE = """\
+Usage: cmux-sprint <subcommand> [args...]
+
+Subcommands:
+  launch-lead <sprint_id> <role> <wave>
+      Open a new cmux pane for <role> and start an interactive claude session
+      with the role's prompt.
+
+  poll-wave <sprint_id> <wave>
+      Block until all roles in <wave> have status done or failed (or timeout).
+
+  gate <sprint_id> <wave>
+      Unlock wave+1 in gate.json and emit a gate_unlocked event.
+
+Wave->role mapping:
+  0  planning-lead
+  1  engineering-lead, frontend-lead, review-lead
+  2  qa-lead, security-lead
+  3  release-lead, docs-lead
+"""
+
+
+def main() -> None:
+    args = sys.argv[1:]
+
+    if not args or args[0] in ("-h", "--help"):
+        print(USAGE)
+        return
+
+    subcmd = args[0]
+
+    if subcmd == "launch-lead":
+        if len(args) < 4:
+            print("Usage: cmux-sprint launch-lead <sprint_id> <role> <wave>", file=sys.stderr)
+            sys.exit(1)
+        cmd_launch_lead(args[1], args[2], int(args[3]))
+
+    elif subcmd == "poll-wave":
+        if len(args) < 3:
+            print("Usage: cmux-sprint poll-wave <sprint_id> <wave>", file=sys.stderr)
+            sys.exit(1)
+        cmd_poll_wave(args[1], int(args[2]))
+
+    elif subcmd == "gate":
+        if len(args) < 3:
+            print("Usage: cmux-sprint gate <sprint_id> <wave>", file=sys.stderr)
+            sys.exit(1)
+        cmd_gate(args[1], int(args[2]))
+
+    else:
+        print(f"[cmux-sprint] unknown subcommand: {subcmd!r}", file=sys.stderr)
+        print(USAGE, file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

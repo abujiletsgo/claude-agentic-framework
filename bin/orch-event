@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# orch-event — Write a live orchestrate status event to /tmp/caf_orch_status.jsonl
+# Usage: orch-event <wave> <agent> <status> [summary]
+#   wave:   0, 1, 2, ... (wave number)
+#   agent:  researcher-1, builder-1, validator-1, etc.
+#   status: running | done | failed
+#   summary: optional one-line summary of what the agent did/found
+#
+# Called by the orchestrator after spawning or receiving results from each agent.
+set -euo pipefail
+
+if [[ $# -lt 3 ]]; then
+    echo "Usage: orch-event <wave> <agent> <status> [summary]" >&2
+    exit 1
+fi
+
+wave="$1"
+agent="$2"
+status="$3"
+summary="${4:-}"
+ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Escape summary for JSON
+summary_escaped="${summary//\\/\\\\}"
+summary_escaped="${summary_escaped//\"/\\\"}"
+
+if [[ -z "$summary_escaped" ]]; then
+    line="{\"ts\":\"${ts}\",\"wave\":${wave},\"agent\":\"${agent}\",\"status\":\"${status}\"}"
+else
+    line="{\"ts\":\"${ts}\",\"wave\":${wave},\"agent\":\"${agent}\",\"status\":\"${status}\",\"summary\":\"${summary_escaped}\"}"
+fi
+
+printf '%s\n' "$line" >> /tmp/caf_orch_status.jsonl

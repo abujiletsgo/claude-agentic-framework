@@ -27,7 +27,41 @@ Why: spawned subagents do not have the Agent tool — they cannot spawn further 
   Wave 2: validator-1
 ```
 
+## Dashboard Integration (MANDATORY)
+
+Before spawning each wave, call `orch-event` to stream live status to the dashboard panels:
+
+```bash
+# Before spawning Wave N agents — mark as running:
+Bash("bin/orch-event <N> <agent-name> running '<one-line description of what it will do>'")
+
+# After each agent returns — mark done or failed:
+Bash("bin/orch-event <N> <agent-name> done '<one-line summary of what it found/built>'")
+Bash("bin/orch-event <N> <agent-name> failed '<reason>'")
+```
+
+Also reset the status file at the start of each orchestration:
+```bash
+Bash("rm -f /tmp/caf_orch_status.jsonl")
+```
+
+Then, immediately after resetting the status file, register this task with the session tracker and open a dedicated report pane. Do this BEFORE spawning any agents:
+```bash
+# 1. Register task — this writes /tmp/caf_session/<session_id>/current_task_id
+Bash("bin/session-event task_start '<task description>' orchestrate")
+
+# 2. Read the task_id assigned by session-event:
+#    task_id = int(open(f"/tmp/caf_session/{SESSION_ID}/current_task_id").read().strip())
+
+# 3. Open a dedicated report pane for this task:
+Bash("bin/open-task-pane <task_id> '<task description>' orchestrate")
+```
+
+The task_id is a monotonically increasing integer written to `/tmp/caf_session/<session_id>/current_task_id` by `session-event task_start`. Read it after calling task_start, before calling open-task-pane.
+
 ### 2. Spawn research agents — ALL in ONE message
+
+Before spawning, call orch-event for each researcher (status: running). After results return, call orch-event (status: done/failed) with a one-line summary.
 
 ```python
 Agent(name="researcher-1", model="sonnet", prompt="...")  # \
@@ -36,6 +70,8 @@ Agent(name="researcher-2", model="sonnet", prompt="...")  #  } ONE message = par
 
 ### 3. Synthesize research, write plan, spawn builders — ALL in ONE message
 
+Before spawning builders, call orch-event (status: running). After results, call orch-event (done/failed).
+
 ```python
 Write("/tmp/caf_plan.md", plan_content)
 Agent(name="builder-1", model="sonnet", prompt="Read /tmp/caf_plan.md section 1...")  # \
@@ -43,6 +79,8 @@ Agent(name="builder-2", model="haiku", prompt="Read /tmp/caf_plan.md section 2..
 ```
 
 ### 4. Validate — MANDATORY after every build
+
+Call orch-event before and after validator.
 
 ```python
 Agent(name="validator-1", model="haiku", prompt="Verify the changes match the plan...")
@@ -114,6 +152,11 @@ When a specialized workflow outperforms a generic builder:
 
 ### Verification
 [PASS/FAIL]
+```
+
+After the validator returns PASS, close out the session task record:
+```bash
+Bash("bin/session-event task_done '<task description>'")
 ```
 
 See `global-agents/orchestrator.md` for the full reference protocol (if using Claude Agentic Framework).

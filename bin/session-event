@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    printf 'Usage: %s <event_type> <task_name> [task_type]\n' "$(basename "$0")" >&2
+    printf '\nValid event_types:\n' >&2
+    printf '  task_start   — begin tracking a task (task_type required)\n' >&2
+    printf '  task_done    — mark task completed\n' >&2
+    printf '  task_failed  — mark task failed\n' >&2
+    printf '\nValid task_types (for task_start):\n' >&2
+    printf '  orchestrate | sprint | other\n' >&2
+    exit 1
+}
+
+if [[ $# -lt 2 ]]; then
+    usage
+fi
+
+event_type="$1"
+task_name="$2"
+task_type="${3:-other}"
+
+# Derive SESSION_ID from env or generate a fallback
+if [[ -z "${SESSION_ID:-}" ]]; then
+    SESSION_ID="session_$(date +%Y%m%d_%H%M%S)"
+fi
+
+SESSION_DIR="/tmp/caf_session/${SESSION_ID}"
+mkdir -p "${SESSION_DIR}"
+
+tasks_file="${SESSION_DIR}/tasks.jsonl"
+ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+if [[ "${event_type}" == "task_start" ]]; then
+    # Increment task_id counter
+    current="$(cat "${SESSION_DIR}/current_task_id" 2>/dev/null || echo 0)"
+    task_id=$(( current + 1 ))
+    printf '%s' "${task_id}" > "${SESSION_DIR}/current_task_id"
+
+    # Write global session pointer
+    printf '%s' "${SESSION_ID}" > "/tmp/caf_session/current_session_id"
+
+    status="running"
+    json_line="{\"ts\":\"${ts}\",\"session_id\":\"${SESSION_ID}\",\"task_id\":${task_id},\"task_name\":\"${task_name}\",\"type\":\"${event_type}\",\"status\":\"${status}\",\"cwd\":\"${PWD}\",\"task_type\":\"${task_type}\"}"
+
+elif [[ "${event_type}" == "task_done" || "${event_type}" == "task_failed" ]]; then
+    # Find task_id by grepping tasks.jsonl for the last line with matching task_name
+    if [[ ! -f "${tasks_file}" ]]; then
+        printf '[session-event] ERROR: no tasks.jsonl found at %s\n' "${tasks_file}" >&2
+        exit 1
+    fi
+
+    task_id="$(grep "\"task_name\":\"${task_name}\"" "${tasks_file}" \
+        | tail -1 \
+        | python3 -c "import sys,json; print(json.loads(sys.stdin.read())['task_id'])")"
+
+    if [[ -z "${task_id}" ]]; then
+        printf '[session-event] ERROR: could not find task_id for task_name "%s"\n' "${task_name}" >&2
+        exit 1
+    fi
+
+    status="$([ "${event_type}" = "task_done" ] && echo "done" || echo "failed")"
+    json_line="{\"ts\":\"${ts}\",\"session_id\":\"${SESSION_ID}\",\"task_id\":${task_id},\"task_name\":\"${task_name}\",\"type\":\"${event_type}\",\"status\":\"${status}\",\"cwd\":\"${PWD}\"}"
+
+else
+    printf '[session-event] ERROR: unknown event_type "%s"\n' "${event_type}" >&2
+    usage
+fi
+
+printf '%s\n' "${json_line}" >> "${tasks_file}"

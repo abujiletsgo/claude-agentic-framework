@@ -27,6 +27,15 @@ ipc_dir="/tmp/caf_sprint/${sprint_id}"
 mkdir -p "${ipc_dir}"
 events_file="${ipc_dir}/events.jsonl"
 
+# Write cwd on first event so dashboard can filter by project
+cwd_file="${ipc_dir}/cwd"
+if [[ ! -f "${cwd_file}" ]]; then
+    printf '%s' "${PWD}" > "${cwd_file}"
+fi
+
+# Update current_sprint_id pointer
+printf '%s' "${sprint_id}" > "/tmp/caf_sprint/current_sprint_id"
+
 # Build base JSON fields
 base='"ts":"'"${ts}"'","sprint":"'"${sprint_id}"'","type":"'"${event_type}"'"'
 

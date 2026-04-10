@@ -1,383 +1,621 @@
 #!/usr/bin/env python3
 """
-CAF Sprint Report — bottom-right pane.
-Appends completed lead summaries as they finish. Readable, scrollable.
-
-Live mode:  python3 dashboard/sprint_report.py <sprint_id>
-Demo mode:  python3 dashboard/sprint_report.py demo
+CAF Sprint Report — always-on dashboard panel.
+Polls every 5s. Clear + redraw. No args, no demo, no mode switching.
 """
-import sys, os, re, json, time, shutil
+import json
+import os
+import sys
+import time
+import shutil
+from datetime import datetime, timezone
 from pathlib import Path
-from datetime import datetime, UTC
 
 # ── ANSI ──────────────────────────────────────────────────────────────────────
 R  = "\033[0m"
 B  = "\033[1m"
-D  = "\033[2m"
-CY = "\033[36m"
-GR = "\033[32m"
-YL = "\033[33m"
-RD = "\033[31m"
-M  = "\033[35m"
-BL = "\033[34m"
-WH = "\033[97m"
+CY = "\033[96m"
+GR = "\033[92m"
+YL = "\033[93m"
+RD = "\033[91m"
+M  = "\033[95m"
 
-STRIP_ANSI = re.compile(r'\033\[[0-9;]*m')
+# ── Constants ─────────────────────────────────────────────────────────────────
+SPRINT_BASE = Path("/tmp/caf_sprint")
+ACTIVITY_LOG = Path.home() / ".claude/data/activity_log.jsonl"
+SESSION_BASE = Path("/tmp/caf_session")
 
-def cols(): return shutil.get_terminal_size((100, 40)).columns
-def rule(c="─", color=D): print(f"{color}{c * cols()}{R}")
-def w(n=0): return cols() - n
+LEAD_ORDER = [
+    "planning-lead",
+    "engineering-lead",
+    "frontend-lead",
+    "review-lead",
+    "qa-lead",
+    "security-lead",
+    "release-lead",
+    "docs-lead",
+]
 
+WAVE_LABELS = {0: "PLAN", 1: "BUILD", 2: "VALIDATE", 3: "SHIP"}
 
-# ── Report entry renderer ─────────────────────────────────────────────────────
-
-WAVE_LABEL = {0: "PLAN", 1: "BUILD", 2: "VALIDATE", 3: "SHIP"}
-WAVE_COLOR = {0: BL, 1: CY, 2: M, 3: GR}
-
-def print_header(sprint_id: str, started_at: str):
-    print()
-    rule("━", CY)
-    print(f"{B}{CY}  SPRINT REPORT  ·  {sprint_id}{R}")
-    print(f"{D}  started {started_at}{R}")
-    rule("━", CY)
-
-def print_lead_report(role: str, info: dict, log_lines: list[str], finished_at: str):
-    """Print a full readable section for one completed lead."""
-    wave  = info.get("wave", 0)
-    wc    = WAVE_COLOR.get(wave, CY)
-    wl    = WAVE_LABEL.get(wave, f"W{wave}")
-    status = info.get("status", "done")
-    sc    = GR if status == "done" else RD
-    chip  = f"{sc}{'✓ DONE' if status == 'done' else '✗ FAILED'}{R}"
-
-    print()
-    print(f"  {wc}{B}{'─' * 4}  {role.upper()}  [{wl}]{R}  {chip}  {D}{finished_at}{R}")
-    print()
-
-    # Parse log into sections
-    done_tasks = []
-    failed_tasks = []
-    decisions = []
-    files_changed = []
-    test_results = []
-    output_summary = None
-
-    for raw in log_lines:
-        l = STRIP_ANSI.sub("", raw).strip()
-        if l.startswith("✓ "):
-            done_tasks.append(l[2:])
-        elif l.startswith("✗ "):
-            failed_tasks.append(l[2:])
-        # heuristics for structured output leads write
-        if any(x in l.lower() for x in ["changed", "modified", ".py", ".ts", ".yaml", ".json", ".md"]) \
-                and ("file" in l.lower() or "." in l):
-            files_changed.append(l)
-        if any(x in l.lower() for x in ["test", "pass", "fail", "assert", "spec", "e2e", "coverage"]):
-            test_results.append(l)
-        if any(x in l.lower() for x in ["decided", "adr", "selected", "approved", "rejected", "chose"]):
-            decisions.append(l)
-        if ("DONE" in l or "complete" in l.lower()) and len(l) < 120 and "━" not in l:
-            output_summary = l
-
-    # ── Accomplished ──────────────────────────────────────────────────────────
-    if done_tasks:
-        print(f"  {B}Accomplished{R}")
-        for t in done_tasks:
-            print(f"    {GR}✓{R}  {t}")
-        print()
-
-    # ── Decisions ────────────────────────────────────────────────────────────
-    if decisions:
-        print(f"  {B}Decisions{R}")
-        seen = set()
-        for d in decisions:
-            if d not in seen:
-                seen.add(d)
-                print(f"    {BL}→{R}  {d}")
-        print()
-
-    # ── Files changed ─────────────────────────────────────────────────────────
-    if files_changed:
-        print(f"  {B}Files{R}")
-        seen = set()
-        for f in files_changed[:6]:
-            if f not in seen:
-                seen.add(f)
-                print(f"    {D}·{R}  {f}")
-        print()
-
-    # ── Test results ──────────────────────────────────────────────────────────
-    if test_results:
-        print(f"  {B}Tests{R}")
-        seen = set()
-        for t in test_results[:4]:
-            if t not in seen:
-                seen.add(t)
-                color = GR if "pass" in t.lower() else (RD if "fail" in t.lower() else D)
-                print(f"    {color}{t}{R}")
-        print()
-
-    # ── Failed tasks ──────────────────────────────────────────────────────────
-    if failed_tasks:
-        print(f"  {B}{RD}Failures{R}")
-        for t in failed_tasks:
-            print(f"    {RD}✗{R}  {t}")
-        print()
-
-    # ── Summary line ──────────────────────────────────────────────────────────
-    if output_summary:
-        print(f"  {D}└─ {output_summary}{R}")
-
-    rule()
+# Lead -> wave assignment by index (approx): first 2=W0, next 3=W1, next 2=W2, last 1=W3
+LEAD_WAVE = {
+    "planning-lead":    0,
+    "engineering-lead": 1,
+    "frontend-lead":    1,
+    "review-lead":      1,
+    "qa-lead":          2,
+    "security-lead":    2,
+    "release-lead":     3,
+    "docs-lead":        3,
+}
 
 
-def print_sprint_summary(sprint_id: str, status_data: dict, duration_s: int):
-    """Final summary block printed when all leads finish."""
-    leads  = {k: v for k, v in status_data.items() if isinstance(v, dict)}
-    n_done = sum(1 for v in leads.values() if v.get("status") == "done")
-    n_fail = sum(1 for v in leads.values() if v.get("status") == "failed")
-    mins   = duration_s // 60
-    secs   = duration_s % 60
+# ── Terminal helpers ──────────────────────────────────────────────────────────
 
-    print()
-    rule("━", GR if not n_fail else RD)
-    if not n_fail:
-        print(f"  {B}{GR}✓  SPRINT COMPLETE{R}  {D}{sprint_id}{R}")
-    else:
-        print(f"  {B}{RD}✗  SPRINT FINISHED WITH {n_fail} FAILURE(S){R}")
-    print(f"  {D}{n_done} leads done  ·  {mins:02d}:{secs:02d} elapsed{R}")
-    print()
-
-    # Wave summary
-    waves_done = sorted(set(v.get("wave", 0) for v in leads.values()))
-    for wn in waves_done:
-        wl    = WAVE_LABEL.get(wn, f"W{wn}")
-        wc    = WAVE_COLOR.get(wn, CY)
-        roles = [k for k, v in leads.items() if isinstance(v, dict) and v.get("wave") == wn]
-        stati = [v.get("status","?") for v in leads.values() if isinstance(v, dict) and v.get("wave") == wn]
-        all_ok = all(s == "done" for s in stati)
-        icon   = f"{GR}✓{R}" if all_ok else f"{RD}✗{R}"
-        print(f"  {icon}  {wc}Wave {wn} — {wl}{R}  {D}{', '.join(roles)}{R}")
-
-    print()
-    rule("━", GR if not n_fail else RD)
+def term_width() -> int:
+    return shutil.get_terminal_size((100, 40)).columns
 
 
-# ── IPC helpers ───────────────────────────────────────────────────────────────
+def trunc(line: str, w: int) -> str:
+    """Truncate line to w chars."""
+    if len(line) > w:
+        return line[:w - 1] + "…"
+    return line
 
-def read_status(sprint_id: str) -> dict:
+
+def out(line: str = ""):
+    w = term_width() - 2
+    print(trunc(line, w))
+
+
+# ── Data readers ──────────────────────────────────────────────────────────────
+
+def sprint_cwd(sprint_id: str) -> str | None:
+    """Read cwd file from sprint dir, return cwd string or None."""
     try:
-        return json.loads(Path(f"/tmp/caf_sprint/{sprint_id}/status.json").read_text())
+        return (SPRINT_BASE / sprint_id / "cwd").read_text().strip() or None
+    except Exception:
+        return None
+
+
+def sprint_matches_project(sprint_id: str) -> bool:
+    """True if sprint belongs to PROJECT_CWD (or no filter set)."""
+    if not PROJECT_CWD:
+        return True
+    cwd = sprint_cwd(sprint_id)
+    if cwd is None:
+        return False  # no cwd file = unknown project, hide when filtering
+    return cwd == PROJECT_CWD
+
+
+def find_active_sprint() -> str | None:
+    """Return sprint_id if current_sprint_id pointer exists, dir exists, and matches project."""
+    pointer = SPRINT_BASE / "current_sprint_id"
+    try:
+        sprint_id = pointer.read_text().strip()
+        if sprint_id and (SPRINT_BASE / sprint_id).is_dir() and sprint_matches_project(sprint_id):
+            return sprint_id
+    except Exception:
+        pass
+    return None
+
+
+def find_last_sprint() -> str | None:
+    """Scan /tmp/caf_sprint/ dirs by mtime descending, pick most recent matching sprint dir."""
+    try:
+        if not SPRINT_BASE.exists():
+            return None
+        dirs = sorted(
+            (d for d in SPRINT_BASE.iterdir() if d.is_dir()),
+            key=lambda d: d.stat().st_mtime,
+            reverse=True,
+        )
+        for d in dirs:
+            if sprint_matches_project(d.name):
+                return d.name
+    except Exception:
+        pass
+    return None
+
+
+def read_events(sprint_id: str) -> list:
+    """Read events.jsonl for a sprint, return list of dicts."""
+    path = SPRINT_BASE / sprint_id / "events.jsonl"
+    events = []
+    try:
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    events.append(json.loads(line))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return events
+
+
+def read_all_statuses(sprint_id: str) -> dict:
+    """Read all <role>.status files, return {role: {status, error}}."""
+    result = {}
+    base = SPRINT_BASE / sprint_id
+    try:
+        for lead in LEAD_ORDER:
+            status_file = base / f"{lead}.status"
+            try:
+                data = json.loads(status_file.read_text())
+                result[lead] = data
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return result
+
+
+def read_gate(sprint_id: str) -> dict:
+    """Read gate.json, return dict."""
+    path = SPRINT_BASE / sprint_id / "gate.json"
+    try:
+        return json.loads(path.read_text())
     except Exception:
         return {}
 
-def read_log(sprint_id: str, role: str, n: int = 80) -> list[str]:
-    f = Path(f"/tmp/caf_sprint/{sprint_id}/logs/{role}.log")
+
+def current_wave_from_events(events: list) -> int:
+    """Determine current wave from wave_start events."""
+    wave = 0
+    for ev in events:
+        if ev.get("type") == "wave_start":
+            w = ev.get("wave")
+            if isinstance(w, int) and w > wave:
+                wave = w
+    return wave
+
+
+def read_report_md(sprint_id: str) -> dict:
+    """Parse report.md for wave completion status.
+    Returns {wave_idx: 'done'|'failed'|None, 'complete': bool, 'mtime': float}."""
+    import re
+    path = SPRINT_BASE / sprint_id / "report.md"
+    result = {"complete": False, "mtime": None}
     try:
-        lines = f.read_text(errors="replace").splitlines()
-        return [l for l in lines if l.strip()][-n:]
+        text = path.read_text(errors="replace")
+        result["mtime"] = path.stat().st_mtime
+        result["complete"] = "COMPLETE" in text and "✓" in text
+        for m in re.finditer(r"##\s+Wave\s+(\d+)[^✓✗\n]*([✓✗])?", text):
+            wn = int(m.group(1))
+            mark = m.group(2)
+            if mark == "✓":
+                result[wn] = "done"
+            elif mark == "✗":
+                result[wn] = "failed"
+            else:
+                result[wn] = None
     except Exception:
-        return []
+        pass
+    return result
 
 
-# ── Live mode ─────────────────────────────────────────────────────────────────
-
-ROLE_ORDER = ["planning-lead", "engineering-lead", "review-lead",
-              "qa-lead", "security-lead", "release-lead", "infra-lead", "docs-lead"]
-
-def run_live(sprint_id: str, poll: int = 3):
-    started_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
-    start_ts   = time.time()
-    reported   = set()
-
-    print_header(sprint_id, started_at)
-    print(f"  {D}Waiting for leads to complete...{R}")
-
-    while True:
-        status = read_status(sprint_id)
-        leads  = {k: v for k, v in status.items() if isinstance(v, dict)}
-
-        for role in ROLE_ORDER:
-            if role in leads and role not in reported:
-                info = leads[role]
-                if info.get("status") in ("done", "failed"):
-                    log   = read_log(sprint_id, role)
-                    ts    = datetime.now(UTC).strftime("%H:%M UTC")
-                    print_lead_report(role, info, log, ts)
-                    reported.add(role)
-
-        all_done = leads and all(v.get("status") in ("done","failed") for v in leads.values())
-        if all_done:
-            print_sprint_summary(sprint_id, status, int(time.time() - start_ts))
-            break
-
-        time.sleep(poll)
+PROJECT_CWD: "str | None" = None
 
 
-# ── Demo mode ─────────────────────────────────────────────────────────────────
-
-DEMO_REPORTS = [
-    ("planning-lead", {"status":"done","wave":0}, [
-        "✓ reviewed existing auth design — middleware.py, session.py, auth/utils.py",
-        "✓ identified 3 migration risks: token leakage on refresh, replay attacks, clock skew",
-        "✓ drafted ADR-012: JWT RS256 selected over session tokens",
-        "    decided: RS256 asymmetric signing — public key verifiable by all services",
-        "    decided: 15min access token + 7-day refresh with rotation",
-        "    decided: Redis blacklist for logout invalidation",
-        "✓ validated against OWASP Top-10 auth checklist — all items addressed",
-        "✓ published migration plan to /tmp/caf_sprint/sprint-001/results/planning_result.md",
-        "DONE — ADR-012 written. JWT RS256 selected. 3 risks mitigated in plan.",
-    ], 1.5),
-    ("engineering-lead", {"status":"done","wave":1}, [
-        "✓ read ADR-012 and migration plan (2,400 tokens context)",
-        "✓ scaffolded auth/jwt_handler.py — sign_token(), verify_token(), refresh_token()",
-        "✓ updated auth/middleware.py — replaced session.get() with jwt.verify()",
-        "✓ updated auth/utils.py — added token blacklist check via Redis",
-        "    modified: auth/jwt_handler.py  (+218 lines)",
-        "    modified: auth/middleware.py   (+34 / -21 lines)",
-        "    modified: auth/utils.py        (+12 lines)",
-        "    modified: openapi.yaml         (+40 lines — new /auth/refresh endpoint)",
-        "✓ implemented validate_token() + refresh_token() with clock skew tolerance (30s)",
-        "✓ 12/12 unit tests passing — jwt_handler_test.py",
-        "    test: test_sign_verify PASS",
-        "    test: test_expired_token PASS",
-        "    test: test_clock_skew_tolerance PASS",
-        "    test: test_refresh_rotation PASS",
-        "DONE — 3 files changed, 264 insertions, 21 deletions. 12/12 tests green. Wave 1 gate unlocked.",
-    ], 1.5),
-    ("review-lead", {"status":"done","wave":2}, [
-        "✓ read jwt_handler.py diff — 218 lines, clean structure",
-        "✓ no hardcoded secrets, no debug logs with token values",
-        "✓ checked token expiry handling — correct, uses UTC timestamps",
-        "✓ clock skew tolerance (30s) is appropriate — consistent with industry standard",
-        "✓ error responses follow RFC 7807 — no token data leaked in errors",
-        "✓ refresh token rotation implemented correctly — old token invalidated on use",
-        "    decided: filed nit #1 — add type hints to verify_token() return value",
-        "    decided: filed nit #2 — extract magic number 30 to AUTH_CLOCK_SKEW_SECONDS config",
-        "DONE — LGTM. 2 minor nits filed as issues #234 and #235. No blockers. Approved.",
-    ], 1.5),
-    ("qa-lead", {"status":"done","wave":2}, [
-        "✓ booted test environment — docker-compose up, all services healthy",
-        "✓ E2E: login flow — POST /auth/login → 200 + JWT returned  PASS",
-        "✓ E2E: valid token accepted — GET /api/me with valid JWT → 200  PASS",
-        "✓ E2E: token refresh — POST /auth/refresh → new token pair  PASS",
-        "✓ E2E: expired token rejected — GET /api/me with expired JWT → 401  PASS",
-        "✓ E2E: logout + blacklist — POST /auth/logout → token invalidated → 401  PASS",
-        "✓ E2E: replay attack prevention — reuse of rotated refresh token → 401  PASS",
-        "    test: 6/6 E2E scenarios PASS",
-        "    test: 14/14 regression tests PASS (existing session-based tests adapted)",
-        "    test: 0 failures, 0 flakes",
-        "DONE — All 20 tests passed (6 E2E + 14 regression). Zero failures. Zero flakes.",
-    ], 1.5),
-    ("security-lead", {"status":"done","wave":3}, [
-        "✓ scanned all dependencies — 0 critical, 2 low CVEs (non-auth)",
-        "✓ audited JWT RS256 config — key size 2048-bit, appropriate",
-        "✓ verified token expiry enforced at middleware layer",
-        "✓ confirmed no secrets in source (gitleaks scan clean)",
-        "    decided: approved auth implementation for production",
-        "DONE — 0 critical findings. JWT config approved. Security sign-off granted.",
-    ], 1.5),
-    ("release-lead", {"status":"done","wave":3}, [
-        "✓ merged auth feature branch to main",
-        "✓ tagged v2.1.0 — auth JWT migration complete",
-        "✓ built docker image: myapp:v2.1.0 (412MB)",
-        "    modified: Dockerfile (+3 lines — REDIS_URL env)",
-        "    modified: docker-compose.yaml (+redis service)",
-        "✓ pushed to registry: registry.example.com/myapp:v2.1.0",
-        "✓ triggered staging deploy — all health checks green",
-        "DONE — v2.1.0 tagged and pushed. Staging healthy.",
-    ], 0),
-]
-
-def run_demo():
-    started_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
-    start_ts   = time.time()
-
-    print_header("sprint-demo-001", started_at)
-    print(f"  {D}Waiting for leads to complete...{R}")
-
-    for role, info, log_lines, pause in DEMO_REPORTS:
-        if pause > 0:
-            time.sleep(pause)
-        ts = datetime.now(UTC).strftime("%H:%M UTC")
-        print_lead_report(role, info, log_lines, ts)
-        if pause > 0:
-            time.sleep(pause * 0.5)
-
-    fake_status = {role: info for role, info, _, _ in DEMO_REPORTS}
-    print_sprint_summary("sprint-demo-001", fake_status, int(time.time() - start_ts))
-
-
-# ── Idle mode ─────────────────────────────────────────────────────────────────
-
-def _last_sprint_id() -> str | None:
-    """Return most recently archived sprint id, or None."""
-    archive = Path.home() / ".claude/data/sprint_events"
-    if not archive.exists():
+def find_current_session() -> "str | None":
+    try:
+        return (SESSION_BASE / "current_session_id").read_text().strip() or None
+    except Exception:
         return None
-    files = sorted(archive.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
-    return files[-1].stem if files else None
 
 
-def run_idle(poll: int = 5):
-    """Show idle panel until a live sprint appears, then hand off to run_live."""
-    ipc_base = Path("/tmp/caf_sprint")
-    last_sprint = _last_sprint_id()
+def read_session_tasks() -> list:
+    """Read tasks.jsonl, return latest-status dict per task_id, sorted by task_id."""
+    session_id = find_current_session()
+    if not session_id: return []
+    path = SESSION_BASE / session_id / "tasks.jsonl"
+    by_task = {}
+    try:
+        for line in path.read_text().splitlines():
+            if not line.strip(): continue
+            try:
+                e = json.loads(line)
+                tid = e.get("task_id")
+                if tid is None: continue
+                # keep latest ts per task_id
+                if tid not in by_task or e.get("ts","") > by_task[tid].get("ts",""):
+                    by_task[tid] = e
+                # preserve start_ts separately
+                if e.get("type") == "task_start":
+                    by_task.setdefault(tid, {})["start_ts"] = e.get("ts","")
+            except Exception:
+                pass
+    except Exception:
+        pass
+    # Second pass: attach start_ts to all entries
+    start_ts_map = {}
+    try:
+        for line in path.read_text().splitlines():
+            if not line.strip(): continue
+            try:
+                e = json.loads(line)
+                if e.get("type") == "task_start":
+                    start_ts_map[e.get("task_id")] = e.get("ts","")
+            except Exception:
+                pass
+    except Exception:
+        pass
+    result = []
+    for tid, ev in sorted(by_task.items()):
+        ev["start_ts"] = start_ts_map.get(tid, ev.get("ts",""))
+        result.append(ev)
+    return result
 
-    while True:
-        # Check if a sprint has started while we were idle
-        if ipc_base.exists():
-            sprints = sorted(
-                (d for d in ipc_base.iterdir() if d.is_dir()),
-                key=lambda d: d.stat().st_mtime,
-                reverse=True,
+
+def read_activity_log(n: int = 3) -> list:
+    """Read last n entries from activity_log.jsonl, filtered by PROJECT_CWD if set."""
+    entries = []
+    try:
+        lines = ACTIVITY_LOG.read_text().splitlines()
+        for line in reversed(lines):
+            line = line.strip()
+            if line:
+                try:
+                    e = json.loads(line)
+                    if PROJECT_CWD and e.get("cwd") != PROJECT_CWD:
+                        continue
+                    entries.append(e)
+                    if len(entries) >= n:
+                        break
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return entries  # most recent first
+
+
+# ── Formatters ────────────────────────────────────────────────────────────────
+
+def calc_elapsed(start_ts: str, end_ts: "str | None") -> str:
+    """Returns elapsed as 'Xm' or 'ongoing'."""
+    try:
+        start = parse_ts(start_ts)
+        end = parse_ts(end_ts) if end_ts else time.time()
+        if start is None: return ""
+        secs = int((end or time.time()) - start)
+        if secs < 60: return f"{secs}s"
+        return f"{secs // 60}m"
+    except Exception:
+        return ""
+
+
+def progress_bar(filled: int, total: int, width: int = 20) -> str:
+    if total == 0:
+        pct = 0
+        n = 0
+    else:
+        pct = int(filled / total * 100)
+        n = int(filled / total * width)
+    bar = "#" * n + "." * (width - n)
+    return f"[{bar}]  {pct}%"
+
+
+def format_elapsed(start_ts: float) -> str:
+    """Format elapsed seconds as HH:MM."""
+    elapsed = int(time.time() - start_ts)
+    hours = elapsed // 3600
+    mins = (elapsed % 3600) // 60
+    return f"{hours:02d}:{mins:02d}"
+
+
+def parse_ts(ts_str: str) -> float | None:
+    """Parse ISO timestamp to float, return None on failure."""
+    if not ts_str:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            dt = datetime.strptime(ts_str.replace("Z", "+00:00") if ts_str.endswith("Z") else ts_str, fmt)
+            return dt.timestamp()
+        except Exception:
+            pass
+    try:
+        return float(ts_str)
+    except Exception:
+        return None
+
+
+def fmt_hhmm(ts_str: str) -> str:
+    """Format a timestamp string as HH:MM."""
+    ts = parse_ts(ts_str)
+    if ts is None:
+        return "??:??"
+    dt = datetime.fromtimestamp(ts)
+    return dt.strftime("%H:%M")
+
+
+def fmt_date(ts_str: str) -> str:
+    """Format timestamp as YYYY-MM-DD."""
+    ts = parse_ts(ts_str)
+    if ts is None:
+        return "????"
+    dt = datetime.fromtimestamp(ts)
+    return dt.strftime("%Y-%m-%d")
+
+
+# ── Render: session summary ───────────────────────────────────────────────────
+
+def render_session_summary() -> None:
+    tasks = read_session_tasks()
+    if not tasks:
+        out(f"  (no tasks this session)")
+        return
+    session_id = find_current_session() or ""
+    # Extract date from session_id like "session_20260410_142300"
+    parts = session_id.split("_")
+    date_str = parts[1] if len(parts) > 1 else session_id[:10]
+    out(f"{B}SESSION  {date_str}  [{len(tasks)} tasks]{R}")
+    out()
+    ICONS = {"done": f"{GR}✓{R}", "failed": f"{RD}✗{R}", "running": f"{YL}►{R}"}
+    for ev in tasks:
+        status = ev.get("status", "pending")
+        icon = ICONS.get(status, "○")
+        name = (ev.get("task_name","") or "")[:35].ljust(35)
+        ttype = (ev.get("task_type","") or "")[:12].ljust(12)
+        start_ts = ev.get("start_ts", ev.get("ts",""))
+        end_ts = ev.get("ts","") if ev.get("type") in ("task_done","task_failed") else None
+        elapsed = calc_elapsed(start_ts, end_ts)
+        start_hm = fmt_hhmm(start_ts) if start_ts else "??:??"
+        tid = ev.get("task_id","")
+        out(f"  {tid:>3}  {icon}  {name}  {start_hm}  {ttype}  {elapsed}")
+
+
+# ── Render: sprint active ─────────────────────────────────────────────────────
+
+def render_sprint(sprint_id: str):
+    events   = read_events(sprint_id)
+    statuses = read_all_statuses(sprint_id)
+    report   = read_report_md(sprint_id)
+
+    cur_wave = current_wave_from_events(events)
+    # If no events but report.md says complete, treat as past last wave
+    if not events and report.get("complete"):
+        cur_wave = max((k for k in report if isinstance(k, int)), default=0)
+    wave_label = WAVE_LABELS.get(cur_wave, f"W{cur_wave}")
+
+    out(f"{B}{CY}SPRINT  {sprint_id}  [W{cur_wave} — {wave_label}]{R}")
+    out()
+
+    # Group leads by wave
+    waves: dict[int, list[str]] = {}
+    for lead in LEAD_ORDER:
+        w = LEAD_WAVE.get(lead, 0)
+        waves.setdefault(w, []).append(lead)
+
+    max_wave = max(waves.keys()) if waves else 3
+
+    # Determine wave completion status
+    for wn in sorted(waves.keys()):
+        wlabel = WAVE_LABELS.get(wn, f"W{wn}")
+        leads_in_wave = waves[wn]
+
+        # Wave-level status
+        lead_statuses_in_wave = [statuses.get(l, {}) for l in leads_in_wave]
+        done_leads = [l for l in leads_in_wave if statuses.get(l, {}).get("status") == "done"]
+        failed_leads = [l for l in leads_in_wave if statuses.get(l, {}).get("status") == "failed"]
+        running_leads = [l for l in leads_in_wave if l in statuses and statuses[l].get("status") not in ("done", "failed")]
+        waiting_leads = [l for l in leads_in_wave if l not in statuses]
+
+        all_done = len(done_leads) == len(leads_in_wave)
+        any_running = len(running_leads) > 0 or (wn == cur_wave and not all_done and len(done_leads) + len(failed_leads) < len(leads_in_wave))
+
+        # Fall back to report.md if no .status files
+        report_wave = report.get(wn)
+        if all_done and not failed_leads:
+            wave_icon = f"{GR}✓{R}"
+        elif failed_leads or report_wave == "failed":
+            wave_icon = f"{RD}✗{R}"
+        elif report_wave == "done" or wn < cur_wave:
+            wave_icon = f"{GR}✓{R}"
+        elif wn == cur_wave:
+            wave_icon = f"{YL}►{R}"
+        else:
+            wave_icon = "○"
+
+        # Build lead chips
+        lead_chips = []
+        for lead in leads_in_wave:
+            st = statuses.get(lead, {})
+            status_val = st.get("status", "")
+            if status_val == "done":
+                icon = f"{GR}✓{R}"
+            elif status_val == "failed":
+                icon = f"{RD}✗{R}"
+            elif lead in statuses:
+                icon = f"{YL}►{R}"
+            else:
+                icon = "○"
+            lead_chips.append(f"{lead} {icon}")
+
+        chips_str = "  ".join(lead_chips) if lead_chips else ""
+        wlabel_padded = f"W{wn} {wlabel:<8}"
+        if chips_str:
+            out(f"  {wlabel_padded} {wave_icon}  {chips_str}")
+        else:
+            out(f"  {wlabel_padded} {wave_icon}")
+
+    out()
+
+    # Progress bar
+    completed_waves = sum(1 for wn in waves if wn < cur_wave) + (
+        1 if all(statuses.get(l, {}).get("status") in ("done", "failed")
+                 for l in waves.get(cur_wave, [])) else 0
+    )
+    total_waves = max_wave + 1
+
+    # Elapsed from first event or report.md mtime
+    elapsed_str = "00:00"
+    if events:
+        first_ts = parse_ts(events[0].get("ts", ""))
+        if first_ts:
+            elapsed_str = format_elapsed(first_ts)
+    elif report.get("mtime"):
+        elapsed_str = format_elapsed(report["mtime"])
+
+    bar = progress_bar(completed_waves, total_waves)
+    out(f"  {B}Progress:{R} {bar}   elapsed {elapsed_str}")
+
+
+# ── Render: no sprint ─────────────────────────────────────────────────────────
+
+def render_no_sprint():
+    out(f"{B}{YL}NO SPRINT ACTIVE{R}")
+
+    last_id = find_last_sprint()
+    if last_id:
+        # Try events.jsonl first, fall back to report.md mtime
+        last_events = read_events(last_id)
+        if last_events:
+            last_ts = last_events[-1].get("ts", "")
+            last_date = fmt_date(last_ts) if last_ts else "unknown"
+        else:
+            sprint_dir = SPRINT_BASE / last_id
+            try:
+                mtime = max(f.stat().st_mtime for f in sprint_dir.iterdir() if f.is_file())
+                last_date = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
+            except Exception:
+                last_date = "unknown"
+
+        report_path = SPRINT_BASE / last_id / "report.md"
+        if report_path.exists():
+            try:
+                first_line = report_path.read_text().splitlines()[3].strip()  # "Status: COMPLETE ✓"
+                state = "completed" if "COMPLETE" in first_line else "unknown"
+            except Exception:
+                state = "unknown"
+        else:
+            last_statuses = read_all_statuses(last_id)
+            all_done = bool(last_statuses) and all(
+                v.get("status") in ("done", "failed") for v in last_statuses.values()
             )
-            for d in sprints:
-                status_file = d / "status.json"
-                if status_file.exists():
-                    try:
-                        data = json.loads(status_file.read_text())
-                        if any(isinstance(v, dict) for v in data.values()):
-                            # Live sprint detected — hand off, then return to idle
-                            sys.stdout.write("\033[2J\033[H")
-                            run_live(d.name, poll=poll)
-                            last_sprint = d.name  # update last sprint id
-                            break  # fall back to idle loop
-                    except Exception:
-                        pass
+            state = "completed" if all_done else "unknown"
 
-        # Draw idle panel
-        w = cols()
-        ts = datetime.now(UTC).strftime("%H:%M UTC")
-        sys.stdout.write("\033[2J\033[H")
+        out(f"  Last sprint: {last_id}  ({last_date})  [{state}]")
+    else:
+        out("  No previous sprint found.")
 
-        print(f"{B}{CY}{'━' * w}{R}")
-        print(f"{B}{CY}  SPRINT REPORT{R}")
-        print(f"{D}{'━' * w}{R}")
-        print()
-        print(f"  {D}○  no active sprint{R}")
-        print()
-        print(f"  {D}run /sprint to begin{R}")
-        print(f"  {D}lead summaries appear here as each wave completes{R}")
-        print()
+    out(f"  Run /sprint to start a new sprint.")
 
-        if last_sprint:
-            print(f"  {D}last sprint: {last_sprint}{R}")
-            print()
 
-        rule("─", D)
-        print(f"  {D}{ts}{R}", end="", flush=True)
+# ── Render: events ────────────────────────────────────────────────────────────
 
+def render_events(sprint_id: str):
+    events = read_events(sprint_id)
+    last5 = events[-5:] if len(events) >= 5 else events
+    last5 = list(reversed(last5))  # most recent first
+
+    out()
+    out(f"{B}EVENTS{R}")
+    if not last5:
+        out("  (no events)")
+        return
+
+    for ev in last5:
+        ts_str = fmt_hhmm(ev.get("ts", ""))
+        ev_type = ev.get("type", "?")
+        wave = ev.get("wave")
+        name = ev.get("name", "")
+        commit = ev.get("commit", "")
+
+        parts = [f"  {ts_str}  {ev_type}"]
+        if wave is not None:
+            parts.append(f"[W{wave}]")
+        if name:
+            parts.append(name)
+        if commit:
+            parts.append(commit[:40])
+
+        out("  ".join(parts))
+
+
+# ── Render: recent sessions ───────────────────────────────────────────────────
+
+def render_activity():
+    entries = read_activity_log(3)
+
+    out()
+    out(f"{B}RECENT SESSIONS{R}")
+    if not entries:
+        out("  (no sessions logged)")
+        return
+
+    for entry in entries:
+        ts_str = entry.get("ts", "")
+        date_str = fmt_date(ts_str) if ts_str else "????"
+        commit = entry.get("commit", "(no commit)")
+        changed = entry.get("changed", [])
+        tasks = entry.get("tasks", [])
+
+        out(f"  {date_str}  {commit}")
+
+        if changed:
+            if len(changed) <= 2:
+                files_str = "  ".join(changed)
+            else:
+                files_str = "  ".join(changed[:2]) + f"  (+{len(changed) - 2} more)"
+            out(f"    files: {files_str}")
+
+        if tasks:
+            tasks_str = "  ".join(str(t) for t in tasks[:2])
+            out(f"    tasks: {tasks_str}")
+
+
+# ── Main render ───────────────────────────────────────────────────────────────
+
+def render():
+    w = term_width()
+    # Clear screen
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
+
+    # Header
+    out(f"{B}{CY}+-- CAF DASHBOARD {'-' * max(0, w - 19)}+{R}")
+    out()
+
+    sprint_id = find_active_sprint()
+    if sprint_id:
+        render_sprint(sprint_id)
+        render_events(sprint_id)
+        out()
+        out(f"{B}SESSION{R}")
+        render_session_summary()
+    else:
+        out(f"{B}SESSION SUMMARY{R}")
+        out()
+        render_session_summary()
+
+    render_activity()
+
+    out()
+    now = datetime.now().strftime("%H:%M:%S")
+    out(f"  {now}  (refreshes every 5s)")
+
+
+def main_loop(poll: int = 5):
+    while True:
+        try:
+            render()
+        except Exception as e:
+            sys.stdout.write("\033[2J\033[H")
+            print(f"render error: {e}")
         time.sleep(poll)
 
-
-# ── Entry ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    sprint_id = sys.argv[1] if len(sys.argv) > 1 else "idle"
-    if sprint_id == "demo":
-        run_demo()
-    elif sprint_id == "idle":
-        run_idle(poll=int(sys.argv[2]) if len(sys.argv) > 2 else 5)
-    else:
-        run_live(sprint_id, poll=int(sys.argv[2]) if len(sys.argv) > 2 else 3)
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        if args[i] == "--cwd" and i + 1 < len(args):
+            PROJECT_CWD = args[i + 1]
+            i += 2
+        else:
+            i += 1
+    main_loop()

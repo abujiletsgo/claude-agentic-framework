@@ -7,7 +7,7 @@
 the agent to verify tests when the task description mentions test requirements.
 Always exits 0 (observability + gentle nudge, never blocks)."""
 
-import json, sys
+import json, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,7 +26,8 @@ def main():
     task_id = data.get("task_id", "unknown")
     task_subject = data.get("task_subject", "")
     task_desc = data.get("task_description", "")
-    teammate = data.get("teammate_name", "")
+    teammate = data.get("teammate_name", "") or data.get("agent_name", "")
+    session_id = data.get("session_id", os.environ.get("CLAUDE_SESSION_ID", ""))
 
     # Log completion to JSONL
     log_path = Path.home() / ".claude" / "data" / "task_completions.jsonl"
@@ -36,6 +37,8 @@ def main():
         "task_id": task_id,
         "task_subject": task_subject,
         "teammate_name": teammate,
+        "cwd": os.getcwd(),
+        "session_id": session_id,
     }
     try:
         with open(log_path, "a") as f:
