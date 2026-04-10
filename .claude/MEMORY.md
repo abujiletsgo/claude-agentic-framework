@@ -2,87 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (15:55 UTC) · @Tom Kwon
-**Commit:** chore: update gstack-bridge paths + CLAUDE.md for fork architecture (1097c55) by Tom Kwon
-**Changed:**
-  CLAUDE.md         | 30 ++++++++++++++++--------------
-  bin/gstack-bridge | 11 ++++++++++-
-  2 files changed, 26 insertions(+), 15 deletions(-)
-
-## 2026-04-08 (15:59 UTC) · @Tom Kwon
-**Commit:** feat: add sprint strategy to orchestrate, /worktree sprint subcommand, refresh docs (d8042d3) by Tom Kwon
-**Changed:**
-  .claude/PROJECT_CONTEXT.md         |  43 +++++--------
-  CLAUDE.md                          | 122 ++++++++++++++++++++++++-------------
-  README.md                          |  21 ++++---
-  global-skills/orchestrate/SKILL.md |  51 ++++++++++++++++
-  global-skills/worktree/SKILL.md    |  23 +++++++
-  5 files changed, 181 insertions(+), 79 deletions(-)
-
-## 2026-04-08 (16:10 UTC) · @Tom Kwon
-**Commit:** Merge commit '76adabd56f1b36ab94769217057f738168e20f4a' as 'global-skills/gstack' (7553e3c1) by Tom Kwon
-**Changed:**
-  global-skills/gstack/.env.example                  |    5 +
-  global-skills/gstack/.github/actionlint.yaml       |    4 +
-  global-skills/gstack/.github/docker/Dockerfile.ci  |   63 +
-  .../gstack/.github/workflows/actionlint.yml        |    8 +
-  .../gstack/.github/workflows/ci-image.yml          |   40 +
-  .../gstack/.github/workflows/evals-periodic.yml    |  129 +
-  global-skills/gstack/.github/workflows/evals.yml   |  240 ++
-  .../gstack/.github/workflows/skill-docs.yml        |   33 +
-  global-skills/gstack/.gitignore                    |   26 +
-  global-skills/gstack/AGENTS.md                     |   49 +
-  ... and 405 more files
-
-## 2026-04-08 (16:12 UTC) · @Tom Kwon
-**Commit:** fix: gstack-bridge check supports subtree installs (9d5e2a66) by Tom Kwon
-**Changed:**
-  bin/gstack-bridge | 6 ++++--
-  1 file changed, 4 insertions(+), 2 deletions(-)
-
-## 2026-04-08 (16:13 UTC) · @Tom Kwon
-**Commit:** feat: add cteam launcher — tmux workspace with dashboard pane (6a555f05) by Tom Kwon
-**Changed:**
-  bin/cteam | 37 +++++++++++++++++++++++++++++++++++++
-  1 file changed, 37 insertions(+)
-
-## 2026-04-08 (16:15 UTC) · @Tom Kwon
-**Commit:** feat: cteam sidebar with session/project manager + 3-pane layout (a59bb209) by Tom Kwon
-**Changed:**
-  bin/cteam         |  28 +++++--
-  bin/cteam-sidebar | 247 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  2 files changed, 268 insertions(+), 7 deletions(-)
-
-## 2026-04-08 (16:19 UTC) · @Tom Kwon
-**Commit:** feat: clickable curses sidebar with mouse support (bad92f01) by Tom Kwon
-**Changed:**
-  bin/cteam         |   3 +
-  bin/cteam-sidebar | 673 ++++++++++++++++++++++++++++++++++--------------------
-  2 files changed, 434 insertions(+), 242 deletions(-)
-
-## 2026-04-08 (16:25 UTC) · @Tom Kwon
-**Commit:** feat: /buddy companion system — cat, dog, owl, ghost, robot with live dashboard widget (cb5fc2c1) by Tom Kwon
-**Changed:**
-  bin/cteam                    |  19 ++-
-  bin/cteam-buddy              | 257 ++++++++++++++++++++++++++++++++
-  global-skills/buddy/SKILL.md |  88 +++++++++++
-  lib/buddies.py               | 339 +++++++++++++++++++++++++++++++++++++++++++
-  4 files changed, 696 insertions(+), 7 deletions(-)
-
-## 2026-04-08 (16:28 UTC) · @Tom Kwon
-**Commit:** feat: proper idle dashboard — shows git status, auto-launches sprint TUI when sprint starts (f3157cc7) by Tom Kwon
-**Changed:**
-  bin/cteam           |   4 +-
-  bin/cteam-dashboard | 157 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-  2 files changed, 158 insertions(+), 3 deletions(-)
-
-## 2026-04-08 (16:34 UTC) · @Tom Kwon
-**Commit:** feat: animated buddies — 96 frames, idle cycling, drift, oneshot reactions, pet responses (5a2d09c8) by Tom Kwon
-**Changed:**
-  bin/cteam-buddy | 209 +++++++++++------
-  lib/buddies.py  | 685 ++++++++++++++++++++++++++++++++++++++++++++++++--------
-  2 files changed, 727 insertions(+), 167 deletions(-)
-
 ## 2026-04-08 (16:37 UTC) · @Tom Kwon
 **Commit:** fix: transparent backgrounds for Ghostty, shrink buddy pane, remove buddy buttons (353655ed) by Tom Kwon
 **Changed:**
@@ -277,3 +196,76 @@
   dashboard/activity_report.py                       | 703 +++++++++++++---
   dashboard/sprint_report.py                         | 916 +++++++++++++--------
   ... and 4 more files
+
+## 2026-04-10 (17:04 UTC) · @Tom Kwon
+**Commit:** chore: remove ghost sprint-lead from model_tiers.yaml (bbb8d4e0) by Tom Kwon
+**Changed:**
+  data/model_tiers.yaml | 1 -
+  1 file changed, 1 deletion(-)
+
+## 2026-04-10 (17:21 UTC) · @Tom Kwon
+**Commit:** feat: caf-hud — always-on Rust TUI with idle mode + job tabs + auto-launch (96e46936) by Tom Kwon
+**Changed:**
+  .gitignore                                        |    3 +
+  Cargo.lock                                        | 1260 +++++++++++++++++++++
+  Cargo.toml                                        |    9 +
+  bin/cmux-sprint                                   |   56 +-
+  caf-hooks/Cargo.toml                              |    6 -
+  caf-hud/Cargo.toml                                |   12 +
+  caf-hud/src/main.rs                               |  882 +++++++++++++++
+  global-hooks/framework/session/session_startup.py |    1 +
+  global-hooks/framework/session/spawn_hud.py       |   70 ++
+  global-skills/orchestrate/SKILL.md                |   26 +-
+  ... and 1 more files
+
+## 2026-04-10 (17:33 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (82d6a85d) by Tom Kwon
+**Changed:**
+  CLAUDE.md | 2 +-
+  README.md | 6 +++---
+  2 files changed, 4 insertions(+), 4 deletions(-)
+
+## 2026-04-10 (17:39 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (ca4b3cf6) by Tom Kwon
+**Changed:**
+  CLAUDE.md | 2 +-
+  README.md | 6 +++---
+  2 files changed, 4 insertions(+), 4 deletions(-)
+
+## 2026-04-10 (17:41 UTC) · @Tom Kwon
+**Commit:** docs: orchestrate — explicit parallel researchers in Wave 0, use haiku model (992de748) by Tom Kwon
+**Changed:**
+  global-skills/orchestrate/SKILL.md | 11 ++++++++---
+  1 file changed, 8 insertions(+), 3 deletions(-)
+
+## 2026-04-10 (17:44 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (60856569) by Tom Kwon
+**Changed:**
+  CLAUDE.md | 2 +-
+  README.md | 2 +-
+  2 files changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-04-10 (17:48 UTC) · @Tom Kwon
+**Commit:** fix: caf-hud idle mode showing 0 for hooks/agents/skills (021da08c) by Tom Kwon
+**Changed:**
+  caf-hud/src/main.rs | 18 +++++++++---------
+  1 file changed, 9 insertions(+), 9 deletions(-)
+
+## 2026-04-10 (17:48 UTC) · @Tom Kwon
+**Commit:** docs: orchestrate — enforce parallel-first; all agents per wave in one message (00e6b74e) by Tom Kwon
+**Changed:**
+  global-skills/orchestrate/SKILL.md | 19 ++++++++++++++++---
+  1 file changed, 16 insertions(+), 3 deletions(-)
+
+## 2026-04-10 (17:50 UTC) · @Tom Kwon
+**Commit:** docs: quality-first priorities + planning-lead on opus (bf72318b) by Tom Kwon
+**Changed:**
+  data/model_tiers.yaml              |  1 +
+  global-skills/orchestrate/SKILL.md | 10 ++++++----
+  2 files changed, 7 insertions(+), 4 deletions(-)
+
+## 2026-04-10 (17:52 UTC) · @Tom Kwon
+**Commit:** docs: orchestrate — explicit dependency mapping in wave planning (51153535) by Tom Kwon
+**Changed:**
+  global-skills/orchestrate/SKILL.md | 5 ++++-
+  1 file changed, 4 insertions(+), 1 deletion(-)
