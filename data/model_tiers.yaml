@@ -36,7 +36,7 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 2 Opus, 7 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
+# 2 Opus, 8 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
 # Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator)
 
 agent_tiers:
@@ -50,6 +50,7 @@ agent_tiers:
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
     - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
+    - lead                    # Orchestration lead — pure delegating planner
     - debugger                # Root cause analysis + fix plan writing
 
   haiku:
