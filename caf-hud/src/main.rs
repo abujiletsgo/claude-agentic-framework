@@ -174,22 +174,22 @@ impl App {
         }
 
         // System status from CLAUDE.md
+        // Structure lines look like: "global-hooks/        45 hooks across 16 events (...)"
+        // The number always appears after the "/" — split there and extract.
         let claude_md = caf_dir().join("CLAUDE.md");
         if let Ok(text) = fs::read_to_string(&claude_md) {
             for line in text.lines() {
+                let after_slash = line.find('/').map(|i| line[i + 1..].trim());
                 if line.contains("hooks across") {
-                    // e.g. "global-hooks/        44 hooks across 16 events"
-                    if let Some(n) = extract_leading_number(line.trim()) {
+                    if let Some(n) = after_slash.and_then(extract_leading_number) {
                         self.idle_summary.hook_count = n;
                     }
-                }
-                if line.contains("agents") && line.starts_with("global-agents") {
-                    if let Some(n) = extract_leading_number(line.trim().trim_start_matches("global-agents/").trim()) {
+                } else if line.contains(" agents") && line.starts_with("global-agents") {
+                    if let Some(n) = after_slash.and_then(extract_leading_number) {
                         self.idle_summary.agent_count = n;
                     }
-                }
-                if line.contains("skills") && line.starts_with("global-skills") {
-                    if let Some(n) = extract_leading_number(line.trim().trim_start_matches("global-skills/").trim()) {
+                } else if line.contains(" skills") && line.starts_with("global-skills") {
+                    if let Some(n) = after_slash.and_then(extract_leading_number) {
                         self.idle_summary.skill_count = n;
                     }
                 }
@@ -445,7 +445,7 @@ fn load_job_info(base: &Path, orch_id: &str) -> JobInfo {
 
 fn extract_leading_number(s: &str) -> Option<usize> {
     let num_str: String = s.chars().take_while(|c| c.is_ascii_digit()).collect();
-    num_str.parse().ok()
+    if num_str.is_empty() { None } else { num_str.parse().ok() }
 }
 
 // ---------------------------------------------------------------------------
