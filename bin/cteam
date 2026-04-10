@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# cteam — CAF workspace launcher (cmux-native)
+# Requires: cmux with a fresh tab (Cmd+T)
+#
+# Layout:
+#   [main: claude]  │  [dashboard: sprint_report.py idle]  │  [report: activity_report.py]
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [ -z "${CMUX_SURFACE_ID:-}" ]; then
+  echo "[cteam] not running inside cmux." >&2
+  echo "[cteam] open a new cmux tab (Cmd+T) and run cteam there." >&2
+  exit 1
+fi
+
+export CTEAM_REPO_DIR="$REPO_DIR"
+export CTEAM_DASHBOARD_CMD="uv run python ${REPO_DIR}/dashboard/sprint_report.py idle"
+export CTEAM_REPORT_CMD="uv run python ${REPO_DIR}/dashboard/activity_report.py"
+
+python3 <<'PYEOF'
+import sys, os
+sys.path.insert(0, os.environ['CTEAM_REPO_DIR'] + '/lib')
+import cmux_client as cmux
+
+repo_dir   = os.environ['CTEAM_REPO_DIR']
+dash_cmd   = os.environ['CTEAM_DASHBOARD_CMD']
+report_cmd = os.environ['CTEAM_REPORT_CMD']
+main_sid   = os.environ.get('CMUX_SURFACE_ID', '')
+wid        = os.environ.get('CMUX_WORKSPACE_ID', '')
+
+def split(from_sid):
+    resp = cmux._call('surface.split', {
+        'surface_id': from_sid,
+        'workspace_id': wid,
+        'direction': 'right',
+    })
+    if not resp.get('ok'):
+        code = (resp.get('error') or {}).get('code', '')
+        msg  = (resp.get('error') or {}).get('message', str(resp))
+        if code in ('unavailable', 'not_found'):
+            print('[cteam] cmux workspace not found — your env vars are stale.', file=sys.stderr)
+            print('[cteam] open a fresh cmux tab (Cmd+T) and run cteam there.', file=sys.stderr)
+            sys.exit(0)
+        print(f'[cteam] split failed: {msg}', file=sys.stderr)
+        return None
+    result = resp.get('result') or {}
+    return result.get('surface_id') or result.get('id') or None
+
+dash_sid = split(main_sid)
+if not dash_sid:
+    sys.exit(0)
+
+cmux.send_surface(dash_sid, f'cd {repo_dir} && {dash_cmd}\n')
+
+report_sid = split(dash_sid)
+if report_sid:
+    cmux.send_surface(report_sid, f'cd {repo_dir} && {report_cmd}\n')
+
+cmux.focus_surface(main_sid)
+PYEOF
+
+cd "${REPO_DIR}"
+exec claude

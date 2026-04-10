@@ -330,6 +330,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/automation/activity_logger.py",
+            "timeout": 8,
+            "async": true,
+            "_comment": "ASYNC: append session summary to activity_log.jsonl for dashboard"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
             "timeout": 5,
             "async": true,

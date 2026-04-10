@@ -68,6 +68,8 @@ cmd_create() {
   if [ -n "${CMUX_SURFACE_ID:-}" ]; then
     _save_surface "$sprint_id" "leader" "$CMUX_SURFACE_ID"
   fi
+  # Dashboard pane (sprint_report.py idle) is always open via cteam — it auto-detects
+  # the sprint from status.json and switches to live mode on its own poll cycle.
   "${SCRIPT_DIR}/sprint-event" "${sprint_id}" sprint_initialized
 }
 
