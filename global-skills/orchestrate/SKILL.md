@@ -31,6 +31,7 @@ Ask 3–5 questions. Always include evaluation questions — these are not optio
 - "Are there parts that are off-limits or must stay unchanged?"
 - "Any time/quality tradeoffs — ship fast vs. ship right?"
 - "Any context I'm missing — recent decisions, known issues, related work in flight?"
+- "Are there dependency chains I should know about? e.g. does the frontend depend on API contracts the backend lead will produce, or can they work from a spec in parallel?"
 
 **Evaluation** (always ask at least 2 of these):
 - "How will you know if the engineering work is correct? Any specific scenarios or edge cases it must handle?"
@@ -77,7 +78,9 @@ Wait for user response. Then:
 **Done when**: [summary from acceptance criteria]
 **Constraints**: [what's off-limits or fixed]
 **Leads needed**: [which leads and why]
-**Wave plan**: [Wave 0: lead-A | Wave 1: lead-B, lead-C | ...]
+**Dependency map**: [e.g. "frontend-lead depends on engineering-lead (needs API contracts)"; "qa-lead depends on engineering-lead (needs something to test)"]
+**Wave plan**: [Wave 0: planning-lead (opus) + researchers | Wave 1: engineering-lead | Wave 2: frontend-lead + qa-lead + review-lead | ...]
+**Wave rule**: leads in the same wave run in parallel — only put a lead in the same wave as another if it does NOT depend on that lead's output
 **Evaluation**: full-picture evaluator runs after all leads complete — will loop corrections back if criteria not met
 ```
 
