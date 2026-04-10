@@ -5,7 +5,8 @@ cmux-sprint — launch and coordinate orchestrate leads as cmux panes.
 Subcommands:
   launch-lead      <orch_id> <role> <wave>               Open a pane for a lead
   launch-agent     <orch_id> <agent_name> <wave>         Open a pane for an agent
-  launch-dashboard <orch_id>                             Open dashboard pane
+  launch-dashboard <orch_id>                             Open dashboard pane (legacy)
+  launch-hud       <orch_id>                             Open caf-hud TUI pane (idempotent)
   launch-validator <orch_id>                             Open shared validator pane
   send-agent       <id> <name> <message>                 Inject message into running pane
   abort-agent      <id> <name> [<new_prompt>]            Ctrl+C then optional redirect
@@ -701,6 +702,53 @@ def cmd_launch_validator(orch_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Subcommand: launch-hud  (caf-hud Rust TUI — idempotent)
+# ---------------------------------------------------------------------------
+
+def cmd_launch_hud(orch_id: str) -> None:
+    """Open caf-hud TUI in a dedicated split pane (idempotent — skip if hud_surface.txt exists)."""
+    od = ORCH_BASE / orch_id
+    od.mkdir(parents=True, exist_ok=True)
+
+    # Idempotency guard
+    hud_surface_file = od / "hud_surface.txt"
+    if hud_surface_file.exists():
+        existing = hud_surface_file.read_text().strip()
+        print(f"[cmux-sprint] caf-hud already running for {orch_id!r} in pane {existing} (skipping)")
+        return
+
+    original_sid = os.environ.get("CMUX_SURFACE_ID", "")
+    (od / "pm_surface.txt").write_text(original_sid)
+
+    try:
+        hud_sid = cmux.new_split(direction="right")
+    except Exception as exc:
+        print(f"[cmux-sprint] surface.split failed for caf-hud: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if not hud_sid:
+        print("[cmux-sprint] surface.split returned no surface_id for caf-hud", file=sys.stderr)
+        sys.exit(1)
+
+    _save_orch_surface(orch_id, "hud", hud_sid)
+    hud_surface_file.write_text(hud_sid)
+
+    cwd = os.environ.get("PWD", str(Path.cwd()))
+    hud_bin = CAF_DIR / "target" / "release" / "caf-hud"
+
+    cmux.send_surface(hud_sid, f"cd {cwd}\n")
+    cmux.send_surface(hud_sid, f"{hud_bin} {orch_id}\n")
+
+    if original_sid:
+        try:
+            cmux.focus_surface(original_sid)
+        except Exception:
+            pass
+
+    print(f"[cmux-sprint] caf-hud launched for {orch_id!r} in pane {hud_sid}")
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: setup-worktree  (git branch + worktree per lead)
 # ---------------------------------------------------------------------------
 
@@ -950,6 +998,12 @@ def main() -> None:
             print("Usage: cmux-sprint launch-dashboard <sprint_id>", file=sys.stderr)
             sys.exit(1)
         cmd_launch_dashboard(args[1])
+
+    elif subcmd == "launch-hud":
+        if len(args) < 2:
+            print("Usage: cmux-sprint launch-hud <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_launch_hud(args[1])
 
     elif subcmd == "launch-validator":
         if len(args) < 2:
