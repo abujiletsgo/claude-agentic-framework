@@ -17,7 +17,7 @@
 - `ADMIN.md` — admin/ops guide
 - `QUICKSTART.md` — contributor quickstart
 - `PLAN.md` — full sprint/implementation plan (55KB)
-- `.claude/ARCHITECTURE.md` — blast-radius table, Mermaid diagram, critical paths, data lineage, duplication warnings
+- `.claude/ARCHITECTURE.md` — blast-radius table, Mermaid diagram, IPC flow, data lineage, hook registry, duplication warnings (regenerated 2026-04-11, git 2755665e)
 - `docs/framework-guide-ko.html` — full framework guide in Korean
 - `guides/` — additional guides
 - `global-skills/gstack/` — gstack subtree has its own CLAUDE.md, ARCHITECTURE.md, AGENTS.md, etc.
