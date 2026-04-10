@@ -49,7 +49,7 @@ archive/             Archived commands, skills, hooks
 
 ```
     Opus (2): orchestrator, project-architect
-  Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger
+  Sonnet (7): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, lead, debugger
    Haiku (3): docs-scraper, validator, agent-watchdog
 ```
 
