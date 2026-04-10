@@ -23,7 +23,7 @@ sprint:
 
   # IPC filesystem
   ipc:
-    base_dir: "/tmp/caf_sprint"
+    base_dir: "/tmp/caf_orch"
     poll_interval_seconds: 5
 
   # mempalace — long-term memory, NOT real-time compression
@@ -53,49 +53,96 @@ sprint:
     2: { name: "Validate", parallel: true, gate: true, failure_policy: "escalate" }
     3: { name: "Ship", parallel: false, gate: false, failure_policy: "block" }
 
-  # lead roles
+  # Lead roster — ALL gstack skills are potential leads.
+  # PM picks dynamically based on task. These are the available types.
+  # Leads are DELEGATING PLANNERS only — they spawn workers, never build directly.
+  #
+  # Research is a SHARED POOL, not a per-lead role:
+  #   - PM collects all research needs upfront (Wave 0)
+  #   - Deduplicates + launches shared researchers once
+  #   - Research files land in /tmp/caf_orch/<id>/shared/research/
+  #   - Lead prompts reference these files directly (no per-lead re-research)
+  #
+  # devex-lead is MERGED into review-lead (overlapping scope).
   leads:
-    planning-lead:
-      wave: 0
-      gstack_skills: ["/plan-ceo-review", "/plan-eng-review", "/plan-design-review",
-                       "/plan-devex-review", "/autoplan"]
+    architecture-lead:
+      gstack_skills: ["/arch-map"]
       caf_fallback_agents: ["researcher"]
-      description: "Synthesize all planning reviews into unified architecture decision"
+      description: "System design, dependency mapping, ADRs — delegates to researchers + builders"
+      token_budget: 50000
+
+    planning-lead:
+      gstack_skills: ["/autoplan", "/plan-ceo-review", "/plan-eng-review",
+                      "/plan-design-review", "/plan-devex-review"]
+      caf_fallback_agents: ["researcher"]
+      description: "Full task decomposition — delegates to researchers, writes the plan"
       token_budget: 50000
 
     engineering-lead:
-      wave: 1
-      gstack_skills: ["/investigate", "/pair-agent", "/careful"]
+      gstack_skills: ["/investigate", "/careful", "/pair-agent", "/fusion"]
       caf_fallback_agents: ["builder", "validator", "researcher"]
-      description: "Build features with spawned builders, validate with spawned validators"
+      description: "Implementation planning — delegates to builders + validators"
       token_budget: 100000
 
+    design-lead:
+      gstack_skills: ["/design-consultation", "/design-html", "/plan-design-review",
+                      "/design-review", "/design-shotgun"]
+      caf_fallback_agents: ["builder", "researcher"]
+      description: "UX/visual direction — delegates to design builders"
+      token_budget: 60000
+
     review-lead:
-      wave: 2
-      gstack_skills: ["/review", "/devex-review", "/codex"]
+      gstack_skills: ["/review", "/codex", "/code-review", "/devex-review", "/plan-devex-review"]
       caf_fallback_agents: ["critical-analyst"]
-      description: "Code review and cross-model comparison"
+      description: "Code review + DX planning — delegates reviews and developer experience audits"
       token_budget: 60000
 
     qa-lead:
-      wave: 2
-      gstack_skills: ["/qa", "/qa-only", "/browse"]
+      gstack_skills: ["/qa", "/qa-only", "/browse", "/gstack"]
       caf_fallback_agents: ["validator"]
-      description: "End-to-end QA, browser testing, regression checks"
+      description: "QA planning — delegates E2E + unit test runners"
       token_budget: 80000
 
     security-lead:
-      wave: 2
-      gstack_skills: ["/cso"]
+      gstack_skills: ["/cso", "/security-scanner"]
       caf_fallback_agents: ["scout-report-suggest"]
-      description: "OWASP/STRIDE security audit"
+      description: "Threat modeling — delegates security scans + audits"
       token_budget: 40000
 
+    performance-lead:
+      gstack_skills: ["/benchmark"]
+      caf_fallback_agents: ["validator", "researcher"]
+      description: "Perf planning — delegates profilers + benchmark runners"
+      token_budget: 40000
+
+    refactoring-lead:
+      gstack_skills: ["/refactoring-assistant"]
+      caf_fallback_agents: ["builder", "critical-analyst"]
+      description: "Refactor strategy — delegates builders for execution"
+      token_budget: 60000
+
+    debugging-lead:
+      gstack_skills: ["/investigate", "/error-analyzer", "/solve", "/fusion"]
+      caf_fallback_agents: ["debugger", "researcher"]
+      description: "Root cause analysis — delegates debuggers + investigators"
+      token_budget: 60000
+
+    testing-lead:
+      gstack_skills: ["/test-generator", "/test-scout"]
+      caf_fallback_agents: ["validator", "builder"]
+      description: "Test strategy — delegates test writers + runners"
+      token_budget: 50000
+
     release-lead:
-      wave: 3
-      gstack_skills: ["/ship", "/land-and-deploy", "/canary", "/document-release", "/retro"]
+      gstack_skills: ["/ship", "/land-and-deploy", "/canary", "/setup-deploy", "/rollback"]
       caf_fallback_agents: []
-      description: "Merge, deploy, document, retrospective"
+      description: "Ship planning — delegates deploy steps + monitors"
+      token_budget: 30000
+
+    docs-lead:
+      gstack_skills: ["/document-release", "/retro"]
+      caf_fallback_agents: ["builder"]
+      description: "Documentation planning — delegates writers"
       token_budget: 30000
 
   # graceful degradation

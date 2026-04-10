@@ -1,33 +1,105 @@
-#!/usr/bin/env bash
-# orch-event — Write a live orchestrate status event to /tmp/caf_orch_status.jsonl
-# Usage: orch-event <wave> <agent> <status> [summary]
-#   wave:   0, 1, 2, ... (wave number)
-#   agent:  researcher-1, builder-1, validator-1, etc.
-#   status: running | done | failed
-#   summary: optional one-line summary of what the agent did/found
+#!/usr/bin/env python3
+# orch-event — Write a live orchestrate status event to a per-job events.jsonl
 #
-# Called by the orchestrator after spawning or receiving results from each agent.
-set -euo pipefail
+# Usage (new, job-scoped):
+#   orch-event <orch_id> <wave> <agent> <status> [<summary-or-json>]
+#
+# Usage (legacy, deprecated):
+#   orch-event <wave> <agent> <status> [<summary-or-json>]
+#
+#   orch_id: e.g. "orch_1775838399"
+#   wave:    0, 1, 2, ... (wave number)
+#   agent:   planning-lead, engineering-lead, etc.
+#   status:  running | done | failed
+#   last arg: either a plain string summary, OR a JSON object with rich fields:
+#     {"summary":"...", "reason":"...", "changed":"...", "next":"...", "output":"..."}
+#
+# New mode: writes to /tmp/caf_orch/<orch_id>/events.jsonl
+# Legacy mode: first arg is an integer wave — writes to /tmp/caf_orch_status.jsonl
+#
+# Examples (new):
+#   orch-event orch_123 0 planning-lead running "decomposing the task"
+#   orch-event orch_123 1 engineering-lead done '{"summary":"auth rewrite done","reason":"JWT RS256","changed":"auth/jwt.py","next":"qa-lead: test the refresh flow"}'
+#
+# Examples (legacy):
+#   orch-event 0 planning-lead running "decomposing the task"
 
-if [[ $# -lt 3 ]]; then
-    echo "Usage: orch-event <wave> <agent> <status> [summary]" >&2
-    exit 1
-fi
+import sys
+import json
+import datetime
+from pathlib import Path
 
-wave="$1"
-agent="$2"
-status="$3"
-summary="${4:-}"
-ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# Escape summary for JSON
-summary_escaped="${summary//\\/\\\\}"
-summary_escaped="${summary_escaped//\"/\\\"}"
+def ts():
+    return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-if [[ -z "$summary_escaped" ]]; then
-    line="{\"ts\":\"${ts}\",\"wave\":${wave},\"agent\":\"${agent}\",\"status\":\"${status}\"}"
-else
-    line="{\"ts\":\"${ts}\",\"wave\":${wave},\"agent\":\"${agent}\",\"status\":\"${status}\",\"summary\":\"${summary_escaped}\"}"
-fi
 
-printf '%s\n' "$line" >> /tmp/caf_orch_status.jsonl
+def build_event(wave, agent, status, fourth, orch_id=None):
+    base = {"ts": ts(), "wave": int(wave), "agent": agent, "status": status}
+    if orch_id is not None:
+        base["orch_id"] = orch_id
+
+    if fourth and fourth.startswith("{"):
+        # Rich JSON payload — merge inner fields
+        try:
+            extra = json.loads(fourth)
+            base.update(extra)
+        except json.JSONDecodeError:
+            # Malformed JSON — treat as plain string
+            base["summary"] = fourth
+    elif fourth:
+        base["summary"] = fourth
+
+    return json.dumps(base)
+
+
+def main():
+    args = sys.argv[1:]
+
+    if len(args) < 3:
+        print(
+            "Usage: orch-event <orch_id> <wave> <agent> <status> [<summary-or-json>]\n"
+            "  (legacy) orch-event <wave> <agent> <status> [<summary-or-json>]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # Detect legacy mode: first arg is a plain integer (old wave number)
+    if args[0].isdigit():
+        # Legacy / backward-compat mode
+        print(
+            "orch-event: DEPRECATED — pass orch_id as first argument: "
+            "orch-event <orch_id> <wave> <agent> <status> [<summary-or-json>]",
+            file=sys.stderr,
+        )
+        wave, agent, status = args[0], args[1], args[2]
+        fourth = args[3] if len(args) > 3 else ""
+        line = build_event(wave, agent, status, fourth, orch_id=None)
+        out_path = Path("/tmp/caf_orch_status.jsonl")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "a") as f:
+            f.write(line + "\n")
+        return
+
+    # New job-scoped mode
+    if len(args) < 4:
+        print(
+            "Usage: orch-event <orch_id> <wave> <agent> <status> [<summary-or-json>]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    orch_id, wave, agent, status = args[0], args[1], args[2], args[3]
+    fourth = args[4] if len(args) > 4 else ""
+
+    line = build_event(wave, agent, status, fourth, orch_id=orch_id)
+
+    out_dir = Path("/tmp/caf_orch") / orch_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "events.jsonl"
+    with open(out_path, "a") as f:
+        f.write(line + "\n")
+
+
+if __name__ == "__main__":
+    main()

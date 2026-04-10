@@ -1,6 +1,6 @@
 ---
 name: health
-description: "Check CAF system health — git status, MCP servers, mempalace, hooks"
+description: "Check CAF system health — git status, MCP servers, hooks"
 user-invocable: true
 ---
 
@@ -14,7 +14,6 @@ Run a point-in-time diagnostic of the CAF framework and report results as a mark
 |-----------|-------|
 | **git** | `git status --porcelain` — clean working tree vs. dirty file count |
 | **hooks** | All file paths referenced in `~/.claude/settings.json` hooks section exist |
-| **mempalace** | MCP search round-trip succeeds, latency measured |
 | **MCP servers** | All `mcpServers` keys present in `~/.claude/settings.json` |
 
 ## When to Use
@@ -48,8 +47,7 @@ Print the markdown table returned by health-checker verbatim. No interpretation 
 |-----------|--------|---------|-------|
 | git        | ✓ clean | N/A | 0 dirty files |
 | hooks      | ✓ 45/45 present | N/A | |
-| mempalace  | ✓ reachable | 142ms | |
-| MCP servers | ✓ configured | N/A | officecli, mempalace, papers, github, papersflow, sourcegraph |
+| MCP servers | ✓ configured | N/A | officecli, papers, github, papersflow, sourcegraph |
 ```
 
 If any component is unhealthy, that row shows ✗ with a brief error note. Other rows are unaffected.

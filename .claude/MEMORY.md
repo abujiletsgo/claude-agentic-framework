@@ -2,119 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-07 (17:31 UTC) · @Tom Kwon
-**Commit:** chore: flesh out mempalace.yaml rooms + commit session memory (3d94e5b) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  mempalace.yaml    | 34 ++++++++++++++++++++++++
-  2 files changed, 112 insertions(+)
-
-## 2026-04-07 (17:34 UTC) · @Tom Kwon
-**Commit:** feat: add AAAK session-start compression for all projects (a2355bf) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                               |   7 +
-  global-hooks/framework/automation/auto_prime.py |  25 ++
-  install.sh                                      |  35 ++-
-  tests/test_aaak_integration.py                  | 319 ++++++++++++++++++++++++
-  4 files changed, 384 insertions(+), 2 deletions(-)
-
-## 2026-04-08 (02:43 UTC) · @Tom Kwon
-**Commit:** fix: auto-detect mempalace Python version instead of hardcoding 3.12 (4f4e944) by Tom Kwon
-**Changed:**
-  global-hooks/framework/aaak_compress.py      | 14 +++++++++++---
-  global-hooks/framework/facts/fact_kg_sync.py | 14 +++++++++++---
-  install.sh                                   | 16 ++++++++++------
-  tests/test_aaak_integration.py               |  9 ++++++---
-  4 files changed, 38 insertions(+), 15 deletions(-)
-
-## 2026-04-08 (03:15 UTC) · @Tom Kwon
-**Commit:** feat: project-local mempalace integration — SubagentStop storage + SubagentStart KG inject (f544ef8) by Tom Kwon
-**Changed:**
-  .gitignore                                         |   3 +
-  CLAUDE.md                                          |   2 +-
-  README.md                                          |   6 +-
-  global-agents/researcher.md                        |   2 +-
-  .../framework/context/pre_compact_preserve.py      |  17 +-
-  .../framework/memory/auto_memory_writer.py         |  16 +-
-  .../framework/memory/kg_session_context.py         |  20 +-
-  global-hooks/framework/memory/palace_init.py       | 192 +++++++
-  .../framework/memory/subagent_kg_inject.py         | 118 ++++
-  .../framework/memory/subagent_palace_store.py      | 114 ++++
-  ... and 3 more files
-
-## 2026-04-08 (03:23 UTC) · @Tom Kwon
-**Commit:** chore: tidy repo + generate full framework report (fc9686a) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                     |  22 +-
-  README.md                             |  19 +-
-  mempalace.yaml => data/mempalace.yaml |   0
-  docs/framework-report.html            | 403 ++++++++++++++++++++++++++++++++++
-  scripts/generate_docs.py              |  19 +-
-  5 files changed, 446 insertions(+), 17 deletions(-)
-
-## 2026-04-08 (08:11 UTC) · @Tom Kwon
-**Commit:** docs: complete framework-guide-ko.html v4.1 update (f3b8091) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md            |  17 ++--
-  docs/framework-guide-ko.html | 203 +++++++++++++++++++++++++++++++++++--------
-  2 files changed, 179 insertions(+), 41 deletions(-)
-
-## 2026-04-08 (09:01 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (bf704b6) by Tom Kwon
-**Changed:**
-  README.md | 6 +++---
-  1 file changed, 3 insertions(+), 3 deletions(-)
-
-## 2026-04-08 (10:17 UTC) · @Tom Kwon
-**Commit:** feat: wire 12 Rust hooks into settings.json.template (235717f) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                | 15 +++++-------
-  install.sh                       |  9 ++++++-
-  templates/settings.json.template | 51 +++++++++++++++++++++-------------------
-  3 files changed, 41 insertions(+), 34 deletions(-)
-
-## 2026-04-08 (10:24 UTC) · @Tom Kwon
-**Commit:** feat: 8 new Rust hooks, /doctor diagnostic (22 checks), token optimization (1966f33) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                              |  19 +-
-  CLAUDE.md                                      |   4 +-
-  README.md                                      |  10 +-
-  caf-hooks/src/hooks/audit_config_change.rs     | 121 ++++
-  caf-hooks/src/hooks/auto_error_analyzer.rs     |   9 +-
-  caf-hooks/src/hooks/auto_escalate.rs           | 242 +++++++
-  caf-hooks/src/hooks/auto_fact_extractor.rs     | 534 +++++++++++++++
-  caf-hooks/src/hooks/doctor.rs                  | 882 +++++++++++++++++++++++++
-  caf-hooks/src/hooks/enforce_orchestrate.rs     |  22 +-
-  caf-hooks/src/hooks/epistemic_guard.rs         |  24 +
-  ... and 17 more files
-
-## 2026-04-08 (10:28 UTC) · @Tom Kwon
-**Commit:** chore: remove FRAMEWORK_REFERENCE.md and framework-report.html (749b85e) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                            |   22 +-
-  FRAMEWORK_REFERENCE.md                       | 1041 --------------------------
-  README.md                                    |    4 +-
-  caf-hooks/.claude/FACTS.md                   |   17 +
-  caf-hooks/.claude/MEMORY.md                  |   11 +
-  caf-hooks/.claude/settings.json              |    7 +
-  docs/framework-report.html                   |  403 ----------
-  global-skills/tidy/SKILL.md                  |    6 +-
-  global-skills/tidy/tidy_analyzer.py          |    4 +-
-  scripts/generate_docs.py                     |    4 +-
-  ... and 20 more files
-
-## 2026-04-08 (10:51 UTC) · @Tom Kwon
-**Commit:** docs: update framework-guide-ko.html for v4.2 (1a3a036) by Tom Kwon
-**Changed:**
-  docs/framework-guide-ko.html | 127 +++++++++++++++++++++++++++++++------------
-  1 file changed, 93 insertions(+), 34 deletions(-)
-
-## 2026-04-08 (13:21 UTC) · @Tom Kwon
-**Commit:** docs: add 20 skill workflow diagrams + mempalace/AAAK sections to guide (074d3c5) by Tom Kwon
-**Changed:**
-  docs/framework-guide-ko.html | 1375 ++++++++++++++++++++++++++++++++++++++++++
-  1 file changed, 1375 insertions(+)
-
 ## 2026-04-08 (15:55 UTC) · @Tom Kwon
 **Commit:** chore: update gstack-bridge paths + CLAUDE.md for fork architecture (1097c55) by Tom Kwon
 **Changed:**
@@ -256,3 +143,137 @@
 **Changed:**
   global-hooks/hooks_SessionStart/launch_live_tui.py | 54 ++--------------------
   1 file changed, 3 insertions(+), 51 deletions(-)
+
+## 2026-04-08 (17:16 UTC) · @Tom Kwon
+**Commit:** dashboard: rewrite panels with RichLog for true terminal transparency (b6634e52) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                 | 300 ++++++++++++++++----------------------
+  CLAUDE.md                         |   8 +-
+  README.md                         |  24 +--
+  bin/cteam                         |  13 +-
+  dashboard/sprint_tui.css          |  58 ++------
+  dashboard/widgets/lead_panel.py   |  42 ++++--
+  dashboard/widgets/report_panel.py |  59 +++++---
+  7 files changed, 233 insertions(+), 271 deletions(-)
+
+## 2026-04-08 (17:22 UTC) · @Tom Kwon
+**Commit:** dashboard: detect terminal background via OSC 11 for color matching (91589787) by Tom Kwon
+**Changed:**
+  dashboard/sprint_tui.py | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+  1 file changed, 47 insertions(+)
+
+## 2026-04-08 (17:32 UTC) · @Tom Kwon
+**Commit:** dashboard: use $background theme variable instead of transparent/OSC11 (63a4074e) by Tom Kwon
+**Changed:**
+  dashboard/sprint_tui.css | 44 ++++++++++++++++++++++++--------------------
+  dashboard/sprint_tui.py  | 47 -----------------------------------------------
+  2 files changed, 24 insertions(+), 67 deletions(-)
+
+## 2026-04-08 (17:43 UTC) · @Tom Kwon
+**Commit:** feat: CAF Dashboard Layout A — unified big-screen TUI (7b94e74d) by Tom Kwon
+**Changed:**
+  bin/cteam-dashboard                   | 162 +-----------------------
+  dashboard/__init__.py                 |   1 +
+  dashboard/caf_dashboard.css           |  58 +++++++++
+  dashboard/caf_dashboard.py            | 101 +++++++++++++++
+  dashboard/cost_estimator.py           | 130 ++++++++++++++++++++
+  dashboard/widgets/agents_widget.py    |  71 +++++++++++
+  dashboard/widgets/event_log_widget.py | 166 +++++++++++++++++++++++++
+  dashboard/widgets/leads_grid.py       | 184 ++++++++++++++++++++++++++++
+  dashboard/widgets/right_sidebar.py    | 224 ++++++++++++++++++++++++++++++++++
+  dashboard/widgets/summary_panel_v2.py | 160 ++++++++++++++++++++++++
+  ... and 3 more files
+
+## 2026-04-08 (17:45 UTC) · @Tom Kwon
+**Commit:** fix: use python3 for dashboard (textual installed there), fix @work import (7c63b9bd) by Tom Kwon
+**Changed:**
+  bin/cteam-dashboard             | 2 +-
+  dashboard/widgets/leads_grid.py | 2 +-
+  2 files changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-04-09 (13:49 UTC) · @Tom Kwon
+**Commit:** fix: add sys.path insert so dashboard runs from any working directory (e4fa584b) by Tom Kwon
+**Changed:**
+  dashboard/caf_dashboard.py | 4 ++++
+  1 file changed, 4 insertions(+)
+
+## 2026-04-09 (16:52 UTC) · @Tom Kwon
+**Commit:** chore: remove Textual TUI dashboard and buddy system (1e8065b3) by Tom Kwon
+**Changed:**
+  .gitignore                                         |   8 +
+  CLAUDE.md                                          |   6 +-
+  README.md                                          |  16 +-
+  bin/caf-ref                                        |  65 ++
+  bin/cteam                                          |  71 --
+  bin/cteam-buddy                                    | 300 --------
+  bin/cteam-dashboard                                |   6 -
+  bin/cteam-sidebar                                  | 437 -----------
+  dashboard/__init__.py                              |   1 -
+  dashboard/caf_dashboard.css                        |  58 --
+  ... and 25 more files
+
+## 2026-04-09 (16:57 UTC) · @Tom Kwon
+**Commit:** Merge CAF upstream: v5.0 research intelligence + mempalace removal (ca3e1ea3) by Tom Kwon
+**Changed:**
+  caf-hooks/.claude/MEMORY.md                        |   15 +
+  caf-hooks/src/hooks/voice_done.rs                  |   98 +-
+  data/mempalace.yaml                                |   51 -
+  docs/framework-guide-ko.html                       |  658 +-----------
+  global-agents/academic-researcher.md               |   98 +-
+  global-agents/code-researcher.md                   |   85 +-
+  global-agents/critical-analyst.md                  |   12 +
+  global-agents/meta-agent.md                        |   12 +
+  global-agents/researcher.md                        |  386 +++----
+  global-hooks/framework/aaak_compress.py            |  139 ---
+  ... and 31 more files
+
+## 2026-04-09 (17:16 UTC) · @Tom Kwon
+**Commit:** docs: auto-regenerate from repo state (8699b21d) by Tom Kwon
+**Changed:**
+  CLAUDE.md |  2 +-
+  README.md | 16 ++++++----------
+  2 files changed, 7 insertions(+), 11 deletions(-)
+
+## 2026-04-10 (05:14 UTC) · @Tom Kwon
+**Commit:** feat: cmux sprint system + mempalace stub cleanup (9d879894) by Tom Kwon
+**Changed:**
+  bin/cmux-sprint                                    | 293 ++++++++++++++++++
+  bin/sprint-view                                    | 327 +++++++++++++++++++++
+  data/sprint_config.yaml                            |  16 +-
+  .../hooks_SubagentStop/sprint_palace_store.py      |  99 +------
+  global-skills/sprint/SKILL.md                      |  27 +-
+  lib/agent_display.py                               | 171 +++++++++++
+  lib/cmux_client.py                                 | 112 +++++++
+  PLAN.md => specs/PLAN.md                           |   0
+  tests/test_cmux_integration.py                     | 266 +++++++++++++++++
+  9 files changed, 1206 insertions(+), 105 deletions(-)
+
+## 2026-04-10 (07:25 UTC) · @Tom Kwon
+**Commit:** feat: cmux-native dashboard — always-on report + sprint panels via cteam (82d5d2fa) by Tom Kwon
+**Changed:**
+  CLAUDE.md                                          |   2 +-
+  README.md                                          |   6 +-
+  bin/cmux-sprint                                    |   2 +
+  bin/cteam                                          |  64 ++++
+  dashboard/activity_report.py                       | 187 ++++++++++
+  dashboard/sprint_dashboard.py                      | 373 ++++++++++++++++++++
+  dashboard/sprint_overview.py                       | 154 +++++++++
+  dashboard/sprint_report.py                         | 383 +++++++++++++++++++++
+  .../framework/automation/activity_logger.py        | 114 ++++++
+  global-skills/sprint/SKILL.md                      |  40 +--
+  ... and 2 more files
+
+## 2026-04-10 (16:48 UTC) · @Tom Kwon
+**Commit:** feat: cmux-native per-task report panes + session tracker (4fece86a) by Tom Kwon
+**Changed:**
+  .gitignore                                         |   4 +
+  bin/cdash                                          |  60 ++
+  bin/cmux-sprint                                    | 545 ++++++------
+  bin/cteam                                          |  46 +-
+  bin/open-task-pane                                 |  83 ++
+  bin/orch-event                                     |  33 +
+  bin/session-event                                  |  70 ++
+  bin/sprint-event                                   |   9 +
+  dashboard/activity_report.py                       | 703 +++++++++++++---
+  dashboard/sprint_report.py                         | 916 +++++++++++++--------
+  ... and 4 more files

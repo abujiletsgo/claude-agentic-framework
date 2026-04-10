@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""SubagentStart hook: inject sprint context + KG decisions into lead."""
+"""SubagentStart hook: inject orchestrate job context into lead agents."""
 import json
 import os
 import sys
 from pathlib import Path
 
-MAX_CONTEXT_CHARS = 2000
-MAX_KG_CHARS = 1500
+MAX_CONTEXT_CHARS = 2500
 
 def main():
     try:
@@ -14,82 +13,111 @@ def main():
     except Exception:
         hook_input = {}
 
-    sprint_id = os.environ.get("CAF_SPRINT_ID", "")
-    role = os.environ.get("CAF_SPRINT_ROLE", "")
+    orch_id = os.environ.get("CAF_ORCH_ID", "")
+    role    = os.environ.get("CAF_ORCH_ROLE", "")
 
-    # Fast path: not a sprint session
-    if not sprint_id:
+    if not orch_id:
         print(json.dumps({}))
         return
 
-    ipc_dir = Path(f"/tmp/caf_sprint/{sprint_id}")
+    ipc_dir = Path(f"/tmp/caf_orch/{orch_id}")
     context_parts = []
     total_chars = 0
 
     try:
-        # 1. Lead mission (first ~400 chars)
+        # 1. This lead's mission (first ~400 chars)
         prompt_file = ipc_dir / "prompts" / f"{role}.md"
         if prompt_file.exists():
             mission = prompt_file.read_text()[:400]
             context_parts.append(f"## Your Mission\n{mission}")
             total_chars += len(context_parts[-1])
 
-        # 2. Last 5 events (situational awareness)
-        events_file = ipc_dir / "events.jsonl"
-        if events_file.exists():
-            lines = events_file.read_text().strip().split("\n")
-            recent = lines[-5:] if len(lines) >= 5 else lines
-            events_summary = []
-            for line in recent:
-                try:
-                    evt = json.loads(line)
-                    events_summary.append(f"- [{evt.get('type','')}] {evt.get('ts','')}")
-                except json.JSONDecodeError:
-                    pass
-            if events_summary:
-                section = "## Recent Events\n" + "\n".join(events_summary)
-                if total_chars + len(section) < MAX_CONTEXT_CHARS:
-                    context_parts.append(section)
-                    total_chars += len(section)
+        # 2. Acceptance criteria for this role (NEW)
+        ac_file = ipc_dir / "acceptance_criteria.md"
+        if ac_file.exists() and role:
+            ac_text = ac_file.read_text()
+            # Find section header matching this role
+            header = f"### {role}"
+            idx = ac_text.find(header)
+            if idx != -1:
+                # Take next 5 lines after the header line
+                after = ac_text[idx:]
+                lines = after.splitlines()
+                section_lines = []
+                for line in lines[1:]:
+                    if line.startswith("###") and line.strip() != header:
+                        break
+                    section_lines.append(line)
+                    if len(section_lines) >= 5:
+                        break
+                criteria_body = "\n".join(section_lines).strip()
+                if criteria_body:
+                    section = f"## Your Acceptance Criteria\n{criteria_body}"
+                    budget = 300
+                    if total_chars + min(len(section), budget) <= MAX_CONTEXT_CHARS:
+                        context_parts.append(section[:budget])
+                        total_chars += len(context_parts[-1])
 
-        # 3. Completed lead summaries (first 200 chars each, max 3)
+        # 3. Last 3 working_memory entries (replaces global orch status)
+        wm_file = ipc_dir / "shared" / "working_memory.jsonl"
+        if wm_file.exists():
+            lines = [l for l in wm_file.read_text().splitlines() if l.strip()][-3:]
+            entries = []
+            for line in lines:
+                try:
+                    e = json.loads(line)
+                    lead    = e.get("lead", "?")
+                    summary = e.get("summary", "")
+                    reason  = e.get("reason", "")
+                    reason_str = f" (why: {reason})" if reason else ""
+                    entries.append(f"- [{lead}] {summary}{reason_str}")
+                except Exception:
+                    pass
+            if entries:
+                section = "## Team Activity (recent)\n" + "\n".join(entries)
+                budget = 400
+                if total_chars + min(len(section), budget) <= MAX_CONTEXT_CHARS:
+                    context_parts.append(section[:budget])
+                    total_chars += len(context_parts[-1])
+
+        # 4. Pending questions notice (NEW)
+        q_file = ipc_dir / "shared" / "questions.jsonl"
+        if q_file.exists():
+            pending_count = 0
+            for line in q_file.read_text().splitlines():
+                try:
+                    e = json.loads(line)
+                    if e.get("status") == "pending":
+                        pending_count += 1
+                except Exception:
+                    pass
+            if pending_count > 0:
+                notice = (
+                    f"Note: {pending_count} question(s) awaiting PM response "
+                    f"— check orch-shared pending-questions if blocked."
+                )
+                budget = 100
+                if total_chars + min(len(notice), budget) <= MAX_CONTEXT_CHARS:
+                    context_parts.append(notice[:budget])
+                    total_chars += len(context_parts[-1])
+
+        # 5. Completed lead summaries (first 200 chars each, max 3)
         results_dir = ipc_dir / "results"
         if results_dir.exists():
             result_files = sorted(results_dir.glob("*_result.md"))[:3]
             summaries = []
             for rf in result_files:
-                summary = rf.read_text()[:200]
-                summaries.append(f"### {rf.stem}\n{summary}")
+                text = rf.read_text()[:200]
+                summaries.append(f"### {rf.stem}\n{text}")
             if summaries:
                 section = "## Prior Lead Results\n" + "\n".join(summaries)
-                if total_chars + len(section) < MAX_CONTEXT_CHARS:
-                    context_parts.append(section)
-                    total_chars += len(section)
-
-        # 4. KG decisions (via direct import, not MCP)
-        try:
-            sys.path.insert(0, str(Path.home() / "Documents/claude-agentic-framework/lib"))
-            import palace_init
-            kg_data = palace_init.get_project_kg()
-            if kg_data:
-                decisions = []
-                for triple in kg_data[:10]:
-                    if hasattr(triple, 'predicate') and 'decided' in str(triple.predicate):
-                        decisions.append(f"- {triple.subject}: {triple.object}")
-                    elif isinstance(triple, (list, tuple)) and len(triple) >= 3:
-                        decisions.append(f"- {triple[0]}: {triple[2]}")
-                if decisions:
-                    section = "## Prior Decisions (KG)\n" + "\n".join(decisions)
-                    section = section[:MAX_KG_CHARS]
-                    if total_chars + len(section) < MAX_CONTEXT_CHARS:
-                        context_parts.append(section)
-        except ImportError:
-            pass  # mempalace not available — skip KG
-        except Exception:
-            pass  # fail-open
+                budget = 600
+                if total_chars + min(len(section), budget) <= MAX_CONTEXT_CHARS:
+                    context_parts.append(section[:budget])
+                    total_chars += len(context_parts[-1])
 
     except Exception:
-        pass  # fail-open on any error
+        pass  # fail-open
 
     if context_parts:
         combined = "\n\n".join(context_parts)[:MAX_CONTEXT_CHARS]

@@ -432,7 +432,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/sprint_palace_store.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/lead_result_store.py",
             "timeout": 8
           }
         ]

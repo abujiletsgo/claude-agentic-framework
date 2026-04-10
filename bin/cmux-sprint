@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-cmux-sprint — launch and coordinate sprint leads as real cmux panes.
+cmux-sprint — launch and coordinate orchestrate leads as cmux panes.
 
 Subcommands:
-  launch-lead <sprint_id> <role> <wave>   Open a new pane with an interactive claude session
-  poll-wave   <sprint_id> <wave>          Poll until all roles in the wave are done/failed
-  gate        <sprint_id> <wave>          Unlock the next wave in gate.json
+  launch-lead      <orch_id> <role> <wave>               Open a pane for a lead
+  launch-agent     <orch_id> <agent_name> <wave>         Open a pane for an agent
+  launch-dashboard <orch_id>                             Open dashboard pane
+  launch-validator <orch_id>                             Open shared validator pane
+  send-agent       <id> <name> <message>                 Inject message into running pane
+  abort-agent      <id> <name> [<new_prompt>]            Ctrl+C then optional redirect
+  poll-wave        <orch_id> <wave>                      Poll wave until all done/failed
+  poll-agents      <orch_id> <agent1> [agent2 ...]       Poll agents until done/failed
+  gate             <orch_id> <wave>                      Unlock next wave
+  setup-worktree   <orch_id> <lead>                      Create git branch + worktree for lead
+  merge-leads      <orch_id>                             PM merges all lead branches, reports conflicts
 """
 
 import sys
@@ -26,6 +34,7 @@ import cmux_client as cmux  # noqa: E402 (after sys.path manipulation)
 # Constants
 # ---------------------------------------------------------------------------
 SPRINT_BASE = Path("/tmp/caf_sprint")
+ORCH_BASE   = Path("/tmp/caf_orch")
 
 WAVE_ROLES: dict[int, list[str]] = {
     0: ["planning-lead"],
@@ -34,13 +43,31 @@ WAVE_ROLES: dict[int, list[str]] = {
     3: ["release-lead", "docs-lead"],
 }
 
+# Role→wave lookup (inverse of WAVE_ROLES)
+ROLE_WAVE: dict[str, int] = {
+    role: wave for wave, roles in WAVE_ROLES.items() for role in roles
+}
+
 POLL_INTERVAL = 5        # seconds between status checks
 POLL_TIMEOUT  = 30 * 60  # 30-minute hard timeout
+
+# How long to wait for Claude's prompt to appear before giving up and sending anyway
+CLAUDE_READY_TIMEOUT = 15   # seconds
+CLAUDE_READY_POLL    = 0.3  # seconds between surface.read_text checks
+
+# Watchdog thresholds
+NUDGE_AFTER    = 5 * 60   # 5 minutes idle -> soft nudge
+REDIRECT_AFTER = 10 * 60  # 10 minutes idle -> stop and write partial
+ABORT_AFTER    = 15 * 60  # 5 minutes after redirect with no response -> abort
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def ts() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
 
 def sprint_dir(sprint_id: str) -> Path:
     return SPRINT_BASE / sprint_id
@@ -48,6 +75,10 @@ def sprint_dir(sprint_id: str) -> Path:
 
 def status_path(sprint_id: str, role: str) -> Path:
     return sprint_dir(sprint_id) / f"{role}.status"
+
+
+def surfaces_path(sprint_id: str) -> Path:
+    return sprint_dir(sprint_id) / "surfaces.json"
 
 
 def read_status(sprint_id: str, role: str) -> str | None:
@@ -61,10 +92,63 @@ def read_status(sprint_id: str, role: str) -> str | None:
         return None
 
 
-def write_status(sprint_id: str, role: str, status: str) -> None:
+def write_status(sprint_id: str, role: str, status: str, wave: int | None = None) -> None:
+    """Write per-role status file and update unified status.json."""
     path = status_path(sprint_id, role)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"status": status}))
+    entry: dict = {"status": status}
+    if wave is not None:
+        entry["wave"] = wave
+    path.write_text(json.dumps(entry))
+    _update_unified_status(sprint_id, role, status, wave)
+
+
+def _update_unified_status(sprint_id: str, role: str, status: str, wave: int | None) -> None:
+    """Merge role status into the unified status.json the dashboard reads."""
+    sd = sprint_dir(sprint_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    unified_path = sd / "status.json"
+
+    try:
+        unified: dict = json.loads(unified_path.read_text()) if unified_path.exists() else {}
+    except Exception:
+        unified = {}
+
+    existing = unified.get(role, {})
+    existing["status"] = status
+    if wave is not None:
+        existing["wave"] = wave
+    # Preserve pct if already set (leads write it themselves via their own status file)
+    if "pct" not in existing:
+        existing["pct"] = 100 if status == "done" else 0
+    unified[role] = existing
+
+    try:
+        unified_path.write_text(json.dumps(unified, indent=2))
+    except Exception as exc:
+        print(f"[cmux-sprint] warning: could not write status.json: {exc}", file=sys.stderr)
+
+
+def save_surface(sprint_id: str, key: str, surface_id: str) -> None:
+    """Persist a role->surface_id mapping to surfaces.json."""
+    p = surfaces_path(sprint_id)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        manifest: dict = json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        manifest = {}
+    manifest[key] = surface_id
+    p.write_text(json.dumps(manifest, indent=2))
+
+
+def load_surfaces(sprint_id: str) -> dict:
+    p = surfaces_path(sprint_id)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
 
 
 def call_sprint_event(sprint_id: str, event_type: str, payload: str = "") -> None:
@@ -85,30 +169,186 @@ def get_sprint_cwd(sprint_id: str) -> str:
     return os.environ.get("PWD", str(Path.cwd()))
 
 
+def _wait_for_claude_ready(surface_id: str) -> None:
+    """
+    Poll surface text until Claude's interactive prompt is visible.
+    Falls back after CLAUDE_READY_TIMEOUT seconds so we never hang.
+    Indicators: "> " prompt, "?" (question), or the Claude banner.
+    """
+    wid = os.environ.get("CMUX_WORKSPACE_ID", "")
+    deadline = time.time() + CLAUDE_READY_TIMEOUT
+    while time.time() < deadline:
+        try:
+            result = cmux._call("surface.read_text", {
+                "surface_id": surface_id,
+                "workspace_id": wid,
+            })
+            text = result.get("result", {}).get("text", "")
+            # Claude is ready when its prompt line appears
+            if any(marker in text for marker in ("> ", "? ", "✻ ", "Claude")):
+                return
+        except Exception:
+            pass
+        time.sleep(CLAUDE_READY_POLL)
+    # Timed out — send anyway; worst case Claude buffers it
+    print(f"[cmux-sprint] warning: Claude ready-wait timed out after {CLAUDE_READY_TIMEOUT}s, sending prompt anyway", file=sys.stderr)
+
+
+def _get_agent_heartbeat(orch_id: str, agent_name: str) -> float:
+    """
+    Return the timestamp of the agent's last working_memory.jsonl entry.
+    Falls back to .status file mtime if no working_memory entry exists.
+    Falls back to current time if neither exists.
+    """
+    import datetime
+    wm_path = ORCH_BASE / orch_id / "working_memory" / f"{agent_name}.jsonl"
+    if wm_path.exists():
+        try:
+            lines = wm_path.read_text().splitlines()
+            # Walk backwards to find the last parseable line with a timestamp
+            for line in reversed(lines):
+                try:
+                    entry = json.loads(line)
+                    ts_val = entry.get("ts") or entry.get("timestamp")
+                    if ts_val:
+                        dt = datetime.datetime.fromisoformat(ts_val.replace("Z", "+00:00"))
+                        return dt.timestamp()
+                except Exception:
+                    continue
+            # File exists but no parseable timestamps -- use file mtime
+            return wm_path.stat().st_mtime
+        except Exception:
+            pass
+
+    # Fall back to .status file mtime
+    status_p = ORCH_BASE / orch_id / f"{agent_name}.status"
+    if status_p.exists():
+        try:
+            return status_p.stat().st_mtime
+        except Exception:
+            pass
+
+    return time.time()
+
+
 # ---------------------------------------------------------------------------
-# Subcommand: launch-lead
+# Orch surface helpers
 # ---------------------------------------------------------------------------
 
-def cmd_launch_lead(sprint_id: str, role: str, wave: int) -> None:
-    sd = sprint_dir(sprint_id)
-    prompt_path = sd / "prompts" / f"{role}.md"
+def _orch_surfaces_path(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id / "surfaces.json"
 
+
+def _save_orch_surface(orch_id: str, key: str, surface_id: str) -> None:
+    p = _orch_surfaces_path(orch_id)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        manifest: dict = json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        manifest = {}
+    manifest[key] = surface_id
+    p.write_text(json.dumps(manifest, indent=2))
+
+
+def _load_orch_surfaces(orch_id: str) -> dict:
+    p = _orch_surfaces_path(orch_id)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: cmd_launch_pane  (merged launch-lead + launch-agent)
+# ---------------------------------------------------------------------------
+
+def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch") -> None:
+    """
+    Open a cmux pane for a sprint lead or orchestrate agent.
+
+    ipc_base="orch"    -> reads prompt from /tmp/caf_orch/<orch_id>/prompts/<name>.md
+                          status/surfaces stored under /tmp/caf_orch/
+    ipc_base="sprint"  -> reads prompt from /tmp/caf_sprint/<orch_id>/prompts/<name>.md
+                          status/surfaces stored under /tmp/caf_sprint/
+    """
+    if ipc_base == "sprint":
+        base_dir = SPRINT_BASE / orch_id
+        prompt_path = base_dir / "prompts" / f"{name}.md"
+    else:
+        base_dir = ORCH_BASE / orch_id
+        prompt_path = base_dir / "prompts" / f"{name}.md"
+
+    # Change 4: Prompt validation before launch
     if not prompt_path.exists():
-        print(f"[cmux-sprint] prompt not found: {prompt_path}", file=sys.stderr)
+        print(f"[cmux-sprint] ERROR: prompt file missing: {prompt_path}", file=sys.stderr)
+        print(f"[cmux-sprint] Write the prompt first, then launch.", file=sys.stderr)
         sys.exit(1)
 
-    prompt_text = prompt_path.read_text()
+    base_prompt = prompt_path.read_text()
 
-    # Mark as running before we open the pane
-    write_status(sprint_id, role, "running")
-    call_sprint_event(sprint_id, "lead_started")
+    if ipc_base == "orch":
+        # Inject IPC footer so the agent knows how to report back
+        ipc_footer = f"""
 
-    # Remember the calling surface so we can focus back later
+---
+## IPC (REQUIRED -- do this last)
+
+When your work is complete:
+1. Write your full result to: `/tmp/caf_orch/{orch_id}/results/{name}_result.md`
+2. Then run this exact command:
+   ```
+   python3 -c "import json; open('/tmp/caf_orch/{orch_id}/{name}.status','w').write(json.dumps({{'status':'done'}}))"
+   ```
+If you fail or cannot complete: write `{{"status":"failed","error":"<reason>"}}` instead.
+"""
+        full_prompt = base_prompt + ipc_footer
+    else:
+        full_prompt = base_prompt
+
+    # Mark as running
+    if ipc_base == "sprint":
+        write_status(orch_id, name, "running", wave)
+        call_sprint_event(orch_id, "lead_started")
+    else:
+        base_dir.mkdir(parents=True, exist_ok=True)
+        status_p = base_dir / f"{name}.status"
+        status_p.write_text(json.dumps({"status": "running", "wave": wave}))
+        orch_event_bin = CAF_DIR / "bin" / "orch-event"
+        try:
+            subprocess.run(
+                [str(orch_event_bin), str(wave), name, "running", f"wave {wave} agent"],
+                check=False,
+            )
+        except Exception:
+            pass
+
     original_sid = os.environ.get("CMUX_SURFACE_ID", "")
 
-    # Split right to get a new pane
+    # Change 6: For orch panes, prefer pm_surface.txt as split anchor so leads
+    # stack on the LEFT below PM, not below the HUD/validator.
+    if ipc_base == "orch":
+        pm_surface_file = ORCH_BASE / orch_id / "pm_surface.txt"
+        pm_sid = ""
+        if pm_surface_file.exists():
+            try:
+                pm_sid = pm_surface_file.read_text().strip()
+            except Exception:
+                pass
+
+        surfaces = _load_orch_surfaces(orch_id)
+        hud_sid = surfaces.get("hud", "")
+        last_sid = surfaces.get("_last_split") or pm_sid or original_sid
+        # If _last_split is the HUD, fall back to pm_sid chain
+        if last_sid == hud_sid and pm_sid:
+            last_sid = pm_sid
+    else:
+        surfaces = load_surfaces(orch_id)
+        last_sid = surfaces.get("_last_split") or original_sid
+
     try:
-        new_sid = cmux.new_split(direction="right")
+        new_sid = cmux.new_split(direction="right", from_surface=last_sid or None)
     except Exception as exc:
         print(f"[cmux-sprint] surface.split failed: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -117,68 +357,465 @@ def cmd_launch_lead(sprint_id: str, role: str, wave: int) -> None:
         print("[cmux-sprint] surface.split returned no surface_id", file=sys.stderr)
         sys.exit(1)
 
-    # cd to sprint cwd then launch claude interactively
-    cwd = get_sprint_cwd(sprint_id)
+    # Track pane by name and as the latest split anchor
+    if ipc_base == "sprint":
+        save_surface(orch_id, name, new_sid)
+        save_surface(orch_id, "_last_split", new_sid)
+        cwd = get_sprint_cwd(orch_id)
+    else:
+        _save_orch_surface(orch_id, name, new_sid)
+        _save_orch_surface(orch_id, "_last_split", new_sid)
+        cwd = os.environ.get("PWD", str(Path.cwd()))
+
     cmux.send_surface(new_sid, f"cd {cwd}\n")
     cmux.send_surface(new_sid, "claude\n")
+    _wait_for_claude_ready(new_sid)
+    cmux.send_surface(new_sid, full_prompt + "\n")
 
-    # Give claude time to initialise before sending the prompt
-    time.sleep(1)
-
-    # Send the prompt text followed by Enter so claude starts processing
-    cmux.send_surface(new_sid, prompt_text + "\n")
-
-    # Return focus to the pane that called us
     if original_sid:
         try:
             cmux.focus_surface(original_sid)
         except Exception:
-            pass  # non-fatal
+            pass
 
-    print(f"[cmux-sprint] launched {role} (wave {wave}) in pane {new_sid}")
+    print(f"[cmux-sprint] launched {name} (wave {wave}) in pane {new_sid}")
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: poll-wave
+# Subcommand: send-agent  (inject a message into a running Claude pane)
 # ---------------------------------------------------------------------------
 
-def cmd_poll_wave(sprint_id: str, wave: int) -> None:
-    roles = WAVE_ROLES.get(wave)
-    if roles is None:
-        print(f"[cmux-sprint] unknown wave: {wave}", file=sys.stderr)
+def cmd_send_agent(job_id: str, agent_name: str, message: str, mode: str = "orch") -> None:
+    """
+    Send a follow-up message to an already-running Claude Code session in another pane.
+
+    mode: "sprint" -> looks up in /tmp/caf_sprint/<id>/surfaces.json
+          "orch"   -> looks up in /tmp/caf_orch/<id>/surfaces.json  (default)
+
+    The message is sent as keyboard input to the surface, terminated with Enter.
+    Waits for Claude's prompt to be visible before sending (avoids mid-response injection).
+    """
+    if mode == "sprint":
+        surfaces = load_surfaces(job_id)
+    else:
+        surfaces = _load_orch_surfaces(job_id)
+
+    sid = surfaces.get(agent_name)
+    if not sid:
+        print(
+            f"[cmux-sprint] send-agent: no surface_id for {agent_name!r} in job {job_id!r}. "
+            f"Known surfaces: {list(surfaces.keys())}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    print(f"[cmux-sprint] polling wave {wave} roles: {', '.join(roles)}")
+    # Wait for Claude to be at a prompt before injecting (avoids landing mid-response)
+    _wait_for_claude_ready(sid)
+
+    cmux.send_surface(sid, message + "\n")
+    print(f"[cmux-sprint] sent message to {agent_name} (surface {sid})")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: abort-agent  (Ctrl+C a running agent, optionally redirect it)
+# ---------------------------------------------------------------------------
+
+def cmd_abort_agent(job_id: str, agent_name: str, new_prompt: str = "", mode: str = "orch") -> None:
+    """
+    Send Ctrl+C to interrupt a running agent, then optionally send a new prompt.
+
+    Useful when an agent is going down the wrong path and needs to be redirected
+    without tearing down and rebuilding the pane.
+    """
+    if mode == "sprint":
+        surfaces = load_surfaces(job_id)
+    else:
+        surfaces = _load_orch_surfaces(job_id)
+
+    sid = surfaces.get(agent_name)
+    if not sid:
+        print(f"[cmux-sprint] abort-agent: no surface_id for {agent_name!r}", file=sys.stderr)
+        sys.exit(1)
+
+    wid = os.environ.get("CMUX_WORKSPACE_ID", "")
+
+    # Ctrl+C interrupts whatever Claude is currently doing
+    cmux._call("surface.send_key", {
+        "surface_id": sid,
+        "workspace_id": wid,
+        "key": "ctrl+c",
+    })
+    print(f"[cmux-sprint] sent Ctrl+C to {agent_name} (surface {sid})")
+
+    if new_prompt:
+        # Give Claude a moment to return to its prompt after the interrupt
+        time.sleep(0.5)
+        _wait_for_claude_ready(sid)
+        cmux.send_surface(sid, new_prompt + "\n")
+        print(f"[cmux-sprint] sent redirect prompt to {agent_name}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: cmd_poll  (merged poll-wave + poll-agents)
+# ---------------------------------------------------------------------------
+
+def cmd_poll(orch_id: str, agent_names: list[str], ipc_base: str = "orch") -> None:
+    """
+    Block until all named agents report done or failed via their .status files.
+
+    ipc_base="orch"    -> reads status from /tmp/caf_orch/<orch_id>/<name>.status
+    ipc_base="sprint"  -> reads status from /tmp/caf_sprint/<orch_id>/<name>.status
+
+    Features:
+    - 3-level watchdog (nudge@5m, redirect@10m, abort@15m) for orch agents
+    - Auto-gates next wave on successful completion (orch only)
+    - Surfaces pending PM questions during wait loop (orch only)
+    """
+    print(f"[cmux-sprint] polling {ipc_base} agents: {', '.join(agent_names)}")
     deadline = time.time() + POLL_TIMEOUT
+
+    # Watchdog state: per-agent intervention tracking
+    interventions: dict[str, dict] = {
+        name: {"nudge_at": None, "redirect_at": None}
+        for name in agent_names
+    }
+
+    terminal = {"done", "failed"}
 
     while True:
         if time.time() > deadline:
             print(
-                f"[cmux-sprint] WARNING: poll-wave {wave} timed out after 30 minutes.",
+                f"[cmux-sprint] WARNING: poll timed out after 30 minutes.",
                 file=sys.stderr,
             )
             return
 
-        statuses = {role: read_status(sprint_id, role) for role in roles}
-        terminal = {"done", "failed"}
-        pending = [r for r, s in statuses.items() if s not in terminal]
+        # Read statuses
+        statuses: dict[str, str | None] = {}
+        for name in agent_names:
+            if ipc_base == "sprint":
+                statuses[name] = read_status(orch_id, name)
+            else:
+                p = ORCH_BASE / orch_id / f"{name}.status"
+                try:
+                    statuses[name] = json.loads(p.read_text())["status"] if p.exists() else None
+                except Exception:
+                    statuses[name] = None
+
+        pending = [n for n, s in statuses.items() if s not in terminal]
 
         if not pending:
-            failed = [r for r, s in statuses.items() if s == "failed"]
+            failed = [n for n, s in statuses.items() if s == "failed"]
             if failed:
                 print(
-                    f"[cmux-sprint] WARNING: wave {wave} completed with failures: {', '.join(failed)}",
+                    f"[cmux-sprint] WARNING: agents finished with failures: {', '.join(failed)}",
                     file=sys.stderr,
                 )
             else:
-                print(f"[cmux-sprint] wave {wave} complete — all roles done.")
+                print(f"[cmux-sprint] all agents done: {', '.join(agent_names)}")
+
+            # Emit completion events for orch mode
+            if ipc_base == "orch":
+                orch_event_bin = CAF_DIR / "bin" / "orch-event"
+                for name in agent_names:
+                    status = statuses.get(name, "done")
+                    try:
+                        subprocess.run(
+                            [str(orch_event_bin), "0", name, status or "done", "completed"],
+                            check=False,
+                        )
+                    except Exception:
+                        pass
+
+            # Change 3: Auto-gate after successful poll completion (orch only, no failures)
+            if ipc_base == "orch" and not failed:
+                gate_path = Path(f"/tmp/caf_orch/{orch_id}/gate.json")
+                try:
+                    gates = json.loads(gate_path.read_text()) if gate_path.exists() else {}
+                    # Determine current wave from agent status files (lowest wave seen)
+                    current_wave = None
+                    for name in agent_names:
+                        sp = ORCH_BASE / orch_id / f"{name}.status"
+                        if sp.exists():
+                            try:
+                                entry = json.loads(sp.read_text())
+                                w = entry.get("wave")
+                                if w is not None:
+                                    wn = int(w)
+                                    if current_wave is None or wn < current_wave:
+                                        current_wave = wn
+                            except Exception:
+                                pass
+                    if current_wave is not None:
+                        gates[str(current_wave + 1)] = {"unlocked": True, "ts": ts()}
+                        gate_path.write_text(json.dumps(gates))
+                        print(f"[cmux-sprint] auto-gated: wave {current_wave + 1} unlocked")
+                except Exception:
+                    pass
+
             return
 
+        # --- Watchdog: check each pending agent (orch only) ---
+        if ipc_base == "orch":
+            now = time.time()
+            for name in pending:
+                heartbeat = _get_agent_heartbeat(orch_id, name)
+                idle = now - heartbeat
+                iv = interventions[name]
+
+                if idle > ABORT_AFTER and iv["redirect_at"] is not None:
+                    # Check if agent wrote to working_memory after redirect
+                    post_redirect_hb = _get_agent_heartbeat(orch_id, name)
+                    if post_redirect_hb <= iv["redirect_at"] + 1:
+                        # No activity since redirect -- abort
+                        print(f"[cmux-sprint] watchdog ABORT: {name} unresponsive after redirect", flush=True)
+                        cmd_abort_agent(orch_id, name, "TIME LIMIT EXCEEDED. Write partial result now and mark status done immediately.", mode="orch")
+                        iv["redirect_at"] = None  # reset to avoid repeated aborts
+
+                elif idle > REDIRECT_AFTER and iv["redirect_at"] is None:
+                    print(f"[cmux-sprint] watchdog REDIRECT: {name} idle {idle:.0f}s", flush=True)
+                    cmd_send_agent(orch_id, name, "10 minutes with no progress updates. Stop current approach. Write whatever partial result you have to your result file, mark failed criteria as FAIL with explanation, mark status done.", mode="orch")
+                    iv["redirect_at"] = now
+                    iv["nudge_at"] = iv["nudge_at"] or now  # nudge implicitly done
+
+                elif idle > NUDGE_AFTER and iv["nudge_at"] is None:
+                    print(f"[cmux-sprint] watchdog NUDGE: {name} idle {idle:.0f}s", flush=True)
+                    cmd_send_agent(orch_id, name, "No working_memory update in 5 minutes. Write a brief status entry (what you're doing, if blocked). If stuck, use ask-pm.", mode="orch")
+                    iv["nudge_at"] = now
+
         print(
-            f"[cmux-sprint] wave {wave}: waiting on {', '.join(pending)} …",
+            f"[cmux-sprint] waiting on agents: {', '.join(pending)} ...",
             flush=True,
         )
+
+        # Surface any pending PM questions so PM can answer them without leaving poll loop
+        if ipc_base == "orch":
+            questions_path = ORCH_BASE / orch_id / "shared" / "questions.jsonl"
+            if questions_path.exists():
+                pending_qs = []
+                for line in questions_path.read_text().splitlines():
+                    try:
+                        e = json.loads(line)
+                        if e.get("status") == "pending":
+                            pending_qs.append(e)
+                    except Exception:
+                        pass
+                if pending_qs:
+                    print("\n[cmux-sprint] *** PENDING QUESTIONS FROM LEADS ***", flush=True)
+                    for q in pending_qs:
+                        crit = " [CRITICAL -- ask user]" if q.get("critical") else ""
+                        print(f"  [{q.get('id')}]{crit} {q.get('lead','?')}: {q.get('question','')}", flush=True)
+                        print(f"    -> bin/orch-shared answer-question {orch_id} {q.get('id')} '<answer>'", flush=True)
+                    print()
+
         time.sleep(POLL_INTERVAL)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: launch-dashboard
+# ---------------------------------------------------------------------------
+
+def cmd_launch_dashboard(sprint_id: str) -> None:
+    """Open the sprint dashboard in a dedicated split pane (HUD right, PM left)."""
+    original_sid = os.environ.get("CMUX_SURFACE_ID", "")
+
+    # Change 6: Save PM surface before splitting so subsequent launch-pane calls
+    # know to split from the left column (PM side), not from the HUD.
+    pm_sid = original_sid
+    sd = sprint_dir(sprint_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    (sd / "pm_surface.txt").write_text(pm_sid)
+
+    # Split right -- HUD appears as right full-height column
+    try:
+        hud_sid = cmux.new_split(direction="right")
+    except Exception as exc:
+        print(f"[cmux-sprint] surface.split failed for dashboard: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if not hud_sid:
+        print("[cmux-sprint] surface.split returned no surface_id for dashboard", file=sys.stderr)
+        sys.exit(1)
+
+    save_surface(sprint_id, "dashboard", hud_sid)
+    save_surface(sprint_id, "hud", hud_sid)
+
+    cwd = get_sprint_cwd(sprint_id)
+    dashboard_script = CAF_DIR / "dashboard" / "sprint_dashboard.py"
+
+    cmux.send_surface(hud_sid, f"cd {cwd}\n")
+    cmux.send_surface(hud_sid, f"uv run python3 {dashboard_script} {sprint_id}\n")
+
+    # Return focus to PM pane
+    if original_sid:
+        try:
+            cmux.focus_surface(original_sid)
+        except Exception:
+            pass
+
+    print(f"[cmux-sprint] dashboard launched for sprint {sprint_id!r} in pane {hud_sid}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: launch-validator  (persistent shared validator pane)
+# ---------------------------------------------------------------------------
+
+def cmd_launch_validator(orch_id: str) -> None:
+    """Open the shared validator in a dedicated pane (HUD right, PM left)."""
+    original_sid = os.environ.get("CMUX_SURFACE_ID", "")
+
+    # Change 6: Save pm_sid to pm_surface.txt for orch context so that
+    # subsequent launch-pane calls split from PM side, not from validator/HUD.
+    pm_sid = original_sid
+    od = ORCH_BASE / orch_id
+    od.mkdir(parents=True, exist_ok=True)
+    (od / "pm_surface.txt").write_text(pm_sid)
+
+    try:
+        val_sid = cmux.new_split(direction="right")
+    except Exception as exc:
+        print(f"[cmux-sprint] surface.split failed for validator: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if not val_sid:
+        print("[cmux-sprint] no surface_id returned for validator", file=sys.stderr)
+        sys.exit(1)
+
+    # Save as both "validator" and "hud" so cmd_launch_pane knows not to split from it
+    _save_orch_surface(orch_id, "validator", val_sid)
+    _save_orch_surface(orch_id, "hud", val_sid)
+
+    cwd = get_sprint_cwd(orch_id) if (SPRINT_BASE / orch_id).exists() else os.environ.get("PWD", str(Path.cwd()))
+    validator_script = CAF_DIR / "dashboard" / "shared_validator.py"
+
+    cmux.send_surface(val_sid, f"cd {cwd}\n")
+    cmux.send_surface(val_sid, f"uv run python3 {validator_script} {orch_id}\n")
+
+    if original_sid:
+        try:
+            cmux.focus_surface(original_sid)
+        except Exception:
+            pass
+
+    print(f"[cmux-sprint] shared validator launched for {orch_id!r} in pane {val_sid}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: setup-worktree  (git branch + worktree per lead)
+# ---------------------------------------------------------------------------
+
+def cmd_setup_worktree(orch_id: str, lead_name: str) -> None:
+    """
+    Create a git worktree + branch for a lead so they work in isolation.
+    Branch: orch/<orch_id>/<lead_name>
+    Worktree path: /tmp/caf_orch/<orch_id>/worktrees/<lead_name>
+    """
+    worktree_base = Path(f"/tmp/caf_orch/{orch_id}/worktrees")
+    worktree_base.mkdir(parents=True, exist_ok=True)
+    worktree_path = worktree_base / lead_name
+    branch = f"orch/{orch_id}/{lead_name}"
+
+    # Get current repo root
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+            cwd=os.environ.get("PWD", str(Path.cwd())),
+        )
+        repo_root = result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"[cmux-sprint] git rev-parse failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Create worktree on a new branch based on current HEAD
+    try:
+        subprocess.run(
+            ["git", "worktree", "add", "-b", branch, str(worktree_path)],
+            check=True, cwd=repo_root,
+        )
+    except subprocess.CalledProcessError:
+        # Branch may already exist -- try without -b
+        try:
+            subprocess.run(
+                ["git", "worktree", "add", str(worktree_path), branch],
+                check=True, cwd=repo_root,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"[cmux-sprint] git worktree add failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # Store worktree path in surfaces manifest for reference
+    wt_manifest_path = Path(f"/tmp/caf_orch/{orch_id}/worktrees.json")
+    try:
+        wt_map: dict = json.loads(wt_manifest_path.read_text()) if wt_manifest_path.exists() else {}
+    except Exception:
+        wt_map = {}
+    wt_map[lead_name] = {"path": str(worktree_path), "branch": branch}
+    wt_manifest_path.write_text(json.dumps(wt_map, indent=2))
+
+    print(f"[cmux-sprint] worktree created: {worktree_path}  branch: {branch}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: merge-leads  (PM merges all lead branches at the end)
+# ---------------------------------------------------------------------------
+
+def cmd_merge_leads(orch_id: str) -> None:
+    """
+    Merge all lead worktree branches back into the current branch.
+    Reports conflicts clearly so the PM can resolve them.
+    """
+    wt_manifest_path = Path(f"/tmp/caf_orch/{orch_id}/worktrees.json")
+    if not wt_manifest_path.exists():
+        print(f"[cmux-sprint] no worktrees.json found for {orch_id}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        wt_map: dict = json.loads(wt_manifest_path.read_text())
+    except Exception as e:
+        print(f"[cmux-sprint] could not read worktrees.json: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    cwd = os.environ.get("PWD", str(Path.cwd()))
+    report_lines = []
+    conflicts = []
+
+    for lead_name, info in wt_map.items():
+        branch = info.get("branch", "")
+        if not branch:
+            continue
+
+        print(f"[cmux-sprint] merging {lead_name} ({branch})...")
+        result = subprocess.run(
+            ["git", "merge", "--no-ff", branch, "-m", f"merge {lead_name} ({orch_id})"],
+            capture_output=True, text=True, cwd=cwd,
+        )
+
+        if result.returncode == 0:
+            report_lines.append(f"+ {lead_name} ({branch}) -- merged cleanly")
+        else:
+            # Check if it's a conflict vs other error
+            if "CONFLICT" in result.stdout or "CONFLICT" in result.stderr:
+                conflicts.append(lead_name)
+                report_lines.append(f"x {lead_name} ({branch}) -- CONFLICT\n  {result.stdout[:200]}")
+                # Abort this merge so PM can resolve manually
+                subprocess.run(["git", "merge", "--abort"], cwd=cwd, capture_output=True)
+            else:
+                report_lines.append(f"x {lead_name} ({branch}) -- error: {result.stderr[:100]}")
+
+    # Write merge report
+    report_path = Path(f"/tmp/caf_orch/{orch_id}/merge_report.md")
+    report_content = f"# Merge Report -- {orch_id}\n\n" + "\n".join(report_lines)
+    if conflicts:
+        report_content += (
+            f"\n\n## Conflicts ({len(conflicts)} branches)\n"
+            + "\n".join(f"- {c}" for c in conflicts)
+            + "\n\nResolve manually then re-run merge for conflicting branches.\n"
+        )
+    report_path.write_text(report_content)
+
+    print(f"\n[cmux-sprint] merge complete -- report: {report_path}")
+    print(report_content)
 
 
 # ---------------------------------------------------------------------------
@@ -218,10 +855,13 @@ def cmd_gate(sprint_id: str, wave: int) -> None:
 USAGE = """\
 Usage: cmux-sprint <subcommand> [args...]
 
-Subcommands:
+Sprint subcommands:
   launch-lead <sprint_id> <role> <wave>
-      Open a new cmux pane for <role> and start an interactive claude session
-      with the role's prompt.
+      Open a cmux pane for a sprint lead. Splits from PM surface (not HUD) for left-column stacking.
+
+  launch-dashboard <sprint_id>
+      Open the sprint dashboard (sprint_dashboard.py) as right-column HUD.
+      Saves pm_surface.txt so leads stack left below PM.
 
   poll-wave <sprint_id> <wave>
       Block until all roles in <wave> have status done or failed (or timeout).
@@ -229,7 +869,29 @@ Subcommands:
   gate <sprint_id> <wave>
       Unlock wave+1 in gate.json and emit a gate_unlocked event.
 
-Wave->role mapping:
+Orchestrate subcommands:
+  launch-agent <orch_id> <agent_name> <wave>
+      Open a cmux pane for an orchestrate agent. Reads prompt from
+      /tmp/caf_orch/<orch_id>/prompts/<agent_name>.md, injects IPC instructions,
+      polls for Claude ready, then sends the prompt. Agent must write results to
+      /tmp/caf_orch/<orch_id>/results/<agent_name>_result.md and status to
+      /tmp/caf_orch/<orch_id>/<agent_name>.status.
+
+  poll-agents <orch_id> <agent1> [<agent2> ...]
+      Block until all named agents report done or failed via their .status files.
+      Includes 3-level watchdog (nudge@5m, redirect@10m, abort@15m).
+      Auto-gates next wave on successful completion.
+
+  send-agent <id> <name> <message> [--sprint]
+      Inject a follow-up message into a running Claude pane (mid-run communication).
+      Waits for Claude's prompt before sending so it doesn't land mid-response.
+      Default: orch surfaces. Pass --sprint to use sprint surfaces.json instead.
+
+  abort-agent <id> <name> [<new_prompt>] [--sprint]
+      Send Ctrl+C to interrupt a running agent. Optionally send a redirect prompt
+      after the interrupt (e.g. to correct a wrong approach without rebuilding the pane).
+
+Wave->role mapping (sprint):
   0  planning-lead
   1  engineering-lead, frontend-lead, review-lead
   2  qa-lead, security-lead
@@ -250,13 +912,73 @@ def main() -> None:
         if len(args) < 4:
             print("Usage: cmux-sprint launch-lead <sprint_id> <role> <wave>", file=sys.stderr)
             sys.exit(1)
-        cmd_launch_lead(args[1], args[2], int(args[3]))
+        cmd_launch_pane(args[1], args[2], int(args[3]), ipc_base="sprint")
+
+    elif subcmd == "send-agent":
+        # send-agent <id> <name> <message> [--sprint]
+        if len(args) < 4:
+            print("Usage: cmux-sprint send-agent <id> <name> <message> [--sprint]", file=sys.stderr)
+            sys.exit(1)
+        mode = "sprint" if "--sprint" in args else "orch"
+        non_flag = [a for a in args[1:] if not a.startswith("--")]
+        cmd_send_agent(non_flag[0], non_flag[1], non_flag[2], mode)
+
+    elif subcmd == "abort-agent":
+        # abort-agent <id> <name> [<new_prompt>] [--sprint]
+        if len(args) < 3:
+            print("Usage: cmux-sprint abort-agent <id> <name> [<new_prompt>] [--sprint]", file=sys.stderr)
+            sys.exit(1)
+        mode = "sprint" if "--sprint" in args else "orch"
+        non_flag = [a for a in args[1:] if not a.startswith("--")]
+        new_prompt = non_flag[2] if len(non_flag) > 2 else ""
+        cmd_abort_agent(non_flag[0], non_flag[1], new_prompt, mode)
+
+    elif subcmd == "launch-agent":
+        if len(args) < 4:
+            print("Usage: cmux-sprint launch-agent <orch_id> <agent_name> <wave>", file=sys.stderr)
+            sys.exit(1)
+        cmd_launch_pane(args[1], args[2], int(args[3]), ipc_base="orch")
+
+    elif subcmd == "poll-agents":
+        if len(args) < 3:
+            print("Usage: cmux-sprint poll-agents <orch_id> <agent1> [agent2 ...]", file=sys.stderr)
+            sys.exit(1)
+        cmd_poll(args[1], args[2:], ipc_base="orch")
+
+    elif subcmd == "launch-dashboard":
+        if len(args) < 2:
+            print("Usage: cmux-sprint launch-dashboard <sprint_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_launch_dashboard(args[1])
+
+    elif subcmd == "launch-validator":
+        if len(args) < 2:
+            print("Usage: cmux-sprint launch-validator <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_launch_validator(args[1])
+
+    elif subcmd == "setup-worktree":
+        if len(args) < 3:
+            print("Usage: cmux-sprint setup-worktree <orch_id> <lead>", file=sys.stderr)
+            sys.exit(1)
+        cmd_setup_worktree(args[1], args[2])
+
+    elif subcmd == "merge-leads":
+        if len(args) < 2:
+            print("Usage: cmux-sprint merge-leads <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_merge_leads(args[1])
 
     elif subcmd == "poll-wave":
         if len(args) < 3:
             print("Usage: cmux-sprint poll-wave <sprint_id> <wave>", file=sys.stderr)
             sys.exit(1)
-        cmd_poll_wave(args[1], int(args[2]))
+        wave = int(args[2])
+        roles = WAVE_ROLES.get(wave)
+        if roles is None:
+            print(f"[cmux-sprint] unknown wave: {wave}", file=sys.stderr)
+            sys.exit(1)
+        cmd_poll(args[1], roles, ipc_base="sprint")
 
     elif subcmd == "gate":
         if len(args) < 3:

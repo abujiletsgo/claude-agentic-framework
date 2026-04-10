@@ -15,3 +15,8 @@ global-skills/gstack/.claude/
 
 # Tidy logs
 logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

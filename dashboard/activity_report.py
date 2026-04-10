@@ -1,503 +1,191 @@
 #!/usr/bin/env python3
 """
-CAF Activity Report — always-on report panel.
+CAF Activity Report — multi-panel ANSI HUD for /orchestrate jobs.
 
-Three modes: sprint (active sprint detected), orchestrate (/tmp/caf_plan.md recent), idle.
-Polls every 5s. stdlib only.
+Finds the most-recently-modified orch job under /tmp/caf_orch/ and renders
+a live two-column HUD.  Full redraw every 3s; questions polled every 1s.
 
-Usage: python3 dashboard/activity_report.py [poll_seconds]
+Usage: python3 dashboard/activity_report.py
 """
 import sys, os, json, time, shutil
 from pathlib import Path
 from datetime import datetime, timezone
 
 # ── ANSI ──────────────────────────────────────────────────────────────────────
-R  = "\033[0m"
-B  = "\033[1m"
-CY = "\033[96m"
-GR = "\033[92m"
-YL = "\033[93m"
-RD = "\033[91m"
-M  = "\033[95m"
-D  = "\033[2m"
+RESET = "\033[0m"
+BOLD  = "\033[1m"
+DIM   = "\033[2m"
+RED   = "\033[91m"
+YLW   = "\033[93m"
+GRN   = "\033[92m"
+BLU   = "\033[94m"
+CYN   = "\033[96m"
+WHT   = "\033[97m"
+GRAY  = "\033[90m"
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-SPRINT_DIR   = Path("/tmp/caf_sprint")
-PLAN_FILE    = Path("/tmp/caf_plan.md")
-ORCH_STATUS  = Path("/tmp/caf_orch_status.jsonl")
-DATA_DIR     = Path.home() / ".claude" / "data"
-COMPLETIONS  = DATA_DIR / "task_completions.jsonl"
-ALERTS_FILE  = DATA_DIR / "subagent_alerts.jsonl"
-ACTIVITY_LOG = DATA_DIR / "activity_log.jsonl"
-SESSION_BASE = Path("/tmp/caf_session")
-TASK_ID: "int | None" = None  # set from --task arg at bottom
+ORCH_BASE    = Path("/tmp/caf_orch")
+ACTIVITY_LOG = Path.home() / ".claude" / "data" / "activity_log.jsonl"
 
-WAVE_LABELS = {0: "PLAN", 1: "BUILD", 2: "VALIDATE", 3: "SHIP"}
-LEAD_ORDER  = [
+LEAD_ORDER = [
     "planning-lead", "engineering-lead", "frontend-lead", "review-lead",
     "qa-lead", "security-lead", "release-lead", "docs-lead",
 ]
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
-def W() -> int:
+# ── Terminal helpers ──────────────────────────────────────────────────────────
+
+def term_width() -> int:
     return shutil.get_terminal_size((100, 40)).columns
 
-def trunc(s: str, width: int = 0) -> str:
-    w = width or (W() - 2)
-    return s[:w] if len(s) > w else s
-
-def pr(s: str = "") -> None:
-    print(trunc(s))
+def clamp(s: str, width: int) -> str:
+    """Strip ANSI codes for length measurement, then hard-clamp visible chars."""
+    # Use raw len as proxy — ANSI codes will make lines shorter on screen.
+    # We build lines manually so visible text is already bounded.
+    if len(s) > width + 50:   # rough guard
+        return s[:width + 50]
+    return s
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+def elapsed_str(mtime: float) -> str:
+    secs = int(now_utc().timestamp() - mtime)
+    if secs < 60:
+        return f"{secs}s"
+    elif secs < 3600:
+        return f"{secs // 60}m"
+    else:
+        return f"{secs // 3600}h{(secs % 3600) // 60}m"
 
 def fmt_ts(ts_str: str) -> str:
     try:
         dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
         return dt.strftime("%H:%M")
     except Exception:
-        return ts_str[:5] if ts_str else "??:??"
+        return (ts_str[:5] if ts_str else "??:??")
 
-# ── Session/task readers ──────────────────────────────────────────────────────
 
-def find_current_session() -> "str | None":
+# ── Job discovery ─────────────────────────────────────────────────────────────
+
+def find_active_orch_id() -> str:
+    """Return the orch_id of the most-recently-modified subdir that has
+    acceptance_criteria.md.  Falls back to most-recently-modified dir."""
     try:
-        return (SESSION_BASE / "current_session_id").read_text().strip() or None
+        candidates = []
+        for d in ORCH_BASE.iterdir():
+            if not d.is_dir():
+                continue
+            crit = d / "acceptance_criteria.md"
+            if crit.exists():
+                candidates.append((d.stat().st_mtime, d.name))
+        if candidates:
+            candidates.sort(reverse=True)
+            return candidates[0][1]
+        # fallback: any dir
+        dirs = sorted(
+            [d for d in ORCH_BASE.iterdir() if d.is_dir()],
+            key=lambda d: d.stat().st_mtime,
+            reverse=True,
+        )
+        return dirs[0].name if dirs else ""
     except Exception:
-        return None
+        return ""
 
-def read_session_task(task_id: int) -> dict:
-    """Return task metadata dict from tasks.jsonl for given task_id."""
-    session_id = find_current_session()
-    if not session_id:
-        return {}
-    path = SESSION_BASE / session_id / "tasks.jsonl"
-    task_start = {}
-    task_end = {}
-    try:
-        for line in path.read_text().splitlines():
-            if not line.strip(): continue
-            try:
-                e = json.loads(line)
-                if e.get("task_id") == task_id:
-                    if e.get("type") == "task_start":
-                        task_start = e
-                    elif e.get("type") in ("task_done", "task_failed"):
-                        task_end = e
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return {**task_start, **task_end, "end_ts": task_end.get("ts")}
-
-def read_orch_status_for_task(task_meta: dict) -> list:
-    """Filter /tmp/caf_orch_status.jsonl to this task's time window."""
-    start_ts = task_meta.get("ts", "")
-    end_ts = task_meta.get("end_ts")
-    entries = []
-    try:
-        for line in ORCH_STATUS.read_text(errors="replace").splitlines():
-            if not line.strip(): continue
-            try:
-                e = json.loads(line)
-                ts = e.get("ts", "")
-                if start_ts and ts < start_ts:
-                    continue
-                if end_ts and ts > end_ts:
-                    continue
-                entries.append(e)
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return entries
 
 # ── Data readers ──────────────────────────────────────────────────────────────
 
-def sprint_matches_project(sprint_id: str) -> bool:
-    """True if sprint belongs to PROJECT_CWD (or no filter, or no cwd file in sprint)."""
-    if not PROJECT_CWD:
-        return True
-    try:
-        cwd = (SPRINT_DIR / sprint_id / "cwd").read_text().strip()
-        return cwd == PROJECT_CWD
-    except Exception:
-        return False  # no cwd file = unknown project, hide when filtering
-
-
-def find_current_sprint() -> "str | None":
-    """Return sprint_id if active sprint dir exists and matches current project."""
-    id_file = SPRINT_DIR / "current_sprint_id"
-    try:
-        sprint_id = id_file.read_text().strip()
-        if sprint_id and (SPRINT_DIR / sprint_id).is_dir() and sprint_matches_project(sprint_id):
-            return sprint_id
-    except Exception:
-        pass
-    return None
-
-def read_pm_plan(sprint_id: str, n: int = 15) -> list:
-    """First n lines of pm_plan.md for the sprint."""
-    path = SPRINT_DIR / sprint_id / "pm_plan.md"
+def read_acceptance_criteria(orch_id: str) -> tuple[str, list[tuple[bool, str]]]:
+    """Return (task_line, [(checked, text), ...])."""
+    path = ORCH_BASE / orch_id / "acceptance_criteria.md"
+    task_line = ""
+    criteria: list[tuple[bool, str]] = []
     try:
         lines = path.read_text(errors="replace").splitlines()
-        return lines[:n]
+        for i, line in enumerate(lines):
+            if "**Task**:" in line:
+                # text after the marker
+                task_line = line.split("**Task**:", 1)[-1].strip()
+            stripped = line.strip()
+            if stripped.startswith("- [x]") or stripped.startswith("- [X]"):
+                criteria.append((True, stripped[5:].strip()))
+            elif stripped.startswith("- [ ]"):
+                criteria.append((False, stripped[5:].strip()))
     except Exception:
-        return []
+        pass
+    return task_line, criteria
 
-def read_sprint_events(sprint_id: str) -> list:
-    """All events from events.jsonl."""
-    path = SPRINT_DIR / sprint_id / "events.jsonl"
-    events = []
+
+def read_evaluation_report(orch_id: str) -> tuple[dict[str, str], str]:
+    """Return (criterion_statuses, verdict_text)."""
+    path = ORCH_BASE / orch_id / "evaluation_report.md"
+    crit_statuses: dict[str, str] = {}   # criterion text snippet -> PASS/FAIL/PARTIAL
+    verdict = ""
+    try:
+        text = path.read_text(errors="replace")
+        # Parse per-criterion Status lines
+        current_crit = ""
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("###") or stripped.startswith("**Criterion"):
+                current_crit = stripped.lstrip("#").strip().strip("*").strip()
+            elif stripped.startswith("Status:") or stripped.startswith("**Status**:"):
+                val = stripped.split(":", 1)[-1].strip().strip("*").strip()
+                if current_crit:
+                    crit_statuses[current_crit.lower()[:30]] = val
+        # Parse overall verdict section
+        if "## Overall Verdict" in text:
+            verdict_section = text.split("## Overall Verdict", 1)[1]
+            # grab first non-empty line
+            for ln in verdict_section.splitlines():
+                ln = ln.strip()
+                if ln:
+                    verdict = ln[:80]
+                    break
+    except Exception:
+        pass
+    return crit_statuses, verdict
+
+
+def read_lead_statuses(orch_id: str) -> dict[str, dict]:
+    """role -> {status, error, mtime}"""
+    result = {}
+    base = ORCH_BASE / orch_id
+    for role in LEAD_ORDER:
+        f = base / f"{role}.status"
+        if f.exists():
+            try:
+                data = json.loads(f.read_text())
+                data["mtime"] = f.stat().st_mtime
+                result[role] = data
+            except Exception:
+                result[role] = {"status": "unknown", "mtime": f.stat().st_mtime}
+    # Also pick up any other *-lead.status files not in LEAD_ORDER
+    try:
+        for f in base.glob("*-lead.status"):
+            role = f.stem  # e.g. "hud-lead"
+            if role not in result:
+                try:
+                    data = json.loads(f.read_text())
+                    data["mtime"] = f.stat().st_mtime
+                    result[role] = data
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return result
+
+
+def read_working_memory(orch_id: str) -> list[dict]:
+    """Last entries from shared/working_memory.jsonl."""
+    path = ORCH_BASE / orch_id / "shared" / "working_memory.jsonl"
+    entries = []
     try:
         for line in path.read_text(errors="replace").splitlines():
             line = line.strip()
             if not line:
                 continue
             try:
-                events.append(json.loads(line))
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return events
-
-def read_lead_result(sprint_id: str, role: str) -> list:
-    """First 3 non-empty lines of results/<role>_result.md."""
-    path = SPRINT_DIR / sprint_id / "results" / f"{role}_result.md"
-    try:
-        lines = [l for l in path.read_text(errors="replace").splitlines() if l.strip()]
-        return lines[:3]
-    except Exception:
-        return []
-
-def read_all_statuses(sprint_id: str) -> dict:
-    """role -> {status, error} from <role>.status files."""
-    statuses = {}
-    sprint_path = SPRINT_DIR / sprint_id
-    for role in LEAD_ORDER:
-        status_file = sprint_path / f"{role}.status"
-        try:
-            data = json.loads(status_file.read_text())
-            statuses[role] = data
-        except Exception:
-            pass
-    return statuses
-
-def read_gate(sprint_id: str) -> dict:
-    """Read gate.json -> {unlocked_waves: [...]}."""
-    path = SPRINT_DIR / sprint_id / "gate.json"
-    try:
-        return json.loads(path.read_text())
-    except Exception:
-        return {}
-
-def read_orchestrate_plan() -> "str | None":
-    """Return plan text if /tmp/caf_plan.md or /tmp/caf_orch_status.jsonl exists and mtime < 4h."""
-    try:
-        # Check orch status file first (written per-wave, more current)
-        if ORCH_STATUS.exists():
-            age = now_utc().timestamp() - ORCH_STATUS.stat().st_mtime
-            if age <= 4 * 3600:
-                # Return plan file content if available, else a stub
-                if PLAN_FILE.exists():
-                    return PLAN_FILE.read_text(errors="replace")
-                return "# Orchestration in progress\n(plan file not found)"
-        # Fall back to plan file alone
-        if not PLAN_FILE.exists():
-            return None
-        age = now_utc().timestamp() - PLAN_FILE.stat().st_mtime
-        if age > 4 * 3600:
-            return None
-        return PLAN_FILE.read_text(errors="replace")
-    except Exception:
-        return None
-
-def read_task_completions(n: int = 10) -> list:
-    """Last n entries from task_completions.jsonl, filtered by PROJECT_CWD if set."""
-    entries = []
-    try:
-        for line in COMPLETIONS.read_text(errors="replace").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                e = json.loads(line)
-                if PROJECT_CWD and e.get("cwd") and e.get("cwd") != PROJECT_CWD:
-                    continue
-                entries.append(e)
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return entries[-n:]
-
-def read_alerts(n: int = 3) -> list:
-    """Last n entries from subagent_alerts.jsonl."""
-    entries = []
-    try:
-        for line in ALERTS_FILE.read_text(errors="replace").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entries.append(json.loads(line))
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return entries[-n:]
-
-def read_activity_log(n: int = 3) -> list:
-    """Last n entries from activity_log.jsonl, filtered by PROJECT_CWD if set."""
-    entries = []
-    try:
-        for line in ACTIVITY_LOG.read_text(errors="replace").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                e = json.loads(line)
-                if PROJECT_CWD and e.get("cwd") != PROJECT_CWD:
-                    continue
-                entries.append(e)
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return entries[-n:]
-
-# ── Section printers ──────────────────────────────────────────────────────────
-
-def print_header(title: str) -> None:
-    w = W()
-    bar = "═" * w
-    pr(f"{B}{CY}{bar}{R}")
-    pr(f"{B}{CY}  {title}{R}")
-    pr(f"{B}{CY}{bar}{R}")
-    pr()
-
-def print_section(label: str) -> None:
-    pr(f"{B}{YL}── {label} {R}")
-
-def print_plan_lines(lines: list) -> None:
-    for line in lines:
-        pr(f"  {line}")
-    pr()
-
-def print_completions(entries: list) -> None:
-    if not entries:
-        pr(f"  {D}(none){R}")
-        pr()
-        return
-    for e in entries:
-        ts   = fmt_ts(e.get("timestamp", ""))
-        subj = e.get("task_subject", "") or e.get("task_id", "")
-        who  = e.get("teammate_name", "") or e.get("agent_name", "")
-        tid  = e.get("task_id", "")
-        # Show task_id as "who" if teammate_name blank (API limitation)
-        who_str = f"{D}[{who}]{R}" if who else (f"{D}[task {tid}]{R}" if tid else "")
-        pr(f"  {GR}✓{R}  {D}{ts}{R}  {subj}  {who_str}")
-    pr()
-
-def print_alerts(entries: list) -> None:
-    if not entries:
-        pr(f"  {D}(none){R}")
-    for e in entries:
-        ts    = fmt_ts(e.get("timestamp", ""))
-        agent = e.get("agent_name", "")
-        types = ", ".join(e.get("anomaly_types", []))
-        exc   = (e.get("error_excerpt") or "")[:80]
-        pr(f"  {RD}!{R}  {D}{ts}{R}  {M}{agent}{R}  {YL}{types}{R}")
-        if exc:
-            pr(f"      {D}{exc}{R}")
-    pr()
-
-def print_events(events: list, n: int = 8) -> None:
-    recent = events[-n:]
-    if not recent:
-        pr(f"  {D}(none){R}")
-    for ev in recent:
-        ts     = fmt_ts(ev.get("ts", ""))
-        etype  = ev.get("type", "")
-        wave   = ev.get("wave")
-        name   = ev.get("name", ev.get("commit", ""))
-        detail = f"W{wave}" if wave is not None else ""
-        if name:
-            detail = f"{detail}  {name}" if detail else name
-        pr(f"  {D}{ts}{R}  {CY}{etype}{R}  {detail}")
-    pr()
-
-def print_activity_sessions(entries: list) -> None:
-    if not entries:
-        pr(f"  {D}(none){R}")
-        return
-    for e in entries:
-        ts      = e.get("ts", "")[:10]
-        commit  = e.get("commit", "")
-        changed = e.get("changed", [])
-        tasks   = e.get("tasks", [])
-        pr(f"  {B}{CY}{ts}{R}  {commit[:60]}")
-        if changed:
-            shown = "  ".join(changed[:3])
-            extra = f"  (+{len(changed)-3} more)" if len(changed) > 3 else ""
-            pr(f"    {D}files: {shown}{extra}{R}")
-        if tasks:
-            for t in tasks[:2]:
-                pr(f"    {GR}✓{R}  {D}{t[:70]}{R}")
-        pr()
-
-# ── Wave/lead status for sprint mode ─────────────────────────────────────────
-
-def role_wave(role: str) -> int:
-    """Map role to wave index based on LEAD_ORDER position."""
-    wave_map = {
-        "planning-lead":    0,
-        "engineering-lead": 1,
-        "frontend-lead":    1,
-        "review-lead":      1,
-        "qa-lead":          2,
-        "security-lead":    2,
-        "release-lead":     3,
-        "docs-lead":        3,
-    }
-    return wave_map.get(role, 1)
-
-def print_waves(sprint_id: str, statuses: dict) -> None:
-    gate = read_gate(sprint_id)
-    unlocked = set(gate.get("unlocked_waves", [0]))
-
-    waves: dict = {}
-    for role in LEAD_ORDER:
-        w = role_wave(role)
-        waves.setdefault(w, []).append(role)
-
-    for wave_idx in sorted(waves.keys()):
-        label = WAVE_LABELS.get(wave_idx, f"W{wave_idx}")
-        roles_in_wave = waves[wave_idx]
-
-        known = [statuses[r] for r in roles_in_wave if r in statuses]
-        all_done    = bool(known) and all(s.get("status") == "done"   for s in known)
-        any_failed  = any(s.get("status") == "failed" for s in known)
-        any_running = wave_idx in unlocked and not all_done and not any_failed
-
-        if all_done:
-            wave_color = GR
-            wave_mark  = "✓"
-        elif any_failed:
-            wave_color = RD
-            wave_mark  = "✗"
-        elif any_running:
-            wave_color = YL
-            wave_mark  = "▶"
-        else:
-            wave_color = D
-            wave_mark  = "○"
-
-        pr(f"  {wave_color}{B}WAVE {wave_idx} — {label}  {wave_mark}{R}")
-
-        for role in roles_in_wave:
-            st = statuses.get(role, {})
-            status_str = st.get("status", "")
-            err        = st.get("error", "")
-
-            if status_str == "done":
-                icon  = f"{GR}[DONE]{R}   "
-            elif status_str == "failed":
-                icon  = f"{RD}[FAILED]{R} "
-            elif wave_idx in unlocked:
-                icon  = f"{YL}[running]{R}"
-            else:
-                icon  = f"{D}[waiting]{R}"
-
-            pr(f"    {icon}  {role}")
-            if err:
-                pr(f"           {RD}{err[:70]}{R}")
-
-            # Show first 3 lines of result
-            result_lines = read_lead_result(sprint_id, role)
-            for rl in result_lines:
-                pr(f"           {D}{rl}{R}")
-        pr()
-
-# ── Task mode renderer ────────────────────────────────────────────────────────
-
-def render_task(task_id: int) -> None:
-    task_meta = read_session_task(task_id)
-    task_name = task_meta.get("task_name", f"task {task_id}")
-    task_type = task_meta.get("task_type", "other")
-    sprint_id = task_meta.get("sprint_id")
-
-    print_header(f"TASK {task_id} — {task_name}")
-
-    if task_type == "sprint" and sprint_id:
-        # reuse existing sprint render
-        statuses = read_all_statuses(sprint_id)
-        events = read_sprint_events(sprint_id)
-        alerts = read_alerts(n=3)
-        plan_lines = read_pm_plan(sprint_id, n=15)
-        print_section("PLAN")
-        print_plan_lines(plan_lines)
-        print_section("WAVE STATUS")
-        print_waves(sprint_id, statuses)
-        print_section("EVENTS")
-        print_events(events, n=8)
-        print_section("ALERTS")
-        print_alerts(alerts)
-    else:
-        # orchestrate mode filtered to task window
-        orch_waves = read_orch_status_for_task(task_meta)
-        completions = read_task_completions(n=10)
-        alerts = read_alerts(n=3)
-
-        # show plan if available
-        plan_text = read_orchestrate_plan()
-        if plan_text:
-            print_section("PLAN")
-            print_plan_lines(plan_text.splitlines()[:15])
-
-        print_section("AGENT WAVES")
-        print_orch_waves(orch_waves)
-        print_section("COMPLETED TASKS")
-        print_completions(completions)
-        print_section("ALERTS")
-        print_alerts(alerts)
-
-
-# ── Mode renderers ────────────────────────────────────────────────────────────
-
-def render_sprint(sprint_id: str) -> None:
-    statuses = read_all_statuses(sprint_id)
-    events   = read_sprint_events(sprint_id)
-    alerts   = read_alerts(n=3)
-    plan_lines = read_pm_plan(sprint_id, n=15)
-
-    print_header(f"AGENT REPORT — {sprint_id}")
-
-    print_section("PLAN")
-    print_plan_lines(plan_lines)
-
-    print_section("WAVE STATUS")
-    print_waves(sprint_id, statuses)
-
-    print_section("EVENTS")
-    print_events(events, n=8)
-
-    print_section("ALERTS")
-    print_alerts(alerts)
-
-
-def read_orch_status() -> list:
-    """Read /tmp/caf_orch_status.jsonl — live orchestrate wave updates."""
-    entries = []
-    try:
-        for line in ORCH_STATUS.read_text(errors="replace").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
                 entries.append(json.loads(line))
             except Exception:
                 pass
@@ -506,125 +194,417 @@ def read_orch_status() -> list:
     return entries
 
 
-def print_orch_waves(entries: list) -> None:
-    """Print live orchestrate wave status from caf_orch_status.jsonl."""
-    if not entries:
-        pr(f"  {D}(no wave updates yet){R}")
-        pr()
-        return
-    for e in entries:
-        ts      = fmt_ts(e.get("ts", ""))
-        wave    = e.get("wave", "")
-        agent   = e.get("agent", "")
-        status  = e.get("status", "")
-        summary = e.get("summary", "")
+def read_questions(orch_id: str) -> list[dict]:
+    """All entries from shared/questions.jsonl with status==pending."""
+    path = ORCH_BASE / orch_id / "shared" / "questions.jsonl"
+    entries = []
+    try:
+        for line in path.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                e = json.loads(line)
+                if e.get("status") == "pending":
+                    entries.append(e)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return entries
 
-        if status == "running":
-            icon = f"{YL}►{R}"
-        elif status == "done":
-            icon = f"{GR}✓{R}"
-        elif status == "failed":
-            icon = f"{RD}✗{R}"
+
+def read_discoveries(orch_id: str) -> list[dict]:
+    """Last 2 entries from shared/discoveries.jsonl."""
+    path = ORCH_BASE / orch_id / "shared" / "discoveries.jsonl"
+    entries = []
+    try:
+        for line in path.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return entries[-2:]
+
+
+def read_token_usage() -> str:
+    """Sum session tokens from caf_session_cost_*.jsonl (written by Rust SessionCostTracker).
+    Reads the most-recently-modified cost file. Returns '~42k tok | $0.12' or ''."""
+    import glob as _glob
+    cost_files = sorted(
+        _glob.glob("/tmp/caf_session_cost_*.jsonl"),
+        key=lambda p: Path(p).stat().st_mtime,
+        reverse=True,
+    )
+    if not cost_files:
+        return ""
+    total_tok = 0
+    total_cost = 0.0
+    try:
+        for line in Path(cost_files[0]).read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                e = json.loads(line)
+                total_tok  += (e.get("input_tokens", 0) or 0) + (e.get("output_tokens", 0) or 0)
+                total_cost += e.get("cost_usd", 0.0) or 0.0
+            except Exception:
+                pass
+    except Exception:
+        return ""
+    if total_tok == 0:
+        return ""
+    k = total_tok // 1000
+    return f"~{k}k tok ${total_cost:.2f}"
+
+
+# ── Layout helpers ────────────────────────────────────────────────────────────
+
+def box_line(left_content: str, right_content: str,
+             left_w: int, right_w: int,
+             left_color: str = "", right_color: str = "") -> str:
+    """Render one row of a two-column box."""
+    lc = left_content[:left_w].ljust(left_w)
+    rc = right_content[:right_w].ljust(right_w)
+    lc_colored = f"{left_color}{lc}{RESET}" if left_color else lc
+    rc_colored = f"{right_color}{rc}{RESET}" if right_color else rc
+    return f"{BOLD}{CYN}║{RESET}{lc_colored}{BOLD}{CYN}║{RESET}{rc_colored}{BOLD}{CYN}║{RESET}"
+
+
+def h_rule_double(w: int) -> str:
+    return f"{BOLD}{CYN}{'═' * w}{RESET}"
+
+def h_rule_split(left_w: int, right_w: int) -> str:
+    """╠══════╦══════╣"""
+    return (f"{BOLD}{CYN}╠{'═' * left_w}╦{'═' * right_w}╣{RESET}")
+
+def h_rule_join(left_w: int, right_w: int) -> str:
+    """╠══════╩══════╣"""
+    return (f"{BOLD}{CYN}╠{'═' * left_w}╩{'═' * right_w}╣{RESET}")
+
+def h_rule_single_full(w: int) -> str:
+    """╠══════════════╣"""
+    return f"{BOLD}{CYN}╠{'═' * (w - 2)}╣{RESET}"
+
+def top_border(w: int) -> str:
+    return f"{BOLD}{CYN}╔{'═' * (w - 2)}╗{RESET}"
+
+def bot_border(w: int) -> str:
+    return f"{BOLD}{CYN}╚{'═' * (w - 2)}╝{RESET}"
+
+def full_row(content: str, w: int, color: str = "") -> str:
+    inner = w - 2
+    text = content[:inner].ljust(inner)
+    colored = f"{color}{text}{RESET}" if color else text
+    return f"{BOLD}{CYN}║{RESET}{colored}{BOLD}{CYN}║{RESET}"
+
+
+# ── Lead status rendering ─────────────────────────────────────────────────────
+
+def lead_symbol(status: str) -> str:
+    if status == "done":
+        return f"{GRN}✓{RESET}"
+    elif status == "running":
+        return f"{CYN}●{RESET}"
+    elif status == "failed":
+        return f"{RED}✗{RESET}"
+    elif status == "aborted":
+        return f"{GRAY}⊘{RESET}"
+    else:
+        return f"{GRAY}◌{RESET}"
+
+def lead_color(status: str) -> str:
+    if status == "done":
+        return GRN
+    elif status == "running":
+        return CYN
+    elif status == "failed":
+        return RED
+    else:
+        return GRAY
+
+
+def last_memory_for_lead(lead: str, mem_entries: list[dict]) -> str:
+    """Return summary text of last working_memory entry for this lead."""
+    for e in reversed(mem_entries):
+        if e.get("lead") == lead or e.get("role") == lead or e.get("agent") == lead:
+            return (e.get("summary") or e.get("content") or e.get("text") or "")[:40]
+    return ""
+
+
+# ── Questions panel ───────────────────────────────────────────────────────────
+
+def render_questions_panel(questions: list[dict], inner_w: int) -> list[str]:
+    """Return list of lines (no ║ borders — caller adds them)."""
+    lines = []
+    if not questions:
+        lines.append(f"{GRAY}(no pending questions){RESET}")
+        return lines
+
+    for q in questions:
+        critical = q.get("critical", False)
+        bc = RED if critical else YLW
+        qid   = str(q.get("id", ""))
+        lead  = str(q.get("lead", q.get("from", "")))
+        qtext = str(q.get("question", q.get("text", "")))[:60]
+        # inner box width: inner_w - 4 for margins
+        bw = min(inner_w - 4, 30)
+        lines.append(f"{bc}╔{'═' * bw}╗{RESET}")
+        lines.append(f"{bc}║{BOLD}⚠ WAITING PM{RESET}{bc}{'─' * max(0, bw - 12)}║{RESET}")
+        lines.append(f"{bc}║{RESET}[{qid}] {lead[:bw-4]}{' ' * max(0, bw - 4 - len(qid) - len(lead))} {bc}║{RESET}")
+        # question text wrapped at bw-2
+        for chunk_start in range(0, len(qtext), bw - 2):
+            chunk = qtext[chunk_start:chunk_start + bw - 2]
+            lines.append(f"{bc}║{RESET}{chunk.ljust(bw - 2)}{bc}║{RESET}")
+        cmd = f"orch-shared answer-q {qid}"
+        lines.append(f"{bc}║{RESET}{GRAY}{cmd[:bw-2].ljust(bw-2)}{RESET}{bc}║{RESET}")
+        lines.append(f"{bc}╚{'═' * bw}╝{RESET}")
+
+    return lines
+
+
+# ── HUD renderer ──────────────────────────────────────────────────────────────
+
+def render_hud() -> None:
+    w = term_width()
+    out: list[str] = []
+
+    def emit(line: str = "") -> None:
+        out.append(line)
+
+    orch_id = find_active_orch_id()
+
+    # ── Gather data ───────────────────────────────────────────────────────────
+    task_line, criteria      = read_acceptance_criteria(orch_id) if orch_id else ("", [])
+    crit_statuses, verdict   = read_evaluation_report(orch_id) if orch_id else ({}, "")
+    lead_statuses            = read_lead_statuses(orch_id) if orch_id else {}
+    mem_entries              = read_working_memory(orch_id) if orch_id else []
+    questions                = read_questions(orch_id) if orch_id else []
+    discoveries              = read_discoveries(orch_id) if orch_id else []
+    tok_usage                = read_token_usage()
+
+    # ── Column widths ─────────────────────────────────────────────────────────
+    # total inner width = w - 2 (for ║ on each side)
+    # split roughly 22 / rest
+    inner = w - 2
+    left_w  = min(22, inner // 3)
+    right_w = inner - left_w - 1  # -1 for middle ║
+
+    # ── Header ────────────────────────────────────────────────────────────────
+    task_short = task_line[:55] if task_line else "(no task)"
+    elapsed_total = ""
+    if orch_id:
+        orch_dir = ORCH_BASE / orch_id
+        try:
+            elapsed_total = elapsed_str(orch_dir.stat().st_mtime)
+        except Exception:
+            elapsed_total = "?"
+    usage_str  = f"📊 {tok_usage}" if tok_usage else ""
+    header_parts = [
+        f"{BOLD}{CYN}{orch_id or 'no-job'}{RESET}",
+        f"{WHT}{task_short}{RESET}",
+        f"{GRAY}⏱ {elapsed_total}{RESET}",
+        f"{BLU}{usage_str}{RESET}" if usage_str else "",
+    ]
+    header_inner = "  │  ".join(p for p in header_parts if p)
+    emit(top_border(w))
+    emit(full_row(f"  {header_inner}", w))
+    emit(h_rule_split(left_w, right_w))
+
+    # ── Column headers ────────────────────────────────────────────────────────
+    emit(box_line(
+        f" {BOLD}CRITERIA{RESET}",
+        f" {BOLD}LEAD STATUS{RESET}",
+        left_w, right_w,
+    ))
+
+    # ── Criteria + Lead rows (interleaved) ────────────────────────────────────
+    # Determine how many rows to show
+    leads_to_show = [r for r in LEAD_ORDER if r in lead_statuses]
+    # Add any discovered leads not in LEAD_ORDER
+    for r in lead_statuses:
+        if r not in leads_to_show:
+            leads_to_show.append(r)
+
+    max_rows = max(len(criteria), len(leads_to_show))
+
+    for i in range(max_rows):
+        # ── Left: criterion ──────────────────────────────────────────────────
+        if i < len(criteria):
+            checked, ctext = criteria[i]
+            # check eval overlay
+            ctext_key = ctext.lower()[:30]
+            eval_status = ""
+            for ck, cv in crit_statuses.items():
+                if ck in ctext_key or ctext_key in ck:
+                    eval_status = cv
+                    break
+            if eval_status == "PASS":
+                box_char = f"{GRN}x{RESET}"
+            elif checked:
+                box_char = f"{GRN}x{RESET}"
+            elif eval_status == "FAIL":
+                box_char = f"{RED} {RESET}"
+            else:
+                box_char = " "
+            ctext_disp = ctext[:left_w - 6]
+            left_str = f" [{box_char}] {ctext_disp}"
         else:
-            icon = f"{D}○{R}"
+            left_str = ""
 
-        wave_label = f"W{wave}" if wave != "" else ""
-        pr(f"  {icon}  {D}{ts}{R}  {M}{agent}{R}  {D}{wave_label}{R}")
-        if summary:
-            pr(f"       {D}{summary[:80]}{R}")
-    pr()
+        # ── Right: lead status ────────────────────────────────────────────────
+        if i < len(leads_to_show):
+            role   = leads_to_show[i]
+            info   = lead_statuses[role]
+            status = info.get("status", "pending")
+            sym    = lead_symbol(status)
+            col    = lead_color(status)
+            mtime  = info.get("mtime")
+            el     = elapsed_str(mtime) if mtime else "?"
+            role_short = role[:20]
+            status_short = status[:7]
+            right_str = f" {sym} {col}{role_short:<20}{RESET} {GRAY}{status_short:<7}{RESET} ({el})"
+        else:
+            right_str = ""
 
+        emit(box_line(left_str, right_str, left_w, right_w))
 
-def render_orchestrate(plan_text: str) -> None:
-    orch_waves  = read_orch_status()
-    completions = read_task_completions(n=10)
-    alerts      = read_alerts(n=3)
-    plan_lines  = plan_text.splitlines()[:15]
+        # ── Sub-row: last memory for lead ──────────────────────────────────────
+        if i < len(leads_to_show):
+            role   = leads_to_show[i]
+            status = lead_statuses[role].get("status", "")
+            if status == "running":
+                mem_text = last_memory_for_lead(role, mem_entries)
+                if mem_text:
+                    mem_disp = f"  └ {GRAY}\"{mem_text[:right_w - 6]}\"{RESET}"
+                    emit(box_line("", mem_disp, left_w, right_w))
 
-    print_header("AGENT REPORT — orchestrate")
+    # Criteria overall eval status label
+    if verdict:
+        emit(box_line(
+            f" {GRN if 'PASS' in verdict.upper() else YLW}eval: {verdict[:left_w-8]}{RESET}",
+            "",
+            left_w, right_w,
+        ))
+    else:
+        emit(box_line(f" {GRAY}eval: pending{RESET}", "", left_w, right_w))
 
-    print_section("PLAN")
-    print_plan_lines(plan_lines)
+    # ── Middle divider ────────────────────────────────────────────────────────
+    emit(h_rule_split(left_w, right_w))
 
-    print_section("AGENT WAVES")
-    print_orch_waves(orch_waves)
+    # ── Questions + Working Memory ────────────────────────────────────────────
+    emit(box_line(
+        f" {BOLD}❓ QUESTIONS{RESET}",
+        f" {BOLD}WORKING MEMORY (last 6){RESET}",
+        left_w, right_w,
+    ))
 
-    print_section("COMPLETED TASKS")
-    print_completions(completions)
+    # Left: questions panel lines
+    q_lines  = render_questions_panel(questions, left_w)
+    # Right: working memory last 6 entries
+    mem_last6 = mem_entries[-6:]
+    mem_lines: list[str] = []
+    for me in mem_last6:
+        ts_raw  = me.get("ts", me.get("timestamp", ""))
+        ts_disp = fmt_ts(ts_raw) if ts_raw else "??:??"
+        lead    = me.get("lead", me.get("role", me.get("agent", "?")))[:6]
+        summary = (me.get("summary") or me.get("content") or me.get("text") or "")
+        first_line = summary.splitlines()[0] if summary else ""
+        mem_lines.append(f" {GRAY}{ts_disp}{RESET} {CYN}{lead}{RESET}: {first_line[:right_w - 12]}")
+        # second line (why/detail)
+        why = (me.get("why") or me.get("reason") or "")
+        if why:
+            mem_lines.append(f"   {GRAY}why: {why[:right_w - 8]}{RESET}")
 
-    print_section("ALERTS")
-    print_alerts(alerts)
+    max_q_rows = max(len(q_lines), len(mem_lines), 1)
+    for i in range(max_q_rows):
+        left_str  = q_lines[i]  if i < len(q_lines)  else ""
+        right_str = mem_lines[i] if i < len(mem_lines) else ""
+        emit(box_line(left_str, right_str, left_w, right_w))
 
+    # ── Broadcast bar ─────────────────────────────────────────────────────────
+    emit(h_rule_join(left_w, right_w))
+    if discoveries:
+        last_d = discoveries[-1]
+        topic  = str(last_d.get("topic", last_d.get("type", "broadcast")))
+        msg    = str(last_d.get("message", last_d.get("content", last_d.get("text", ""))))[:80]
+        bcast  = f" 📡 {BOLD}{topic}{RESET}: {msg}"
+    else:
+        bcast  = f" {GRAY}📡 (no broadcasts yet){RESET}"
+    emit(full_row(bcast, w))
 
-def render_idle() -> None:
-    completions = read_task_completions(n=8)
-    sessions    = read_activity_log(n=3)
+    # ── Evaluation panel ──────────────────────────────────────────────────────
+    emit(h_rule_single_full(w))
+    # Determine eval state
+    all_leads_done = bool(lead_statuses) and all(
+        v.get("status") in ("done", "failed") for v in lead_statuses.values()
+    )
+    eval_f = ORCH_BASE / orch_id / "evaluation_report.md" if orch_id else Path("/dev/null")
+    eval_running = False
+    eval_status_f = ORCH_BASE / orch_id / "evaluator.status" if orch_id else Path("/dev/null")
+    try:
+        es = json.loads(eval_status_f.read_text())
+        if es.get("status") == "running":
+            eval_running = True
+    except Exception:
+        pass
 
-    print_header("AGENT REPORT — idle")
+    if eval_running:
+        eval_text = f" {CYN}● evaluating...{RESET}"
+    elif verdict:
+        if "PASS" in verdict.upper():
+            # count criteria
+            total = len(criteria)
+            passed = sum(1 for _, ct in criteria
+                        for ck, cv in crit_statuses.items()
+                        if (ck in ct.lower()[:30] or ct.lower()[:30] in ck) and cv == "PASS")
+            eval_text = f" {GRN}{BOLD}PASS {passed}/{total} criteria{RESET}"
+        else:
+            failed_leads = [r for r, v in lead_statuses.items() if v.get("status") == "failed"]
+            fl_str = ", ".join(failed_leads[:3]) if failed_leads else "see report"
+            eval_text = f" {RED}{BOLD}NEEDS REWORK — {verdict[:50]}{RESET}  {GRAY}({fl_str}){RESET}"
+    elif not orch_id:
+        eval_text = f" {GRAY}pending — no active job{RESET}"
+    else:
+        eval_text = f" {GRAY}pending — runs after all leads complete{RESET}"
 
-    pr(f"  {D}No active orchestration.{R}")
-    pr()
+    emit(full_row(f" EVALUATION: {eval_text}", w))
+    emit(bot_border(w))
 
-    print_section("RECENT TASKS")
-    print_completions(completions)
-
-    print_section("RECENT SESSIONS")
-    print_activity_sessions(sessions)
-
-
-# ── Main render loop ──────────────────────────────────────────────────────────
-
-def render() -> None:
+    # ── Flush ─────────────────────────────────────────────────────────────────
     sys.stdout.write("\033[2J\033[H")
+    sys.stdout.write("\n".join(out) + "\n")
     sys.stdout.flush()
 
-    if TASK_ID is not None:
-        render_task(TASK_ID)
-    else:
-        # existing logic unchanged
-        sprint_id = find_current_sprint()
-        if sprint_id:
-            render_sprint(sprint_id)
-        else:
-            plan_text = read_orchestrate_plan()
-            if plan_text is not None:
-                render_orchestrate(plan_text)
-            else:
-                render_idle()
 
-    # Footer
-    ts = now_utc().strftime("%H:%M UTC")
-    pr(f"{D}{'─' * (W()-2)}{R}")
-    pr(f"  {D}○  {ts}  (refresh every 5s){R}")
+# ── Main loop ─────────────────────────────────────────────────────────────────
 
-
-PROJECT_CWD: "str | None" = None
-
-
-def main(poll: int = 5) -> None:
+def main() -> None:
+    tick = 0
     while True:
         try:
-            render()
+            if tick % 3 == 0:
+                render_hud()
+            else:
+                # Fast poll: only re-render if there are pending questions
+                orch_id = find_active_orch_id()
+                if orch_id and read_questions(orch_id):
+                    render_hud()
         except Exception as e:
             sys.stdout.write("\033[2J\033[H")
-            print(f"{RD}render error: {e}{R}")
-        time.sleep(poll)
+            print(f"{RED}render error: {e}{RESET}")
+        time.sleep(1)
+        tick += 1
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    poll = 5
-    i = 0
-    while i < len(args):
-        if args[i] == "--cwd" and i + 1 < len(args):
-            PROJECT_CWD = args[i + 1]; i += 2
-        elif args[i] == "--task" and i + 1 < len(args):
-            TASK_ID = int(args[i + 1]); poll = 3; i += 2
-        else:
-            try: poll = int(args[i])
-            except ValueError: pass
-            i += 1
     try:
-        main(poll=poll)
+        main()
     except KeyboardInterrupt:
         print()

@@ -51,6 +51,7 @@ def main():
         "security/verify_skills.py",
         "security/validate_docs.py",
         "automation/auto_prime.py",
+        "automation/inject_always_loaded_skills.py",
     ]
 
     messages = []

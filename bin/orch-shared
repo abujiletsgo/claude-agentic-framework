@@ -1,0 +1,555 @@
+#!/usr/bin/env python3
+"""
+orch-shared — Shared workspace operations for /orchestrate jobs.
+
+All state lives under /tmp/caf_orch/<orch_id>/shared/.
+
+Subcommands:
+  init <orch_id>
+      Create the shared/ directory structure for a new job.
+
+  register-domain <orch_id> <lead> <glob1> [glob2 ...]
+      Claim file ownership. Other leads must message <lead> before touching
+      any matching path. Writes to shared/domains.json.
+
+  check-domain <orch_id> <file>
+      Print which lead owns <file>, or "unclaimed". Exit 0 always.
+
+  append-memory <orch_id> '<json>'
+      Append one JSON line to shared/working_memory.jsonl.
+      Required fields: lead, summary. Optional: reason, changed, next, topic.
+
+  read-memory <orch_id> [n]
+      Print last n entries from working_memory.jsonl (default 20).
+
+  request-test <orch_id> <lead> <command>
+      Enqueue a test run. Writes to shared/test_queue.jsonl.
+      The shared validator pane picks this up and writes to test_results.jsonl.
+
+  read-tests <orch_id> [n]
+      Print last n test results from shared/test_results.jsonl (default 10).
+
+  broadcast <orch_id> <from_lead> <topic> <message>
+      Append a discovery to shared/discoveries.jsonl and send it via
+      send-agent to every other lead pane in surfaces.json.
+      Use for critical findings that may affect other leads' work.
+
+  list-surfaces <orch_id>
+      Print surfaces.json — all known lead → surface_id mappings.
+"""
+
+import sys
+import json
+import os
+import time
+import subprocess
+from pathlib import Path
+from datetime import datetime, timezone
+
+CAF_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(CAF_DIR / "lib"))
+import cmux_client as cmux  # noqa
+
+ORCH_BASE = Path("/tmp/caf_orch")
+
+
+def ts() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def shared_dir(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id / "shared"
+
+
+def surfaces_path(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id / "surfaces.json"
+
+
+def load_surfaces(orch_id: str) -> dict:
+    p = surfaces_path(orch_id)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# init
+# ---------------------------------------------------------------------------
+
+def cmd_init(orch_id: str) -> None:
+    sd = shared_dir(orch_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    (sd / "research").mkdir(exist_ok=True)
+    (sd / "worktrees").mkdir(exist_ok=True)
+
+    # Seed empty files so leads don't need to check existence
+    for fname in ("working_memory.jsonl", "test_queue.jsonl",
+                  "test_results.jsonl", "discoveries.jsonl", "questions.jsonl"):
+        p = sd / fname
+        if not p.exists():
+            p.write_text("")
+
+    if not (sd / "domains.json").exists():
+        (sd / "domains.json").write_text(json.dumps({}))
+
+    print(f"[orch-shared] initialized shared workspace: {sd}")
+
+
+# ---------------------------------------------------------------------------
+# register-domain
+# ---------------------------------------------------------------------------
+
+def cmd_register_domain(orch_id: str, lead: str, globs: list[str]) -> None:
+    p = shared_dir(orch_id) / "domains.json"
+    try:
+        domains: dict = json.loads(p.read_text())
+    except Exception:
+        domains = {}
+
+    for g in globs:
+        existing = domains.get(g)
+        if existing and existing != lead:
+            print(
+                f"[orch-shared] WARNING: {g!r} already claimed by {existing!r}. "
+                f"Overwriting with {lead!r}.",
+                file=sys.stderr,
+            )
+        domains[g] = lead
+
+    p.write_text(json.dumps(domains, indent=2))
+    print(f"[orch-shared] {lead} registered domains: {', '.join(globs)}")
+
+
+# ---------------------------------------------------------------------------
+# check-domain
+# ---------------------------------------------------------------------------
+
+def cmd_check_domain(orch_id: str, file_path: str) -> None:
+    p = shared_dir(orch_id) / "domains.json"
+    try:
+        domains: dict = json.loads(p.read_text())
+    except Exception:
+        domains = {}
+
+    import fnmatch
+    for pattern, lead in domains.items():
+        if fnmatch.fnmatch(file_path, pattern):
+            print(f"{lead}")
+            return
+    print("unclaimed")
+
+
+# ---------------------------------------------------------------------------
+# append-memory
+# ---------------------------------------------------------------------------
+
+def cmd_append_memory(orch_id: str, payload: str) -> None:
+    try:
+        entry = json.loads(payload)
+    except json.JSONDecodeError as e:
+        print(f"[orch-shared] invalid JSON: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    entry["ts"] = ts()
+    p = shared_dir(orch_id) / "working_memory.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
+    print(f"[orch-shared] memory written: {entry.get('summary', '')[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# read-memory
+# ---------------------------------------------------------------------------
+
+def cmd_read_memory(orch_id: str, n: int = 20) -> None:
+    p = shared_dir(orch_id) / "working_memory.jsonl"
+    if not p.exists():
+        print("(no entries)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    for line in lines:
+        try:
+            e = json.loads(line)
+            lead    = e.get("lead", "?")
+            summary = e.get("summary", "")
+            reason  = e.get("reason", "")
+            changed = e.get("changed", "")
+            next_   = e.get("next", "")
+            t       = e.get("ts", "")[:16]
+            print(f"[{t}] {lead}: {summary}")
+            if reason:  print(f"         why:     {reason}")
+            if changed: print(f"         changed: {changed}")
+            if next_:   print(f"         next:    {next_}")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# request-test
+# ---------------------------------------------------------------------------
+
+def cmd_request_test(orch_id: str, lead: str, command: str) -> None:
+    entry = {
+        "ts": ts(),
+        "lead": lead,
+        "command": command,
+        "status": "queued",
+    }
+    p = shared_dir(orch_id) / "test_queue.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
+    print(f"[orch-shared] test queued for {lead}: {command[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# read-tests
+# ---------------------------------------------------------------------------
+
+def cmd_read_tests(orch_id: str, n: int = 10) -> None:
+    p = shared_dir(orch_id) / "test_results.jsonl"
+    if not p.exists():
+        print("(no results yet)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    for line in lines:
+        try:
+            e = json.loads(line)
+            status  = e.get("status", "?")
+            lead    = e.get("lead", "?")
+            command = e.get("command", "")[:50]
+            t       = e.get("ts", "")[:16]
+            passed  = e.get("passed", "?")
+            icon    = "✓" if status == "passed" else "✗" if status == "failed" else "·"
+            print(f"[{t}] {icon} {lead}: {command}  ({passed})")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# broadcast
+# ---------------------------------------------------------------------------
+
+def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> None:
+    """
+    Append a discovery to discoveries.jsonl and send it to every other
+    lead pane via cmux send-agent. Used for critical cross-domain findings.
+    """
+    entry = {
+        "ts": ts(),
+        "from": from_lead,
+        "topic": topic,
+        "message": message,
+    }
+    p = shared_dir(orch_id) / "discoveries.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
+
+    surfaces = load_surfaces(orch_id)
+    recipients = [
+        name for name in surfaces
+        if name != from_lead and not name.startswith("_")
+        and name not in ("dashboard", "validator")
+    ]
+
+    if not recipients:
+        print(f"[orch-shared] broadcast written to discoveries.jsonl (no active panes to notify)")
+        return
+
+    cmux_bin = CAF_DIR / "bin" / "cmux-sprint"
+    alert = (
+        f"[BROADCAST from {from_lead} — topic: {topic}]\n"
+        f"{message}\n\n"
+        f"Does this affect your current work? If yes, adjust your plan and note it "
+        f"in shared/working_memory.jsonl via: bin/orch-shared append-memory {orch_id} "
+        f"'{{\"lead\":\"<you>\",\"summary\":\"adjusted plan: ...\",\"reason\":\"broadcast from {from_lead}\"}}'.\n"
+        f"If no, continue as planned."
+    )
+
+    sent = []
+    for name in recipients:
+        try:
+            subprocess.run(
+                [sys.executable, str(cmux_bin), "send-agent", orch_id, name, alert],
+                check=False, timeout=10,
+            )
+            sent.append(name)
+        except Exception as exc:
+            print(f"[orch-shared] could not send to {name}: {exc}", file=sys.stderr)
+
+    print(f"[orch-shared] broadcast '{topic}' → {', '.join(sent) or 'none'}")
+
+
+# ---------------------------------------------------------------------------
+# ask-pm
+# ---------------------------------------------------------------------------
+
+def cmd_ask_pm(orch_id: str, lead: str, question: str, critical: str = "no") -> None:
+    """
+    Lead asks PM a question. Writes to shared/questions.jsonl with status="pending".
+    Lead should then poll wait-answer <orch_id> <question_id> for a response.
+    """
+    import uuid
+    q_id = str(uuid.uuid4())[:8]
+    entry = {
+        "ts": ts(),
+        "id": q_id,
+        "lead": lead,
+        "question": question,
+        "critical": critical.lower() in ("yes", "true", "1"),
+        "status": "pending",
+        "answer": None,
+    }
+    p = shared_dir(orch_id) / "questions.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
+    print(f"[orch-shared] question {q_id} posted by {lead}")
+    print(f"  Q: {question[:80]}")
+    print(f"  Wait for answer: bin/orch-shared wait-answer {orch_id} {q_id}")
+
+
+# ---------------------------------------------------------------------------
+# wait-answer
+# ---------------------------------------------------------------------------
+
+def cmd_wait_answer(orch_id: str, question_id: str, timeout: int = 120) -> None:
+    """
+    Lead polls for an answer to question_id. Blocks until answered or timeout.
+    Exits 0 with answer on stdout. Exits 1 on timeout (lead should proceed with
+    conservative assumption and log it).
+    """
+    p = shared_dir(orch_id) / "questions.jsonl"
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if p.exists():
+            for line in p.read_text().splitlines():
+                try:
+                    e = json.loads(line)
+                    if e.get("id") == question_id and e.get("status") == "answered":
+                        print(e.get("answer", ""))
+                        return
+                except Exception:
+                    pass
+        time.sleep(3)
+    print(f"[orch-shared] wait-answer timed out after {timeout}s for question {question_id}",
+          file=sys.stderr)
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# answer-question
+# ---------------------------------------------------------------------------
+
+def cmd_answer_question(orch_id: str, question_id: str, answer: str) -> None:
+    """
+    PM answers a pending question. Rewrites the questions.jsonl entry in-place.
+    """
+    p = shared_dir(orch_id) / "questions.jsonl"
+    if not p.exists():
+        print(f"[orch-shared] no questions file found", file=sys.stderr)
+        sys.exit(1)
+
+    lines = p.read_text().splitlines()
+    updated = False
+    new_lines = []
+    for line in lines:
+        try:
+            e = json.loads(line)
+            if e.get("id") == question_id and e.get("status") == "pending":
+                e["status"] = "answered"
+                e["answer"] = answer
+                e["answered_ts"] = ts()
+                new_lines.append(json.dumps(e))
+                updated = True
+                continue
+        except Exception:
+            pass
+        new_lines.append(line)
+
+    if not updated:
+        print(f"[orch-shared] question {question_id!r} not found or already answered",
+              file=sys.stderr)
+        sys.exit(1)
+
+    import tempfile
+    tmp = p.with_suffix('.jsonl.tmp')
+    with tmp.open('w') as f:
+        f.write('\n'.join(new_lines) + '\n')
+    tmp.replace(p)  # atomic on POSIX
+    print(f"[orch-shared] answered question {question_id}: {answer[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# pending-questions
+# ---------------------------------------------------------------------------
+
+def cmd_pending_questions(orch_id: str) -> None:
+    """Print all unanswered questions. Called by PM (and surfaced by poll-agents)."""
+    p = shared_dir(orch_id) / "questions.jsonl"
+    if not p.exists():
+        print("(no questions file)")
+        return
+    pending = []
+    for line in p.read_text().splitlines():
+        try:
+            e = json.loads(line)
+            if e.get("status") == "pending":
+                pending.append(e)
+        except Exception:
+            pass
+    if not pending:
+        print("(no pending questions)")
+        return
+    for e in pending:
+        crit = " [CRITICAL]" if e.get("critical") else ""
+        print(f"  [{e.get('id')}]{crit} from {e.get('lead','?')} at {e.get('ts','')[:16]}")
+        print(f"    Q: {e.get('question','')}")
+        print(f"    Answer: bin/orch-shared answer-question {orch_id} {e.get('id')} '<answer>'")
+        print()
+
+
+# ---------------------------------------------------------------------------
+# cleanup
+# ---------------------------------------------------------------------------
+
+def cmd_cleanup(orch_id: str) -> None:
+    """Archive results to ~/.claude/data/orch_results/<id>/, then remove /tmp/caf_orch/<id>/"""
+    import shutil
+
+    src = ORCH_BASE / orch_id
+    if not src.exists():
+        print(f"[orch-shared] nothing to clean: {src} not found")
+        return
+
+    # Archive results
+    archive_base = Path.home() / ".claude" / "data" / "orch_results"
+    archive_base.mkdir(parents=True, exist_ok=True)
+    dest = archive_base / orch_id
+
+    results_src = src / "results"
+    if results_src.exists():
+        shutil.copytree(str(results_src), str(dest / "results"), dirs_exist_ok=True)
+
+    # Also archive acceptance_criteria and evaluation_report if present
+    for fname in ("acceptance_criteria.md", "evaluation_report.md", "report.md", "merge_report.md"):
+        f = src / fname
+        if f.exists():
+            dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(f), str(dest / fname))
+
+    # Remove /tmp state
+    shutil.rmtree(str(src))
+    print(f"[orch-shared] archived results to {dest}")
+    print(f"[orch-shared] removed {src}")
+
+
+# ---------------------------------------------------------------------------
+# list-surfaces
+# ---------------------------------------------------------------------------
+
+def cmd_list_surfaces(orch_id: str) -> None:
+    surfaces = load_surfaces(orch_id)
+    if not surfaces:
+        print("(no surfaces registered)")
+        return
+    for name, sid in surfaces.items():
+        print(f"  {name:<24} {sid}")
+
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+
+USAGE = """\
+Usage: orch-shared <subcommand> [args...]
+
+Subcommands:
+  init <orch_id>
+  register-domain <orch_id> <lead> <glob1> [glob2 ...]
+  check-domain <orch_id> <file>
+  append-memory <orch_id> '<json>'
+  read-memory <orch_id> [n]
+  request-test <orch_id> <lead> <command>
+  read-tests <orch_id> [n]
+  broadcast <orch_id> <from_lead> <topic> <message>
+  ask-pm <orch_id> <lead> <question> [critical=yes|no]
+  wait-answer <orch_id> <question_id> [timeout_seconds]
+  answer-question <orch_id> <question_id> <answer>
+  pending-questions <orch_id>
+  list-surfaces <orch_id>
+  cleanup <orch_id>        Archive results, remove /tmp/caf_orch/<orch_id>/
+"""
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        print(USAGE)
+        return
+
+    sub = args[0]
+
+    if sub == "init":
+        cmd_init(args[1])
+    elif sub == "register-domain":
+        if len(args) < 4:
+            print("Usage: orch-shared register-domain <orch_id> <lead> <glob1> ...", file=sys.stderr)
+            sys.exit(1)
+        cmd_register_domain(args[1], args[2], args[3:])
+    elif sub == "check-domain":
+        cmd_check_domain(args[1], args[2])
+    elif sub == "append-memory":
+        cmd_append_memory(args[1], args[2])
+    elif sub == "read-memory":
+        cmd_read_memory(args[1], int(args[2]) if len(args) > 2 else 20)
+    elif sub == "request-test":
+        cmd_request_test(args[1], args[2], args[3])
+    elif sub == "read-tests":
+        cmd_read_tests(args[1], int(args[2]) if len(args) > 2 else 10)
+    elif sub == "broadcast":
+        if len(args) < 5:
+            print("Usage: orch-shared broadcast <orch_id> <from_lead> <topic> <message>", file=sys.stderr)
+            sys.exit(1)
+        cmd_broadcast(args[1], args[2], args[3], args[4])
+    elif sub == "ask-pm":
+        if len(args) < 4:
+            print("Usage: orch-shared ask-pm <orch_id> <lead> <question> [critical=yes|no]",
+                  file=sys.stderr)
+            sys.exit(1)
+        critical = args[4] if len(args) > 4 else "no"
+        cmd_ask_pm(args[1], args[2], args[3], critical)
+    elif sub == "wait-answer":
+        if len(args) < 3:
+            print("Usage: orch-shared wait-answer <orch_id> <question_id> [timeout_seconds]",
+                  file=sys.stderr)
+            sys.exit(1)
+        timeout = int(args[3]) if len(args) > 3 else 120
+        cmd_wait_answer(args[1], args[2], timeout)
+    elif sub == "answer-question":
+        if len(args) < 4:
+            print("Usage: orch-shared answer-question <orch_id> <question_id> <answer>",
+                  file=sys.stderr)
+            sys.exit(1)
+        cmd_answer_question(args[1], args[2], args[3])
+    elif sub == "pending-questions":
+        cmd_pending_questions(args[1])
+    elif sub == "list-surfaces":
+        cmd_list_surfaces(args[1])
+    elif sub == "cleanup":
+        if len(args) < 2:
+            print("Usage: orch-shared cleanup <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_cleanup(args[1])
+    else:
+        print(f"[orch-shared] unknown subcommand: {sub!r}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
