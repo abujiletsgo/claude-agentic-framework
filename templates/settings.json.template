@@ -47,6 +47,15 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/spawn_hud.py",
+            "timeout": 5
+          }
+        ]
       }
     ],
 

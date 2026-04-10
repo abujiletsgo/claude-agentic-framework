@@ -59,6 +59,8 @@ pub fn run() {
 
     // ── Framework & integrations ─────────────────────────────────────────
     results.push(check_framework_integrity());
+    results.push(check_cmux());
+    results.push(check_settings_vs_disk_hooks());
     results.push(check_mempalace());
     results.push(check_aaak_compression());
 
@@ -122,6 +124,14 @@ pub fn run() {
                     }
                     "Hook smoke test" => {
                         println!("  Hook runtime broken. Try: uv cache clean && bash install.sh");
+                    }
+                    "cmux" => {
+                        println!("  /orchestrate pane features require cmux — install from https://cmux.app");
+                        println!("  Without cmux: /orchestrate falls back to agents-only mode (no HUD)");
+                    }
+                    "settings.json hook count vs disk" => {
+                        println!("  New hook scripts found on disk not yet in settings.json.");
+                        println!("  Fix: bash install.sh  (re-registers all hooks)");
                     }
                     "Symlinks (commands/skills/agents)" => {
                         println!("  Symlinks missing or broken: bash install.sh");
@@ -217,13 +227,15 @@ fn check_rust_binary() -> CheckResult {
         Err(e) => return CheckResult::warn("Rust binary", format!("cannot read binary mtime: {}", e)),
     };
 
-    // Derive source directory: binary is at <framework>/caf-hooks/target/release/caf-hooks
-    // Go up: release/ -> target/ -> caf-hooks/ -> src/
-    let src_dir = exe_path
-        .parent() // release/
-        .and_then(|p| p.parent()) // target/
-        .and_then(|p| p.parent()) // caf-hooks/
-        .map(|p| p.join("src"));
+    // Support workspace (target/release/caf-hooks → 2 parents to crate root) and
+    // standalone (caf-hooks/target/release/caf-hooks → 3 parents to crate root).
+    // Walk up to find a dir that contains src/
+    let src_dir = [2usize, 3, 4].iter().find_map(|&levels| {
+        let mut p: &std::path::Path = &exe_path;
+        for _ in 0..levels { p = p.parent()?; }
+        let candidate = p.join("src");
+        if candidate.exists() { Some(candidate) } else { None }
+    });
 
     let src_dir = match src_dir {
         Some(d) if d.exists() => d,
@@ -455,22 +467,23 @@ fn check_required_dirs() -> CheckResult {
 
 fn check_framework_integrity() -> CheckResult {
     println!("[CHECK] Framework repo integrity");
-    // Derive framework dir from binary location:
-    // binary: <framework>/caf-hooks/target/release/caf-hooks
-    // framework dir: four levels up from binary
     let exe_path = match std::env::current_exe() {
         Ok(p) => p,
         Err(e) => return CheckResult::fail("Framework repo integrity", format!("cannot determine binary path: {}", e)),
     };
 
-    let framework_dir = exe_path
-        .parent() // release/
-        .and_then(|p| p.parent()) // target/
-        .and_then(|p| p.parent()) // caf-hooks/
-        .and_then(|p| p.parent()); // framework root
+    // Support two layouts:
+    //   Workspace:   <framework>/target/release/caf-hooks  → 3 levels up
+    //   Standalone:  <framework>/caf-hooks/target/release/caf-hooks  → 4 levels up
+    let framework_dir = [3usize, 4].iter().find_map(|&levels| {
+        let mut p: &std::path::Path = &exe_path;
+        for _ in 0..levels { p = p.parent()?; }
+        let candidate = p.to_path_buf();
+        if candidate.join("global-hooks").exists() { Some(candidate) } else { None }
+    });
 
     let framework_dir = match framework_dir {
-        Some(d) => d.to_path_buf(),
+        Some(d) => d,
         None => return CheckResult::fail("Framework repo integrity", "cannot derive framework directory from binary path"),
     };
 
@@ -873,6 +886,128 @@ fn check_aaak_compression() -> CheckResult {
             "disabled — no python3.x/site-packages found in mempalace venv",
         ),
     }
+}
+
+fn check_cmux() -> CheckResult {
+    println!("[CHECK] cmux (required for /orchestrate HUD + pane management)");
+
+    // cmux is a macOS GUI app — detect by socket presence (app must be running)
+    let socket_path = dirs::home_dir()
+        .map(|h| h.join("Library/Application Support/cmux/cmux.sock"));
+
+    // Also check common install locations for the cmux CLI shim
+    let app_installed = dirs::home_dir()
+        .map(|h| h.join("Applications/cmux.app").exists() || std::path::Path::new("/Applications/cmux.app").exists())
+        .unwrap_or(false);
+
+    let socket_ok = socket_path.as_ref().map(|p| p.exists()).unwrap_or(false);
+
+    match (app_installed, socket_ok) {
+        (_, true) => CheckResult::pass(
+            "cmux",
+            "socket active — /orchestrate HUD and pane management will work",
+        ),
+        (true, false) => CheckResult::warn(
+            "cmux",
+            "app installed but not running — open cmux before using /orchestrate pane features",
+        ),
+        (false, false) => CheckResult::warn(
+            "cmux",
+            "not found — /orchestrate will fall back to agents-only mode (no HUD, no panes). Install cmux from https://cmux.app",
+        ),
+    }
+}
+
+fn check_settings_vs_disk_hooks() -> CheckResult {
+    println!("[CHECK] settings.json hook count vs disk (detects unregistered new hooks)");
+
+    // Derive framework dir from binary path
+    let exe_path = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return CheckResult::warn("settings.json hook count vs disk", "cannot determine binary path"),
+    };
+    // Same workspace vs standalone layout detection
+    let hooks_dir = [3usize, 4].iter().find_map(|&levels| {
+        let mut p: &std::path::Path = &exe_path;
+        for _ in 0..levels { p = p.parent()?; }
+        let candidate = p.join("global-hooks");
+        if candidate.exists() { Some(candidate) } else { None }
+    });
+    let hooks_dir = match hooks_dir {
+        Some(d) => d,
+        None => return CheckResult::warn("settings.json hook count vs disk", "global-hooks/ not found"),
+    };
+
+    // Count .py hook files on disk (exclude __pycache__, __init__.py)
+    let disk_count = count_hook_files(&hooks_dir);
+
+    // Count hooks registered in settings.json
+    let settings_path = match settings_json_path() {
+        Some(p) => p,
+        None => return CheckResult::warn("settings.json hook count vs disk", "cannot determine home directory"),
+    };
+    let contents = match std::fs::read_to_string(&settings_path) {
+        Ok(c) => c,
+        Err(_) => return CheckResult::warn("settings.json hook count vs disk", "settings.json not readable"),
+    };
+    let json: serde_json::Value = match serde_json::from_str(&contents) {
+        Ok(v) => v,
+        Err(_) => return CheckResult::warn("settings.json hook count vs disk", "settings.json parse error"),
+    };
+    // Count commands that reference a .py file inside a hooks_* directory.
+    // Handles both "uv run --no-project /path/hooks_X/script.py" and plain "/path/hooks_X/script.py" forms.
+    let registered_count = extract_hook_commands(&json)
+        .iter()
+        .filter(|cmd| {
+            cmd.split_whitespace().any(|tok| {
+                tok.contains("hooks_") && tok.ends_with(".py")
+            })
+        })
+        .count();
+
+    if disk_count > registered_count {
+        CheckResult::warn(
+            "settings.json hook count vs disk",
+            format!(
+                "{} hook scripts on disk, {} registered in settings.json — {} unregistered. Run: bash install.sh",
+                disk_count, registered_count, disk_count - registered_count
+            ),
+        )
+    } else {
+        CheckResult::pass(
+            "settings.json hook count vs disk",
+            format!("{} hooks on disk match settings.json", disk_count),
+        )
+    }
+}
+
+fn count_hook_files(global_hooks_dir: &Path) -> usize {
+    // Only count .py files inside hooks_* subdirectories (event hook dirs).
+    // Excludes global-hooks/framework/ (utility modules, not registered hooks).
+    let mut count = 0;
+    if let Ok(entries) = std::fs::read_dir(global_hooks_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if name.starts_with("hooks_") {
+                    // Count .py files directly inside this hooks_* dir (non-recursive, depth 1)
+                    if let Ok(hook_files) = std::fs::read_dir(&path) {
+                        for hf in hook_files.flatten() {
+                            let hpath = hf.path();
+                            if hpath.is_file()
+                                && hpath.extension().and_then(|e| e.to_str()) == Some("py")
+                                && hpath.file_name().and_then(|n| n.to_str()).unwrap_or("") != "__init__.py"
+                            {
+                                count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    count
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
