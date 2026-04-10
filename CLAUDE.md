@@ -21,7 +21,7 @@ templates/           settings.json.template (edit this, run install.sh)
 
 ```
   Opus (2): orchestrator, project-architect
-Sonnet (7): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger, sprint-lead
+Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger
  Haiku (3): docs-scraper, validator, agent-watchdog
 ```
 
