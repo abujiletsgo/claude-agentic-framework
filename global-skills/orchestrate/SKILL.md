@@ -368,9 +368,9 @@ bin/cmux-sprint abort-agent <orch_id> qa-lead "Scope down to auth module only"
 
 Wave 0 — planning-lead + all shared researchers in ONE message (parallel):
 ```python
-Agent(name="planning-lead",       subagent_type="lead",       model="sonnet", prompt=<prompt>)
-Agent(name="research-codebase",   subagent_type="researcher", model="haiku",  prompt=<prompt>)
-Agent(name="research-auth",       subagent_type="researcher", model="haiku",  prompt=<prompt>)
+Agent(name="planning-lead",       subagent_type="lead",       model="opus",  prompt=<prompt>)
+Agent(name="research-codebase",   subagent_type="researcher", model="haiku", prompt=<prompt>)
+Agent(name="research-auth",       subagent_type="researcher", model="haiku", prompt=<prompt>)
 # Wait for all to return, then write lead prompts using their findings
 ```
 
@@ -381,6 +381,7 @@ Agent(name="qa-lead",          subagent_type="lead", model="sonnet", prompt=<pro
 Agent(name="review-lead",      subagent_type="lead", model="sonnet", prompt=<prompt>)
 # Wait for all to return, then merge + evaluate
 ```
+Note: planning-lead uses opus — wrong plan = everything downstream wrong. Other leads use sonnet.
 
 Never launch leads sequentially — always one message per wave.
 
@@ -639,7 +640,8 @@ Deliver to user:
 - All IPC: plain JSON + plain text. Never AAAK in prompts or IPC
 - Every lead must produce a criterion check + decision log — no silent work
 - Language/tool choice is always a decision point — leads surface options + tradeoffs, never silently default to existing language; "match what's already there" is not a valid reason on its own
-- **Parallel whenever possible** — speed over token efficiency; never serialize work that can run concurrently; within a wave, all agents launch in one message
+- **Priority order: quality/consistency/robustness → speed → token efficiency** — never sacrifice correctness for speed or tokens; parallelize for speed but not at the cost of quality; haiku only for mechanical no-reasoning work, sonnet minimum for any coding or analysis
+- **Parallel whenever possible** — within a wave, all agents launch in one message; never serialize work that can run concurrently
 
 ---
 

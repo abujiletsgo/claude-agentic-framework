@@ -13,6 +13,7 @@ tiers:
       - Orchestration, planning, architecture
       - Complex multi-step coordination
       - Recursive exploration controllers
+      - planning-lead in orchestrate jobs (wrong plan = everything downstream wrong)
 
   sonnet:
     model_id: claude-sonnet-4-6
