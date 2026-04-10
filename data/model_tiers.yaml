@@ -51,7 +51,6 @@ agent_tiers:
     - scout-report-suggest    # Codebase scouting
     - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
     - debugger                # Root cause analysis + fix plan writing
-    - sprint-lead             # Sprint coordination, planning, and execution management
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)
