@@ -129,11 +129,16 @@ Research is a shared pool, not per-lead. Before writing lead prompts:
 
 2. **Deduplicate**: Merge overlapping questions. One researcher per topic — no duplication.
 
-3. **Launch shared researchers** (Wave 0, alongside planning-lead):
+3. **Launch all shared researchers in parallel** (Wave 0, alongside planning-lead — one message, multiple Agent() calls):
    ```python
-   Agent(name="research-<topic>", subagent_type="researcher", model="sonnet",
-         prompt="Research [specific question]. Save findings to /tmp/caf_orch/<id>/shared/research/<topic>.md")
+   # All in a single message — they run concurrently
+   Agent(name="research-codebase",   subagent_type="researcher", model="haiku", prompt="...")
+   Agent(name="research-auth",       subagent_type="researcher", model="haiku", prompt="...")
+   Agent(name="research-tests",      subagent_type="researcher", model="haiku", prompt="...")
+   # Each saves findings to /tmp/caf_orch/<id>/shared/research/<topic>.md
    ```
+   Use **haiku** for researchers — they're reading files, not reasoning. Fast and cheap.
+   Wait for all to complete before writing lead prompts (their output feeds the prompts).
 
 4. **Pass findings to leads**: Reference the research files in each lead's prompt.
    ```
