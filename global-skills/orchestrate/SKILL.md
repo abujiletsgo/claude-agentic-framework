@@ -366,11 +366,23 @@ bin/cmux-sprint abort-agent <orch_id> qa-lead "Scope down to auth module only"
 
 ### agents-only mode (no CMUX_SURFACE_ID)
 
+Wave 0 — planning-lead + all shared researchers in ONE message (parallel):
 ```python
-Bash("bin/orch-event <orch_id> 0 planning-lead running 'planning the work'")
-Agent(name="planning-lead", subagent_type="lead", model="sonnet", prompt=<prompt>)
-Bash("bin/orch-event <orch_id> 0 planning-lead done '{\"summary\":\"...\",\"reason\":\"...\",\"changed\":\"...\",\"next\":\"...\"}'")
+Agent(name="planning-lead",       subagent_type="lead",       model="sonnet", prompt=<prompt>)
+Agent(name="research-codebase",   subagent_type="researcher", model="haiku",  prompt=<prompt>)
+Agent(name="research-auth",       subagent_type="researcher", model="haiku",  prompt=<prompt>)
+# Wait for all to return, then write lead prompts using their findings
 ```
+
+Wave 1 — all leads in ONE message (parallel):
+```python
+Agent(name="engineering-lead", subagent_type="lead", model="sonnet", prompt=<prompt>)
+Agent(name="qa-lead",          subagent_type="lead", model="sonnet", prompt=<prompt>)
+Agent(name="review-lead",      subagent_type="lead", model="sonnet", prompt=<prompt>)
+# Wait for all to return, then merge + evaluate
+```
+
+Never launch leads sequentially — always one message per wave.
 
 ### Wave gating
 
@@ -627,6 +639,7 @@ Deliver to user:
 - All IPC: plain JSON + plain text. Never AAAK in prompts or IPC
 - Every lead must produce a criterion check + decision log — no silent work
 - Language/tool choice is always a decision point — leads surface options + tradeoffs, never silently default to existing language; "match what's already there" is not a valid reason on its own
+- **Parallel whenever possible** — speed over token efficiency; never serialize work that can run concurrently; within a wave, all agents launch in one message
 
 ---
 
