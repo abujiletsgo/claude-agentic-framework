@@ -171,15 +171,18 @@ When you write your result file, check each criterion explicitly and mark PASS o
 If any criterion is FAIL, explain why and what would be needed to fix it.
 The evaluator will verify your self-assessment.
 
-## You Are a Delegating Planner
-Your job is to PLAN and DELEGATE — not to build, research, or write code yourself.
-1. Assess your domain by reading shared research files (listed below)
-2. Register your file domain so other leads know what you own
-3. Break your domain into specific tasks with clear acceptance criteria
-4. Spawn the right workers (builders, validators, researchers, critical-analysts)
-5. Use the shared validator for test runs — don't spawn your own
-6. Synthesize their output into a coherent result
-7. Write your section's outcome to: /tmp/caf_orch/<id>/results/<lead-name>_result.md
+## You Are a Delegating Planner — You NEVER Touch Files or Code Directly
+
+Your job is to PLAN and DELEGATE. You have no Read, Edit, Grep, or Glob access.
+Every piece of information you need comes from a subagent. Every line of code comes from a builder.
+
+1. **Spawn a researcher** to read the shared research files and summarize what you need
+2. Register your file domain: `bin/orch-shared register-domain <id> <lead-name> "path/**"`
+3. Break your domain into specific tasks with clear acceptance criteria per worker
+4. Spawn builders for each implementation task — never write code yourself
+5. Request test runs via `bin/orch-shared request-test` — never spawn your own validator
+6. Spawn a critical-analyst to quality-gate the combined output
+7. Synthesize worker outputs into your result file and write it yourself (Write tool is OK)
 
 ## Tool & Language Selection (REQUIRED — never silently default)
 At any decision point involving language choice, tooling, or significant architectural pattern:
@@ -360,7 +363,7 @@ bin/cmux-sprint abort-agent <orch_id> qa-lead "Scope down to auth module only"
 
 ```python
 Bash("bin/orch-event <orch_id> 0 planning-lead running 'planning the work'")
-Agent(name="planning-lead", subagent_type="sprint-lead", model="sonnet", prompt=<prompt>)
+Agent(name="planning-lead", subagent_type="lead", model="sonnet", prompt=<prompt>)
 Bash("bin/orch-event <orch_id> 0 planning-lead done '{\"summary\":\"...\",\"reason\":\"...\",\"changed\":\"...\",\"next\":\"...\"}'")
 ```
 
@@ -515,7 +518,7 @@ For each lead listed in "Leads with failures":
    ```
    Or agents-only — re-launch the lead with an amended prompt:
    ```python
-   Agent(name="<lead-name>-iter2", subagent_type="sprint-lead", model="sonnet",
+   Agent(name="<lead-name>-iter2", subagent_type="lead", model="sonnet",
          prompt=<original_prompt> + "\n\n## CORRECTION NEEDED (Iteration 2)\n" + feedback)
    ```
 
@@ -605,7 +608,7 @@ Deliver to user:
 - PM always specs with user first — no guessing scope
 - Acceptance criteria are extracted from the user in Phase 1 — never invent them
 - PM never just agrees — always challenge if there is room to challenge: wrong tool for the job, missing edge case, simpler approach exists, stated constraint seems arbitrary, scope too broad/narrow. A PM who only says yes is useless. Surface the objection, state the reasoning, then let the user decide.
-- Leads are planners + delegators only — if a lead writes code directly, that's wrong
+- Leads are planners + delegators only — no Read, Edit, Grep, Glob, or code writing directly; enforced by lead.md agent definition (tools: Agent, Task, Write, Bash-IPC-only)
 - Workers (builders, researchers, validators) are spawned by leads, not by PM
 - Research is shared — deduplicate before launching, pass findings to all leads that need them
 - Leads work in worktrees — never on the main branch directly
