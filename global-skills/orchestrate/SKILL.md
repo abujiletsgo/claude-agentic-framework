@@ -49,24 +49,26 @@ Show both to user. Get confirmation before proceeding.
 
 Leads are **delegating planners** — they break their domain into tasks and spawn workers. They do NOT build, research, or code directly.
 
-| Lead type | Skill | What they plan + delegate |
-|-----------|-------|--------------------------|
-| architecture-lead | `/arch-map` | system design, dependency mapping, ADRs |
-| planning-lead | `/autoplan` | full task decomposition, estimates |
-| ceo-review-lead | `/plan-ceo-review` | strategic alignment, risk, ROI |
-| eng-review-lead | `/plan-eng-review` | technical approach, execution feasibility |
-| design-lead | `/plan-design-review`, `/design-html` | UX, visual design direction |
-| engineering-lead | `/investigate`, `/careful`, `/fusion` | feature implementation, delegates to builders |
-| pairing-lead | `/pair-agent` | live pair sessions, complex debugging delegation |
-| review-lead | `/review`, `/codex`, `/devex-review` | code + DX review, cross-model analysis |
-| qa-lead | `/qa`, `/qa-only`, `/browse` | test planning, delegates E2E + unit test runners |
-| security-lead | `/cso`, `/security-scanner` | threat modeling, delegates security scans |
-| performance-lead | `/benchmark` | perf profiling, delegates benchmark runners |
-| refactoring-lead | `/refactoring-assistant` | refactor planning, delegates builders |
-| debugging-lead | `/investigate`, `/error-analyzer`, `/solve` | root cause analysis, delegates diagnosis |
-| release-lead | `/ship`, `/land-and-deploy`, `/canary`, `/rollback` | ship planning, delegates deploy steps |
-| docs-lead | `/document-release`, `/retro` | documentation planning, delegates writers |
-| testing-lead | `/test-generator`, `/test-scout` | test strategy, delegates test writers/runners |
+| Lead type | subagent_type | Domain | Workers spawned |
+|-----------|---------------|--------|-----------------|
+| planning-lead | planning-lead | Task decomposition, wave planning, dependencies | researcher, critical-analyst |
+| architecture-lead | architecture-lead | System design, ADRs, interface contracts | researcher, critical-analyst |
+| engineering-lead | engineering-lead | Feature implementation, code changes | researcher, builder, critical-analyst |
+| refactoring-lead | refactoring-lead | Code reorganization, rename/move | researcher, builder, validator |
+| debugging-lead | debugging-lead | Root cause analysis, fix planning | researcher, debugger, builder |
+| pairing-lead | pairing-lead | Complex debugging, interactive diagnosis | researcher, debugger, builder |
+| qa-lead | qa-lead | Test coverage, regression prevention, E2E | researcher, builder, validator |
+| testing-lead | testing-lead | Test strategy, test framework decisions | researcher, builder, validator |
+| review-lead | review-lead | Code quality review, DX review | researcher, critical-analyst, code-researcher |
+| security-lead | security-lead | Threat modeling, vulnerability assessment | researcher, critical-analyst, builder |
+| performance-lead | performance-lead | Perf profiling, benchmark planning | researcher, builder, validator |
+| design-lead | design-lead | UX/visual design direction, design system | researcher, builder, critical-analyst |
+| ceo-review-lead | ceo-review-lead | Strategic alignment, ROI, risk | researcher, critical-analyst |
+| eng-review-lead | eng-review-lead | Technical feasibility, approach validation | researcher, critical-analyst, code-researcher |
+| docs-lead | docs-lead | Documentation, release notes, API docs | researcher, builder, validator |
+| release-lead | release-lead | Ship planning, deploy sequencing | researcher, builder, validator |
+
+**Note:** planning-lead uses model opus — wrong plan cascades to all downstream leads.
 
 **Selection rule**: only pick leads whose domain is relevant. `research-lead` does not exist — research is a shared pool (Phase 2.5).
 
@@ -89,6 +91,29 @@ Research is a shared pool — not per-lead. Before writing lead prompts:
    ```
    Use haiku — they're reading files, not reasoning. Wait for all before writing lead prompts.
 4. Pass findings to every lead that needs them via `## Shared Research Available` in their prompt.
+
+---
+
+## Phase 2.5b: PM-Direct Mode (no leads)
+
+For small-to-medium focused tasks, the PM can skip lead agents entirely and spawn a direct worker team:
+
+```python
+# PM-direct — one wave, all in parallel
+Agent(name="researcher",   subagent_type="researcher", model="haiku", prompt="...")
+Agent(name="builder",      subagent_type="builder",    model="sonnet", prompt="...")
+Agent(name="validator",    subagent_type="validator",  model="haiku", prompt="...")
+```
+
+Use PM-direct when:
+- Single domain (only one type of work: just coding, just docs, just a fix)
+- < 3 independent work streams
+- No inter-agent coordination needed (leads don't need to broadcast or share a blackboard)
+
+Use leads when:
+- Multiple domains (engineering + QA + security in parallel)
+- Work streams have dependencies or interface contracts
+- Leads need to coordinate via shared workspace (register-domain, broadcast, etc.)
 
 ---
 
@@ -128,7 +153,7 @@ Generate `orch_id = f"orch_{int(time.time())}"`. All IPC under `/tmp/caf_orch/<o
 
 ```bash
 # Wave 0 — parallel
-bin/cmux-sprint launch-agent <orch_id> planning-lead 0
+bin/cmux-sprint launch-agent <orch_id> planning-lead 0 --model claude-opus-4-6
 # + shared researcher Agent() calls in same message
 bin/cmux-sprint poll-agents <orch_id> planning-lead
 

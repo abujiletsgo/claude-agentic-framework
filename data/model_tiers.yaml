@@ -37,13 +37,14 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 2 Opus, 8 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
+# 3 Opus, 24 Sonnet, 4 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
 # Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator)
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
+    - planning-lead           # Wave planning lead — wrong plan = everything downstream wrong
 
   sonnet:
     - critical-analyst        # Critical thinking, risk analysis
@@ -51,13 +52,34 @@ agent_tiers:
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
     - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
-    - lead                    # Orchestration lead — pure delegating planner
+    - lead                    # Generic orchestration lead (fallback/base)
     - debugger                # Root cause analysis + fix plan writing
+    - onboard-builder         # Wave 1 onboarding — generates project files from plan
+    - onboard-planner         # Wave 0 onboarding — detects stack, writes plan
+    - academic-researcher     # Academic paper search and citation graph traversal
+    - code-researcher         # Cross-repo code pattern search via GitHub MCP
+    # ── Domain-specific lead agents ──
+    - engineering-lead        # Feature implementation planning + delegation
+    - qa-lead                 # Test coverage planning + delegation
+    - review-lead             # Code quality review planning + delegation
+    - security-lead           # Threat modeling planning + delegation
+    - debugging-lead          # Root cause analysis planning + delegation
+    - architecture-lead       # System design + ADR planning + delegation
+    - testing-lead            # Test strategy planning + delegation
+    - refactoring-lead        # Refactor planning + delegation
+    - release-lead            # Ship/deploy planning + delegation
+    - docs-lead               # Documentation planning + delegation
+    - performance-lead        # Perf profiling planning + delegation
+    - design-lead             # UX/visual design planning + delegation
+    - ceo-review-lead         # Strategic review planning + delegation
+    - eng-review-lead         # Technical feasibility planning + delegation
+    - pairing-lead            # Complex debugging via pair sessions + delegation
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)
     - validator               # Test running + pass/fail reporting
     - agent-watchdog          # Background anomaly detection
+    - health-checker          # CAF health checks — mechanical, no reasoning needed
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 
