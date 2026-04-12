@@ -32,7 +32,7 @@ Spawn the `health-checker` agent to run all checks and format the results:
 Agent(
     name="health-checker",
     subagent_type="health-checker",
-    prompt="Run all CAF health checks from the project root at /Users/tomkwon/Documents/caf-team. Output a markdown table."
+    prompt="Run all CAF health checks from the project root at $(pwd). Output a markdown table."
 )
 ```
 

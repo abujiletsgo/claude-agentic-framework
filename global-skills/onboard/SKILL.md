@@ -119,8 +119,8 @@ Agent(
 
     ### 2. .claude/settings.json
     Steps:
-    a. Read the CAF template at ~/Documents/caf-team/templates/settings.json.template
-       (fall back to ~/.caf/templates/settings.json.template if not found there)
+    a. Read the CAF template at ~/.caf/templates/settings.json.template
+       (fall back to templates/settings.json.template in the current working directory if not found)
     b. Replace __REPO_DIR__ with the actual cwd path.
        Use Python json.dumps() for safe escaping:
          python3 -c "import json, sys; print(json.dumps(sys.argv[1]))" "$(pwd)"

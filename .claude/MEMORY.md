@@ -2,30 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (16:37 UTC) · @Tom Kwon
-**Commit:** fix: transparent backgrounds for Ghostty, shrink buddy pane, remove buddy buttons (353655ed) by Tom Kwon
-**Changed:**
-  bin/cteam           |  4 ++--
-  bin/cteam-buddy     | 30 +++++-------------------------
-  bin/cteam-dashboard |  8 +++-----
-  bin/cteam-sidebar   | 12 ++++++------
-  4 files changed, 16 insertions(+), 38 deletions(-)
-
-## 2026-04-08 (16:55 UTC) · @Tom Kwon
-**Commit:** fix: fully theme-adaptive — zero hardcoded colors, inherits terminal palette + transparency (15e6d5d8) by Tom Kwon
-**Changed:**
-  bin/cteam-buddy     | 25 +++++++++++++------------
-  bin/cteam-dashboard | 21 +++++++++++----------
-  bin/cteam-sidebar   | 37 +++++++++++++++++++------------------
-  3 files changed, 43 insertions(+), 40 deletions(-)
-
-## 2026-04-08 (16:59 UTC) · @Tom Kwon
-**Commit:** fix: buddy pane split order, sprint TUI transparent backgrounds (32f34fe2) by Tom Kwon
-**Changed:**
-  bin/cteam                | 34 +++++++++++++++++++---------------
-  dashboard/sprint_tui.css | 25 +++++++++++--------------
-  2 files changed, 30 insertions(+), 29 deletions(-)
-
 ## 2026-04-08 (17:04 UTC) · @Tom Kwon
 **Commit:** fix: Textual ANSI_COLOR + transparent, buddy pane verified, add cteam --reset (34e622ec) by Tom Kwon
 **Changed:**
@@ -269,3 +245,39 @@
 **Changed:**
   global-skills/orchestrate/SKILL.md | 5 ++++-
   1 file changed, 4 insertions(+), 1 deletion(-)
+
+## 2026-04-10 (17:58 UTC) · @Tom Kwon
+**Commit:** refactor(orchestrate): split 657-line SKILL.md into lean core + templates (2755665e) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  | 154 +++---
+  global-skills/orchestrate/SKILL.md                 | 616 ++++-----------------
+  .../orchestrate/templates/acceptance-criteria.md   |  23 +
+  .../orchestrate/templates/delivery-format.md       |  26 +
+  .../orchestrate/templates/escalation-format.md     |  15 +
+  .../orchestrate/templates/evaluator-prompt.md      |  37 ++
+  global-skills/orchestrate/templates/lead-prompt.md | 138 +++++
+  .../orchestrate/templates/mission-brief.md         |   9 +
+  .../orchestrate/templates/result-format.md         |  10 +
+  9 files changed, 454 insertions(+), 574 deletions(-)
+
+## 2026-04-12 (13:47 UTC) · @Tom Kwon
+**Commit:** docs(arch-map): regenerate architecture map — caf-hud, lead.md, orchestrate split (7aa6606e) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md    | 768 +++++++++++++++++++--------------------------
+  .claude/PROJECT_CONTEXT.md |   2 +-
+  2 files changed, 326 insertions(+), 444 deletions(-)
+
+## 2026-04-12 (14:22 UTC) · @Tom Kwon
+**Commit:** feat(agents): add 16 domain-specific lead agents + fix orchestrate leads table (8481d577) by Tom Kwon
+**Changed:**
+  CLAUDE.md                          | 10 ++---
+  data/model_tiers.yaml              | 26 +++++++++++-
+  global-agents/architecture-lead.md | 80 +++++++++++++++++++++++++++++++++++++
+  global-agents/ceo-review-lead.md   | 80 +++++++++++++++++++++++++++++++++++++
+  global-agents/debugging-lead.md    | 81 +++++++++++++++++++++++++++++++++++++
+  global-agents/design-lead.md       | 81 +++++++++++++++++++++++++++++++++++++
+  global-agents/docs-lead.md         | 81 +++++++++++++++++++++++++++++++++++++
+  global-agents/eng-review-lead.md   | 81 +++++++++++++++++++++++++++++++++++++
+  global-agents/engineering-lead.md  | 82 ++++++++++++++++++++++++++++++++++++++
+  global-agents/pairing-lead.md      | 81 +++++++++++++++++++++++++++++++++++++
+  ... and 10 more files

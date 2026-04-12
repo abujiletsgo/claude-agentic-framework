@@ -37,14 +37,15 @@ tiers:
       - Status reporting and TTS summaries
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 3 Opus, 24 Sonnet, 4 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
-# Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator)
+# 4 Opus, 29 Sonnet, 4 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
+# Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator), engineering-lead (replaced by domain leads)
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
     - planning-lead           # Wave planning lead — wrong plan = everything downstream wrong
+    - po                      # Product Owner — vision alignment, lead routing, escalation handling
 
   sonnet:
     - critical-analyst        # Critical thinking, risk analysis
@@ -59,7 +60,12 @@ agent_tiers:
     - academic-researcher     # Academic paper search and citation graph traversal
     - code-researcher         # Cross-repo code pattern search via GitHub MCP
     # ── Domain-specific lead agents ──
-    - engineering-lead        # Feature implementation planning + delegation
+    - frontend-lead           # Frontend/UI/UX domain spec + delegation
+    - backend-lead            # Backend/business logic domain spec + delegation
+    - api-lead                # API design + contracts domain spec + delegation
+    - mobile-lead             # Mobile app domain spec + delegation
+    - data-lead               # Data layer/DB domain spec + delegation
+    - infra-lead              # Infrastructure/deploy domain spec + delegation
     - qa-lead                 # Test coverage planning + delegation
     - review-lead             # Code quality review planning + delegation
     - security-lead           # Threat modeling planning + delegation

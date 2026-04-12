@@ -1,3 +1,9 @@
+---
+name: research-docs
+description: "Internal routing guide for documentation research — library docs, API references, framework docs"
+user-invocable: false
+---
+
 # Documentation Research Skill
 
 ## Trigger

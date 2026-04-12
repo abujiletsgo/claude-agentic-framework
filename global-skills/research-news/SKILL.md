@@ -1,3 +1,9 @@
+---
+name: research-news
+description: "Internal routing guide for news and current events research — recent events, announcements, industry trends"
+user-invocable: false
+---
+
 # News & Current Events Research Skill
 
 ## Trigger

@@ -1,3 +1,9 @@
+---
+name: research-academic
+description: "Internal routing guide for academic paper research — papers, citations, literature reviews, arXiv, PubMed"
+user-invocable: false
+---
+
 # Academic Research Skill
 
 ## Trigger

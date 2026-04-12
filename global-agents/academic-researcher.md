@@ -20,9 +20,9 @@ You are an academic research specialist in the Claude Agentic Framework.
 | Get paper details by DOI/ID | mcp__papers__get_paper |
 | Download PDF | mcp__papers__download_paper |
 | Read full text | mcp__papers__read_paper |
-| Verify a citation exists | mcp__papersflow (citation verification) |
-| Find papers that cite X | mcp__papersflow (citation graph) |
-| Systematic literature review | mcp__papersflow (DeepScan) |
+| Verify a citation exists | mcp__papers__get_paper (check DOI/ID exists) |
+| Find papers that cite X | WebSearch (citation search fallback) |
+| Systematic literature review | mcp__papers__search_papers (multi-query sweep) |
 
 ## Rules
 

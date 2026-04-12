@@ -74,6 +74,10 @@ def sprint_dir(sprint_id: str) -> Path:
     return SPRINT_BASE / sprint_id
 
 
+def orch_dir(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id
+
+
 def status_path(sprint_id: str, role: str) -> Path:
     return sprint_dir(sprint_id) / f"{role}.status"
 
@@ -202,21 +206,23 @@ def _get_agent_heartbeat(orch_id: str, agent_name: str) -> float:
     Falls back to current time if neither exists.
     """
     import datetime
-    wm_path = ORCH_BASE / orch_id / "working_memory" / f"{agent_name}.jsonl"
+    wm_path = ORCH_BASE / orch_id / "shared" / "working_memory.jsonl"
     if wm_path.exists():
         try:
             lines = wm_path.read_text().splitlines()
-            # Walk backwards to find the last parseable line with a timestamp
+            # Walk backwards to find the last entry from this agent with a timestamp
             for line in reversed(lines):
                 try:
                     entry = json.loads(line)
+                    if entry.get("lead") != agent_name:
+                        continue
                     ts_val = entry.get("ts") or entry.get("timestamp")
                     if ts_val:
                         dt = datetime.datetime.fromisoformat(ts_val.replace("Z", "+00:00"))
                         return dt.timestamp()
                 except Exception:
                     continue
-            # File exists but no parseable timestamps -- use file mtime
+            # File exists but no entries for this agent -- use file mtime as proxy
             return wm_path.stat().st_mtime
         except Exception:
             pass
@@ -265,7 +271,7 @@ def _load_orch_surfaces(orch_id: str) -> dict:
 # Subcommand: cmd_launch_pane  (merged launch-lead + launch-agent)
 # ---------------------------------------------------------------------------
 
-def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch") -> None:
+def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch", model: str = "") -> None:
     """
     Open a cmux pane for a sprint lead or orchestrate agent.
 
@@ -369,7 +375,8 @@ If you fail or cannot complete: write `{{"status":"failed","error":"<reason>"}}`
         cwd = os.environ.get("PWD", str(Path.cwd()))
 
     cmux.send_surface(new_sid, f"cd {cwd}\n")
-    cmux.send_surface(new_sid, "claude\n")
+    claude_cmd = f"claude --model {model}\n" if model else "claude\n"
+    cmux.send_surface(new_sid, claude_cmd)
     _wait_for_claude_ready(new_sid)
     cmux.send_surface(new_sid, full_prompt + "\n")
 
@@ -871,7 +878,11 @@ def cmd_merge_leads(orch_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 def cmd_gate(sprint_id: str, wave: int) -> None:
-    sd = sprint_dir(sprint_id)
+    # Detect orch vs sprint mode by id prefix
+    if sprint_id.startswith("orch_"):
+        sd = orch_dir(sprint_id)
+    else:
+        sd = sprint_dir(sprint_id)
     sd.mkdir(parents=True, exist_ok=True)
     gate_path = sd / "gate.json"
 
@@ -983,9 +994,18 @@ def main() -> None:
 
     elif subcmd == "launch-agent":
         if len(args) < 4:
-            print("Usage: cmux-sprint launch-agent <orch_id> <agent_name> <wave>", file=sys.stderr)
+            print("Usage: cmux-sprint launch-agent <orch_id> <agent_name> <wave> [--model <model_id>]", file=sys.stderr)
             sys.exit(1)
-        cmd_launch_pane(args[1], args[2], int(args[3]), ipc_base="orch")
+        model_flag = ""
+        remaining = args[4:]
+        i = 0
+        while i < len(remaining):
+            if remaining[i] == "--model" and i + 1 < len(remaining):
+                model_flag = remaining[i + 1]
+                i += 2
+            else:
+                i += 1
+        cmd_launch_pane(args[1], args[2], int(args[3]), ipc_base="orch", model=model_flag)
 
     elif subcmd == "poll-agents":
         if len(args) < 3:

@@ -24,12 +24,18 @@ Threat modeling, vulnerability assessment, and security patch planning. You own 
 1. **Read your prompt file** (the PM wrote it to `/tmp/caf_orch/<orch_id>/prompts/security-lead.md`) — use Bash: `cat /tmp/caf_orch/<orch_id>/prompts/security-lead.md`
 2. **Register your file domains** via `bin/orch-shared register-domain <orch_id> security-lead <glob> ...`
 3. **Spawn a researcher** to read auth code, input handling, and security config — do NOT read files yourself
-4. **Break work into tasks** with clear acceptance criteria per worker
-5. **Spawn workers in parallel** (all in one Agent() message per wave)
-6. **Request tests** via `bin/orch-shared request-test <orch_id> security-lead "<command>"` — do NOT spawn your own validator
-7. **Synthesize** worker outputs into your result file
-8. **Write result** to `/tmp/caf_orch/<orch_id>/results/security-lead.md`
-9. **Write status** when done:
+4. **Write your domain spec** to `/tmp/caf_orch/<orch_id>/results/security-lead-spec.md`:
+   - What needs to be done in your domain
+   - Acceptance criteria for your slice
+   - Technical approach
+   - Edge cases and constraints
+   - Interface contracts with other domains
+5. **Break work into tasks** with clear acceptance criteria per worker
+6. **Spawn workers in parallel** (all in one Agent() message per wave)
+7. **Request tests** via `bin/orch-shared request-test <orch_id> security-lead "<command>"` — do NOT spawn your own validator
+8. **Synthesize** worker outputs into your result file
+9. **Write result** to `/tmp/caf_orch/<orch_id>/results/security-lead.md`
+10. **Write status** when done:
    ```bash
    python3 -c "import json; open('/tmp/caf_orch/<orch_id>/security-lead.status','w').write(json.dumps({'status':'done'}))"
    ```
@@ -67,12 +73,17 @@ bin/orch-shared broadcast <orch_id> security-lead "<topic>" "<message>"
 # Ask the PM a question
 bin/orch-shared ask-pm <orch_id> security-lead "<question>" [critical=yes]
 
+# Escalate — block and wait for PO to spawn another lead
+bin/orch-shared ask-pm <orch_id> security-lead "Need <other-lead> for <reason>." critical=yes
+bin/orch-shared wait-answer <orch_id> <question_id> 300
+
 # Write status when done
 python3 -c "import json; open('/tmp/caf_orch/<orch_id>/security-lead.status','w').write(json.dumps({'status':'done'}))"
 ```
 
 ## Hard Constraints
 
+- **WRITE THE SPEC FIRST** before spawning any builders — no builder without a spec
 - **NEVER use Read, Edit, Grep, Glob** — spawn a researcher instead
 - **NEVER write implementation code** — spawn a builder
 - **NEVER run tests yourself** — use `bin/orch-shared request-test`
