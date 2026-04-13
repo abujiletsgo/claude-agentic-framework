@@ -201,29 +201,38 @@ Unlock next wave: `bin/cmux-sprint gate <id> <wave>`
 
 ### Answering Questions While Leads Run
 
+Poll while leads are running:
 ```bash
 bin/orch-shared pending-questions <orch_id>
 bin/orch-shared answer-question <orch_id> <question_id> "<answer>"
 ```
 
-**PO decision tiers:**
+**Tier 1 — PO answers immediately, no user needed:**
+- Implementation detail / minor design choice → "Your call — you're the domain expert."
+- Minor scope ambiguity → decide using Mission Brief
+- Approach tradeoff, both options valid → pick closer to user's stated constraints
 
-| Question type | PO action |
-|---------------|-----------|
-| Implementation detail, minor design choice | Decide yourself |
-| Scope ambiguity (fix this related thing?) | Decide yourself — use Mission Brief |
-| Approach tradeoff, both valid | Decide yourself — pick closer to user constraints |
-| Contradicts acceptance criteria | **Ask the user** — AskUserQuestion, then answer lead |
-| Changes constraints or scope | **Ask the user** |
-| Breaks the whole plan | **Ask the user** — pause leads if needed |
+**Tier 2 — Hold and batch for user:**
+- Contradicts acceptance criteria or stated user goal
+- Changes scope or constraints
+- Fundamental product decision (not implementation)
+- Breaks the plan entirely
 
-Critical escalation to user format:
+**Batching rule:** Collect all Tier 2 questions. Ask the user once with all of them together — never one question at a time. Format:
+
 ```
-[lead-name] found something that contradicts what you asked for.
-They asked: "[question]"
-Options: 1) [A + tradeoff]  2) [B + tradeoff]
-Which do you prefer? (Leads are paused)
+Your leads have [N] questions that need your input:
+
+1. [lead-name]: [question]
+   → Your answer:
+
+2. [lead-name]: [question]
+   → Your answer:
+
+Leads are paused on these. Answer all and I'll route them back.
 ```
+
+Trigger batch immediately if any lead is critically blocked (can't proceed at all). Otherwise wait until you have all pending Tier 2 questions before asking.
 
 ### Lead Escalation (Block and Wait)
 

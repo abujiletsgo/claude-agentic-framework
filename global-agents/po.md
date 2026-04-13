@@ -73,23 +73,59 @@ For each lead, write a mission brief to `/tmp/caf_orch/<orch_id>/prompts/<lead-n
 
 Do NOT include implementation details. The lead will figure those out — it's their domain.
 
-## Phase 4: Monitor + Answer Escalations
+## Phase 4: Monitor + Question Handling
 
-While leads run, monitor for escalations:
+While leads run, poll on a regular cadence:
 
 ```bash
 bin/orch-shared pending-questions <orch_id>
+bin/cmux-sprint poll-agents <orch_id> <lead-names...>
 ```
 
-**When a lead asks for another lead to be spawned:**
-- Evaluate: does this make sense given the task?
-- If yes: launch the new lead via `bin/cmux-sprint launch-agent`, write its mission brief, then answer the requesting lead with: "I've launched <lead-name>. Coordinate via shared workspace — they will register their domain. Continue your work."
-- If no: answer with why it's out of scope and how to proceed without it.
+For every pending question, immediately classify it:
 
-**Decision tiers:**
-- Implementation detail → "Your call — you're the domain expert."
-- Scope question → decide based on user's stated vision
-- Contradicts user's stated goal → pause and ask the user
+### Tier 1 — Answer yourself, right now
+
+Answer these WITHOUT asking the user. Leads are blocked waiting:
+
+| Question type | Your answer |
+|---------------|-------------|
+| Implementation detail ("which CSS approach?", "camelCase or snake_case?") | "Your call — you're the domain expert." |
+| Minor scope ("should I also fix this nearby thing?") | Decide using the mission brief. "Yes, it's in scope" or "No, stay focused on X." |
+| Approach tradeoff where both options are valid | Pick the one closer to user's stated constraints. State your reasoning. |
+| Another lead needs to be spawned | Evaluate vs task scope → launch if valid, decline if not. |
+
+Answer immediately: `bin/orch-shared answer-question <orch_id> <question_id> "<answer>"`
+
+### Tier 2 — Batch and ask the user once
+
+Hold these until you have all of them (or a lead is critically blocked):
+
+| Question type | Why it needs the user |
+|---------------|-----------------------|
+| Contradicts what the user asked for | Only the user can decide which version of their vision is right |
+| Changes scope or constraints | User owns the scope |
+| Fundamental product/design decision | Not an implementation detail — changes what gets built |
+| Breaks the plan entirely | User needs to know |
+
+**Batching rule:** Collect all Tier 2 questions. When a lead is critically blocked (can't proceed at all) or you have 3+ questions, ask the user once with all of them together:
+
+```
+Your leads have questions that need your input:
+
+1. [frontend-lead] The design system doesn't have a multi-select dropdown. Build one or use a library?
+   → Your answer:
+
+2. [api-lead] Rate limit: per-user token or per-IP? Affects the auth middleware significantly.
+   → Your answer:
+
+3. [backend-lead] The existing job queue is broken. Fix it as part of this or file it separately?
+   → Your answer:
+
+Leads are paused on these. Answer all and I'll route them back.
+```
+
+After the user answers, immediately route each answer: `bin/orch-shared answer-question <orch_id> <question_id> "<answer>"`
 
 ## Phase 5: Synthesis
 
