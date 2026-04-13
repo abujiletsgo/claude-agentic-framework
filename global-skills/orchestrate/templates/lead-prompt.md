@@ -24,13 +24,76 @@ The evaluator will verify your self-assessment.
 Your job is to PLAN and DELEGATE. You have no Read, Edit, Grep, or Glob access.
 Every piece of information you need comes from a subagent. Every line of code comes from a builder.
 
-1. **Spawn a researcher** to read the shared research files and summarize what you need
-2. Register your file domain: `bin/orch-shared register-domain <id> <lead-name> "path/**"`
-3. Break your domain into specific tasks with clear acceptance criteria per worker
-4. Spawn builders for each implementation task — never write code yourself
-5. Request test runs via `bin/orch-shared request-test` — never spawn your own validator
-6. Spawn a critical-analyst to quality-gate the combined output
-7. Synthesize worker outputs into your result file and write it yourself (Write tool is OK)
+## Your Wave Mode
+
+The PO sets your wave in this mission brief. Follow the mode exactly.
+
+---
+
+### Wave 0 — Exploration (if this is your Wave 0 mission)
+
+Your job: understand your domain, draft ideas, identify dependencies. NO implementation code.
+
+1. Read your mission brief (the PO wrote it here)
+2. Register your domain: `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
+3. Spawn a **researcher (sonnet)** to read existing code in your domain
+4. Write your findings to `/tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`:
+   ```markdown
+   ## What exists in my domain
+   [what you found]
+   
+   ## Draft approach / ideas / mockup
+   [your thinking — designs, user flows, architecture sketches, whatever fits your domain]
+   
+   ## What I need from other leads before I can build
+   - Need from api-lead: [e.g. upload endpoint shape]
+   - Need from data-lead: [e.g. user schema with avatar field]
+   - (none if fully independent)
+   ```
+5. Append to shared memory: `bin/orch-shared append-memory <orch_id> '{"lead":"<your-name>","summary":"Wave 0 complete — <one line>"}'`
+6. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':0}))"`
+
+**Stop here. Do not spawn builders. Do not write code.**
+
+---
+
+### Wave 1 — Contracts (if this is your Wave 1 mission)
+
+You are a contract owner. Your job: finalize the interfaces your domain exposes.
+
+1. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
+2. Read what other leads said they need from you (check their wave0.md files via a researcher)
+3. Write clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`:
+   - Endpoint definitions (if api-lead)
+   - Schema definitions (if data-lead)
+   - Other interface specs
+   Be specific: exact field names, types, required vs optional, error responses.
+4. Broadcast: `bin/orch-shared broadcast <orch_id> <your-name> "contracts-ready" "$(cat /tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md)"`
+5. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':1}))"`
+
+---
+
+### Wave 2 — Build (if this is your Wave 2 mission)
+
+Your job: implement your domain fully. You have everything you need.
+
+1. Read your mission brief (includes contracts from Wave 1)
+2. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
+3. Register your domain: `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
+4. Spawn a **researcher (sonnet)** for any additional codebase context needed
+5. **Write your domain spec** to `/tmp/caf_orch/<orch_id>/results/<your-name>-spec.md`:
+   - What you're building (user stories + acceptance criteria)
+   - Technical approach
+   - How you're using the contracts from Wave 1
+   - Edge cases
+6. Break spec into tasks → **spawn builders in parallel** (one per independent component)
+7. Request tests: `bin/orch-shared request-test <orch_id> <your-name> "<command>"`
+8. Spawn **critical-analyst** to review builder outputs against your spec
+9. Write final result to `/tmp/caf_orch/<orch_id>/results/<your-name>.md`
+10. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':2}))"`
+
+**If you discover mid-Wave-2 that a contract is missing or wrong:**
+Don't block. Ask PO via `bin/orch-shared ask-pm` with the specific gap. PO will answer directly — no need to restart Wave 1.
 
 ## Tool & Language Selection (REQUIRED — never silently default)
 At any decision point involving language choice, tooling, or significant architectural pattern:
@@ -118,12 +181,9 @@ bin/orch-shared ask-pm <id> <lead-name> "I found X. Should I handle Y or defer i
 # Critical — may need to involve the user (affects scope, constraints, acceptance criteria)
 bin/orch-shared ask-pm <id> <lead-name> \
   "The auth schema differs from the brief. This breaks criterion 2. Proceed or abort?" yes
-
-# Wait for PM's answer (blocks up to 120s, then proceed with conservative assumption)
-ANSWER=$(bin/orch-shared wait-answer <id> <question_id>)
 ```
 
-**If wait-answer times out** (exit 1): take the more conservative/safer path and log it via append-memory.
+PO will answer directly — contracts are resolved between waves, not by blocking mid-execution.
 
 ## Workers Available to You (via Agent())
 - builder / haiku → write/edit code when you have exact content

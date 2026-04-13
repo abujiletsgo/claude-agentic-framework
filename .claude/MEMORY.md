@@ -2,20 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (17:04 UTC) · @Tom Kwon
-**Commit:** fix: Textual ANSI_COLOR + transparent, buddy pane verified, add cteam --reset (34e622ec) by Tom Kwon
-**Changed:**
-  bin/cteam                |  5 +++++
-  dashboard/sprint_tui.css | 44 +++++++++++++++++++++++++++++++++++++++-----
-  dashboard/sprint_tui.py  |  1 +
-  3 files changed, 45 insertions(+), 5 deletions(-)
-
-## 2026-04-08 (17:07 UTC) · @Tom Kwon
-**Commit:** fix: force transparent on ALL Textual widgets — wildcard + explicit overrides (3d517f6e) by Tom Kwon
-**Changed:**
-  dashboard/sprint_tui.css | 49 +++++++++++++++++++++++++++++++++++++-----------
-  1 file changed, 38 insertions(+), 11 deletions(-)
-
 ## 2026-04-08 (17:08 UTC) · @Tom Kwon
 **Commit:** feat: live agent dashboard for /orchestrate visibility (2ff65fdc) by Tom Kwon
 **Changed:**
@@ -281,3 +267,25 @@
   global-agents/engineering-lead.md  | 82 ++++++++++++++++++++++++++++++++++++++
   global-agents/pairing-lead.md      | 81 +++++++++++++++++++++++++++++++++++++
   ... and 10 more files
+
+## 2026-04-12 (14:32 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): PO model — product owner, spec-first leads, domain-specific agents (b0523248) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  60 +--
+  .claude/PO_BRIEF.md                                |  29 ++
+  CLAUDE.md                                          |   4 +-
+  bin/cmux-sprint                                    |  36 +-
+  bin/orch-shared                                    |   0
+  bin/sprint-event                                   |  24 ++
+  dashboard/sprint_report.py                         | 424 +++++++++++++++++++++
+  data/model_tiers.yaml                              |  12 +-
+  global-agents/academic-researcher.md               |   6 +-
+  global-agents/api-lead.md                          | 113 ++++++
+  ... and 33 more files
+
+## 2026-04-13 (01:42 UTC) · @Tom Kwon
+**Commit:** feat(po): question batching — PO answers Tier 1 autonomously, batches Tier 2 for user (6e8a8d07) by Tom Kwon
+**Changed:**
+  global-agents/po.md                | 56 +++++++++++++++++++++++++++++++-------
+  global-skills/orchestrate/SKILL.md | 37 +++++++++++++++----------
+  2 files changed, 69 insertions(+), 24 deletions(-)

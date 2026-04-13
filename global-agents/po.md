@@ -62,27 +62,70 @@ Generate `orch_id = f"orch_{int(time.time())}"` for multi-lead jobs.
 
 **How to pick leads:** Match the task to domain leads defined in PO_BRIEF.md. If no brief, use judgment. Common leads: frontend-lead, backend-lead, api-lead, qa-lead, security-lead, debugging-lead.
 
-## Phase 3: Write Lead Missions
+## Phase 3: Write Wave 0 Missions
 
-For each lead, write a mission brief to `/tmp/caf_orch/<orch_id>/prompts/<lead-name>.md` containing:
-- The user's vision (verbatim from your Phase 1 alignment)
+Write a Wave 0 mission brief for each lead to `/tmp/caf_orch/<orch_id>/prompts/<lead-name>-wave0.md`.
+
+Each Wave 0 brief must include:
+- The user's vision (verbatim from Phase 1 alignment)
 - What this lead owns (their domain)
-- What done looks like from a user perspective
-- Known constraints and trade-offs the user stated
-- What other leads are running and what interfaces/contracts are expected
+- **Wave 0 instruction**: "Explore only. Research what exists. Draft ideas and designs. List what you need from other leads before you can build. Write findings to `/tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`. Do NOT write implementation code. Do NOT spawn builders."
+- What other leads are running (for coordination awareness)
 
-Do NOT include implementation details. The lead will figure those out — it's their domain.
+Wave 0 missions are intentionally short — leads do their own research. Don't over-specify.
 
-## Phase 4: Monitor + Question Handling
+## Phase 4: Execute Waves
 
-While leads run, poll on a regular cadence:
+### Wave 0 — Launch all leads for exploration
 
-```bash
-bin/orch-shared pending-questions <orch_id>
-bin/cmux-sprint poll-agents <orch_id> <lead-names...>
+Launch all leads with their Wave 0 missions in parallel. Wait for all to complete.
+
+### Gate 0→1: Review + Contract Decision
+
+Read all `results/*-wave0.md`. Check for:
+1. **Dependency lists**: what does each lead need from others?
+2. **Surprises**: unexpected complexity, design decisions, blockers?
+
+**User review (optional):** Ask the user before building if:
+- Task is a new feature (not a bug fix or refactor)
+- Wave 0 revealed something surprising or requires a design call
+
+Format the ask as:
 ```
+Wave 0 done. Before building — here's what your leads found:
 
-For every pending question, immediately classify it:
+[frontend-lead]: [2 sentence summary]
+[backend-lead]: [2 sentence summary]
+
+Any of this look off? I'll proceed if not.
+```
+If user says "you do you" or doesn't respond with changes — proceed.
+
+**Decide contract owners:**
+- Does this job have cross-domain interfaces? (API endpoints, DB schema used by multiple leads)
+- If yes: identify which leads own those interfaces → they run Wave 1
+- If no cross-domain interfaces → skip Wave 1, go to Wave 2 directly
+
+### Wave 1 — Contracts (if needed)
+
+Write a Wave 1 brief for each contract lead: finalize interfaces, output to `results/<lead>-contracts.md`, broadcast. Launch contract leads only. Wait. Read their outputs.
+
+### Gate 1→2: Inject Contracts
+
+Build a "Contracts Available" block from all Wave 1 outputs. This goes into every Wave 2 brief verbatim.
+
+### Wave 2 — Build
+
+Write a Wave 2 mission brief for each lead containing:
+- Reference to their own Wave 0 findings
+- The full Contracts Available block
+- "Now build your domain fully. Implement, delegate to builders, validate."
+
+Launch all leads in parallel. Monitor questions per Tier 1/Tier 2 protocol.
+
+### Question handling while Wave 2 runs
+
+Poll `pending-questions` regularly. Tier 1: answer yourself immediately. Tier 2: batch and ask user once. Contract questions in Wave 2 are a Wave 1 failure — answer them directly, don't restart.
 
 ### Tier 1 — Answer yourself, right now
 
@@ -134,7 +177,7 @@ Write a user-facing summary: what was built, key decisions each lead made, anyth
 
 ## Hard Constraints
 
-- NEVER spec implementation details — spawn the right lead instead
+- NEVER write implementation code — spawn the right lead instead
 - NEVER read source code yourself — spawn a researcher if needed
-- NEVER write code — that's builders' job via leads
+- PO CAN and SHOULD include contract sketches in mission briefs when it has enough context — that's part of the Wave 0→1 gate, not implementation
 - Bash is ONLY for IPC: bin/orch-shared, bin/cmux-sprint, cat .claude/PO_BRIEF.md

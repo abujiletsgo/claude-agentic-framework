@@ -42,6 +42,7 @@ import sys
 import json
 import os
 import time
+import fcntl
 import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
@@ -157,7 +158,11 @@ def cmd_append_memory(orch_id: str, payload: str) -> None:
     p = shared_dir(orch_id) / "working_memory.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
-        f.write(json.dumps(entry) + "\n")
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
     print(f"[orch-shared] memory written: {entry.get('summary', '')[:60]}")
 
 
@@ -202,7 +207,11 @@ def cmd_request_test(orch_id: str, lead: str, command: str) -> None:
     p = shared_dir(orch_id) / "test_queue.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
-        f.write(json.dumps(entry) + "\n")
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
     print(f"[orch-shared] test queued for {lead}: {command[:60]}")
 
 
@@ -248,7 +257,11 @@ def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> Non
     p = shared_dir(orch_id) / "discoveries.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
-        f.write(json.dumps(entry) + "\n")
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
     surfaces = load_surfaces(orch_id)
     recipients = [
@@ -308,7 +321,11 @@ def cmd_ask_pm(orch_id: str, lead: str, question: str, critical: str = "no") -> 
     p = shared_dir(orch_id) / "questions.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
-        f.write(json.dumps(entry) + "\n")
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
     print(f"[orch-shared] question {q_id} posted by {lead}")
     print(f"  Q: {question[:80]}")
     print(f"  Wait for answer: bin/orch-shared wait-answer {orch_id} {q_id}")

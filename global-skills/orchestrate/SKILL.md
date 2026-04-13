@@ -54,9 +54,11 @@ Leads are **delegating planners** — they break their domain into tasks and spa
 
 | Lead type | subagent_type | Domain | Workers spawned |
 |-----------|---------------|--------|-----------------|
-| planning-lead | planning-lead | Task decomposition, wave planning, dependencies | researcher, critical-analyst |
 | architecture-lead | architecture-lead | System design, ADRs, interface contracts | researcher, critical-analyst |
-| engineering-lead | engineering-lead | Feature implementation, code changes | researcher, builder, critical-analyst |
+| frontend-lead | frontend-lead | UI, client-side logic, design system | researcher, builder, critical-analyst |
+| backend-lead | backend-lead | Server logic, services, integrations | researcher, builder, critical-analyst |
+| api-lead | api-lead | Endpoint/response shapes, API contracts | researcher, builder, validator |
+| data-lead | data-lead | DB schema, migrations, data models | researcher, builder, validator |
 | refactoring-lead | refactoring-lead | Code reorganization, rename/move | researcher, builder, validator |
 | debugging-lead | debugging-lead | Root cause analysis, fix planning | researcher, debugger, builder |
 | pairing-lead | pairing-lead | Complex debugging, interactive diagnosis | researcher, debugger, builder |
@@ -71,11 +73,11 @@ Leads are **delegating planners** — they break their domain into tasks and spa
 | docs-lead | docs-lead | Documentation, release notes, API docs | researcher, builder, validator |
 | release-lead | release-lead | Ship planning, deploy sequencing | researcher, builder, validator |
 
-**Note:** planning-lead uses model opus — wrong plan cascades to all downstream leads.
+**Note:** planning-lead exists as an escape hatch for >5-lead jobs where the PO wants a dedicated planner sub-session. Not part of normal flows.
 
 **Selection rule**: only pick leads whose domain is relevant. `research-lead` does not exist — research is a shared pool (Phase 2.5).
 
-Typical 3-lead: `planning-lead` → `engineering-lead` → `review-lead` + `qa-lead`
+Typical 3-lead: `frontend-lead` → `backend-lead` + `api-lead` → `qa-lead` + `review-lead`
 Typical 5-lead: adds `security-lead` + `release-lead`
 
 ---
@@ -86,13 +88,13 @@ Research is a shared pool — not per-lead. Before writing lead prompts:
 
 1. Collect what background info each lead will need. Write a list of research questions.
 2. Deduplicate — one researcher per topic.
-3. **Launch all shared researchers in parallel** (Wave 0, one message alongside planning-lead):
+3. **Launch all shared researchers in parallel** (one message, before Wave 0):
    ```python
-   Agent(name="research-codebase", subagent_type="researcher", model="haiku", prompt="...")
-   Agent(name="research-auth",     subagent_type="researcher", model="haiku", prompt="...")
+   Agent(name="research-codebase", subagent_type="researcher", model="sonnet", prompt="...")
+   Agent(name="research-auth",     subagent_type="researcher", model="sonnet", prompt="...")
    # Each saves to /tmp/caf_orch/<id>/shared/research/<topic>.md
    ```
-   Use haiku — they're reading files, not reasoning. Wait for all before writing lead prompts.
+   Use sonnet — codebase research IS reasoning (pattern detection, architectural insight). Haiku only for mechanical listings like file inventories. Wait for all before writing lead prompts.
 4. Pass findings to every lead that needs them via `## Shared Research Available` in their prompt.
 
 ---
@@ -141,114 +143,94 @@ Key sections every prompt must include:
 
 ## Phase 4: Execute
 
-### Pre-flight
-
-```bash
-bin/orch-shared init <orch_id>
-bin/cmux-sprint launch-validator <orch_id>    # cmux only
-bin/cmux-sprint setup-worktree <orch_id> <lead-name>   # one per lead
-bin/cmux-sprint launch-hud <orch_id>
-```
-
 Generate `orch_id = f"orch_{int(time.time())}"`. All IPC under `/tmp/caf_orch/<orch_id>/`.
 
-### cmux mode (CMUX_SURFACE_ID set)
-
+### Pre-flight
 ```bash
-# Wave 0 — parallel
-bin/cmux-sprint launch-agent <orch_id> planning-lead 0 --model claude-opus-4-6
-# + shared researcher Agent() calls in same message
-bin/cmux-sprint poll-agents <orch_id> planning-lead
-
-# Wave 1+ — all leads in parallel
-bin/cmux-sprint launch-agent <orch_id> frontend-lead 1
-bin/cmux-sprint launch-agent <orch_id> backend-lead 1
-bin/cmux-sprint launch-agent <orch_id> qa-lead 1
-bin/cmux-sprint poll-agents <orch_id> frontend-lead backend-lead qa-lead
+bin/orch-shared init <orch_id>
+bin/cmux-sprint launch-hud <orch_id>  # cmux only
 ```
 
-Mid-run messaging:
+### Wave 0 — Exploration (all leads, parallel)
+
+Write a Wave 0 mission brief for each lead. Key instruction: "Explore your domain. Research what exists. Draft ideas. List what you need from other leads. Do NOT write any implementation code. Output your findings to `/tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`."
+
+**agents-only:**
+```python
+Agent(name="frontend-lead", subagent_type="frontend-lead", model="sonnet", prompt=<wave0-mission>)
+Agent(name="backend-lead",  subagent_type="backend-lead",  model="sonnet", prompt=<wave0-mission>)
+Agent(name="api-lead",      subagent_type="api-lead",      model="sonnet", prompt=<wave0-mission>)
+# All in one message — wait for all before proceeding
+```
+
+**cmux:**
 ```bash
-bin/cmux-sprint send-agent <orch_id> <lead-name> "message"
-bin/cmux-sprint abort-agent <orch_id> <lead-name> "reason"
+bin/cmux-sprint launch-agent <orch_id> frontend-lead 0
+bin/cmux-sprint launch-agent <orch_id> backend-lead 0
+bin/cmux-sprint launch-agent <orch_id> api-lead 0
+bin/cmux-sprint poll-agents <orch_id> frontend-lead backend-lead api-lead
 ```
 
-### agents-only mode (no CMUX_SURFACE_ID)
+### Gate 0 → 1: PO Review
 
-Wave 0 — ONE message, all in parallel:
+Read all `results/*-wave0.md` files. Check for:
+- Dependency requirements: does any lead need contracts from another?
+- Surprises or blockers worth flagging to the user
+
+**Optional user review** — ask the user if: task is a new feature (not a fix), or Wave 0 findings reveal unexpected complexity or design decisions. Format:
+```
+Wave 0 is done. Here's what your leads found before we start building:
+[2-3 bullet summary per lead]
+
+Any of this look wrong or surprising? If not I'll move to contracts + build.
+```
+If user says "you do you" or doesn't engage — proceed.
+
+**Decide contract owners.** For this job, which leads own interfaces?
+- api-lead → owns endpoint contracts (if any cross-domain API calls)
+- data-lead → owns schema (if DB schema changes)
+- No contract leads → skip Wave 1, go directly to Wave 2
+
+### Wave 1 — Contracts (contract leads only, fast)
+
+Only run if contract leads were identified in Gate 0→1.
+
+Write a Wave 1 brief for each contract lead: "Finalize the interfaces for your domain. Output clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`. Broadcast your contracts via `bin/orch-shared broadcast`. This is your only output — no implementation yet."
+
+Launch contract leads. Wait for completion. Read their contract files.
+
+### Gate 1 → 2: Inject Contracts
+
+Read all `results/*-contracts.md`. Build a "Contracts Available" block — verbatim quotes of each contract. This block goes into every Wave 2 lead mission brief.
+
+### Wave 2 — Build (all leads, parallel)
+
+Write a Wave 2 mission brief for each lead containing:
+- Their Wave 0 findings (reference their own `wave0.md`)
+- The full Contracts Available block (verbatim from all Wave 1 outputs)
+- "Now build. Implement your domain fully. No more exploration. No more blocking on contracts — they are above."
+
+**agents-only:**
 ```python
-Agent(name="planning-lead",     subagent_type="lead",       model="opus",  prompt=<prompt>)
-Agent(name="research-codebase", subagent_type="researcher", model="haiku", prompt=<prompt>)
-Agent(name="research-auth",     subagent_type="researcher", model="haiku", prompt=<prompt>)
-# Wait for all, then write lead prompts using their findings
+Agent(name="frontend-lead", subagent_type="frontend-lead", model="sonnet", prompt=<wave2-mission>)
+Agent(name="backend-lead",  subagent_type="backend-lead",  model="sonnet", prompt=<wave2-mission>)
+# All in one message
 ```
 
-Wave 1+ — ONE message per wave:
-```python
-Agent(name="frontend-lead", subagent_type="frontend-lead", model="sonnet", prompt=<prompt>)
-Agent(name="backend-lead",  subagent_type="backend-lead",  model="sonnet", prompt=<prompt>)
-Agent(name="qa-lead",       subagent_type="qa-lead",       model="sonnet", prompt=<prompt>)
-Agent(name="review-lead",   subagent_type="review-lead",   model="sonnet", prompt=<prompt>)
+**cmux:**
+```bash
+bin/cmux-sprint launch-agent <orch_id> frontend-lead 2
+bin/cmux-sprint launch-agent <orch_id> backend-lead 2
+bin/cmux-sprint poll-agents <orch_id> frontend-lead backend-lead
 ```
 
-**planning-lead uses opus** — wrong plan = everything downstream wrong. Other leads use sonnet.
-**Never launch leads sequentially — always one message per wave.**
+### Mid-run question handling
+
+Leads post questions via `bin/orch-shared ask-pm`. PO polls `pending-questions` and answers per the Tier 1/Tier 2 protocol. In Wave 2, contract questions should not arise (they were resolved in Wave 1). If one does, it means Wave 1 was incomplete — answer it directly rather than re-running Wave 1.
 
 ### Wave gating
 
-Waves are sequential; agents within a wave are parallel.
-Unlock next wave: `bin/cmux-sprint gate <id> <wave>`
-
-### Answering Questions While Leads Run
-
-Poll while leads are running:
-```bash
-bin/orch-shared pending-questions <orch_id>
-bin/orch-shared answer-question <orch_id> <question_id> "<answer>"
-```
-
-**Tier 1 — PO answers immediately, no user needed:**
-- Implementation detail / minor design choice → "Your call — you're the domain expert."
-- Minor scope ambiguity → decide using Mission Brief
-- Approach tradeoff, both options valid → pick closer to user's stated constraints
-
-**Tier 2 — Hold and batch for user:**
-- Contradicts acceptance criteria or stated user goal
-- Changes scope or constraints
-- Fundamental product decision (not implementation)
-- Breaks the plan entirely
-
-**Batching rule:** Collect all Tier 2 questions. Ask the user once with all of them together — never one question at a time. Format:
-
-```
-Your leads have [N] questions that need your input:
-
-1. [lead-name]: [question]
-   → Your answer:
-
-2. [lead-name]: [question]
-   → Your answer:
-
-Leads are paused on these. Answer all and I'll route them back.
-```
-
-Trigger batch immediately if any lead is critically blocked (can't proceed at all). Otherwise wait until you have all pending Tier 2 questions before asking.
-
-### Lead Escalation (Block and Wait)
-
-When a lead needs another lead spawned, the lead calls:
-```bash
-bin/orch-shared ask-pm <id> <lead-name> \
-  "Need <new-lead-name> spawned to handle <domain>. Blocking on their output." yes
-
-ANSWER=$(bin/orch-shared wait-answer <id> <question_id>)
-```
-
-The lead blocks via `wait-answer` (critical=yes). The PO receives the question via `pending-questions`, evaluates whether the new lead is valid given the task scope, then:
-- **If valid:** launch the new lead via `bin/cmux-sprint launch-agent`, write its mission brief, answer the requesting lead: "I've launched <lead-name>. Coordinate via shared workspace — they will register their domain. Continue your work."
-- **If not valid:** answer with why it's out of scope and how to proceed without it.
-
-The requesting lead unblocks on receipt of the answer and continues.
+Waves are sequential. Agents within a wave are parallel. Always launch an entire wave in one message.
 
 ---
 
