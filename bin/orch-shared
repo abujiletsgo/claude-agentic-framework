@@ -872,6 +872,34 @@ def cmd_merge_results(orch_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# message-lead
+# ---------------------------------------------------------------------------
+
+def cmd_message_lead(orch_id: str, lead_name: str, message: str) -> None:
+    """
+    Send a message to a lead's cmux pane. Try cmux first (local dev),
+    fall back to writing to a message file the lead can poll (CI/headless).
+    """
+    import subprocess
+
+    # Cmux approach: send to the lead's pane
+    cmux_result = subprocess.run(
+        ["cmux", "send-pane", f"{orch_id}-{lead_name}", message],
+        capture_output=True
+    )
+
+    if cmux_result.returncode != 0:
+        # Fallback: write to a message file the lead can poll
+        msg_file = Path(f"/tmp/caf_orch/{orch_id}/messages/{lead_name}.msg")
+        msg_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(msg_file, "a") as f:
+            f.write(f"{message}\n")
+        print(f"[orch-shared] message written to {msg_file} (cmux not available)")
+    else:
+        print(f"[orch-shared] message sent to {lead_name} via cmux")
+
+
+# ---------------------------------------------------------------------------
 # list-surfaces
 # ---------------------------------------------------------------------------
 
@@ -921,6 +949,10 @@ Subcommands:
   write-retro <orch_id>
       Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
       Reads working memory, test results, and evaluation report.
+
+  message-lead <orch_id> <lead> <message>
+      Send a message to a lead's cmux pane. Falls back to writing a message file
+      at /tmp/caf_orch/<orch_id>/messages/<lead>.msg if cmux is unavailable.
 """
 
 
@@ -1003,6 +1035,11 @@ def main() -> None:
             print("Usage: orch-shared write-retro <orch_id>", file=sys.stderr)
             sys.exit(1)
         cmd_write_retro(args[1])
+    elif sub == "message-lead":
+        if len(args) < 4:
+            print("Usage: orch-shared message-lead <orch_id> <lead> <message>", file=sys.stderr)
+            sys.exit(1)
+        cmd_message_lead(args[1], args[2], args[3])
     else:
         print(f"[orch-shared] unknown subcommand: {sub!r}", file=sys.stderr)
         sys.exit(1)

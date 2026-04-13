@@ -13,7 +13,7 @@ tiers:
       - Orchestration, planning, architecture
       - Complex multi-step coordination
       - Recursive exploration controllers
-      - planning-lead in orchestrate jobs (wrong plan = everything downstream wrong)
+      - PO-level vision alignment and lead routing
 
   sonnet:
     model_id: claude-sonnet-4-6
@@ -39,15 +39,14 @@ tiers:
       - Researcher for mechanical listings only (file inventories, not code analysis)
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 4 Opus, 29 Sonnet, 4 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
-# planning-lead (opus) = escape hatch for complex >5-lead jobs only, not standard flow
-# Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator), engineering-lead (replaced by domain leads)
+# 2 Opus, 18 Sonnet, 4 Haiku
+# 8 static domain leads (persistent memory per project, one cmux pane per job)
+# Gstack reviewers (plan-eng-review, plan-ceo-review, plan-design-review, cso, review, qa) used at evaluation gate
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
-    - planning-lead           # Wave planning lead — wrong plan = everything downstream wrong
     - po                      # Product Owner — vision alignment, lead routing, escalation handling
 
   sonnet:
@@ -56,33 +55,20 @@ agent_tiers:
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
     - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
-    - lead                    # Generic orchestration lead (fallback/base)
     - debugger                # Root cause analysis + fix plan writing
     - onboard-builder         # Wave 1 onboarding — generates project files from plan
     - onboard-planner         # Wave 0 onboarding — detects stack, writes plan
     - academic-researcher     # Academic paper search and citation graph traversal
     - code-researcher         # Cross-repo code pattern search via GitHub MCP
-    # ── Domain-specific lead agents ──
-    - frontend-lead           # Frontend/UI/UX domain spec + delegation
-    - backend-lead            # Backend/business logic domain spec + delegation
-    - api-lead                # API design + contracts domain spec + delegation
-    - mobile-lead             # Mobile app domain spec + delegation
-    - data-lead               # Data layer/DB domain spec + delegation
-    - infra-lead              # Infrastructure/deploy domain spec + delegation
-    - qa-lead                 # Test coverage planning + delegation
-    - review-lead             # Code quality review planning + delegation
-    - security-lead           # Threat modeling planning + delegation
+    # ── Domain leads (8 static experts with persistent memory) ──
+    - frontend-lead           # UI, client-side, design system, mobile (via skill)
+    - backend-lead            # Server logic, APIs, data layer, DB, infra, services
     - debugging-lead          # Root cause analysis planning + delegation
     - architecture-lead       # System design + ADR planning + delegation
-    - testing-lead            # Test strategy planning + delegation
     - refactoring-lead        # Refactor planning + delegation
     - release-lead            # Ship/deploy planning + delegation
     - docs-lead               # Documentation planning + delegation
     - performance-lead        # Perf profiling planning + delegation
-    - design-lead             # UX/visual design planning + delegation
-    - ceo-review-lead         # Strategic review planning + delegation
-    - eng-review-lead         # Technical feasibility planning + delegation
-    - pairing-lead            # Complex debugging via pair sessions + delegation
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)

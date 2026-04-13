@@ -314,27 +314,31 @@ fn parse_verdict(path: &Path) -> String {
 }
 
 fn parse_lead_statuses(base: &Path) -> Vec<LeadStatus> {
-    let lead_order = [
-        "planning-lead",
-        "engineering-lead",
-        "frontend-lead",
-        "review-lead",
-        "qa-lead",
-        "security-lead",
-        "release-lead",
-        "docs-lead",
-    ];
+    // Dynamic: scan for any *.status file so custom lead names (api-lead,
+    // backend-lead, design-lead, etc.) show up alongside standard ones.
     let mut statuses = Vec::new();
-    for role in &lead_order {
-        let p = base.join(format!("{}.status", role));
-        if let Ok(text) = fs::read_to_string(&p) {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
-                let status = v["status"].as_str().unwrap_or("unknown").to_string();
-                statuses.push(LeadStatus {
-                    role: role.to_string(),
-                    status,
-                });
+    if let Ok(entries) = fs::read_dir(base) {
+        let mut pairs: Vec<(String, String)> = Vec::new();
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.extension().and_then(|e| e.to_str()) == Some("status") {
+                let role = p
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                if let Ok(text) = fs::read_to_string(&p) {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+                        let status = v["status"].as_str().unwrap_or("unknown").to_string();
+                        pairs.push((role, status));
+                    }
+                }
             }
+        }
+        // Sort alphabetically for stable display order
+        pairs.sort_by(|a, b| a.0.cmp(&b.0));
+        for (role, status) in pairs {
+            statuses.push(LeadStatus { role, status });
         }
     }
     statuses

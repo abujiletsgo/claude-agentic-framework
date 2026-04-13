@@ -5,8 +5,8 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        45 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:0, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:3, hooks_Stop:8, hooks_StopFailure:1, hooks_SubagentStart:3, hooks_SubagentStop:5, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
-global-agents/       40 agents (40 root + 0 team)
+global-hooks/        46 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:0, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:3, hooks_Stop:8, hooks_StopFailure:1, hooks_SubagentStart:3, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
+global-agents/       26 agents (26 root + 0 team)
 global-commands/     16 commands
 global-skills/       29 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
@@ -20,8 +20,8 @@ templates/           settings.json.template (edit this, run install.sh)
 ## Model Tiers
 
 ```
-  Opus (4): orchestrator, project-architect, planning-lead, po
-Sonnet (31): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, lead, debugger, onboard-builder, onboard-planner, academic-researcher, code-researcher, frontend-lead, backend-lead, api-lead, mobile-lead, data-lead, infra-lead, qa-lead, review-lead, security-lead, debugging-lead, architecture-lead, testing-lead, refactoring-lead, release-lead, docs-lead, performance-lead, design-lead, ceo-review-lead, eng-review-lead, pairing-lead
+  Opus (3): orchestrator, project-architect, po
+Sonnet (18): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger, onboard-builder, onboard-planner, academic-researcher, code-researcher, frontend-lead, backend-lead, debugging-lead, architecture-lead, refactoring-lead, release-lead, docs-lead, performance-lead
  Haiku (4): docs-scraper, validator, agent-watchdog, health-checker
 ```
 

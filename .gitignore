@@ -28,3 +28,6 @@ target/
 apps/observability/server/events.db
 apps/observability/server/events.db-shm
 apps/observability/server/events.db-wal
+
+# Lead agent episodic memory (per-project, not committed)
+.claude/lead-memories/

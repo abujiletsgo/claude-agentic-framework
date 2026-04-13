@@ -49,8 +49,7 @@ The PO detects scope (single vs. multi-domain) and routes accordingly.
 
 **Lead discovery order** (check each source, merge results):
 1. **`.claude/agents/`** — any `*-lead.md` file in this directory is a project-specific lead. Read its frontmatter `description` and `domain` fields to understand what it owns. These leads override the standard table for their named domain.
-2. **`PO_BRIEF.md` → `custom_leads`** — if PO_BRIEF.md has a `## Custom Leads` section, those lead names are project-specific and take priority.
-3. **Standard 18-lead table** (below) — global fallback. Only use a standard lead if no project-specific lead covers the same domain.
+2. **Standard 8-lead table** (below) — global fallback. Only use a standard lead if no project-specific lead covers the same domain.
 
 To discover project leads: `ls .claude/agents/*-lead.md 2>/dev/null` and read each file's frontmatter. A custom lead's `subagent_type` field names the base agent type to spawn; its `name` field is its identity in the wave.
 
@@ -66,35 +65,23 @@ To discover project leads: `ls .claude/agents/*-lead.md 2>/dev/null` and read ea
 
 Leads are **delegating planners** — they break their domain into tasks and spawn workers. They do NOT build, research, or code directly.
 
-| Lead type | subagent_type | Domain | Workers spawned |
-|-----------|---------------|--------|-----------------|
-| architecture-lead | architecture-lead | System design, ADRs, interface contracts | researcher, critical-analyst |
-| frontend-lead | frontend-lead | UI, client-side logic, design system | researcher, builder, critical-analyst |
-| backend-lead | backend-lead | Server logic, services, integrations | researcher, builder, critical-analyst |
-| api-lead | api-lead | Endpoint/response shapes, API contracts | researcher, builder, validator |
-| data-lead | data-lead | DB schema, migrations, data models | researcher, builder, validator |
-| refactoring-lead | refactoring-lead | Code reorganization, rename/move | researcher, builder, validator |
-| debugging-lead | debugging-lead | Root cause analysis, fix planning | researcher, debugger, builder |
-| pairing-lead | pairing-lead | Complex debugging, interactive diagnosis | researcher, debugger, builder |
-| qa-lead | qa-lead | Test coverage, regression prevention, E2E | researcher, builder, validator |
-| testing-lead | testing-lead | Test strategy, test framework decisions | researcher, builder, validator |
-| review-lead | review-lead | Code quality review, DX review | researcher, critical-analyst, code-researcher |
-| security-lead | security-lead | Threat modeling, vulnerability assessment | researcher, critical-analyst, builder |
-| performance-lead | performance-lead | Perf profiling, benchmark planning | researcher, builder, validator |
-| design-lead | design-lead | UX/visual design direction, design system | researcher, builder, critical-analyst |
-| ceo-review-lead | ceo-review-lead | Strategic alignment, ROI, risk | researcher, critical-analyst |
-| eng-review-lead | eng-review-lead | Technical feasibility, approach validation | researcher, critical-analyst, code-researcher |
-| docs-lead | docs-lead | Documentation, release notes, API docs | researcher, builder, validator |
-| release-lead | release-lead | Ship planning, deploy sequencing | researcher, builder, validator |
-
-**Note:** planning-lead exists as an escape hatch for >5-lead jobs where the PO wants a dedicated planner sub-session. Not part of normal flows.
+| Lead type | subagent_type | Domain |
+|-----------|---------------|--------|
+| backend-lead | backend-lead | Server logic, APIs, data layer, DB, infra, services |
+| frontend-lead | frontend-lead | UI, client-side logic, design system, mobile (via skill) |
+| architecture-lead | architecture-lead | System design, ADRs, interface contracts |
+| debugging-lead | debugging-lead | Root cause analysis, fix planning |
+| refactoring-lead | refactoring-lead | Code reorganization, rename/move, structural improvements |
+| performance-lead | performance-lead | Profiling, benchmarks, regression detection |
+| docs-lead | docs-lead | Documentation, release notes, API docs |
+| release-lead | release-lead | Ship sequencing, deploy configs, rollback prep |
 
 **Selection rule**: only pick leads whose domain is relevant. `research-lead` does not exist — each lead owns its own research in Wave 0.
 
 **Custom lead rule**: when a `.claude/agents/*-lead.md` file exists, use `subagent_type` from its frontmatter as the agent type and `name` as the identity. If the file has no `subagent_type`, fall back to the closest standard lead type. Custom leads get the same wave structure (Wave 0 explore → Wave 1 contracts → Wave 2 build) as standard leads.
 
-Typical 3-lead: `frontend-lead` → `backend-lead` + `api-lead` → `qa-lead` + `review-lead`
-Typical 5-lead: adds `security-lead` + `release-lead`
+Typical 3-lead: `frontend-lead` + `backend-lead` + `architecture-lead`
+Typical 5-lead: adds `debugging-lead` + `release-lead`
 
 ---
 

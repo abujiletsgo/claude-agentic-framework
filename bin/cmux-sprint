@@ -271,7 +271,7 @@ def _load_orch_surfaces(orch_id: str) -> dict:
 # Subcommand: cmd_launch_pane  (merged launch-lead + launch-agent)
 # ---------------------------------------------------------------------------
 
-def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch", model: str = "") -> None:
+def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch", model: str = "", pane_key: str = "", env_vars: dict | None = None) -> None:
     """
     Open a cmux pane for a sprint lead or orchestrate agent.
 
@@ -279,6 +279,9 @@ def cmd_launch_pane(orch_id: str, name: str, wave: int, ipc_base: str = "orch", 
                           status/surfaces stored under /tmp/caf_orch/
     ipc_base="sprint"  -> reads prompt from /tmp/caf_sprint/<orch_id>/prompts/<name>.md
                           status/surfaces stored under /tmp/caf_sprint/
+
+    pane_key: if set, use this as the surfaces.json key instead of name
+    env_vars: optional dict of env vars to export into the pane before launching claude
     """
     if ipc_base == "sprint":
         base_dir = SPRINT_BASE / orch_id
@@ -364,17 +367,21 @@ If you fail or cannot complete: write `{{"status":"failed","error":"<reason>"}}`
         print("[cmux-sprint] surface.split returned no surface_id", file=sys.stderr)
         sys.exit(1)
 
-    # Track pane by name and as the latest split anchor
+    # Track pane by name (or pane_key if provided) and as the latest split anchor
+    surface_key = pane_key if pane_key else name
     if ipc_base == "sprint":
-        save_surface(orch_id, name, new_sid)
+        save_surface(orch_id, surface_key, new_sid)
         save_surface(orch_id, "_last_split", new_sid)
         cwd = get_sprint_cwd(orch_id)
     else:
-        _save_orch_surface(orch_id, name, new_sid)
+        _save_orch_surface(orch_id, surface_key, new_sid)
         _save_orch_surface(orch_id, "_last_split", new_sid)
         cwd = os.environ.get("PWD", str(Path.cwd()))
 
     cmux.send_surface(new_sid, f"cd {cwd}\n")
+    if env_vars:
+        for k, v in env_vars.items():
+            cmux.send_surface(new_sid, f"export {k}={v}\n")
     claude_cmd = f"claude --model {model}\n" if model else "claude\n"
     cmux.send_surface(new_sid, claude_cmd)
     _wait_for_claude_ready(new_sid)
@@ -993,11 +1000,29 @@ def main() -> None:
         cmd_abort_agent(non_flag[0], non_flag[1], new_prompt, mode)
 
     elif subcmd == "launch-agent":
-        if len(args) < 4:
-            print("Usage: cmux-sprint launch-agent <orch_id> <agent_name> <wave> [--model <model_id>]", file=sys.stderr)
+        if len(args) < 3:
+            print("Usage: cmux-sprint launch-agent <orch_id> <agent_name> [wave] [--model <model_id>]", file=sys.stderr)
             sys.exit(1)
+        orch_id_arg = args[1]
+        agent_name_arg = args[2]
         model_flag = ""
-        remaining = args[4:]
+
+        # Determine if a wave number was passed (backward compat)
+        remaining_start = 3
+        wave_arg = None
+        if len(args) > 3 and args[3].lstrip("-").isdigit():
+            try:
+                wave_arg = int(args[3])
+                remaining_start = 4
+                print(
+                    f"[cmux-sprint] DEPRECATION WARNING: wave number ({wave_arg}) passed to launch-agent. "
+                    f"Wave is ignored — lead self-manages phases.",
+                    file=sys.stderr,
+                )
+            except ValueError:
+                pass
+
+        remaining = args[remaining_start:]
         i = 0
         while i < len(remaining):
             if remaining[i] == "--model" and i + 1 < len(remaining):
@@ -1005,13 +1030,33 @@ def main() -> None:
                 i += 2
             else:
                 i += 1
-        cmd_launch_pane(args[1], args[2], int(args[3]), ipc_base="orch", model=model_flag)
+
+        project_root = os.environ.get("PWD", str(Path.cwd()))
+        lead_env_vars = {
+            "ORCH_ID": orch_id_arg,
+            "LEAD_NAME": agent_name_arg,
+            "LEAD_MEMORY_PATH": f"{project_root}/.claude/lead-memories/{agent_name_arg}.md",
+        }
+        pane_key = f"{orch_id_arg}-{agent_name_arg}"
+        cmd_launch_pane(orch_id_arg, agent_name_arg, 0, ipc_base="orch", model=model_flag, pane_key=pane_key, env_vars=lead_env_vars)
 
     elif subcmd == "poll-agents":
         if len(args) < 3:
             print("Usage: cmux-sprint poll-agents <orch_id> <agent1> [agent2 ...]", file=sys.stderr)
             sys.exit(1)
         cmd_poll(args[1], args[2:], ipc_base="orch")
+
+    elif subcmd == "poll-lead-status":
+        if len(args) < 3:
+            print("Usage: cmux-sprint poll-lead-status <orch_id> <lead>", file=sys.stderr)
+            sys.exit(1)
+        orch_id = args[1]
+        lead_name = args[2]
+        status_file = Path(f"/tmp/caf_orch/{orch_id}/status/{lead_name}-phase.json")
+        if status_file.exists():
+            print(status_file.read_text())
+        else:
+            print(json.dumps({"status": "not_started"}))
 
     elif subcmd == "launch-dashboard":
         if len(args) < 2:

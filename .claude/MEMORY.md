@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (17:32 UTC) · @Tom Kwon
-**Commit:** dashboard: use $background theme variable instead of transparent/OSC11 (63a4074e) by Tom Kwon
-**Changed:**
-  dashboard/sprint_tui.css | 44 ++++++++++++++++++++++++--------------------
-  dashboard/sprint_tui.py  | 47 -----------------------------------------------
-  2 files changed, 24 insertions(+), 67 deletions(-)
-
 ## 2026-04-08 (17:43 UTC) · @Tom Kwon
 **Commit:** feat: CAF Dashboard Layout A — unified big-screen TUI (7b94e74d) by Tom Kwon
 **Changed:**
@@ -293,3 +286,18 @@
 **Changed:**
   dashboard/activity_report.py | 76 +++++++++++++++++++++++++++++++++-----------
   1 file changed, 57 insertions(+), 19 deletions(-)
+
+## 2026-04-13 (10:58 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): dynamic leads, CWD-scoped dashboards, event stream (1be1369c) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  | 86 +++++++++++-----------
+  .claude/PO_BRIEF.md                                |  5 ++
+  .claude/agents/cmux-lead.md                        | 48 ++++++++++++
+  .claude/agents/dashboard-lead.md                   | 49 ++++++++++++
+  .claude/agents/hooks-lead.md                       | 48 ++++++++++++
+  .gitignore                                         |  5 ++
+  CLAUDE.md                                          | 10 +--
+  README.md                                          | 12 +--
+  bin/gen-lead                                       | 70 ++++++++++++++++++
+  bin/orch-shared                                    |  9 ++-
+  ... and 8 more files

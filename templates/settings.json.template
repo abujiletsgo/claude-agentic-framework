@@ -451,6 +451,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/lead_memory_writer.py",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
             "timeout": 5,
             "async": true,
