@@ -1,8 +1,9 @@
+import { homedir } from 'node:os'
 import { join } from 'path'
 
 export const PORT = parseInt(process.env['BUN_PORT'] ?? '3001', 10)
 
-export const ORCH_BASE_DIR = '/tmp/caf_orch'
+export const ORCH_BASE_DIR = join(homedir(), '.caf', 'orch')
 
 export const EVENTS_DB_PATH = join(import.meta.dir, '../../../../apps/observability/server/events.db')
 

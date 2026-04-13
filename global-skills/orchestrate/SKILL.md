@@ -121,6 +121,7 @@ Read `rework.md`. Apply the correction (update spec or re-spawn affected builder
 
 ```bash
 bin/orch-shared broadcast <orch_id> orchestrator "done" "run complete"
+bin/orch-shared write-retro <orch_id>
 ```
 
 Write `/tmp/caf_orch/<orch_id>/report.md`:

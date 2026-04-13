@@ -205,6 +205,23 @@ export async function parseLeadSummaries(orchDir: string): Promise<LeadSummary[]
   return summaries
 }
 
+// ─── parseProject ────────────────────────────────────────────────────────────
+
+export async function parseProject(orchDir: string): Promise<string | undefined> {
+  const raw = await readText(join(orchDir, 'meta.json'))
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const cwd = typeof parsed['cwd'] === 'string' ? parsed['cwd'] : null
+    if (!cwd) return undefined
+    // Use the last two path segments (e.g. /Users/tom/Documents/caf-team → caf-team)
+    const parts = cwd.replace(/\/$/, '').split('/')
+    return parts[parts.length - 1] || undefined
+  } catch {
+    return undefined
+  }
+}
+
 // ─── parseMissionBrief ───────────────────────────────────────────────────────
 
 export async function parseMissionBrief(orchDir: string): Promise<string> {
@@ -248,19 +265,23 @@ export async function listRuns(): Promise<Run[]> {
   const runs: Run[] = []
   for (const dir of orchDirs) {
     const orchDir = join(ORCH_BASE_DIR, dir)
-    // must have acceptance_criteria.md
-    const criteriaText = await readText(join(orchDir, 'acceptance_criteria.md'))
-    if (criteriaText === null) continue
+    // must have acceptance_criteria.md OR mission_brief.md (older runs may lack the former)
+    const [criteriaText, briefText] = await Promise.all([
+      readText(join(orchDir, 'acceptance_criteria.md')),
+      readText(join(orchDir, 'mission_brief.md')),
+    ])
+    if (criteriaText === null && briefText === null) continue
 
-    const [startTime, leadCount, status, waveCount, tokenEstimate] = await Promise.all([
+    const [startTime, leadCount, status, waveCount, tokenEstimate, project] = await Promise.all([
       parseStartTime(orchDir),
       parseLeadCount(orchDir),
       parseRunStatus(orchDir),
       parseWaveCount(orchDir),
       parseTokenEstimate(orchDir),
+      parseProject(orchDir),
     ])
 
-    runs.push({ id: dir, startTime, leadCount, status, waveCount, tokenEstimate })
+    runs.push({ id: dir, startTime, leadCount, status, waveCount, tokenEstimate, project })
   }
 
   runs.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
@@ -278,13 +299,14 @@ export async function getRunDetail(id: string): Promise<RunDetail | null> {
     return null
   }
 
-  const [startTime, leadCount, status, waveCount, tokenEstimate, missionBrief, acceptanceCriteria, evaluationFull, leads, evaluation] =
+  const [startTime, leadCount, status, waveCount, tokenEstimate, project, missionBrief, acceptanceCriteria, evaluationFull, leads, evaluation] =
     await Promise.all([
       parseStartTime(orchDir),
       parseLeadCount(orchDir),
       parseRunStatus(orchDir),
       parseWaveCount(orchDir),
       parseTokenEstimate(orchDir),
+      parseProject(orchDir),
       parseMissionBrief(orchDir),
       parseAcceptanceCriteria(orchDir),
       parseEvaluationFull(orchDir),
@@ -299,6 +321,7 @@ export async function getRunDetail(id: string): Promise<RunDetail | null> {
     status,
     waveCount,
     tokenEstimate,
+    project,
     missionBrief,
     acceptanceCriteria,
     evaluationFull,

@@ -67,7 +67,7 @@ CAF_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAF_DIR / "lib"))
 import cmux_client as cmux  # noqa
 
-ORCH_BASE = Path("/tmp/caf_orch")
+ORCH_BASE = Path.home() / ".caf" / "orch"
 
 
 def ts() -> str:
