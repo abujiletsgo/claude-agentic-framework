@@ -13,7 +13,7 @@ tiers:
       - Orchestration, planning, architecture
       - Complex multi-step coordination
       - Recursive exploration controllers
-      - PO-level vision alignment and lead routing
+      - Multi-agent coordination requiring strategic decisions
 
   sonnet:
     model_id: claude-sonnet-4-6
@@ -40,35 +40,30 @@ tiers:
 
 # ─── Agent Assignments ──────────────────────────────────────────────
 # 2 Opus, 18 Sonnet, 4 Haiku
-# 8 static domain leads (persistent memory per project, one cmux pane per job)
-# Gstack reviewers (plan-eng-review, plan-ceo-review, plan-design-review, cso, review, qa) used at evaluation gate
+# Consultant model: Wave 0a = user ↔ consultants, Wave 0b = researchers, Wave 1 = builders, Wave 2 = QA loop
 
 agent_tiers:
   opus:
     - orchestrator            # Multi-agent coordination and planning
     - project-architect       # Architecture design, agent ecosystem creation
-    - po                      # Product Owner — vision alignment, lead routing, escalation handling
 
   sonnet:
+    - po                      # Product Owner — consultation facilitator, spec synthesizer
     - critical-analyst        # Critical thinking, risk analysis
     - researcher              # Research and analysis
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
-    - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
+    - builder                 # Pure implementation
     - debugger                # Root cause analysis + fix plan writing
     - onboard-builder         # Wave 1 onboarding — generates project files from plan
     - onboard-planner         # Wave 0 onboarding — detects stack, writes plan
     - academic-researcher     # Academic paper search and citation graph traversal
     - code-researcher         # Cross-repo code pattern search via GitHub MCP
-    # ── Domain leads (8 static experts with persistent memory) ──
-    - frontend-lead           # UI, client-side, design system, mobile (via skill)
-    - backend-lead            # Server logic, APIs, data layer, DB, infra, services
-    - debugging-lead          # Root cause analysis planning + delegation
-    - architecture-lead       # System design + ADR planning + delegation
-    - refactoring-lead        # Refactor planning + delegation
-    - release-lead            # Ship/deploy planning + delegation
-    - docs-lead               # Documentation planning + delegation
-    - performance-lead        # Perf profiling planning + delegation
+    # ── Domain consultants (Wave 0a — read-only, interactive, spec producers) ──
+    - frontend-consultant     # UI, UX, components — asks questions, produces frontend spec
+    - backend-consultant      # API, data, services — asks questions, produces backend spec
+    - architecture-consultant # System design, blast radius — asks questions, produces contracts
+    - security-consultant     # Auth, input handling, threat model — asks questions, produces security spec
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)

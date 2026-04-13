@@ -2,21 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (17:43 UTC) · @Tom Kwon
-**Commit:** feat: CAF Dashboard Layout A — unified big-screen TUI (7b94e74d) by Tom Kwon
-**Changed:**
-  bin/cteam-dashboard                   | 162 +-----------------------
-  dashboard/__init__.py                 |   1 +
-  dashboard/caf_dashboard.css           |  58 +++++++++
-  dashboard/caf_dashboard.py            | 101 +++++++++++++++
-  dashboard/cost_estimator.py           | 130 ++++++++++++++++++++
-  dashboard/widgets/agents_widget.py    |  71 +++++++++++
-  dashboard/widgets/event_log_widget.py | 166 +++++++++++++++++++++++++
-  dashboard/widgets/leads_grid.py       | 184 ++++++++++++++++++++++++++++
-  dashboard/widgets/right_sidebar.py    | 224 ++++++++++++++++++++++++++++++++++
-  dashboard/widgets/summary_panel_v2.py | 160 ++++++++++++++++++++++++
-  ... and 3 more files
-
 ## 2026-04-08 (17:45 UTC) · @Tom Kwon
 **Commit:** fix: use python3 for dashboard (textual installed there), fix @work import (7c63b9bd) by Tom Kwon
 **Changed:**
@@ -287,7 +272,7 @@
   dashboard/activity_report.py | 76 +++++++++++++++++++++++++++++++++-----------
   1 file changed, 57 insertions(+), 19 deletions(-)
 
-## 2026-04-13 (10:58 UTC) · @Tom Kwon
+## 2026-04-13 (14:52 UTC) · @Tom Kwon
 **Commit:** feat(orchestrate): dynamic leads, CWD-scoped dashboards, event stream (1be1369c) by Tom Kwon
 **Changed:**
   .claude/MEMORY.md                                  | 86 +++++++++++-----------
@@ -301,3 +286,18 @@
   bin/gen-lead                                       | 70 ++++++++++++++++++
   bin/orch-shared                                    |  9 ++-
   ... and 8 more files
+
+## 2026-04-13 (17:05 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): persistent leads, vision-first PO, lead consolidation (d6ca118d) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  22 +-
+  .claude/PRODUCT_VISION.md                          |  49 +++++
+  .claude/PROJECT_CONTEXT.md                         | 110 +++++-----
+  .gitignore                                         |   3 +
+  CLAUDE.md                                          |   8 +-
+  README.md                                          |  14 +-
+  bin/caf-eval                                       | 221 +++++++++++++++++++
+  bin/cmux-sprint                                    |  61 +++++-
+  bin/gen-lead                                       |  71 +-----
+  bin/orch-shared                                    |  37 ++++
+  ... and 29 more files

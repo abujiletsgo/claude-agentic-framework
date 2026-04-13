@@ -1,0 +1,392 @@
+import { readdir, stat, readFile } from 'fs/promises'
+import { join } from 'path'
+import { ORCH_BASE_DIR } from '../config'
+import { estimateFileTokens } from './tokenEstimator'
+import { parseEvalScore, parseEvalVerdict } from './evalParser'
+import type { Run, RunDetail, RunStatus, LeadSummary, LeadOutput } from '../../../shared/types'
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+async function listDir(dir: string): Promise<string[]> {
+  try {
+    return await readdir(dir)
+  } catch {
+    return []
+  }
+}
+
+async function readText(filePath: string): Promise<string | null> {
+  try {
+    return await readFile(filePath, 'utf-8')
+  } catch {
+    return null
+  }
+}
+
+async function fileMtime(filePath: string): Promise<Date | null> {
+  try {
+    const s = await stat(filePath)
+    return s.mtime
+  } catch {
+    return null
+  }
+}
+
+// ─── parseRunStatus ──────────────────────────────────────────────────────────
+
+export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
+  const entries = await listDir(orchDir)
+  const statusFiles = entries.filter((e) => e.endsWith('.status'))
+
+  // Check for failed statuses
+  for (const sf of statusFiles) {
+    const raw = await readText(join(orchDir, sf))
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      if (typeof parsed['status'] === 'string' && parsed['status'] === 'failed') {
+        return 'FAIL'
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Check evaluation_report.md
+  const evalText = await readText(join(orchDir, 'evaluation_report.md'))
+  if (evalText !== null) {
+    const verdict = parseEvalVerdict(evalText)
+    if (verdict === 'NEEDS REWORK') return 'FAIL'
+    if (verdict === 'SHIP') return 'PASS'
+  }
+
+  // All statuses are "done" → waiting for eval
+  if (statusFiles.length > 0) {
+    let allDone = true
+    for (const sf of statusFiles) {
+      const raw = await readText(join(orchDir, sf))
+      if (!raw) { allDone = false; break }
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed['status'] !== 'done') { allDone = false; break }
+      } catch {
+        allDone = false; break
+      }
+    }
+    if (allDone) return 'IN_PROGRESS'
+  }
+
+  return 'UNKNOWN'
+}
+
+// ─── parseLeadCount ──────────────────────────────────────────────────────────
+
+export async function parseLeadCount(orchDir: string): Promise<number> {
+  const entries = await listDir(join(orchDir, 'prompts'))
+  const prefixes = new Set<string>()
+  for (const e of entries) {
+    // Match wave-numbered files: backend-lead-wave0.md
+    const mWave = e.match(/^(.+)-wave\d+\.md$/)
+    if (mWave && mWave[1] !== undefined) {
+      prefixes.add(mWave[1])
+      continue
+    }
+    // Match plain lead files: backend-lead.md
+    const mPlain = e.match(/^(.+)\.md$/)
+    if (mPlain && mPlain[1] !== undefined) prefixes.add(mPlain[1])
+  }
+  return prefixes.size
+}
+
+// ─── parseWaveCount ──────────────────────────────────────────────────────────
+
+export async function parseWaveCount(orchDir: string): Promise<number> {
+  const entries = await listDir(join(orchDir, 'prompts'))
+  let max = -1
+  let hasPlainLeads = false
+  for (const e of entries) {
+    const mWave = e.match(/-wave(\d+)\.md$/)
+    if (mWave && mWave[1] !== undefined) {
+      const n = parseInt(mWave[1], 10)
+      if (n > max) max = n
+    } else if (e.endsWith('.md')) {
+      hasPlainLeads = true
+    }
+  }
+  // If we found wave-numbered files, return the max wave number
+  if (max >= 0) return max
+  // Plain lead files (no wave suffix) → single-wave run at wave 0
+  if (hasPlainLeads) return 0
+  return 0
+}
+
+// ─── parseTokenEstimate ──────────────────────────────────────────────────────
+
+export async function parseTokenEstimate(orchDir: string): Promise<number> {
+  const resultsDir = join(orchDir, 'results')
+  const entries = await listDir(resultsDir)
+  const mdFiles = entries.filter((e) => e.endsWith('.md'))
+  const counts = await Promise.all(mdFiles.map((e) => estimateFileTokens(join(resultsDir, e))))
+  return counts.reduce((sum, n) => sum + n, 0)
+}
+
+// ─── parseStartTime ──────────────────────────────────────────────────────────
+
+export async function parseStartTime(orchDir: string): Promise<string> {
+  const raw = await readText(join(orchDir, 'orch-start.json'))
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      if (typeof parsed['start'] === 'string') return parsed['start']
+    } catch {
+      // fall through
+    }
+  }
+  // fallback: dir mtime
+  const mtime = await fileMtime(orchDir)
+  return mtime ? mtime.toISOString() : new Date(0).toISOString()
+}
+
+// ─── parseWallClockSeconds ───────────────────────────────────────────────────
+
+export async function parseWallClockSeconds(orchDir: string): Promise<number> {
+  const startStr = await parseStartTime(orchDir)
+  const startMs = new Date(startStr).getTime()
+
+  const entries = await listDir(orchDir)
+  const statusFiles = entries.filter((e) => e.endsWith('.status'))
+
+  let latestMs = startMs
+  for (const sf of statusFiles) {
+    const mtime = await fileMtime(join(orchDir, sf))
+    if (mtime && mtime.getTime() > latestMs) {
+      latestMs = mtime.getTime()
+    }
+  }
+
+  return Math.round((latestMs - startMs) / 1000)
+}
+
+// ─── parseLeadSummaries ──────────────────────────────────────────────────────
+
+export async function parseLeadSummaries(orchDir: string): Promise<LeadSummary[]> {
+  const entries = await listDir(orchDir)
+  const statusFiles = entries.filter((e) => e.endsWith('.status'))
+  const summaries: LeadSummary[] = []
+
+  for (const sf of statusFiles) {
+    const role = sf.replace(/\.status$/, '')
+    const raw = await readText(join(orchDir, sf))
+    let status: RunStatus = 'UNKNOWN'
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed['status'] === 'done') status = 'IN_PROGRESS'
+        else if (parsed['status'] === 'failed') status = 'FAIL'
+      } catch {
+        // keep UNKNOWN
+      }
+    }
+
+    // find max wave from results/<role>-waveN.md
+    const resultsEntries = await listDir(join(orchDir, 'results'))
+    let maxWave = 0
+    for (const re of resultsEntries) {
+      const m = re.match(new RegExp(`^${role}-wave(\\d+)\\.md$`))
+      if (m) {
+        const n = parseInt(m[1] ?? '0', 10)
+        if (n > maxWave) maxWave = n
+      }
+    }
+
+    summaries.push({ name: role, status, wave: maxWave })
+  }
+
+  return summaries
+}
+
+// ─── parseMissionBrief ───────────────────────────────────────────────────────
+
+export async function parseMissionBrief(orchDir: string): Promise<string> {
+  const text = await readText(join(orchDir, 'mission_brief.md'))
+  return text ?? ''
+}
+
+// ─── parseEvaluation ─────────────────────────────────────────────────────────
+
+export async function parseEvaluation(
+  orchDir: string
+): Promise<{ score: number | null; verdict: 'SHIP' | 'NEEDS REWORK' | null }> {
+  const text = await readText(join(orchDir, 'evaluation_report.md'))
+  if (!text) return { score: null, verdict: null }
+  return {
+    score: parseEvalScore(text),
+    verdict: parseEvalVerdict(text),
+  }
+}
+
+// ─── parseAcceptanceCriteria ─────────────────────────────────────────────────
+
+export async function parseAcceptanceCriteria(orchDir: string): Promise<string> {
+  const text = await readText(join(orchDir, 'acceptance_criteria.md'))
+  return text ?? ''
+}
+
+// ─── parseEvaluationFull ─────────────────────────────────────────────────────
+
+export async function parseEvaluationFull(orchDir: string): Promise<string> {
+  const text = await readText(join(orchDir, 'evaluation_report.md'))
+  return text ?? ''
+}
+
+// ─── listRuns ────────────────────────────────────────────────────────────────
+
+export async function listRuns(): Promise<Run[]> {
+  const entries = await listDir(ORCH_BASE_DIR)
+  const orchDirs = entries.filter((e) => e.startsWith('orch_'))
+
+  const runs: Run[] = []
+  for (const dir of orchDirs) {
+    const orchDir = join(ORCH_BASE_DIR, dir)
+    // must have acceptance_criteria.md
+    const criteriaText = await readText(join(orchDir, 'acceptance_criteria.md'))
+    if (criteriaText === null) continue
+
+    const [startTime, leadCount, status, waveCount, tokenEstimate] = await Promise.all([
+      parseStartTime(orchDir),
+      parseLeadCount(orchDir),
+      parseRunStatus(orchDir),
+      parseWaveCount(orchDir),
+      parseTokenEstimate(orchDir),
+    ])
+
+    runs.push({ id: dir, startTime, leadCount, status, waveCount, tokenEstimate })
+  }
+
+  runs.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+  return runs
+}
+
+// ─── getRunDetail ────────────────────────────────────────────────────────────
+
+export async function getRunDetail(id: string): Promise<RunDetail | null> {
+  const orchDir = join(ORCH_BASE_DIR, id)
+  // check dir exists
+  try {
+    await stat(orchDir)
+  } catch {
+    return null
+  }
+
+  const [startTime, leadCount, status, waveCount, tokenEstimate, missionBrief, acceptanceCriteria, evaluationFull, leads, evaluation] =
+    await Promise.all([
+      parseStartTime(orchDir),
+      parseLeadCount(orchDir),
+      parseRunStatus(orchDir),
+      parseWaveCount(orchDir),
+      parseTokenEstimate(orchDir),
+      parseMissionBrief(orchDir),
+      parseAcceptanceCriteria(orchDir),
+      parseEvaluationFull(orchDir),
+      parseLeadSummaries(orchDir),
+      parseEvaluation(orchDir),
+    ])
+
+  return {
+    id,
+    startTime,
+    leadCount,
+    status,
+    waveCount,
+    tokenEstimate,
+    missionBrief,
+    acceptanceCriteria,
+    evaluationFull,
+    leads,
+    evaluationScore: evaluation.score,
+    evaluationVerdict: evaluation.verdict,
+  }
+}
+
+// ─── getLeadOutput ───────────────────────────────────────────────────────────
+
+export async function getLeadOutput(id: string, leadName: string): Promise<LeadOutput | null> {
+  const orchDir = join(ORCH_BASE_DIR, id)
+  const resultsDir = join(orchDir, 'results')
+  const promptsDir = join(orchDir, 'prompts')
+  const resultsEntries = await listDir(resultsDir)
+  const promptsEntries = await listDir(promptsDir)
+
+  // ── Collect result wave files: <leadName>-waveN.md ──────────────────────────
+  const waveFiles: Array<{ wave: number; path: string }> = []
+  for (const e of resultsEntries) {
+    const m = e.match(new RegExp(`^${leadName}-wave(\\d+)\\.md$`))
+    if (m) {
+      waveFiles.push({ wave: parseInt(m[1] ?? '0', 10), path: join(resultsDir, e) })
+    }
+  }
+  // Also check for plain result file: <leadName>.md (wave 0)
+  if (waveFiles.length === 0 && resultsEntries.includes(`${leadName}.md`)) {
+    waveFiles.push({ wave: 0, path: join(resultsDir, `${leadName}.md`) })
+  }
+
+  if (waveFiles.length === 0) return null
+
+  waveFiles.sort((a, b) => a.wave - b.wave)
+
+  // ── Collect prompt wave files: <leadName>-waveN.md or <leadName>.md ──────────
+  const promptWaveFiles: Array<{ wave: number; path: string }> = []
+  for (const e of promptsEntries) {
+    const m = e.match(new RegExp(`^${leadName}-wave(\\d+)\\.md$`))
+    if (m) {
+      promptWaveFiles.push({ wave: parseInt(m[1] ?? '0', 10), path: join(promptsDir, e) })
+    }
+  }
+  if (promptWaveFiles.length === 0 && promptsEntries.includes(`${leadName}.md`)) {
+    promptWaveFiles.push({ wave: 0, path: join(promptsDir, `${leadName}.md`) })
+  }
+  promptWaveFiles.sort((a, b) => a.wave - b.wave)
+
+  // ── Build content: prompt section then results section ──────────────────────
+  const parts: string[] = []
+  let maxWave = 0
+
+  if (promptWaveFiles.length > 0) {
+    const promptParts: string[] = []
+    for (const { wave, path } of promptWaveFiles) {
+      const text = await readText(path)
+      if (text !== null) {
+        if (promptWaveFiles.length > 1) {
+          promptParts.push(`### Wave ${wave}\n\n${text}`)
+        } else {
+          promptParts.push(text)
+        }
+      }
+    }
+    if (promptParts.length > 0) {
+      parts.push(`## Prompt\n\n${promptParts.join('\n\n')}`)
+    }
+  }
+
+  const resultParts: string[] = []
+  for (const { wave, path } of waveFiles) {
+    const text = await readText(path)
+    if (text !== null) {
+      if (waveFiles.length > 1) {
+        resultParts.push(`### Wave ${wave}\n\n${text}`)
+      } else {
+        resultParts.push(text)
+      }
+      if (wave > maxWave) maxWave = wave
+    }
+  }
+  if (resultParts.length > 0) {
+    parts.push(`## Results\n\n${resultParts.join('\n\n')}`)
+  }
+
+  return {
+    leadName,
+    wave: maxWave,
+    content: parts.join('\n\n---\n\n'),
+  }
+}

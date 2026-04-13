@@ -49,6 +49,10 @@ MODULES = {
     "hooks":            MODULES_DIR / "test_hooks.py",
     "context_pipeline": MODULES_DIR / "test_context_pipeline.py",
     "memory_system":    MODULES_DIR / "test_memory_system.py",
+    "orchestration":    MODULES_DIR / "test_orchestration.py",
+    "lead_memory":      MODULES_DIR / "test_lead_memory.py",
+    "cmux_client":      MODULES_DIR / "test_cmux_client.py",
+    "session_pipeline": MODULES_DIR / "test_session_pipeline.py",
     "rust_hooks":       MODULES_DIR / "test_rust_hooks.py",
     "e2e":              MODULES_DIR / "test_e2e_session.py",
 }

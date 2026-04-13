@@ -1,5 +1,5 @@
 [workspace]
-members = ["caf-hooks", "caf-hud"]
+members = ["caf-hooks"]
 resolver = "2"
 
 [profile.release]
