@@ -45,20 +45,17 @@ DO NOT ask: "Which framework?", "How should we structure this?", "What architect
 
 After user alignment, decide:
 
-**Single domain** (1 lead can own the whole task):
-```python
-Agent(name="<lead-name>", subagent_type="<lead-name>", model="sonnet", prompt=<mission>)
-```
-Run in current session — no cmux overhead.
+**Any lead involved → always cmux.** Leads must spawn workers (researchers, builders, validators). A lead spawned via `Agent()` cannot itself spawn agents — use cmux so each lead runs in its own session.
 
-**Multi-domain** (2+ leads needed, parallel work):
 ```bash
 bin/orch-shared init <orch_id>
 bin/cmux-sprint launch-agent <orch_id> <lead-name> <wave>
 # one per lead, all in parallel
 ```
 
-Generate `orch_id = f"orch_{int(time.time())}"` for multi-lead jobs.
+Generate `orch_id = f"orch_{int(time.time())}"`.
+
+**Exception — PO-direct (no leads):** for single-domain, < 3 work streams, no coordination needed — spawn leaf workers directly via `Agent()` (researcher, builder, validator). These don't spawn further, so `Agent()` works fine.
 
 **How to pick leads:** Match the task to domain leads defined in PO_BRIEF.md. If no brief, use judgment. Common leads: frontend-lead, backend-lead, api-lead, qa-lead, security-lead, debugging-lead.
 
@@ -170,10 +167,29 @@ Leads are paused on these. Answer all and I'll route them back.
 
 After the user answers, immediately route each answer: `bin/orch-shared answer-question <orch_id> <question_id> "<answer>"`
 
-## Phase 5: Synthesis
+## Phase 5: Merge + Evaluate + Deliver
 
-When all leads complete, read their result files from `/tmp/caf_orch/<orch_id>/results/`.
-Write a user-facing summary: what was built, key decisions each lead made, anything that needs user attention.
+### Merge
+```bash
+bin/cmux-sprint merge-leads <orch_id>
+```
+Read `/tmp/caf_orch/<orch_id>/merge_report.md`. Resolve any CONFLICT entries before evaluating.
+
+### Evaluate (always runs)
+Launch a full-picture evaluator — even if all leads self-reported PASS:
+```python
+Agent(name="evaluator", subagent_type="critical-analyst", model="sonnet",
+      prompt="<path to evaluator-prompt.md>")
+```
+Full evaluator prompt template: `global-skills/orchestrate/templates/evaluator-prompt.md`
+
+Read `/tmp/caf_orch/<orch_id>/evaluation_report.md`:
+- **SHIP** → deliver
+- **NEEDS REWORK** → re-launch failing leads with specific feedback. Max 2 correction iterations. After 2 — escalate to user with what was tried.
+
+### Deliver
+Write unified summary to `/tmp/caf_orch/<orch_id>/report.md` and deliver to user.
+Format: `global-skills/orchestrate/templates/delivery-format.md`
 
 ## Hard Constraints
 

@@ -11,6 +11,11 @@ Private fork of the Claude Agentic Framework with sprint orchestration, research
 - qa-lead: pytest (tests/)
 - security-lead: damage-control hooks, SHA-256 skill integrity, path protection
 
+## Custom Leads
+- hooks-lead: base=backend-lead, domain="global-hooks/, caf-hooks/ (Rust binary), hook event system"
+- cmux-lead: base=backend-lead, domain="bin/cmux-sprint, lib/cmux_client.py, tmux session management"
+- dashboard-lead: base=backend-lead, domain="dashboard/ scripts, apps/observability/ (Bun+Vue+SQLite)"
+
 ## What "Good" Looks Like
 - All hooks execute under 100ms (Rust binary paths preferred for hot paths)
 - No direct settings.json edits — always via templates/settings.json.template + install.sh

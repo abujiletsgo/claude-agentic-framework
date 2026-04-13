@@ -129,6 +129,11 @@ def cmd_init(orch_id: str) -> None:
     if not (sd / "domains.json").exists():
         (sd / "domains.json").write_text(json.dumps({}))
 
+    # Record project CWD so dashboards can filter by project
+    meta_path = ORCH_BASE / orch_id / "meta.json"
+    if not meta_path.exists():
+        meta_path.write_text(json.dumps({"orch_id": orch_id, "cwd": str(Path.cwd())}))
+
     print(f"[orch-shared] initialized shared workspace: {sd}")
 
 
@@ -578,8 +583,8 @@ def cmd_cleanup(orch_id: str) -> None:
     if results_src.exists():
         shutil.copytree(str(results_src), str(dest / "results"), dirs_exist_ok=True)
 
-    # Also archive acceptance_criteria and evaluation_report if present
-    for fname in ("acceptance_criteria.md", "evaluation_report.md", "report.md", "merge_report.md"):
+    # Also archive acceptance_criteria, evaluation_report, and meta.json
+    for fname in ("acceptance_criteria.md", "evaluation_report.md", "report.md", "merge_report.md", "meta.json"):
         f = src / fname
         if f.exists():
             dest.mkdir(parents=True, exist_ok=True)

@@ -45,10 +45,24 @@ Show both to user. Get confirmation before proceeding.
 
 ## Phase 2: Detect Scope + Pick Leads
 
-The PO detects scope (single vs. multi-domain) and routes accordingly. Refer to PO_BRIEF.md for the project's active leads.
+The PO detects scope (single vs. multi-domain) and routes accordingly.
 
-**Single domain** (1 lead can own the whole task): spawn via `Agent()` in current session — no cmux overhead.
-**Multi-domain** (2+ leads needed, parallel work): use cmux panes via `bin/cmux-sprint launch-agent`.
+**Lead discovery order** (check each source, merge results):
+1. **`.claude/agents/`** — any `*-lead.md` file in this directory is a project-specific lead. Read its frontmatter `description` and `domain` fields to understand what it owns. These leads override the standard table for their named domain.
+2. **`PO_BRIEF.md` → `custom_leads`** — if PO_BRIEF.md has a `## Custom Leads` section, those lead names are project-specific and take priority.
+3. **Standard 18-lead table** (below) — global fallback. Only use a standard lead if no project-specific lead covers the same domain.
+
+To discover project leads: `ls .claude/agents/*-lead.md 2>/dev/null` and read each file's frontmatter. A custom lead's `subagent_type` field names the base agent type to spawn; its `name` field is its identity in the wave.
+
+**Routing decision — pick one:**
+
+| Route | When | How |
+|-------|------|-----|
+| Skip orchestrate entirely | Single domain, < 5 files, no coordination needed | Just do it as a direct agent task |
+| PO-direct (no leads) | Single domain, focused scope, < 3 work streams | `Agent()` for leaf workers — researcher, builder, validator |
+| Leads via cmux | Any lead involved, 2+ domains, or complex single domain | `bin/cmux-sprint launch-agent` — always cmux for leads |
+
+**Why cmux for any lead:** leads must spawn workers (researchers, builders, validators). A lead spawned via `Agent()` cannot itself spawn agents. Use `Agent()` only for leaf workers that do not spawn further.
 
 Leads are **delegating planners** — they break their domain into tasks and spawn workers. They do NOT build, research, or code directly.
 
@@ -75,31 +89,16 @@ Leads are **delegating planners** — they break their domain into tasks and spa
 
 **Note:** planning-lead exists as an escape hatch for >5-lead jobs where the PO wants a dedicated planner sub-session. Not part of normal flows.
 
-**Selection rule**: only pick leads whose domain is relevant. `research-lead` does not exist — research is a shared pool (Phase 2.5).
+**Selection rule**: only pick leads whose domain is relevant. `research-lead` does not exist — each lead owns its own research in Wave 0.
+
+**Custom lead rule**: when a `.claude/agents/*-lead.md` file exists, use `subagent_type` from its frontmatter as the agent type and `name` as the identity. If the file has no `subagent_type`, fall back to the closest standard lead type. Custom leads get the same wave structure (Wave 0 explore → Wave 1 contracts → Wave 2 build) as standard leads.
 
 Typical 3-lead: `frontend-lead` → `backend-lead` + `api-lead` → `qa-lead` + `review-lead`
 Typical 5-lead: adds `security-lead` + `release-lead`
 
 ---
 
-## Phase 2.5: Research Coordination
-
-Research is a shared pool — not per-lead. Before writing lead prompts:
-
-1. Collect what background info each lead will need. Write a list of research questions.
-2. Deduplicate — one researcher per topic.
-3. **Launch all shared researchers in parallel** (one message, before Wave 0):
-   ```python
-   Agent(name="research-codebase", subagent_type="researcher", model="sonnet", prompt="...")
-   Agent(name="research-auth",     subagent_type="researcher", model="sonnet", prompt="...")
-   # Each saves to /tmp/caf_orch/<id>/shared/research/<topic>.md
-   ```
-   Use sonnet — codebase research IS reasoning (pattern detection, architectural insight). Haiku only for mechanical listings like file inventories. Wait for all before writing lead prompts.
-4. Pass findings to every lead that needs them via `## Shared Research Available` in their prompt.
-
----
-
-## Phase 2.5b: PO-Direct Mode (no leads)
+## Phase 2.5: PO-Direct Mode (no leads)
 
 For small-to-medium focused tasks, the PO can skip lead agents entirely and spawn a direct worker team:
 
@@ -114,6 +113,8 @@ Use PO-direct when:
 - Single domain (only one type of work: just coding, just docs, just a fix)
 - < 3 independent work streams
 - No inter-agent coordination needed (leads don't need to broadcast or share a blackboard)
+
+**Quality gate for PO-direct:** no evaluator phase. Validator only. If the task needs a full critical-analyst review, use a lead instead.
 
 Use leads when:
 - Multiple domains (engineering + QA + security in parallel)
@@ -195,7 +196,11 @@ If user says "you do you" or doesn't engage — proceed.
 
 Only run if contract leads were identified in Gate 0→1.
 
-Write a Wave 1 brief for each contract lead: "Finalize the interfaces for your domain. Output clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`. Broadcast your contracts via `bin/orch-shared broadcast`. This is your only output — no implementation yet."
+**PO injects context directly into Wave 1 briefs** — do not require contract leads to spawn researchers to read wave0.md files. Extract the relevant excerpts yourself at Gate 0→1 and paste them verbatim into each contract lead's Wave 1 brief. Contract leads should never need to read another lead's wave0.md themselves.
+
+Write a Wave 1 brief for each contract lead containing:
+- The relevant excerpts from other leads' wave0.md files (what they need from this contract lead)
+- "Finalize the interfaces for your domain. Output clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`. Broadcast your contracts via `bin/orch-shared broadcast`. This is your only output — no implementation yet."
 
 Launch contract leads. Wait for completion. Read their contract files.
 

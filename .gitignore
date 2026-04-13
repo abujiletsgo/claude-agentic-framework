@@ -23,3 +23,8 @@ __pycache__/
 
 # Rust build artifacts
 target/
+
+# Observability SQLite DB (runtime state)
+apps/observability/server/events.db
+apps/observability/server/events.db-shm
+apps/observability/server/events.db-wal

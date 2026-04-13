@@ -2,47 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (17:08 UTC) · @Tom Kwon
-**Commit:** feat: live agent dashboard for /orchestrate visibility (2ff65fdc) by Tom Kwon
-**Changed:**
-  dashboard/live_tui.py                              | 147 +++++++++++++++++++++
-  global-commands/live.md                            |  41 ++++++
-  .../hooks_SubagentStart/write_agent_live.py        |  76 +++++++++++
-  .../hooks_SubagentStop/write_agent_live.py         |  70 ++++++++++
-  templates/settings.json.template                   |  22 +++
-  5 files changed, 356 insertions(+)
-
-## 2026-04-08 (17:13 UTC) · @Tom Kwon
-**Commit:** feat: auto-launch live TUI on session start inside tmux (763d8a35) by Tom Kwon
-**Changed:**
-  global-hooks/hooks_SessionStart/launch_live_tui.py | 55 ++++++++++++++++++++++
-  templates/settings.json.template                   | 11 +++++
-  2 files changed, 66 insertions(+)
-
-## 2026-04-08 (17:15 UTC) · @Tom Kwon
-**Commit:** refactor: move live TUI launch from hook to cteam script (f53a8f0f) by Tom Kwon
-**Changed:**
-  global-hooks/hooks_SessionStart/launch_live_tui.py | 54 ++--------------------
-  1 file changed, 3 insertions(+), 51 deletions(-)
-
-## 2026-04-08 (17:16 UTC) · @Tom Kwon
-**Commit:** dashboard: rewrite panels with RichLog for true terminal transparency (b6634e52) by Tom Kwon
-**Changed:**
-  .claude/MEMORY.md                 | 300 ++++++++++++++++----------------------
-  CLAUDE.md                         |   8 +-
-  README.md                         |  24 +--
-  bin/cteam                         |  13 +-
-  dashboard/sprint_tui.css          |  58 ++------
-  dashboard/widgets/lead_panel.py   |  42 ++++--
-  dashboard/widgets/report_panel.py |  59 +++++---
-  7 files changed, 233 insertions(+), 271 deletions(-)
-
-## 2026-04-08 (17:22 UTC) · @Tom Kwon
-**Commit:** dashboard: detect terminal background via OSC 11 for color matching (91589787) by Tom Kwon
-**Changed:**
-  dashboard/sprint_tui.py | 47 +++++++++++++++++++++++++++++++++++++++++++++++
-  1 file changed, 47 insertions(+)
-
 ## 2026-04-08 (17:32 UTC) · @Tom Kwon
 **Commit:** dashboard: use $background theme variable instead of transparent/OSC11 (63a4074e) by Tom Kwon
 **Changed:**
@@ -289,3 +248,48 @@
   global-agents/po.md                | 56 +++++++++++++++++++++++++++++++-------
   global-skills/orchestrate/SKILL.md | 37 +++++++++++++++----------
   2 files changed, 69 insertions(+), 24 deletions(-)
+
+## 2026-04-13 (04:35 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): 3-wave model — exploration → contracts → build (9114b6f4) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  36 +++--
+  bin/orch-shared                                    |  25 +++-
+  data/model_tiers.yaml                              |   3 +
+  global-agents/po.md                                |  73 +++++++---
+  global-skills/orchestrate/SKILL.md                 | 150 +++++++++------------
+  global-skills/orchestrate/templates/lead-prompt.md |  82 +++++++++--
+  6 files changed, 241 insertions(+), 128 deletions(-)
+
+## 2026-04-13 (04:38 UTC) · @Tom Kwon
+**Commit:** feat(orch-shared): add status, merge-results, read-events + conflict detection (48f8e8d6) by Tom Kwon
+**Changed:**
+  bin/orch-shared                                    | 277 ++++++++++++++++++++-
+  dashboard/activity_report.py                       |  48 +++-
+  dashboard/sprint_report.py                         |  11 +-
+  data/benchmarks/rubric.md                          |  50 ++++
+  data/benchmarks/task-01-status/prompt.md           |  17 ++
+  data/benchmarks/task-01-status/reference-score.md  |  26 ++
+  data/benchmarks/task-02-conflict-detect/prompt.md  |  16 ++
+  .../task-02-conflict-detect/reference-score.md     |  27 ++
+  data/benchmarks/task-03-read-events/prompt.md      |  35 +++
+  .../task-03-read-events/reference-score.md         |  30 +++
+  ... and 1 more files
+
+## 2026-04-13 (04:45 UTC) · @Tom Kwon
+**Commit:** feat(orch-shared): unified event stream + write-retro + fix orch-event deprecation (f3b1f6f4) by Tom Kwon
+**Changed:**
+  bin/orch-event  |   2 +-
+  bin/orch-shared | 164 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  2 files changed, 165 insertions(+), 1 deletion(-)
+
+## 2026-04-13 (04:46 UTC) · @Tom Kwon
+**Commit:** feat(orch-shared): auto-write retro on cleanup (e033da8d) by Tom Kwon
+**Changed:**
+  bin/orch-shared | 6 ++++++
+  1 file changed, 6 insertions(+)
+
+## 2026-04-13 (06:04 UTC) · @Tom Kwon
+**Commit:** feat(dashboard): replace working memory panel with live event feed (3cb43efa) by Tom Kwon
+**Changed:**
+  dashboard/activity_report.py | 76 +++++++++++++++++++++++++++++++++-----------
+  1 file changed, 57 insertions(+), 19 deletions(-)

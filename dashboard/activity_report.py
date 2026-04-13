@@ -5,9 +5,9 @@ CAF Activity Report — multi-panel ANSI HUD for /orchestrate jobs.
 Finds the most-recently-modified orch job under /tmp/caf_orch/ and renders
 a live two-column HUD.  Full redraw every 3s; questions polled every 1s.
 
-Usage: python3 dashboard/activity_report.py
+Usage: python3 dashboard/activity_report.py [--cwd <project_dir>]
 """
-import sys, os, json, re, time, shutil
+import sys, os, json, re, time, shutil, argparse
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -81,27 +81,33 @@ def fmt_ts(ts_str: str) -> str:
 
 # ── Job discovery ─────────────────────────────────────────────────────────────
 
-def find_active_orch_id() -> str:
-    """Return the orch_id of the most-recently-modified subdir that has
-    acceptance_criteria.md.  Falls back to most-recently-modified dir."""
+def _job_cwd(d: Path) -> str:
+    """Read the project CWD recorded in meta.json for this orch job."""
     try:
-        candidates = []
-        for d in ORCH_BASE.iterdir():
-            if not d.is_dir():
-                continue
-            crit = d / "acceptance_criteria.md"
-            if crit.exists():
-                candidates.append((d.stat().st_mtime, d.name))
-        if candidates:
-            candidates.sort(reverse=True)
-            return candidates[0][1]
-        # fallback: any dir
-        dirs = sorted(
-            [d for d in ORCH_BASE.iterdir() if d.is_dir()],
-            key=lambda d: d.stat().st_mtime,
-            reverse=True,
-        )
-        return dirs[0].name if dirs else ""
+        return json.loads((d / "meta.json").read_text()).get("cwd", "")
+    except Exception:
+        return ""
+
+def find_active_orch_id(cwd: str = "") -> str:
+    """Return the orch_id of the most-recently-modified subdir that has
+    acceptance_criteria.md, preferring jobs whose CWD matches ours."""
+    if not cwd:
+        cwd = str(Path.cwd())
+    try:
+        all_dirs = [d for d in ORCH_BASE.iterdir() if d.is_dir()]
+        # Prefer jobs matching this project's CWD
+        scoped = [d for d in all_dirs if _job_cwd(d) == cwd and (d / "acceptance_criteria.md").exists()]
+        if scoped:
+            scoped.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+            return scoped[0].name
+        # Fallback: any dir with acceptance_criteria
+        with_crit = [d for d in all_dirs if (d / "acceptance_criteria.md").exists()]
+        if with_crit:
+            with_crit.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+            return with_crit[0].name
+        # Last resort: any dir
+        all_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+        return all_dirs[0].name if all_dirs else ""
     except Exception:
         return ""
 
@@ -411,14 +417,14 @@ def render_questions_panel(questions: list[dict], inner_w: int) -> list[str]:
 
 # ── HUD renderer ──────────────────────────────────────────────────────────────
 
-def render_hud() -> None:
+def render_hud(cwd: str = "") -> None:
     w = term_width()
     out: list[str] = []
 
     def emit(line: str = "") -> None:
         out.append(line)
 
-    orch_id = find_active_orch_id()
+    orch_id = find_active_orch_id(cwd)
 
     # ── Gather data ───────────────────────────────────────────────────────────
     task_line, criteria      = read_acceptance_criteria(orch_id) if orch_id else ("", [])
@@ -646,16 +652,22 @@ def render_hud() -> None:
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cwd", default=os.getcwd(),
+                        help="Project root (for CWD-scoped job filtering)")
+    args = parser.parse_args()
+    cwd = str(Path(args.cwd).resolve())
+
     tick = 0
     while True:
         try:
             if tick % 3 == 0:
-                render_hud()
+                render_hud(cwd)
             else:
                 # Fast poll: only re-render if there are pending questions
-                orch_id = find_active_orch_id()
+                orch_id = find_active_orch_id(cwd)
                 if orch_id and read_questions(orch_id):
-                    render_hud()
+                    render_hud(cwd)
         except Exception as e:
             sys.stdout.write("\033[2J\033[H")
             print(f"{RED}render error: {e}{RESET}")

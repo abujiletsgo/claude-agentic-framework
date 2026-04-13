@@ -126,14 +126,23 @@ def parse_verdict(path: Path) -> str:
         pass
     return ""
 
-def list_completed_jobs() -> list[dict]:
-    """Return list of completed jobs from orch_results, newest first."""
+def _job_meta_cwd(d: Path) -> str:
+    """Read project CWD from meta.json in an orch job dir."""
+    try:
+        return json.loads((d / "meta.json").read_text()).get("cwd", "")
+    except Exception:
+        return ""
+
+def list_completed_jobs(cwd: str = "") -> list[dict]:
+    """Return completed jobs from orch_results, filtered by cwd if provided."""
     jobs = []
     if not ORCH_RESULTS.exists():
         return jobs
     try:
         for d in ORCH_RESULTS.iterdir():
             if not d.is_dir():
+                continue
+            if cwd and _job_meta_cwd(d) not in ("", cwd):
                 continue
             mtime = d.stat().st_mtime
             task, criteria = parse_acceptance_criteria(d / "acceptance_criteria.md")
@@ -150,16 +159,18 @@ def list_completed_jobs() -> list[dict]:
     jobs.sort(key=lambda j: j["mtime"], reverse=True)
     return jobs
 
-def find_active_job() -> str:
-    """Return orch_id of most-recently-modified active job, or ''."""
+def find_active_job(cwd: str = "") -> str:
+    """Return orch_id of most-recently-modified active job for this project."""
     try:
-        candidates = []
-        for d in ORCH_BASE.iterdir():
-            if d.is_dir():
-                candidates.append((d.stat().st_mtime, d.name))
-        if candidates:
-            candidates.sort(reverse=True)
-            return candidates[0][1]
+        all_dirs = [d for d in ORCH_BASE.iterdir() if d.is_dir()]
+        if cwd:
+            scoped = [d for d in all_dirs if _job_meta_cwd(d) == cwd]
+            if scoped:
+                scoped.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+                return scoped[0].name
+        # Fallback: global most-recent
+        all_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+        return all_dirs[0].name if all_dirs else ""
     except Exception:
         pass
     return ""
@@ -415,9 +426,10 @@ def main():
     cwd = Path(args.cwd).resolve()
 
     try:
+        cwd_str = str(cwd)
         while True:
-            jobs       = list_completed_jobs()
-            active_id  = find_active_job()
+            jobs       = list_completed_jobs(cwd_str)
+            active_id  = find_active_job(cwd_str)
             questions  = read_pending_questions(active_id)
             stats      = read_claude_md_stats(cwd)
 

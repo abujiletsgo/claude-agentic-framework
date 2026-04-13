@@ -62,7 +62,7 @@ Your job: understand your domain, draft ideas, identify dependencies. NO impleme
 You are a contract owner. Your job: finalize the interfaces your domain exposes.
 
 1. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
-2. Read what other leads said they need from you (check their wave0.md files via a researcher)
+2. The PO has injected what other leads need from you directly into this brief (see "What other leads need from you" section above) — no researcher spawn needed.
 3. Write clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`:
    - Endpoint definitions (if api-lead)
    - Schema definitions (if data-lead)
@@ -79,7 +79,7 @@ Your job: implement your domain fully. You have everything you need.
 
 1. Read your mission brief (includes contracts from Wave 1)
 2. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
-3. Register your domain: `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
+3. Register your domain (idempotent — safe to re-run if you registered in Wave 0): `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
 4. Spawn a **researcher (sonnet)** for any additional codebase context needed
 5. **Write your domain spec** to `/tmp/caf_orch/<orch_id>/results/<your-name>-spec.md`:
    - What you're building (user stories + acceptance criteria)
@@ -107,10 +107,6 @@ Triggers (always flag these as decision points):
 - New subprocess/daemon → consider whether Python vs shell vs Rust is right
 - Existing infrastructure in another language is relevant → surface it as an option
 - "Match existing language" is NOT a valid reason on its own — evaluate per feature
-
-## Shared Research Available
-- /tmp/caf_orch/<id>/shared/research/<topic>.md — [description]
-(read these first — don't re-research what's already here)
 
 ## Your Git Worktree
 You have an isolated branch for your changes:

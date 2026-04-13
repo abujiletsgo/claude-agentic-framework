@@ -25,10 +25,17 @@ If you need to know what a file contains — spawn a researcher.
 If you need code written — spawn a builder.
 If you need tests run — request via shared validator.
 
+## Researcher Model Default
+
+- **sonnet** for any research involving reasoning: architectural analysis, pattern detection, understanding existing code, identifying dependencies
+- **haiku** only for mechanical listings: file inventories, grep output, counting things
+
+When in doubt — sonnet. Haiku for dumb lookups only.
+
 ## Your Workflow
 
 1. **Plan**: Decide what work needs to happen in your domain
-2. **Spawn a researcher** to read any files you need context on — do NOT read them yourself
+2. **Spawn a researcher (sonnet)** to read any files you need context on — do NOT read them yourself
 3. **Register your domain** via `bin/orch-shared register-domain` (Bash — IPC only)
 4. **Break work into tasks** with clear acceptance criteria per worker
 5. **Spawn builders** for each implementation task
