@@ -48,6 +48,10 @@ Subcommands:
   read-events <orch_id> [n]
       Print last n events from events.jsonl (default 20).
       Events are written by bin/orch-event when leads change state.
+
+  write-retro <orch_id>
+      Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+      Reads working memory, test results, and evaluation report.
 """
 
 import sys
@@ -86,6 +90,23 @@ def load_surfaces(orch_id: str) -> dict:
         return json.loads(p.read_text())
     except Exception:
         return {}
+
+
+def _emit_event(orch_id: str, agent: str, status: str, summary: str = "") -> None:
+    """Append one event line to /tmp/caf_orch/<orch_id>/events.jsonl.
+    Called internally by orch-shared operations so read-events shows a
+    unified log of all workspace activity, not just orch-event calls."""
+    entry: dict = {"ts": ts(), "agent": agent, "status": status}
+    if summary:
+        entry["summary"] = summary
+    p = ORCH_BASE / orch_id / "events.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +193,10 @@ def cmd_register_domain(orch_id: str, lead: str, globs: list[str]) -> None:
         domains[g] = lead
 
     p.write_text(json.dumps(domains, indent=2))
+    try:
+        _emit_event(orch_id, lead, "domain-claim", f"registered: {', '.join(globs)}")
+    except Exception:
+        pass
     print(f"[orch-shared] {lead} registered domains: {', '.join(globs)}")
 
 
@@ -214,6 +239,10 @@ def cmd_append_memory(orch_id: str, payload: str) -> None:
             f.write(json.dumps(entry) + "\n")
         finally:
             fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, entry.get("lead", "?"), "memory", entry.get("summary", "")[:80])
+    except Exception:
+        pass
     print(f"[orch-shared] memory written: {entry.get('summary', '')[:60]}")
 
 
@@ -291,6 +320,10 @@ def cmd_request_test(orch_id: str, lead: str, command: str) -> None:
             f.write(json.dumps(entry) + "\n")
         finally:
             fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, lead, "test-req", command[:80])
+    except Exception:
+        pass
     print(f"[orch-shared] test queued for {lead}: {command[:60]}")
 
 
@@ -341,6 +374,11 @@ def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> Non
             f.write(json.dumps(entry) + "\n")
         finally:
             fcntl.flock(f, fcntl.LOCK_UN)
+
+    try:
+        _emit_event(orch_id, from_lead, "broadcast", f"[{topic}] {message[:80]}")
+    except Exception:
+        pass
 
     surfaces = load_surfaces(orch_id)
     recipients = [
@@ -405,6 +443,10 @@ def cmd_ask_pm(orch_id: str, lead: str, question: str, critical: str = "no") -> 
             f.write(json.dumps(entry) + "\n")
         finally:
             fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, lead, "question", question[:80])
+    except Exception:
+        pass
     print(f"[orch-shared] question {q_id} posted by {lead}")
     print(f"  Q: {question[:80]}")
     print(f"  Wait for answer: bin/orch-shared wait-answer {orch_id} {q_id}")
@@ -478,6 +520,10 @@ def cmd_answer_question(orch_id: str, question_id: str, answer: str) -> None:
     with tmp.open('w') as f:
         f.write('\n'.join(new_lines) + '\n')
     tmp.replace(p)  # atomic on POSIX
+    try:
+        _emit_event(orch_id, "pm", "answer", answer[:80])
+    except Exception:
+        pass
     print(f"[orch-shared] answered question {question_id}: {answer[:60]}")
 
 
@@ -543,6 +589,115 @@ def cmd_cleanup(orch_id: str) -> None:
     shutil.rmtree(str(src))
     print(f"[orch-shared] archived results to {dest}")
     print(f"[orch-shared] removed {src}")
+
+
+# ---------------------------------------------------------------------------
+# write-retro
+# ---------------------------------------------------------------------------
+
+def cmd_write_retro(orch_id: str) -> None:
+    """Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+    Reads working memory, test results, evaluation report, and acceptance criteria.
+    Call this after cleanup (or before — it reads /tmp state + archived results)."""
+    import shutil as _shutil
+
+    # Try /tmp first (job still active), then archive
+    job_dir = ORCH_BASE / orch_id
+    archive_dir = Path.home() / ".claude" / "data" / "orch_results" / orch_id
+
+    def _read(rel: str) -> str:
+        for base in (job_dir, archive_dir):
+            p = base / rel
+            if p.exists():
+                try:
+                    return p.read_text(errors="replace")
+                except Exception:
+                    pass
+        return ""
+
+    # Task line from acceptance_criteria.md
+    task_line = ""
+    for line in _read("acceptance_criteria.md").splitlines():
+        stripped = line.strip()
+        if "**Task**:" in line:
+            task_line = line.split("**Task**:", 1)[-1].strip()
+            break
+        if stripped in ("## Task", "### Task"):
+            # next non-empty non-heading line
+            found_heading = True
+        elif locals().get("found_heading") and stripped and not stripped.startswith("#"):
+            task_line = stripped
+            break
+
+    # Verdict from evaluation_report.md
+    verdict = ""
+    eval_text = _read("evaluation_report.md")
+    if "## Overall Verdict" in eval_text:
+        for line in eval_text.split("## Overall Verdict", 1)[1].splitlines():
+            line = line.strip()
+            if line:
+                verdict = line[:120]
+                break
+
+    # Working memory entries (last 20)
+    mem_lines = []
+    raw_mem = _read("shared/working_memory.jsonl")
+    for line in raw_mem.splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+            lead = e.get("lead", "?")
+            summary = e.get("summary", "")
+            reason = e.get("reason", "")
+            t = e.get("ts", "")[:16]
+            mem_lines.append(f"- [{t}] **{lead}**: {summary}")
+            if reason:
+                mem_lines.append(f"  - why: {reason}")
+        except Exception:
+            pass
+    mem_section = "\n".join(mem_lines[-20:]) if mem_lines else "(none)"
+
+    # Test results
+    passed = failed = 0
+    raw_tests = _read("shared/test_results.jsonl")
+    for line in raw_tests.splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+            if e.get("status") == "passed":
+                passed += 1
+            elif e.get("status") == "failed":
+                failed += 1
+        except Exception:
+            pass
+    test_section = f"passed: {passed}  failed: {failed}  total: {passed + failed}"
+
+    retro_content = f"""# Retrospective — {orch_id}
+Generated: {ts()}
+
+## Task
+{task_line or "(unknown — no acceptance_criteria.md found)"}
+
+## Verdict
+{verdict or "(unknown — no evaluation_report.md found)"}
+
+## Working Memory (last 20 entries)
+{mem_section}
+
+## Test Results
+{test_section}
+
+## Gaps and Learnings
+(fill in manually after reviewing the run)
+"""
+
+    out_dir = archive_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "retro.md"
+    out_path.write_text(retro_content)
+    print(f"[orch-shared] retro written to {out_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -751,6 +906,10 @@ Subcommands:
   read-events <orch_id> [n]
       Print last n events from events.jsonl (default 20).
       Events are written by bin/orch-event when leads change state.
+
+  write-retro <orch_id>
+      Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+      Reads working memory, test results, and evaluation report.
 """
 
 
@@ -828,6 +987,11 @@ def main() -> None:
             print("Usage: orch-shared read-events <orch_id> [n]", file=sys.stderr)
             sys.exit(1)
         cmd_read_events(args[1], int(args[2]) if len(args) > 2 else 20)
+    elif sub == "write-retro":
+        if len(args) < 2:
+            print("Usage: orch-shared write-retro <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_write_retro(args[1])
     else:
         print(f"[orch-shared] unknown subcommand: {sub!r}", file=sys.stderr)
         sys.exit(1)
