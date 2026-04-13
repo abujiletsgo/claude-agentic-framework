@@ -217,6 +217,24 @@ def read_working_memory(orch_id: str) -> list[dict]:
     return entries
 
 
+def read_events(orch_id: str) -> list[dict]:
+    """Read all events from events.jsonl (written by orch-event + _emit_event)."""
+    path = ORCH_BASE / orch_id / "events.jsonl"
+    entries = []
+    try:
+        for line in path.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return entries
+
+
 def read_questions(orch_id: str) -> list[dict]:
     """All entries from shared/questions.jsonl with status==pending."""
     path = ORCH_BASE / orch_id / "shared" / "questions.jsonl"
@@ -407,6 +425,7 @@ def render_hud() -> None:
     crit_statuses, verdict   = read_evaluation_report(orch_id) if orch_id else ({}, "")
     lead_statuses            = read_lead_statuses(orch_id) if orch_id else {}
     mem_entries              = read_working_memory(orch_id) if orch_id else []
+    events                   = read_events(orch_id) if orch_id else []
     questions                = read_questions(orch_id) if orch_id else []
     discoveries              = read_discoveries(orch_id) if orch_id else []
     tok_usage                = read_token_usage()
@@ -520,34 +539,53 @@ def render_hud() -> None:
     # ── Middle divider ────────────────────────────────────────────────────────
     emit(h_rule_split(left_w, right_w))
 
-    # ── Questions + Working Memory ────────────────────────────────────────────
+    # ── Questions + Event Feed ────────────────────────────────────────────────
+    event_count = len(events)
     emit(box_line(
         f" {BOLD}❓ QUESTIONS{RESET}",
-        f" {BOLD}WORKING MEMORY (last 6){RESET}",
+        f" {BOLD}EVENT FEED{RESET} {GRAY}({event_count} total){RESET}",
         left_w, right_w,
     ))
 
     # Left: questions panel lines
-    q_lines  = render_questions_panel(questions, left_w)
-    # Right: working memory last 6 entries
-    mem_last6 = mem_entries[-6:]
-    mem_lines: list[str] = []
-    for me in mem_last6:
-        ts_raw  = me.get("ts", me.get("timestamp", ""))
-        ts_disp = fmt_ts(ts_raw) if ts_raw else "??:??"
-        lead    = me.get("lead", me.get("role", me.get("agent", "?")))[:6]
-        summary = (me.get("summary") or me.get("content") or me.get("text") or "")
-        first_line = summary.splitlines()[0] if summary else ""
-        mem_lines.append(f" {GRAY}{ts_disp}{RESET} {CYN}{lead}{RESET}: {first_line[:right_w - 12]}")
-        # second line (why/detail)
-        why = (me.get("why") or me.get("reason") or "")
-        if why:
-            mem_lines.append(f"   {GRAY}why: {why[:right_w - 8]}{RESET}")
+    q_lines = render_questions_panel(questions, left_w)
 
-    max_q_rows = max(len(q_lines), len(mem_lines), 1)
+    # Right: event feed — last 8 events, newest at bottom
+    _STATUS_ICON = {
+        "running":      f"{CYN}●{RESET}",
+        "done":         f"{GRN}✓{RESET}",
+        "failed":       f"{RED}✗{RESET}",
+        "memory":       f"{GRAY}·{RESET}",
+        "domain-claim": f"{BLU}⊕{RESET}",
+        "broadcast":    f"{YLW}»{RESET}",
+        "question":     f"{YLW}?{RESET}",
+        "answer":       f"{GRN}✉{RESET}",
+        "test-req":     f"{GRAY}⚙{RESET}",
+        "aborted":      f"{GRAY}⊘{RESET}",
+    }
+    ev_lines: list[str] = []
+    for ev in events[-8:]:
+        ts_raw  = ev.get("ts", "")
+        ts_disp = fmt_ts(ts_raw) if ts_raw else "??:??"
+        status  = ev.get("status", "")
+        agent   = ev.get("agent", "?")[:10]
+        summary = (ev.get("summary") or "")
+        icon    = _STATUS_ICON.get(status, f"{GRAY}·{RESET}")
+        status_color = {
+            "running": CYN, "done": GRN, "failed": RED,
+            "question": YLW, "answer": GRN, "broadcast": YLW,
+        }.get(status, GRAY)
+        summary_disp = summary[:right_w - 22] if summary else f"{GRAY}{status}{RESET}"
+        ev_lines.append(
+            f" {GRAY}{ts_disp}{RESET} {icon} {status_color}{agent:<10}{RESET} {summary_disp}"
+        )
+    if not ev_lines:
+        ev_lines = [f" {GRAY}(no events yet){RESET}"]
+
+    max_q_rows = max(len(q_lines), len(ev_lines), 1)
     for i in range(max_q_rows):
         left_str  = q_lines[i]  if i < len(q_lines)  else ""
-        right_str = mem_lines[i] if i < len(mem_lines) else ""
+        right_str = ev_lines[i] if i < len(ev_lines) else ""
         emit(box_line(left_str, right_str, left_w, right_w))
 
     # ── Broadcast bar ─────────────────────────────────────────────────────────
