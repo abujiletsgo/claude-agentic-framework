@@ -585,6 +585,12 @@ def cmd_cleanup(orch_id: str) -> None:
             dest.mkdir(parents=True, exist_ok=True)
             shutil.copy2(str(f), str(dest / fname))
 
+    # Capture retrospective before wiping /tmp state
+    try:
+        cmd_write_retro(orch_id)
+    except Exception as e:
+        print(f"[orch-shared] retro write failed (non-fatal): {e}", file=sys.stderr)
+
     # Remove /tmp state
     shutil.rmtree(str(src))
     print(f"[orch-shared] archived results to {dest}")
