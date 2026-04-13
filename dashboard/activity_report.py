@@ -7,7 +7,7 @@ a live two-column HUD.  Full redraw every 3s; questions polled every 1s.
 
 Usage: python3 dashboard/activity_report.py
 """
-import sys, os, json, time, shutil
+import sys, os, json, re, time, shutil
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -28,9 +28,22 @@ ORCH_BASE    = Path("/tmp/caf_orch")
 ACTIVITY_LOG = Path.home() / ".claude" / "data" / "activity_log.jsonl"
 
 LEAD_ORDER = [
-    "planning-lead", "engineering-lead", "frontend-lead", "review-lead",
-    "qa-lead", "security-lead", "release-lead", "docs-lead",
+    "planning-lead", "engineering-lead", "frontend-lead", "backend-lead",
+    "review-lead", "qa-lead", "security-lead", "release-lead", "docs-lead",
 ]
+
+_ANSI_RE = re.compile(r'\033\[[0-9;]*m')
+
+def visible_len(s: str) -> int:
+    """Length of string excluding ANSI escape codes."""
+    return len(_ANSI_RE.sub('', s))
+
+def rpad(s: str, width: int) -> str:
+    """Pad string to exact visible width (ANSI-aware)."""
+    vlen = visible_len(s)
+    if vlen >= width:
+        return s
+    return s + ' ' * (width - vlen)
 
 
 # ── Terminal helpers ──────────────────────────────────────────────────────────
@@ -102,11 +115,21 @@ def read_acceptance_criteria(orch_id: str) -> tuple[str, list[tuple[bool, str]]]
     criteria: list[tuple[bool, str]] = []
     try:
         lines = path.read_text(errors="replace").splitlines()
-        for i, line in enumerate(lines):
-            if "**Task**:" in line:
-                # text after the marker
-                task_line = line.split("**Task**:", 1)[-1].strip()
+        after_task_heading = False
+        for line in lines:
             stripped = line.strip()
+            # Inline format: "**Task**: <text>"
+            if "**Task**:" in line:
+                task_line = line.split("**Task**:", 1)[-1].strip()
+                after_task_heading = False
+            # Heading format: "## Task" followed by text on next non-empty line
+            elif stripped in ("## Task", "### Task"):
+                after_task_heading = True
+            elif after_task_heading and stripped and not stripped.startswith("#"):
+                task_line = stripped
+                after_task_heading = False
+            else:
+                after_task_heading = False
             if stripped.startswith("- [x]") or stripped.startswith("- [X]"):
                 criteria.append((True, stripped[5:].strip()))
             elif stripped.startswith("- [ ]"):
@@ -269,9 +292,9 @@ def read_token_usage() -> str:
 def box_line(left_content: str, right_content: str,
              left_w: int, right_w: int,
              left_color: str = "", right_color: str = "") -> str:
-    """Render one row of a two-column box."""
-    lc = left_content[:left_w].ljust(left_w)
-    rc = right_content[:right_w].ljust(right_w)
+    """Render one row of a two-column box (ANSI-aware padding)."""
+    lc = rpad(left_content, left_w)
+    rc = rpad(right_content, right_w)
     lc_colored = f"{left_color}{lc}{RESET}" if left_color else lc
     rc_colored = f"{right_color}{rc}{RESET}" if right_color else rc
     return f"{BOLD}{CYN}║{RESET}{lc_colored}{BOLD}{CYN}║{RESET}{rc_colored}{BOLD}{CYN}║{RESET}"
@@ -300,8 +323,7 @@ def bot_border(w: int) -> str:
 
 def full_row(content: str, w: int, color: str = "") -> str:
     inner = w - 2
-    text = content[:inner].ljust(inner)
-    colored = f"{color}{text}{RESET}" if color else text
+    colored = f"{color}{rpad(content, inner)}{RESET}" if color else rpad(content, inner)
     return f"{BOLD}{CYN}║{RESET}{colored}{BOLD}{CYN}║{RESET}"
 
 
@@ -391,9 +413,9 @@ def render_hud() -> None:
 
     # ── Column widths ─────────────────────────────────────────────────────────
     # total inner width = w - 2 (for ║ on each side)
-    # split roughly 22 / rest
+    # criteria need ~45 chars to be readable; leads need ~40
     inner = w - 2
-    left_w  = min(22, inner // 3)
+    left_w  = min(45, inner * 2 // 5)
     right_w = inner - left_w - 1  # -1 for middle ║
 
     # ── Header ────────────────────────────────────────────────────────────────

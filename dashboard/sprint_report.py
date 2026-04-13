@@ -90,10 +90,19 @@ def parse_acceptance_criteria(path: Path) -> tuple[str, list[tuple[bool, str]]]:
     if not path.exists():
         return task_line, criteria
     try:
+        after_task_heading = False
         for line in path.read_text(errors="replace").splitlines():
+            stripped = line.strip()
             if "**Task**:" in line:
                 task_line = line.split("**Task**:", 1)[-1].strip()
-            stripped = line.strip()
+                after_task_heading = False
+            elif stripped in ("## Task", "### Task"):
+                after_task_heading = True
+            elif after_task_heading and stripped and not stripped.startswith("#"):
+                task_line = stripped
+                after_task_heading = False
+            else:
+                after_task_heading = False
             if stripped.startswith("- [x]") or stripped.startswith("- [X]"):
                 criteria.append((True, stripped[5:].strip()))
             elif stripped.startswith("- [ ]"):

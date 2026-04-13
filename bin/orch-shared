@@ -36,6 +36,18 @@ Subcommands:
 
   list-surfaces <orch_id>
       Print surfaces.json — all known lead → surface_id mappings.
+
+  status <orch_id>
+      Print a health table for a running orch job: pending questions, queued tests,
+      memory entries, registered domains, active surfaces, per-lead wave status.
+
+  merge-results <orch_id>
+      Consolidate all results/<lead>-*.md files into shared/merged_results.md.
+      Works standalone — no cmux dependency. Agents-only compatible.
+
+  read-events <orch_id> [n]
+      Print last n events from events.jsonl (default 20).
+      Events are written by bin/orch-event when leads change state.
 """
 
 import sys
@@ -104,20 +116,59 @@ def cmd_init(orch_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 def cmd_register_domain(orch_id: str, lead: str, globs: list[str]) -> None:
+    import fnmatch as _fnmatch
+
     p = shared_dir(orch_id) / "domains.json"
     try:
         domains: dict = json.loads(p.read_text())
     except Exception:
         domains = {}
 
+    conflicts = []
     for g in globs:
-        existing = domains.get(g)
-        if existing and existing != lead:
-            print(
-                f"[orch-shared] WARNING: {g!r} already claimed by {existing!r}. "
-                f"Overwriting with {lead!r}.",
-                file=sys.stderr,
+        for existing_glob, existing_lead in domains.items():
+            if existing_lead == lead:
+                continue  # same lead re-registering — idempotent
+            # Overlap: either pattern matches the other as a path-like string
+            if _fnmatch.fnmatch(existing_glob, g) or _fnmatch.fnmatch(g, existing_glob):
+                conflicts.append((g, existing_glob, existing_lead))
+
+    if conflicts:
+        for (new_g, existing_g, existing_lead) in conflicts:
+            msg = (
+                f"[orch-shared] CONFLICT: {lead!r} wants {new_g!r} but it overlaps "
+                f"with {existing_g!r} owned by {existing_lead!r}"
             )
+            print(msg, file=sys.stderr)
+
+        # Write to discoveries.jsonl so PO and broadcast consumers can see it
+        disc_path = shared_dir(orch_id) / "discoveries.jsonl"
+        disc_path.parent.mkdir(parents=True, exist_ok=True)
+        with disc_path.open("a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                for (new_g, existing_g, existing_lead) in conflicts:
+                    entry = {
+                        "ts": ts(),
+                        "from": "orch-shared",
+                        "topic": "domain-conflict",
+                        "message": (
+                            f"{lead} wants '{new_g}' but it overlaps with "
+                            f"'{existing_g}' owned by {existing_lead}"
+                        ),
+                    }
+                    f.write(json.dumps(entry) + "\n")
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+
+        print(
+            f"[orch-shared] {len(conflicts)} conflict(s) written to discoveries.jsonl. "
+            f"Resolve before proceeding.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    for g in globs:
         domains[g] = lead
 
     p.write_text(json.dumps(domains, indent=2))
@@ -189,6 +240,34 @@ def cmd_read_memory(orch_id: str, n: int = 20) -> None:
             if reason:  print(f"         why:     {reason}")
             if changed: print(f"         changed: {changed}")
             if next_:   print(f"         next:    {next_}")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# read-events
+# ---------------------------------------------------------------------------
+
+def cmd_read_events(orch_id: str, n: int = 20) -> None:
+    p = ORCH_BASE / orch_id / "events.jsonl"
+    if not p.exists():
+        print("(no events)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    if not lines:
+        print("(no events)")
+        return
+    for line in lines:
+        try:
+            e = json.loads(line)
+            t       = e.get("ts", "")
+            hhmm    = t[11:16] if len(t) >= 16 else "??:??"
+            wave    = e.get("wave", "?")
+            agent   = e.get("agent", "?")
+            status  = e.get("status", "?")
+            summary = e.get("summary", "")
+            summary_part = f"  {summary}" if summary else ""
+            print(f"[{hhmm}] wave{wave}  {agent:<24}  {status:<8}{summary_part}")
         except Exception:
             print(line)
 
@@ -467,6 +546,166 @@ def cmd_cleanup(orch_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# status
+# ---------------------------------------------------------------------------
+
+def cmd_status(orch_id: str) -> None:
+    sd = shared_dir(orch_id)
+    initialized = sd.exists()
+
+    print(f"=== orch job: {orch_id} ===")
+    print()
+
+    status_label = "initialized" if initialized else "NOT INITIALIZED"
+    print(f"Shared workspace: {sd}/  [{status_label}]")
+    print()
+
+    def count_lines(path: Path) -> int:
+        if not path.exists():
+            return 0
+        return sum(1 for l in path.read_text().splitlines() if l.strip())
+
+    def count_pending_questions(path: Path) -> int:
+        if not path.exists():
+            return 0
+        count = 0
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                if json.loads(line).get("status") == "pending":
+                    count += 1
+            except Exception:
+                pass
+        return count
+
+    pending_q = count_pending_questions(sd / "questions.jsonl")
+    queued_tests = count_lines(sd / "test_queue.jsonl")
+    test_results = count_lines(sd / "test_results.jsonl")
+    memory_entries = count_lines(sd / "working_memory.jsonl")
+
+    print(f"  Pending questions : {pending_q}")
+    print(f"  Queued tests      : {queued_tests}")
+    print(f"  Test results      : {test_results}")
+    print(f"  Memory entries    : {memory_entries}")
+    print()
+
+    # Domains
+    domains_path = sd / "domains.json"
+    try:
+        domains: dict = json.loads(domains_path.read_text()) if domains_path.exists() else {}
+    except Exception:
+        domains = {}
+    print(f"Domains registered: {len(domains)}")
+    if domains:
+        for glob, lead in domains.items():
+            print(f"  {glob}  →  {lead}")
+    else:
+        print("  (none)")
+    print()
+
+    # Surfaces
+    surfaces = load_surfaces(orch_id)
+    print(f"Active surfaces: {len(surfaces)}")
+    if surfaces:
+        for name, sid in surfaces.items():
+            print(f"  {name}  →  {sid}")
+    else:
+        print("  (none registered)")
+    print()
+
+    # Lead status files
+    job_dir = ORCH_BASE / orch_id
+    status_files = sorted(job_dir.glob("*.status")) if job_dir.exists() else []
+    print("Lead status:")
+    if not status_files:
+        print("  (no .status files found)")
+    else:
+        for sf in status_files:
+            lead_name = sf.stem
+            try:
+                data = json.loads(sf.read_text())
+                wave = data.get("wave", "?")
+                lead_status = data.get("status", "?")
+                print(f"  {lead_name:<20} wave {wave}  {lead_status}")
+            except Exception:
+                print(f"  {lead_name:<20} (unreadable)")
+
+
+# ---------------------------------------------------------------------------
+# merge-results
+# ---------------------------------------------------------------------------
+
+def cmd_merge_results(orch_id: str) -> None:
+    results_dir = ORCH_BASE / orch_id / "results"
+
+    if not results_dir.exists() or not any(results_dir.glob("*.md")):
+        print("(no results found)")
+        return
+
+    md_files = list(results_dir.glob("*.md"))
+
+    def sort_key(p: Path) -> tuple:
+        name = p.name
+        if "-wave0.md" in name:
+            return (0, name)
+        elif "-contracts.md" in name:
+            return (1, name)
+        elif "-spec.md" in name:
+            return (2, name)
+        else:
+            return (2, name)
+
+    md_files.sort(key=sort_key)
+
+    def wave_label(p: Path) -> str:
+        name = p.name
+        if name.endswith("-wave0.md"):
+            return "Wave 0 (Exploration)"
+        elif name.endswith("-contracts.md"):
+            return "Wave 1 (Contracts)"
+        elif name.endswith("-spec.md"):
+            return "Wave 2 (Spec)"
+        else:
+            # Check if it's a plain <lead>.md
+            stem = p.stem
+            if "-" not in stem:
+                return "Wave 2 (Result)"
+            # anything else — use the raw suffix
+            parts = stem.split("-", 1)
+            if len(parts) > 1:
+                return parts[1]
+            return stem
+
+    sd = shared_dir(orch_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    out_path = sd / "merged_results.md"
+
+    leads_seen = set()
+    sections = []
+    for f in md_files:
+        stem = f.stem
+        # derive lead name: strip known suffixes
+        for suffix in ("-wave0", "-contracts", "-spec"):
+            if stem.endswith(suffix):
+                lead_name = stem[: -len(suffix)]
+                break
+        else:
+            lead_name = stem
+        leads_seen.add(lead_name)
+
+        label = wave_label(f)
+        content = f.read_text()
+        sections.append(f"## {lead_name} — {label}\n{content}\n\n---\n")
+
+    timestamp = ts()
+    header = f"# Merged Results — {orch_id}\nGenerated: {timestamp}\n\n"
+    out_path.write_text(header + "\n".join(sections))
+
+    print(f"[orch-shared] merged {len(md_files)} files from {len(leads_seen)} leads → shared/merged_results.md")
+
+
+# ---------------------------------------------------------------------------
 # list-surfaces
 # ---------------------------------------------------------------------------
 
@@ -501,6 +740,17 @@ Subcommands:
   pending-questions <orch_id>
   list-surfaces <orch_id>
   cleanup <orch_id>        Archive results, remove /tmp/caf_orch/<orch_id>/
+  status <orch_id>
+      Print a health table for a running orch job: pending questions, queued tests,
+      memory entries, registered domains, active surfaces, per-lead wave status.
+
+  merge-results <orch_id>
+      Consolidate all results/<lead>-*.md files into shared/merged_results.md.
+      Works standalone — no cmux dependency. Agents-only compatible.
+
+  read-events <orch_id> [n]
+      Print last n events from events.jsonl (default 20).
+      Events are written by bin/orch-event when leads change state.
 """
 
 
@@ -563,6 +813,21 @@ def main() -> None:
             print("Usage: orch-shared cleanup <orch_id>", file=sys.stderr)
             sys.exit(1)
         cmd_cleanup(args[1])
+    elif sub == "status":
+        if len(args) < 2:
+            print("Usage: orch-shared status <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_status(args[1])
+    elif sub == "merge-results":
+        if len(args) < 2:
+            print("Usage: orch-shared merge-results <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_merge_results(args[1])
+    elif sub == "read-events":
+        if len(args) < 2:
+            print("Usage: orch-shared read-events <orch_id> [n]", file=sys.stderr)
+            sys.exit(1)
+        cmd_read_events(args[1], int(args[2]) if len(args) > 2 else 20)
     else:
         print(f"[orch-shared] unknown subcommand: {sub!r}", file=sys.stderr)
         sys.exit(1)
