@@ -146,7 +146,17 @@ mkdir -p "$CLAUDE_DIR/data/knowledge-db"
 mkdir -p "$CLAUDE_DIR/circuit_breakers"
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "/tmp/claude"
+mkdir -p "$HOME/.caf/orch"
 echo "  -> ~/.claude/data/, circuit_breakers/, skills/auto-generated/, /tmp/claude/"
+echo "  -> ~/.caf/orch/ (persistent orchestration run store)"
+
+# 0b2. Symlink bin/orch-shared to ~/.local/bin so all repos can use it
+echo "[0b2/11] Installing orch-shared globally..."
+mkdir -p "$HOME/.local/bin"
+ln -sf "$REPO_DIR/bin/orch-shared" "$HOME/.local/bin/orch-shared"
+chmod +x "$REPO_DIR/bin/orch-shared"
+echo "  -> ~/.local/bin/orch-shared (symlink → $REPO_DIR/bin/orch-shared)"
+echo "     All repos can now use 'orch-shared' without a local bin/ directory."
 
 # 0c. Pre-warm uv dependency cache (prevents first-run hook timeouts)
 echo "[0c/11] Pre-warming hook dependencies..."
@@ -449,6 +459,51 @@ else
   echo "           Try:   uv cache clean && bash install.sh"
 fi
 rm -f "$SMOKE_FILE"
+
+echo "[10b/11] Doctor checks..."
+DOCTOR_ERRORS=0
+
+# Check ~/.caf/orch/ exists and is writable
+if [ -d "$HOME/.caf/orch" ] && [ -w "$HOME/.caf/orch" ]; then
+  echo "  ~/.caf/orch/: OK (orchestration run store)"
+else
+  echo "  WARNING: ~/.caf/orch/ missing or not writable"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check orch-shared is accessible globally
+if command -v orch-shared >/dev/null 2>&1 || [ -f "$HOME/.local/bin/orch-shared" ]; then
+  echo "  orch-shared: OK (global)"
+else
+  echo "  WARNING: orch-shared not in PATH — cross-repo orchestration logging won't work"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check ~/.claude/agents/ has the right symlinks count
+AGENT_COUNT=$(ls "$HOME/.claude/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+REPO_AGENT_COUNT=$(ls "$REPO_DIR/global-agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$AGENT_COUNT" = "$REPO_AGENT_COUNT" ]; then
+  echo "  agents: OK ($AGENT_COUNT symlinks)"
+else
+  echo "  WARNING: agents mismatch — ~/.claude/agents/ has $AGENT_COUNT, repo has $REPO_AGENT_COUNT"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check ~/.claude/skills/ symlinks
+SKILL_COUNT=$(ls -d "$HOME/.claude/skills/"*/ 2>/dev/null | grep -v auto-generated | wc -l | tr -d ' ')
+REPO_SKILL_COUNT=$(ls -d "$REPO_DIR/global-skills/"*/ 2>/dev/null | wc -l | tr -d ' ')
+if [ "$SKILL_COUNT" = "$REPO_SKILL_COUNT" ]; then
+  echo "  skills: OK ($SKILL_COUNT symlinks)"
+else
+  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT, repo has $REPO_SKILL_COUNT"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+if [ "$DOCTOR_ERRORS" -eq 0 ]; then
+  echo "  All doctor checks passed."
+else
+  echo "  $DOCTOR_ERRORS doctor check(s) failed — re-run bash install.sh to fix."
+fi
 
 echo "[11/11] Installation complete."
 echo "  uv:      $(uv --version)"

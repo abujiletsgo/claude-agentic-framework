@@ -9,6 +9,7 @@ export interface Run {
   status: RunStatus
   waveCount: number        // max wave number extracted from prompts/*-waveN.md filenames
   tokenEstimate: number    // sum of Math.ceil(wordCount * 1.3) across results/**/*.md files
+  project?: string         // repo/project name derived from meta.json `cwd` field; absent for old runs
 }
 
 export interface LeadSummary {

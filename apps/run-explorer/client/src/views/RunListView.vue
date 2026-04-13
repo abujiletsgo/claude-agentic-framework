@@ -12,6 +12,7 @@ const { runs, loading, error, refresh } = useRuns()
 
 const searchQuery = ref('')
 const activeStatuses = ref<Set<RunStatus>>(new Set())
+const activeProject = ref<string | null>(null)
 
 const allStatuses: RunStatus[] = ['PASS', 'FAIL', 'IN_PROGRESS', 'UNKNOWN']
 
@@ -21,33 +22,59 @@ function toggleStatus(s: RunStatus) {
   } else {
     activeStatuses.value.add(s)
   }
-  // trigger reactivity
   activeStatuses.value = new Set(activeStatuses.value)
 }
+
+// Sorted unique project names from all runs
+const allProjects = computed<string[]>(() => {
+  const names = new Set<string>()
+  for (const r of runs.value) {
+    if (r.project) names.add(r.project)
+  }
+  return [...names].sort()
+})
 
 const filteredRuns = computed(() => {
   let result = [...runs.value].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    result = result.filter(r => r.id.toLowerCase().includes(q))
+    result = result.filter(r =>
+      r.id.toLowerCase().includes(q) ||
+      (r.project ?? '').toLowerCase().includes(q)
+    )
   }
   if (activeStatuses.value.size > 0) {
     result = result.filter(r => activeStatuses.value.has(r.status))
   }
+  if (activeProject.value !== null) {
+    result = result.filter(r => (r.project ?? '(unknown)') === activeProject.value)
+  }
   return result
 })
+
+// Group filtered runs by project for display
+const groupedRuns = computed<Array<{ project: string; runs: Run[] }>>(() => {
+  const map = new Map<string, Run[]>()
+  for (const r of filteredRuns.value) {
+    const key = r.project ?? '(unknown)'
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(r)
+  }
+  // Sort groups: named projects first (alpha), then unknown
+  const entries = [...map.entries()].sort(([a], [b]) => {
+    if (a === '(unknown)') return 1
+    if (b === '(unknown)') return -1
+    return a.localeCompare(b)
+  })
+  return entries.map(([project, runs]) => ({ project, runs }))
+})
+
+const showGroups = computed(() => allProjects.value.length > 1 && activeProject.value === null)
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
     d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
-function formatDuration(ms: number | null | undefined): string {
-  if (ms == null) return '—'
-  const s = Math.floor(ms / 1000)
-  const m = Math.floor(s / 60)
-  return m > 0 ? `${m}m ${s % 60}s` : `${s}s`
 }
 
 function navigateToRun(id: string) {
@@ -93,9 +120,34 @@ const statusLabels: Record<RunStatus, string> = {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search by run ID..."
+          placeholder="Search by run ID or project..."
           class="w-full pl-9 pr-4 py-2 text-sm bg-transparent border border-slate-200 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
         />
+      </div>
+
+      <!-- Project filter pills (only shown when multiple projects exist) -->
+      <div v-if="allProjects.length > 1" class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Project:</span>
+        <button
+          :class="[
+            'px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200',
+            activeProject === null
+              ? 'bg-violet-600 border-violet-600 text-white'
+              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-violet-400'
+          ]"
+          @click="activeProject = null"
+        >All</button>
+        <button
+          v-for="p in allProjects"
+          :key="p"
+          :class="[
+            'px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200',
+            activeProject === p
+              ? 'bg-violet-600 border-violet-600 text-white'
+              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-violet-400'
+          ]"
+          @click="activeProject = p"
+        >{{ p }}</button>
       </div>
 
       <!-- Status filter pills -->
@@ -128,87 +180,116 @@ const statusLabels: Record<RunStatus, string> = {
       </button>
     </div>
 
-    <!-- Run table -->
-    <div v-else class="glass-card overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50/80 dark:bg-slate-800/50 sticky top-0 z-10">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Run ID</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Leads</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Started</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Waves</th>
-              <th class="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
-            <!-- Skeleton rows while loading -->
-            <template v-if="loading">
-              <SkeletonRow v-for="i in 5" :key="i" />
-            </template>
+    <!-- Run list -->
+    <template v-else-if="!loading && runs.length === 0">
+      <EmptyState
+        title="No runs yet"
+        description="Orchestration runs will appear here once you launch one."
+        icon="inbox"
+      />
+    </template>
 
-            <!-- Empty state (no runs at all) -->
-            <template v-else-if="runs.length === 0">
-              <tr>
-                <td colspan="6">
-                  <EmptyState
-                    title="No runs yet"
-                    description="Orchestration runs will appear here once you launch one."
-                    icon="inbox"
-                  />
-                </td>
-              </tr>
-            </template>
+    <template v-else-if="!loading && filteredRuns.length === 0">
+      <EmptyState
+        title="No matching runs"
+        description="Try adjusting your search or filters."
+        icon="search"
+        cta-label="Clear filters"
+        @cta="searchQuery = ''; activeStatuses = new Set(); activeProject = null"
+      />
+    </template>
 
-            <!-- Empty state (filtered to zero) -->
-            <template v-else-if="filteredRuns.length === 0">
-              <tr>
-                <td colspan="6">
-                  <EmptyState
-                    title="No matching runs"
-                    description="Try adjusting your search or filters."
-                    icon="search"
-                    cta-label="Clear filters"
-                    @cta="searchQuery = ''; activeStatuses = new Set()"
-                  />
-                </td>
-              </tr>
-            </template>
+    <!-- Grouped by project when multiple exist and no project filter active -->
+    <template v-else-if="showGroups">
+      <div v-for="group in groupedRuns" :key="group.project" class="space-y-2">
+        <!-- Project heading -->
+        <div class="flex items-center gap-2 px-1">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ group.project }}</span>
+          <span class="text-xs text-slate-400 dark:text-slate-600">{{ group.runs.length }} run{{ group.runs.length !== 1 ? 's' : '' }}</span>
+          <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+        </div>
 
-            <!-- Populated rows -->
-            <template v-else>
-              <tr
-                v-for="run in filteredRuns"
-                :key="run.id"
-                class="group hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors duration-150 cursor-pointer"
-                @click="navigateToRun(run.id)"
-              >
-                <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 font-mono">
-                  {{ run.id.slice(0, 8) }}
-                </td>
-                <td class="px-4 py-3">
-                  <StatusBadge :status="run.status" />
-                </td>
-                <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                  {{ run.leadCount }} lead{{ run.leadCount !== 1 ? 's' : '' }}
-                </td>
-                <td class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 font-mono tabular-nums">
-                  {{ formatDate(run.startTime) }}
-                </td>
-                <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 tabular-nums">
-                  {{ run.waveCount }}
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-violet-500 transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+        <!-- Runs table for this project -->
+        <div class="glass-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50/80 dark:bg-slate-800/50">
+                <tr>
+                  <th class="px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Run ID</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Leads</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Started</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Waves</th>
+                  <th class="px-4 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                <tr
+                  v-for="run in group.runs"
+                  :key="run.id"
+                  class="group hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors duration-150 cursor-pointer"
+                  @click="navigateToRun(run.id)"
+                >
+                  <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 font-mono">{{ run.id }}</td>
+                  <td class="px-4 py-3"><StatusBadge :status="run.status" /></td>
+                  <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ run.leadCount }}</td>
+                  <td class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 font-mono tabular-nums">{{ formatDate(run.startTime) }}</td>
+                  <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 tabular-nums">{{ run.waveCount }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-violet-500 transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </template>
+
+    <!-- Flat list (single project or project filter active) -->
+    <template v-else>
+      <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50/80 dark:bg-slate-800/50 sticky top-0 z-10">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Run ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Leads</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Started</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Waves</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+              <template v-if="loading">
+                <SkeletonRow v-for="i in 5" :key="i" />
+              </template>
+              <template v-else>
+                <tr
+                  v-for="run in filteredRuns"
+                  :key="run.id"
+                  class="group hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors duration-150 cursor-pointer"
+                  @click="navigateToRun(run.id)"
+                >
+                  <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 font-mono">{{ run.id }}</td>
+                  <td class="px-4 py-3"><StatusBadge :status="run.status" /></td>
+                  <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ run.leadCount }}</td>
+                  <td class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 font-mono tabular-nums">{{ formatDate(run.startTime) }}</td>
+                  <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 tabular-nums">{{ run.waveCount }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-violet-500 transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
   </div>
 </template>

@@ -16,3 +16,18 @@
   bin/gen-lead                                       |  71 +-----
   bin/orch-shared                                    |  37 ++++
   ... and 29 more files
+
+## 2026-04-13 (17:33 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): consultant model, run-explorer merged dashboard, run detail expansion (2dc39d53) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            | 479 ++++-------
+  .claude/MEMORY.md                                  |  32 +-
+  .claude/PROJECT_CONTEXT.md                         | 113 +--
+  CLAUDE.md                                          |   8 +-
+  Cargo.lock                                         | 490 +-----------
+  Cargo.toml                                         |   2 +-
+  README.md                                          |  14 +-
+  apps/run-explorer/.gitignore                       |   3 +
+  apps/run-explorer/client/.claude/FACTS.md          |  15 +
+  apps/run-explorer/client/.claude/MEMORY.md         |  33 +
+  ... and 99 more files

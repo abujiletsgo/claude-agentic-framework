@@ -81,7 +81,10 @@ const evaluationFullHtml = computed(() => run.value?.evaluationFull ? renderMark
                 <h1 class="text-xl font-semibold text-slate-900 dark:text-white tracking-tight font-mono">{{ run.id }}</h1>
                 <StatusBadge :status="run.status" />
               </div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-mono">Started {{ formatDate(run.startTime) }}</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                Started {{ formatDate(run.startTime) }}
+                <span v-if="run.project" class="ml-2 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{{ run.project }}</span>
+              </p>
             </div>
             <div class="flex items-center gap-4 text-sm">
               <div class="text-center">

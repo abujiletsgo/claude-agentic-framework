@@ -2,34 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-08 (17:45 UTC) · @Tom Kwon
-**Commit:** fix: use python3 for dashboard (textual installed there), fix @work import (7c63b9bd) by Tom Kwon
-**Changed:**
-  bin/cteam-dashboard             | 2 +-
-  dashboard/widgets/leads_grid.py | 2 +-
-  2 files changed, 2 insertions(+), 2 deletions(-)
-
-## 2026-04-09 (13:49 UTC) · @Tom Kwon
-**Commit:** fix: add sys.path insert so dashboard runs from any working directory (e4fa584b) by Tom Kwon
-**Changed:**
-  dashboard/caf_dashboard.py | 4 ++++
-  1 file changed, 4 insertions(+)
-
-## 2026-04-09 (16:52 UTC) · @Tom Kwon
-**Commit:** chore: remove Textual TUI dashboard and buddy system (1e8065b3) by Tom Kwon
-**Changed:**
-  .gitignore                                         |   8 +
-  CLAUDE.md                                          |   6 +-
-  README.md                                          |  16 +-
-  bin/caf-ref                                        |  65 ++
-  bin/cteam                                          |  71 --
-  bin/cteam-buddy                                    | 300 --------
-  bin/cteam-dashboard                                |   6 -
-  bin/cteam-sidebar                                  | 437 -----------
-  dashboard/__init__.py                              |   1 -
-  dashboard/caf_dashboard.css                        |  58 --
-  ... and 25 more files
-
 ## 2026-04-09 (16:57 UTC) · @Tom Kwon
 **Commit:** Merge CAF upstream: v5.0 research intelligence + mempalace removal (ca3e1ea3) by Tom Kwon
 **Changed:**
@@ -301,3 +273,33 @@
   bin/gen-lead                                       |  71 +-----
   bin/orch-shared                                    |  37 ++++
   ... and 29 more files
+
+## 2026-04-13 (17:30 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): consultant model, run-explorer merged dashboard, run detail expansion (2dc39d53) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            | 479 ++++-------
+  .claude/MEMORY.md                                  |  32 +-
+  .claude/PROJECT_CONTEXT.md                         | 113 +--
+  CLAUDE.md                                          |   8 +-
+  Cargo.lock                                         | 490 +-----------
+  Cargo.toml                                         |   2 +-
+  README.md                                          |  14 +-
+  apps/run-explorer/.gitignore                       |   3 +
+  apps/run-explorer/client/.claude/FACTS.md          |  15 +
+  apps/run-explorer/client/.claude/MEMORY.md         |  33 +
+  ... and 99 more files
+
+## 2026-04-13 (17:37 UTC) · @Tom Kwon
+**Commit:** feat(orch): persist runs to ~/.caf/orch, write-retro on every run (9bfd87a0) by Tom Kwon
+**Changed:**
+  apps/run-explorer/server/src/config.ts             |  3 +-
+  apps/run-explorer/server/src/services/runParser.ts | 35 ++++++++++++++++++----
+  bin/orch-shared                                    |  2 +-
+  global-skills/orchestrate/SKILL.md                 |  1 +
+  4 files changed, 33 insertions(+), 8 deletions(-)
+
+## 2026-04-13 (17:39 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): merge upstream parallelism discipline into consultant model (d13a9e69) by Tom Kwon
+**Changed:**
+  global-skills/orchestrate/SKILL.md | 132 ++++++++++++++++++++++++++-----------
+  1 file changed, 93 insertions(+), 39 deletions(-)
