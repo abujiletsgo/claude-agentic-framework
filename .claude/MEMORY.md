@@ -2,27 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (16:48 UTC) · @Tom Kwon
-**Commit:** feat: cmux-native per-task report panes + session tracker (4fece86a) by Tom Kwon
-**Changed:**
-  .gitignore                                         |   4 +
-  bin/cdash                                          |  60 ++
-  bin/cmux-sprint                                    | 545 ++++++------
-  bin/cteam                                          |  46 +-
-  bin/open-task-pane                                 |  83 ++
-  bin/orch-event                                     |  33 +
-  bin/session-event                                  |  70 ++
-  bin/sprint-event                                   |   9 +
-  dashboard/activity_report.py                       | 703 +++++++++++++---
-  dashboard/sprint_report.py                         | 916 +++++++++++++--------
-  ... and 4 more files
-
-## 2026-04-10 (17:04 UTC) · @Tom Kwon
-**Commit:** chore: remove ghost sprint-lead from model_tiers.yaml (bbb8d4e0) by Tom Kwon
-**Changed:**
-  data/model_tiers.yaml | 1 -
-  1 file changed, 1 deletion(-)
-
 ## 2026-04-10 (17:21 UTC) · @Tom Kwon
 **Commit:** feat: caf-hud — always-on Rust TUI with idle mode + job tabs + auto-launch (96e46936) by Tom Kwon
 **Changed:**
@@ -294,3 +273,22 @@
   CLAUDE.md                        |  6 +++---
   templates/settings.json.template | 18 ------------------
   2 files changed, 3 insertions(+), 21 deletions(-)
+
+## 2026-04-14 (session) · @Tom Kwon
+**Work:** gstack /codex skill — Gemini-first second opinion. Rewrote SKILL.md.tmpl (v1→v2): gemini -p as primary, --codex flag as opt-in override. Updated preamble.ts: "Codex Review"→"Gemini Review" in plan footer table, "codex exec/review"→"/codex skill (gemini -p)" in Plan Mode Safe Ops. Regenerated all 28 gstack SKILL.md files. Set ~/.gstack/config.yaml second_opinion_tool: gemini. Also configured gstack second_opinion_tool: auto→gemini in prior exchange.
+**Changed:** global-skills/gstack/codex/SKILL.md.tmpl, global-skills/gstack/scripts/resolvers/preamble.ts, all gstack SKILL.md files (regen), ~/.gstack/config.yaml
+
+## 2026-04-14 (13:37 UTC) · @Tom Kwon
+**Commit:** feat(v5.1): session schema contract, delete observability, config env vars (c6f9f678) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |   65 +-
+  README.md                                          |    3 +-
+  apps/observability/client/.env.sample              |    3 -
+  apps/observability/client/.gitignore               |   24 -
+  apps/observability/client/README.md                |    5 -
+  apps/observability/client/fix-visibility.sh        |   23 -
+  apps/observability/client/index.html               |   13 -
+  apps/observability/client/package-lock.json        | 2685 --------------------
+  apps/observability/client/package.json             |   27 -
+  apps/observability/client/postcss.config.js        |    6 -
+  ... and 67 more files
