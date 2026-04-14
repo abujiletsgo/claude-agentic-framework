@@ -44,15 +44,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py --failure-threshold 5 -- uv run --no-project __REPO_DIR__/global-hooks/hooks_SessionStart/check_gstack.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "__REPO_DIR__/target/release/caf-hooks session-recorder",
             "timeout": 5
           }
@@ -431,15 +422,6 @@
             "command": "__REPO_DIR__/target/release/caf-hooks orch-depth-tracker",
             "timeout": 5,
             "_comment": "Rust: Track orchestration nesting depth for tool guard"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStart/inject_sprint_context.py",
-            "timeout": 5
           }
         ]
       }

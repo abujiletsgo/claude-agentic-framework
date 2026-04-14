@@ -5,8 +5,8 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        50 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:3, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:3, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
-global-agents/       21 agents (21 root + 0 team)
+global-hooks/        48 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
+global-agents/       22 agents (22 root + 0 team)
 global-commands/     16 commands
 global-skills/       30 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
@@ -89,7 +89,7 @@ What remains uncertain: [gaps, alternative explanations]
 - **Edit settings.json directly?** → Stop. Edit template, run install.sh.
 - **Delete a hook file?** → Stop. Stub it first (exit 0), reinstall, then delete.
 - **Move framework directory?** → Stop. Update settings.json paths first.
-- **Hook errors everywhere?** → Check `~/.claude/hook_state.json`. Delete state file or wait 60s.
+- **Hook errors everywhere?** → Check `~/.claude/circuit_breakers/`. Delete state file or wait 60s.
 - **`pip install` in a hook?** → Stop. Use `uv run` instead.
 
 Full guide: `docs/framework-guide-ko.html` | Architecture: `.claude/ARCHITECTURE.md`
