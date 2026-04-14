@@ -143,12 +143,15 @@ echo ""
 echo "[0b/11] Creating required directories..."
 mkdir -p "$CLAUDE_DIR/data/compressed_context"
 mkdir -p "$CLAUDE_DIR/data/knowledge-db"
+# legacy: circuit_breakers/ dir is unused; CB state is in hook_state.json
 mkdir -p "$CLAUDE_DIR/circuit_breakers"
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "/tmp/claude"
 mkdir -p "$HOME/.caf/orch"
+mkdir -p "$HOME/.caf/orch_state" "$HOME/.caf/health"
 echo "  -> ~/.claude/data/, circuit_breakers/, skills/auto-generated/, /tmp/claude/"
 echo "  -> ~/.caf/orch/ (persistent orchestration run store)"
+echo "  -> ~/.caf/orch_state/ ~/.caf/health/ (hook health monitoring)"
 
 # 0b2. Symlink bin/orch-shared to ~/.local/bin so all repos can use it
 echo "[0b2/11] Installing orch-shared globally..."
@@ -157,6 +160,13 @@ ln -sf "$REPO_DIR/bin/orch-shared" "$HOME/.local/bin/orch-shared"
 chmod +x "$REPO_DIR/bin/orch-shared"
 echo "  -> ~/.local/bin/orch-shared (symlink → $REPO_DIR/bin/orch-shared)"
 echo "     All repos can now use 'orch-shared' without a local bin/ directory."
+
+# 0b3. Symlink lib/ to ~/.claude/lib/ so shared libs work from any project
+echo "[0b3/11] Installing shared libs globally..."
+mkdir -p "$CLAUDE_DIR/lib"
+ln -sf "$REPO_DIR/lib/toon_utils.py" "$CLAUDE_DIR/lib/toon_utils.py"
+ln -sf "$REPO_DIR/lib/agent_display.py" "$CLAUDE_DIR/lib/agent_display.py"
+echo "  -> ~/.claude/lib/ (symlinks → $REPO_DIR/lib/)"
 
 # 0c. Pre-warm uv dependency cache (prevents first-run hook timeouts)
 echo "[0c/11] Pre-warming hook dependencies..."
@@ -208,9 +218,9 @@ if [ -d "$REPO_DIR/caf-hooks" ]; then
   if command -v cargo >/dev/null 2>&1; then
     echo "  cargo: OK ($(cargo --version))"
     echo "  Building caf-hooks binary (release mode)..."
-    if (cd "$REPO_DIR/caf-hooks" && cargo build --release 2>/dev/null); then
+    if (cd "$REPO_DIR" && cargo build --release 2>/dev/null); then
       CAF_HOOKS_AVAILABLE=true
-      CAF_HOOKS_BIN="$REPO_DIR/caf-hooks/target/release/caf-hooks"
+      CAF_HOOKS_BIN="$REPO_DIR/target/release/caf-hooks"
       echo "  caf-hooks: built ($CAF_HOOKS_BIN)"
     else
       echo "  WARNING: caf-hooks build failed. Falling back to Python hooks."
@@ -291,11 +301,14 @@ done
 
 # Inject PATH into env block of settings.json
 export HOOK_PATH
+export REPO_DIR
 SETTINGS_CONTENT=$(echo "$SETTINGS_CONTENT" | python3 -c "
 import json, sys, os
 data = json.load(sys.stdin)
 hook_path = os.environ['HOOK_PATH']
+repo_dir = os.environ['REPO_DIR']
 data.setdefault('env', {})['PATH'] = hook_path
+data['env']['CAF_HOOKS_DIR'] = repo_dir + '/global-hooks/damage-control'
 json.dump(data, sys.stdout, indent=2)
 ")
 

@@ -4,6 +4,9 @@
 /// Exit code: 0 if all PASS or only WARNs, 1 if any FAIL.
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use chrono;
 
 enum Status {
     Pass(String),
@@ -63,6 +66,10 @@ pub fn run() {
     results.push(check_settings_vs_disk_hooks());
     results.push(check_mempalace());
     results.push(check_aaak_compression());
+
+    // ── Orchestration & hygiene ──────────────────────────────────────────
+    results.push(check_orch_state_staleness());
+    results.push(check_for_replaced_python_hooks());
 
     // ── Runtime smoke tests ──────────────────────────────────────────────
     results.push(check_python_deps());
@@ -646,18 +653,18 @@ fn check_symlinks() -> CheckResult {
 }
 
 fn check_circuit_breaker_dir() -> CheckResult {
-    println!("[CHECK] Circuit breaker directory");
+    println!("[CHECK] Circuit breaker state file");
     let home = match dirs::home_dir() {
         Some(h) => h,
-        None => return CheckResult::warn("Circuit breaker directory", "cannot determine home directory"),
+        None => return CheckResult::warn("Circuit breaker state file", "cannot determine home directory"),
     };
-    let dir = home.join(".claude/circuit_breakers");
-    if dir.exists() {
-        CheckResult::pass("Circuit breaker directory", format!("{}", dir.display()))
+    let file = home.join(".claude/hook_state.json");
+    if file.exists() {
+        CheckResult::pass("Circuit breaker state file", format!("{}", file.display()))
     } else {
         CheckResult::warn(
-            "Circuit breaker directory",
-            "~/.claude/circuit_breakers/ not found — will be created on first hook failure",
+            "Circuit breaker state file",
+            "~/.claude/hook_state.json not found — will be created on first hook execution",
         )
     }
 }
@@ -1008,6 +1015,102 @@ fn count_hook_files(global_hooks_dir: &Path) -> usize {
         }
     }
     count
+}
+
+fn check_orch_state_staleness() -> CheckResult {
+    println!("[CHECK] Orchestration state staleness");
+    let depth_path = crate::state::orch_state_dir().join("depth");
+    if !depth_path.exists() {
+        return CheckResult::pass("Orchestration state staleness", "No orphaned orchestration state");
+    }
+    let contents = match std::fs::read_to_string(&depth_path) {
+        Ok(c) => c,
+        Err(_) => return CheckResult::pass("Orchestration state staleness", "depth file unreadable — skipping"),
+    };
+    // Parse JSON to get ts field
+    let v: serde_json::Value = match serde_json::from_str(contents.trim()) {
+        Ok(v) => v,
+        Err(_) => return CheckResult::pass("Orchestration state staleness", "Orchestration state is recent (no ts field)"),
+    };
+    let ts_str = match v.get("ts").and_then(|t| t.as_str()) {
+        Some(s) => s,
+        None => return CheckResult::pass("Orchestration state staleness", "Orchestration state is recent"),
+    };
+    let dt = match chrono::DateTime::parse_from_rfc3339(ts_str) {
+        Ok(d) => d,
+        Err(_) => return CheckResult::pass("Orchestration state staleness", "Orchestration state is recent (unparseable ts)"),
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let marker_secs = dt.timestamp() as u64;
+    let age = now.saturating_sub(marker_secs);
+    if age > 86400 {
+        let age_hours = age / 3600;
+        CheckResult::warn(
+            "Orchestration state staleness",
+            format!(
+                "Stale orchestration depth state found (age: {}h). Will be cleaned on next session start.",
+                age_hours
+            ),
+        )
+    } else {
+        CheckResult::pass("Orchestration state staleness", "Orchestration state is recent")
+    }
+}
+
+fn check_for_replaced_python_hooks() -> CheckResult {
+    println!("[CHECK] Replaced Python hooks hygiene");
+    // Derive framework dir from binary path
+    let exe_path = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return CheckResult::warn("Replaced Python hooks hygiene", "cannot determine binary path"),
+    };
+    let framework_dir = [3usize, 4].iter().find_map(|&levels| {
+        let mut p: &std::path::Path = &exe_path;
+        for _ in 0..levels { p = p.parent()?; }
+        let candidate = p.to_path_buf();
+        if candidate.join("global-hooks").exists() { Some(candidate) } else { None }
+    });
+    let framework_dir = match framework_dir {
+        Some(d) => d,
+        None => return CheckResult::warn("Replaced Python hooks hygiene", "cannot derive framework directory"),
+    };
+
+    // Known Python files that have been replaced by Rust equivalents
+    let known_replaced = [
+        "global-hooks/framework/facts/auto_fact_extractor.py",
+    ];
+
+    let mut unmarked: Vec<String> = Vec::new();
+    for rel_path in &known_replaced {
+        let full_path = framework_dir.join(rel_path);
+        if !full_path.exists() {
+            continue;
+        }
+        // Check if line 1 contains "# REPLACED BY RUST"
+        let contents = match std::fs::read_to_string(&full_path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        let first_line = contents.lines().next().unwrap_or("");
+        if !first_line.contains("# REPLACED BY RUST") {
+            unmarked.push(rel_path.to_string());
+        }
+    }
+
+    if unmarked.is_empty() {
+        CheckResult::pass("Replaced Python hooks hygiene", "All replaced Python hooks are properly marked")
+    } else {
+        CheckResult::warn(
+            "Replaced Python hooks hygiene",
+            format!(
+                "Found Python hook(s) replaced by Rust without REPLACED_BY_RUST marker: {}",
+                unmarked.join(", ")
+            ),
+        )
+    }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

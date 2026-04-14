@@ -67,6 +67,27 @@ export interface ApiError {
   code: number
 }
 
+export interface SessionSummary {
+  id: string
+  startTime: string
+  endTime?: string
+  project?: string
+  promptCount: number
+  status: 'active' | 'ended'
+  durationSeconds?: number
+}
+
+export interface SessionMessage {
+  id: number
+  type: string
+  content: string
+  timestamp: string
+}
+
+export interface SessionDetail extends SessionSummary {
+  messages: SessionMessage[]
+}
+
 export interface OrchEvent {
   ts: string            // ISO 8601 timestamp from events.jsonl
   agent: string         // lead/agent name (e.g. "backend-lead")

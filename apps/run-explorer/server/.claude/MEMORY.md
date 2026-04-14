@@ -31,3 +31,16 @@
   apps/run-explorer/client/.claude/FACTS.md          |  15 +
   apps/run-explorer/client/.claude/MEMORY.md         |  33 +
   ... and 99 more files
+
+## 2026-04-14 (05:18 UTC) · @Tom Kwon
+**Commit:** feat(session): orchestration logging, project grouping, install.sh doctor, arch-map v4.2 (7d286ff5) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            | 203 +++++++++++-----
+  .claude/MEMORY.md                                  |  58 ++---
+  .gitignore                                         |   1 +
+  .../client/src/views/RunDetailView.vue             |   5 +-
+  apps/run-explorer/client/src/views/RunListView.vue | 257 ++++++++++++++-------
+  apps/run-explorer/server/.claude/MEMORY.md         |  15 ++
+  apps/run-explorer/shared/types.ts                  |   1 +
+  install.sh                                         |  55 +++++
+  8 files changed, 423 insertions(+), 172 deletions(-)

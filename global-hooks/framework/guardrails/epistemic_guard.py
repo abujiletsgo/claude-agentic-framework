@@ -1,3 +1,4 @@
+# REPLACED BY RUST: caf-hooks epistemic-guard
 #!/usr/bin/env python3
 """
 Epistemic Guard - UserPromptSubmit Hook

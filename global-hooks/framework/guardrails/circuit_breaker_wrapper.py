@@ -29,6 +29,7 @@ Exit Codes:
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -37,19 +38,35 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
+
+def normalize_hook_key(command: list) -> str:
+    """Find the last meaningful .py filename or caf-hooks subcommand."""
+    skip = {'uv', 'run', '--no-project', 'python', 'python3', '--',
+            'circuit_breaker_wrapper.py', 'circuit-breaker-wrapper'}
+    # Scan reversed to find the last meaningful script/subcommand
+    for part in reversed(command):
+        if part.endswith('.py') and 'circuit_breaker_wrapper' not in part:
+            return os.path.splitext(os.path.basename(part))[0].replace('_', '-').lower()
+        if (part and not part.startswith('-') and '/' not in part
+                and part not in skip and not part.endswith('.py')):
+            clean = part.replace('_', '-').lower()
+            if clean not in skip:
+                return clean
+    return os.path.splitext(os.path.basename(command[-1]))[0].replace('_', '-').lower()
+
 from circuit_breaker import CircuitBreaker, CircuitBreakerDecision
 from hook_state_manager import HookStateManager
 from config_loader import load_config
 
 
-def parse_args() -> Optional[list[str]]:
+def parse_args() -> Optional[tuple]:
     """
     Parse command line arguments.
 
-    Expected format: circuit_breaker_wrapper.py -- <command> [args...]
+    Expected format: circuit_breaker_wrapper.py [--failure-threshold N] [--cooldown-seconds N] -- <command> [args...]
 
     Returns:
-        Command to execute as list of strings, or None if invalid
+        Tuple of (command_args, failure_threshold, cooldown_seconds), or None if invalid
     """
     args = sys.argv[1:]
 
@@ -57,6 +74,26 @@ def parse_args() -> Optional[list[str]]:
         print("Error: No command provided", file=sys.stderr)
         print_usage()
         return None
+
+    # Parse our flags before the -- separator
+    failure_threshold = None
+    cooldown_seconds = None
+    i = 0
+    while i < len(args) and args[i] != '--':
+        if args[i] == '--failure-threshold' and i + 1 < len(args):
+            try:
+                failure_threshold = int(args[i + 1])
+            except ValueError:
+                pass
+            i += 2
+        elif args[i] == '--cooldown-seconds' and i + 1 < len(args):
+            try:
+                cooldown_seconds = int(args[i + 1])
+            except ValueError:
+                pass
+            i += 2
+        else:
+            i += 1
 
     # Find the -- separator
     if "--" not in args:
@@ -72,7 +109,7 @@ def parse_args() -> Optional[list[str]]:
         print_usage()
         return None
 
-    return command_args
+    return command_args, failure_threshold, cooldown_seconds
 
 
 def print_usage():
@@ -145,16 +182,24 @@ def main() -> int:
         Exit code (0 = success, 1 = failure, 2 = usage error)
     """
     # Parse command
-    command = parse_args()
-    if command is None:
+    parsed = parse_args()
+    if parsed is None:
         return 2
 
-    # Build full command string for state tracking
-    hook_cmd = " ".join(command)
+    command, cli_failure_threshold, cli_cooldown_seconds = parsed
+
+    # Build canonical CB key for state tracking
+    hook_cmd = normalize_hook_key(command)
 
     try:
         # Load configuration
         config = load_config()
+
+        # Apply CLI overrides if provided
+        if cli_failure_threshold is not None:
+            config.circuit_breaker.failure_threshold = cli_failure_threshold
+        if cli_cooldown_seconds is not None:
+            config.circuit_breaker.cooldown_seconds = cli_cooldown_seconds
 
         # Check if circuit breaker is enabled
         if not config.circuit_breaker.enabled:

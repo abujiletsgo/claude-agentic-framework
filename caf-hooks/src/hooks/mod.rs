@@ -26,5 +26,8 @@ pub mod audit_config_change;
 pub mod session_cost_tracker;
 pub mod subagent_tracker;
 
+// Session recording
+pub mod session_recorder;
+
 // Diagnostic subcommand
 pub mod doctor;

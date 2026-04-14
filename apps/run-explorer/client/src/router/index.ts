@@ -4,6 +4,8 @@ import RunDetailView from '@/views/RunDetailView.vue'
 import ComparisonView from '@/views/ComparisonView.vue'
 import HealthView from '@/views/HealthView.vue'
 import LiveView from '@/views/LiveView.vue'
+import SessionListView from '@/views/SessionListView.vue'
+import SessionDetailView from '@/views/SessionDetailView.vue'
 
 const routes = [
   { path: '/', component: RunListView },
@@ -11,6 +13,8 @@ const routes = [
   { path: '/compare', component: ComparisonView },
   { path: '/health', component: HealthView },
   { path: '/live', component: LiveView },
+  { path: '/sessions', component: SessionListView },
+  { path: '/sessions/:id', component: SessionDetailView, props: true },
 ]
 
 export const router = createRouter({

@@ -24,7 +24,7 @@
 ## GOTCHAS
 - NEVER delete a hook file referenced in live settings.json — stub first, reinstall, delete after [2026-02-24]
 - `observe_patterns.py` and `analyze_session.py` NOT wired — knowledge pipeline only runs LEARN + EVOLVE [2026-02-24]
-- Circuit breaker disables hooks after 3 failures for 60s — delete `~/.claude/circuit_breakers/{hook}.json` to reset [2026-02-24]
+- Circuit breaker disables hooks after 3 failures for 60s — delete entry from `~/.claude/hook_state.json` to reset [2026-02-24]
 - Damage control blocks CVE flag names and "eval" even in commit messages — rephrase to avoid [2026-03-29]
 - Research agents that skip context-first protocol waste 3-8 turns re-discovering known project info [2026-04-03]
 - meta-agent.md has two `model:` lines — frontmatter (opus) is the real one, body line is template instructions [2026-03-29]
@@ -39,14 +39,14 @@
 - Skill builder: `global-skills/skill-builder/SKILL.md` [2026-03-29]
 - Config audit log: `~/.claude/data/logs/config_audit.jsonl` [2026-03-29]
 - Agent tracking: `~/.claude/data/agent_tracking.jsonl` [2026-03-29]
-- Circuit breakers: `~/.claude/circuit_breakers/` [2026-02-24]
+- Circuit breakers: `~/.claude/hook_state.json` [2026-02-24]
 - Agents: `global-agents/` → `~/.claude/agents/` [2026-02-24]
 - Skills: `global-skills/` → `~/.claude/skills/` [2026-02-24]
 
 ## PATTERNS
 - Template change: edit `templates/settings.json.template` → `bash install.sh` → restart session [2026-02-24]
 - Safe hook removal: stub as no-op → install → delete next session [2026-02-24]
-- Reset broken hook: delete `~/.claude/circuit_breakers/{hook_name}.json` [2026-02-24]
+- Reset broken hook: remove hook entry from `~/.claude/hook_state.json` [2026-02-24]
 - Force prime refresh: `rm .claude/PROJECT_CONTEXT.md && /prime` [2026-02-24]
 - Run test suite: `python3 scripts/run_tests.py` (full) or `--fast` (skip slow) [2026-03-29]
 - Create new skill: `/skill-builder` or manually in `.claude/skills/<name>/SKILL.md` [2026-03-29]

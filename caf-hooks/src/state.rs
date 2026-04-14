@@ -36,3 +36,15 @@ pub fn task_completions_path() -> PathBuf {
 pub fn compressed_context_dir() -> PathBuf {
     claude_data_dir().join("compressed_context")
 }
+
+/// Path to orchestration state directory: ~/.caf/orch_state/
+pub fn orch_state_dir() -> PathBuf {
+    dirs::home_dir().unwrap_or_else(|| PathBuf::from("/tmp"))
+        .join(".caf").join("orch_state")
+}
+
+/// Path to orchestration guard marker: ~/.caf/orch_state/guard.marker
+pub fn orch_guard_marker_path() -> PathBuf { orch_state_dir().join("guard.marker") }
+
+/// Path to orchestration depth file: ~/.caf/orch_state/depth
+pub fn orch_depth_path() -> PathBuf { orch_state_dir().join("depth") }

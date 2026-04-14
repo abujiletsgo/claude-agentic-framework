@@ -1,5 +1,0 @@
-#!/usr/bin/env -S uv run --script
-print("gen-lead is deprecated. Leads are static — see global-agents/ for the full lead catalog.")
-print("To add a project-specific lead, create .claude/agents/<name>-lead.md manually.")
-import sys
-sys.exit(1)

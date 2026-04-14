@@ -18,6 +18,7 @@ import {
   handleGetCostProjection,
   handlePostCost,
 } from './handlers/costs'
+import { handleGetSessions, handleGetSessionDetail } from './handlers/sessions'
 import type { ApiError } from '../../shared/types'
 
 const server = Bun.serve({
@@ -117,6 +118,19 @@ const server = Bun.serve({
     // POST /api/costs
     if (req.method === 'POST' && pathname === '/api/costs') {
       return handlePostCost(req)
+    }
+
+    // ── Sessions ─────────────────────────────────────────────────
+
+    // GET /api/sessions
+    if (req.method === 'GET' && pathname === '/api/sessions') {
+      return handleGetSessions()
+    }
+
+    // GET /api/sessions/:id
+    const sessionMatch = pathname.match(/^\/api\/sessions\/([^/]+)$/)
+    if (req.method === 'GET' && sessionMatch) {
+      return handleGetSessionDetail(sessionMatch[1] ?? '')
     }
 
     // 404

@@ -29,15 +29,26 @@ Use `lib/cmux_client.py` (already in this repo) or raw socket JSON calls wheneve
 Always check before doing cmux work:
 
 ```python
-import sys; sys.path.insert(0, 'lib')
+import sys, os
+
+# cmux_client is installed globally by install.sh — works from any project
+_caf_lib = os.path.expanduser("~/.claude/lib")
+if _caf_lib not in sys.path:
+    sys.path.insert(0, _caf_lib)
+# Fallback: local lib/ if running from caf-team repo directly
+if os.path.isdir("lib") and "lib" not in sys.path:
+    sys.path.insert(0, "lib")
+
 import cmux_client as cmux
 
 if not cmux.is_available():
-    print("Not running inside cmux — skip or fall back")
+    sid = os.environ.get("CMUX_SURFACE_ID", "<not set>")
+    sock = os.path.expanduser("~/Library/Application Support/cmux/cmux.sock")
+    print(f"cmux not available — CMUX_SURFACE_ID={sid}, socket_exists={os.path.exists(sock)}")
     sys.exit(0)
 ```
 
-`is_available()` returns `True` only when `CMUX_SURFACE_ID` is set AND the socket responds to `system.capabilities`.
+`is_available()` returns `True` only when `CMUX_SURFACE_ID` is set AND the socket responds to `system.capabilities`. The diagnostic print above shows exactly which condition failed.
 
 ## Environment Variables
 

@@ -31,6 +31,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum HookCommand {
+    // ── Session recording ────────────────────────────────────────────────────
+    /// SessionStart/UserPromptSubmit/Stop: record session events to ~/.caf/sessions/
+    SessionRecorder,
+
     // ── SIMPLE hooks (Phase 1 — implemented) ─────────────────────────────────
     /// PostCompact: verify pre-computed summaries were preserved
     PostCompactVerify,
@@ -146,6 +150,7 @@ fn main() {
 
     match cli.command {
         // ── Implemented ──────────────────────────────────────────────────────
+        HookCommand::SessionRecorder => hooks::session_recorder::run(),
         HookCommand::PostCompactVerify => hooks::post_compact_verify::run(),
         HookCommand::FileWatcher => hooks::file_watcher::run(),
         HookCommand::VoiceDone => hooks::voice_done::run(),
@@ -195,6 +200,7 @@ fn main() {
 fn subcommand_name(cmd: &HookCommand) -> &'static str {
     match cmd {
         HookCommand::Doctor => "doctor",
+        HookCommand::SessionRecorder => "session-recorder",
         HookCommand::PostCompactVerify => "post-compact-verify",
         HookCommand::FileWatcher => "file-watcher",
         HookCommand::VoiceDone => "voice-done",

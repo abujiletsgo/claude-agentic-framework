@@ -130,7 +130,7 @@ pub fn run() {
         return;
     }
 
-    // Parse tool_response
+    // Parse tool_response — with fallback to top-level "error" field (PostToolUseFailure events)
     let tool_response = data.get("tool_response");
 
     // Build a unified object with stdout, stderr, exit_code
@@ -150,10 +150,11 @@ pub fn run() {
         .or_else(|| response_obj.get("output"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    let stderr = response_obj
-        .get("stderr")
+    let stderr = data.get("tool_response")
+        .and_then(|tr| tr.get("stderr").or_else(|| tr.get("error")).or_else(|| tr.get("output")))
+        .or_else(|| data.get("error"))
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or(response_obj.get("stderr").and_then(|v| v.as_str()).unwrap_or(""));
 
     // Determine exit code
     let exit_code: Option<i64> = response_obj

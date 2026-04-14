@@ -1,3 +1,4 @@
+# REPLACED BY RUST: caf-hooks enforce-orchestrate
 #!/usr/bin/env python3
 """
 Enforce /orchestrate Skill Invocation - UserPromptSubmit Hook

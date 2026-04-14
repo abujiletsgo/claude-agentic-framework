@@ -74,6 +74,7 @@ class GlobalStats:
     total_failures: int = 0
     hooks_disabled: int = 0
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    doctor_run_count: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""

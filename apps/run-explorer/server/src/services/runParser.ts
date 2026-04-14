@@ -226,7 +226,11 @@ export async function parseProject(orchDir: string): Promise<string | undefined>
 
 export async function parseMissionBrief(orchDir: string): Promise<string> {
   const text = await readText(join(orchDir, 'mission_brief.md'))
-  return text ?? ''
+  if (text !== null) return text
+  // Consultant model (v5+) writes spec.md instead of mission_brief.md
+  const specText = await readText(join(orchDir, 'spec.md'))
+  if (specText !== null) return specText
+  return ''
 }
 
 // ─── parseEvaluation ─────────────────────────────────────────────────────────
@@ -265,12 +269,15 @@ export async function listRuns(): Promise<Run[]> {
   const runs: Run[] = []
   for (const dir of orchDirs) {
     const orchDir = join(ORCH_BASE_DIR, dir)
-    // must have acceptance_criteria.md OR mission_brief.md (older runs may lack the former)
-    const [criteriaText, briefText] = await Promise.all([
+    // must have at least one content sentinel to be shown:
+    // - acceptance_criteria.md / mission_brief.md (old lead model)
+    // - spec.md (consultant model v5+)
+    const [criteriaText, briefText, specText] = await Promise.all([
       readText(join(orchDir, 'acceptance_criteria.md')),
       readText(join(orchDir, 'mission_brief.md')),
+      readText(join(orchDir, 'spec.md')),
     ])
-    if (criteriaText === null && briefText === null) continue
+    if (criteriaText === null && briefText === null && specText === null) continue
 
     const [startTime, leadCount, status, waveCount, tokenEstimate, project] = await Promise.all([
       parseStartTime(orchDir),

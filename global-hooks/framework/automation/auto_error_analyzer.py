@@ -1,3 +1,4 @@
+# REPLACED BY RUST: caf-hooks auto-error-analyzer
 #!/usr/bin/env python3
 """
 Auto Error Analyzer - PostToolUse Hook

@@ -2,21 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-09 (16:57 UTC) · @Tom Kwon
-**Commit:** Merge CAF upstream: v5.0 research intelligence + mempalace removal (ca3e1ea3) by Tom Kwon
-**Changed:**
-  caf-hooks/.claude/MEMORY.md                        |   15 +
-  caf-hooks/src/hooks/voice_done.rs                  |   98 +-
-  data/mempalace.yaml                                |   51 -
-  docs/framework-guide-ko.html                       |  658 +-----------
-  global-agents/academic-researcher.md               |   98 +-
-  global-agents/code-researcher.md                   |   85 +-
-  global-agents/critical-analyst.md                  |   12 +
-  global-agents/meta-agent.md                        |   12 +
-  global-agents/researcher.md                        |  386 +++----
-  global-hooks/framework/aaak_compress.py            |  139 ---
-  ... and 31 more files
-
 ## 2026-04-09 (17:16 UTC) · @Tom Kwon
 **Commit:** docs: auto-regenerate from repo state (8699b21d) by Tom Kwon
 **Changed:**
@@ -303,3 +288,16 @@
 **Changed:**
   global-skills/orchestrate/SKILL.md | 132 ++++++++++++++++++++++++++-----------
   1 file changed, 93 insertions(+), 39 deletions(-)
+
+## 2026-04-14 (07:20 UTC) · @Tom Kwon
+**Commit:** feat(session): orchestration logging, project grouping, install.sh doctor, arch-map v4.2 (7d286ff5) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            | 203 +++++++++++-----
+  .claude/MEMORY.md                                  |  58 ++---
+  .gitignore                                         |   1 +
+  .../client/src/views/RunDetailView.vue             |   5 +-
+  apps/run-explorer/client/src/views/RunListView.vue | 257 ++++++++++++++-------
+  apps/run-explorer/server/.claude/MEMORY.md         |  15 ++
+  apps/run-explorer/shared/types.ts                  |   1 +
+  install.sh                                         |  55 +++++
+  8 files changed, 423 insertions(+), 172 deletions(-)

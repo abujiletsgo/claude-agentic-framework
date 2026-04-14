@@ -6,6 +6,7 @@ const route = useRoute()
 
 const navLinks = [
   { to: '/', label: 'Runs' },
+  { to: '/sessions', label: 'Sessions' },
   { to: '/compare', label: 'Compare' },
   { to: '/health', label: 'Health' },
   { to: '/live', label: 'Live' },

@@ -3,42 +3,57 @@
 /// Python equivalent: global-hooks/framework/guardrails/orch_depth_tracker.py (160 LOC)
 ///
 /// Behavior:
-/// - SubagentStart: read int from /tmp/caf_orch_depth (default 0), increment, write back.
+/// - SubagentStart: read int from depth file (default 0), increment, write back.
 ///   If marker absent and agent is orchestrator → create marker and reset depth to 0 first.
 ///   If marker absent and agent is NOT orchestrator → skip.
 /// - SubagentStop: read int, decrement (min 0), write back.
 ///   If new depth == 0 and agent is orchestrator → cleanup marker + depth files.
 /// - Always exits 0 (never blocks, tracking only).
 use serde_json::Value;
-use std::path::Path;
+use std::fs;
 
 use crate::io::read_stdin_value;
-
-const MARKER_FILE: &str = "/tmp/caf_orch_guard.marker";
-const DEPTH_FILE: &str = "/tmp/caf_orch_depth";
+use crate::state::{orch_depth_path, orch_guard_marker_path, orch_state_dir};
 
 fn get_depth() -> i64 {
-    if !Path::new(DEPTH_FILE).exists() {
+    let path = orch_depth_path();
+    if !path.exists() {
         return 0;
     }
-    match std::fs::read_to_string(DEPTH_FILE) {
-        Ok(s) => s.trim().parse::<i64>().unwrap_or(0),
+    match fs::read_to_string(&path) {
+        Ok(s) => {
+            let s = s.trim();
+            // Try JSON format first: {"depth": N, "ts": "..."}
+            if let Ok(v) = serde_json::from_str::<Value>(s) {
+                if let Some(d) = v.get("depth").and_then(|d| d.as_i64()) {
+                    return d;
+                }
+            }
+            // Fall back to raw integer (old format)
+            s.parse::<i64>().unwrap_or(0)
+        }
         Err(_) => 0,
     }
 }
 
 fn set_depth(depth: i64) {
     let val = std::cmp::max(0, depth);
-    let _ = std::fs::write(DEPTH_FILE, val.to_string());
+    let ts = chrono::Utc::now().to_rfc3339();
+    let json = serde_json::json!({"depth": val, "ts": ts});
+    let _ = fs::create_dir_all(orch_state_dir());
+    let _ = fs::write(orch_depth_path(), json.to_string());
 }
 
 fn cleanup_marker() {
-    let _ = std::fs::remove_file(MARKER_FILE);
-    let _ = std::fs::remove_file(DEPTH_FILE);
+    let _ = fs::remove_file(orch_guard_marker_path());
+    let _ = fs::remove_file(orch_depth_path());
 }
 
 fn touch_marker() {
-    let _ = std::fs::write(MARKER_FILE, "");
+    let ts = chrono::Utc::now().to_rfc3339();
+    let json = serde_json::json!({"ts": ts});
+    let _ = fs::create_dir_all(orch_state_dir());
+    let _ = fs::write(orch_guard_marker_path(), json.to_string());
 }
 
 /// Check if the agent being started/stopped is an orchestrator by inspecting
@@ -88,7 +103,7 @@ pub fn run() {
 
     if is_stop {
         // SubagentStop: decrement depth
-        if !Path::new(MARKER_FILE).exists() {
+        if !orch_guard_marker_path().exists() {
             // No orchestration active — nothing to do
             return;
         }
@@ -103,7 +118,7 @@ pub fn run() {
         }
     } else {
         // SubagentStart: increment depth
-        if !Path::new(MARKER_FILE).exists() {
+        if !orch_guard_marker_path().exists() {
             // Auto-create marker if an orchestrator agent is starting
             if is_orchestrator_agent(&data) {
                 touch_marker();
