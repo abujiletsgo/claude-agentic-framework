@@ -88,6 +88,25 @@ export interface SessionDetail extends SessionSummary {
   messages: SessionMessage[]
 }
 
+export type SessionEventType = 'SessionStart' | 'UserPromptSubmit' | 'Stop'
+
+export interface SessionEvent {
+  ts: string
+  ms: number
+  type: SessionEventType
+  cwd: string
+  prompt?: string  // only on UserPromptSubmit
+}
+
+export interface Session {
+  id: string
+  events: SessionEvent[]
+  startTs: string       // ts of first SessionStart event
+  stopTs?: string       // ts of Stop event if present
+  prompts: string[]     // all prompt previews in order
+  cwd: string           // cwd from SessionStart
+}
+
 export interface OrchEvent {
   ts: string            // ISO 8601 timestamp from events.jsonl
   agent: string         // lead/agent name (e.g. "backend-lead")

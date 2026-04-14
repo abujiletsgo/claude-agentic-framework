@@ -8,7 +8,7 @@
 - **16 Commands** for delegation, orchestration, and planning
 - **30 Skills** for the full engineering lifecycle
 - **10 Guides** covering context engineering to multi-agent patterns
-- **48 Hooks** across 16 event types (damage-control, observability, framework)
+- **48 Hooks** across 16 event types (damage-control, framework)
 - **Knowledge Pipeline**: SQLite FTS5 persistent memory for cross-session learning
 - **Caddy Classifier**: Automatic task routing (direct / orchestrate / rlm / fusion)
 - **RepoMap**: TreeSitter symbol index auto-generated for large repos (≥200 files)
@@ -41,7 +41,6 @@ guides/              10 engineering guides
 docs/                5 reference docs
 data/                model_tiers.yaml + knowledge-db/
 templates/           settings.json.template
-apps/observability/  Vue 3 + Bun (ports 4000/5173)
 archive/             Archived commands, skills, hooks
 ```
 

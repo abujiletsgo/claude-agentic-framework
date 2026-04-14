@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'node:os'
+import type { Session, SessionEvent, SessionEventType } from '../../../shared/types'
 
 const SESSIONS_DIR = join(homedir(), '.caf', 'sessions')
 
@@ -26,14 +27,9 @@ export interface SessionDetail extends SessionSummary {
 }
 
 // ─── JSONL event shape written by caf-hooks session-recorder ─────────────────
+// SessionEvent, Session, SessionEventType are imported from shared/types
 
-interface RawEvent {
-  ts: string      // ISO 8601
-  ms: number      // epoch ms
-  type: string    // SessionStart | UserPromptSubmit | Stop
-  cwd?: string
-  prompt?: string
-}
+type RawEvent = SessionEvent
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

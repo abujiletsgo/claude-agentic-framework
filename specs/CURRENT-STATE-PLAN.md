@@ -1,108 +1,128 @@
-# Plan: CAF v5.1 — What's Next
+<!-- /autoplan restore point: /Users/tomkwon/.gstack/projects/abujiletsgo-caf-team/main-autoplan-restore-20260414-163557.md -->
+# Plan: CAF v5.1 — Stability + Dashboard Consolidation
 
-**Status**: Draft (generated from current system state for /autoplan review)
-**Date**: 2026-04-14
+**Status**: Active (direction decided 2026-04-14)
 **Branch**: main
-**Purpose**: Surface what's working, what's incomplete, and get direction on what to build next.
+**Commit**: f69c539e
+**Decided direction**: Option A (finish session layer) + Option C (merge observability → run-explorer)
 
 ---
 
-## Where We Are Right Now
+## Decided Direction
 
-CAF is a private fork of claude-agentic-framework. It has evolved significantly from the original sprint/tmux plan. Current state:
-
-### What's Live and Working
-
-**Orchestration layer (the big bet)**
-- `/orchestrate` skill uses a consultant-first model: Wave 0a is user ↔ consultant dialogue, Wave 0b is researcher parallelism, Wave 1+ is builders. Consultants ask questions and produce specs — they don't write code.
-- Runs are persisted to `~/.caf/orch/{id}/` with full audit trail (meta.json, events.jsonl, prompts/, results/, shared/)
-- `bin/orch-shared` is the IPC bus: init, broadcast, ask-pm, merge-results, write-retro
-
-**Rust hook binary (caf-hooks)**
-- 25 hooks compiled to a single Rust binary. Covers all 14 event types.
-- Key behaviors: session recording, memory persistence, fact extraction, cost tracking, damage control (100+ patterns), orchestrator depth/tool guards, epistemic injection.
-- New this session: `session_recorder.rs` records every session to `~/.caf/sessions/{id}.jsonl`
-
-**Run Explorer (the dashboard)**
-- Vue 3 + Bun app at `:3001` (server) / `:5173` (client dev)
-- Reads `~/.caf/orch/` for run history, `~/.caf/sessions/` for session history
-- Sessions layer is new and uncommitted: SessionListView, SessionDetailView, sessionParser.ts, sessions handler
-- Has: run list/detail, live event feed, cost tracking, lead accordion, comparison view, health view
-
-**Global hooks (Python)**
-- 128 Python hook scripts across the framework
-- session_startup.py orchestrates SessionStart: lock → verify → prime → inject_skills
-- Memory/facts are auto-written at Stop, auto-injected at SessionStart
-
-**Agent ecosystem**
-- 22 agents: orchestrator, po, 4 consultants (arch, backend, frontend, security), builder, debugger, validator, researcher, academic-researcher, code-researcher, meta-agent, and others
-- Lead agents were REMOVED (architecture-lead, backend-lead, etc.) — replaced by read-only consultants that ask questions not write code
-
-**Research intelligence**
-- 4 domain research skills: research-academic, research-code, research-news, research-docs
-- academic-researcher + code-researcher agents (MCP-backed)
-- lib/toon_utils.py for token-efficient inter-agent data encoding
-
-**cmux integration** (caf-team specific — not upstream CAF)
-- `bin/cmux-sprint` replaces the old tmux-sprint concept
-- cmux is the default terminal multiplexer for caf-team
-
-**Install + ops**
-- `bash install.sh` builds Rust binary, links all global-* dirs, generates settings.json
-- `install.sh doctor` runs full health check via caf-hooks doctor subcommand
-- Tests: 14 test modules in tests/audit/ covering hooks, orchestration, session pipeline
+- **Audience**: Small team, private use
+- **Consultant model**: Good as-is. Keep Wave 0a → spec → builders flow unchanged.
+- **Dashboard**: Merge `apps/observability/` into `apps/run-explorer/`. One app, one source of truth.
+- **Priority**: Stability + cleanup over new features.
+- **cmux**: Still in use as a terminal multiplexer. `cmux-skill` is live. cmux-based agent orchestration (spawning leads into panes) failed — removed. /orchestrate with Agent() calls is the orchestration path.
 
 ---
 
-## What's Incomplete / In-Flight
+## Current State (post-2026-04-14 cleanup)
 
-### Session layer (uncommitted)
-- `session_recorder.rs` records sessions to `~/.caf/sessions/` — new, uncommitted
-- `sessionParser.ts` + `SessionListView.vue` + `SessionDetailView.vue` — new, uncommitted
-- No shared schema between recorder (Rust) and parser (TypeScript) — field names are implicit
-- Session data not yet surfaced anywhere meaningful beyond the list view
+### What's live and working
+- `/orchestrate` skill: PO + consultant model → spec → parallel builders. Runs persisted to `~/.caf/orch/`.
+- `caf-hooks` Rust binary: 48 hooks, 16 event types. session_recorder.rs committed this session.
+- `run-explorer`: Vue 3 + Bun at :3001 (server) / :5173 (client). Reads `~/.caf/orch/` + `~/.caf/sessions/`.
+  - SessionListView + SessionDetailView committed this session.
+- `global-hooks/`: 50 Python hooks.
+- 21 agents, 16 commands, 30 skills. cmux-skill still active.
+- `bash install.sh`: builds Rust binary, links symlinks, generates settings.json.
 
-### Known gaps (from architecture review today)
-- Port numbers hardcoded in two places (server config + client config)
-- `~/.caf/orch/` base path defined in both `config.ts` and `bin/orch-shared` — not DRY
-- Damage control patterns split across Rust (settings.json rules) and Python (patterns.yaml) — must be kept in sync manually
-- `specs/PLAN.md` is stale — describes tmux-based sprint system that was superseded by cmux + consultant model
-
-### Missing / uncertain
-- No project-level grouping in session view (sessions from different projects mixed)
-- No way to correlate a session to the orch runs it spawned
-- TUI dashboard (Textual/sprint_tui.py) from old plan — never built, replaced by run-explorer
-- `apps/observability/` exists as a separate app — its relationship to run-explorer is unclear. Duplication?
-- `bin/cdash`, `bin/cteam`, `bin/open-task-pane` — bins that may no longer be used now that cmux-sprint is the primary orchestration surface
-- mempalace integration — `.mempalace/` directory exists with knowledge_graph.sqlite3 but unclear what actively writes/reads it now that sprint hooks were removed
+### Removed this session (dead experiments)
+- `bin/cmux-sprint`, `bin/caf-eval`, `bin/caf-ref`, `bin/cdash`, `bin/cteam`, `bin/gen-lead`, `bin/gstack-bridge`, `bin/open-task-pane`, 3 event scripts
+- `lib/cmux_client.py` (cmux agent IPC — only the orchestration client, not cmux itself)
+- `check_gstack.py`, `inject_sprint_context.py` (dead hook scripts)
+- `specs/PLAN.md` (stale 1278-line tmux sprint plan)
+- `.mempalace/` (knowledge graph experiment, nothing wrote to it)
 
 ---
 
-## Proposed Next Directions (for review)
+## What's Incomplete
 
-These are guesses. I want /autoplan to help me validate which is right.
+### P0 — Implicit session schema (fragile)
+- `session_recorder.rs` writes JSONL fields with no contract
+- `sessionParser.ts` reads those fields with no contract
+- If Rust changes a field name, TypeScript silently reads `undefined`
+- **Fix**: Define `apps/run-explorer/shared/types.ts` session schema types that mirror what session_recorder.rs writes. Add a smoke test that parses a real session file.
 
-**Option A: Finish what's started**
-Commit the session layer, add schema validation between Rust/TS, correlate sessions to orch runs in the UI, clean up the port/path duplication.
+### P1 — Dashboard consolidation
+- `apps/observability/` reads `events.db` (SQLite written by hook PostToolUse events)
+- `apps/run-explorer/` reads file-based JSONL (`~/.caf/orch/`, `~/.caf/sessions/`)
+- Two apps, two data sources, overlapping purpose
+- **Fix**: Identify what observability shows that run-explorer doesn't. Add missing views to run-explorer. Delete `apps/observability/`.
+- **Key decision**: SQLite vs JSONL? JSONL is already working, human-readable, append-only. SQLite is queryable. Lean JSONL unless there's a specific query need.
 
-**Option B: Strengthen the consultant model**
-The consultant-first orchestration is the core bet. Make it better: better question batching, better spec → builder handoff, better acceptance criteria validation.
+### P1 — Session ↔ orch correlation
+- A session in run-explorer has no link to the /orchestrate run it was spawned inside
+- **Fix**: session_recorder.rs writes `orch_run_id` when `CAF_ORCH_ID` env var is set. run-explorer shows the link in both directions.
 
-**Option C: Observability consolidation**
-`apps/observability/` and `apps/run-explorer/` partially overlap. Merge or clearly delineate. The observability app reads events.db (SQLite from hook events), run-explorer reads file-based JSONL. Pick one source of truth.
+### P2 — Hardcoded ports + paths
+- `apps/run-explorer/server/src/index.ts`: port 3001 hardcoded
+- Client API base URL hardcoded
+- `~/.caf/orch/` path defined in both `config.ts` and `bin/orch-shared`
+- **Fix**: env vars with documented defaults. One config file.
 
-**Option D: cmux-sprint as the primary /sprint**
-The old sprint plan described a PM → Lead → Worker hierarchy via tmux panes. cmux can do this. Build it properly as a `/sprint` skill on top of cmux.
-
-**Option E: Upstream contribution**
-Extract the terminal-agnostic parts back to claude-agentic-framework (upstream). caf-team becomes the cmux-opinionated layer on top.
+### P2 — Project grouping in session view
+- Sessions from all projects mixed together
+- session_recorder.rs writes `project_root` field — verify this is wired through to the UI
 
 ---
 
-## Key Questions for /autoplan CEO Review
+## Implementation Phases
 
-1. Is the consultant model (read-only consultants → spec → builders) the right architecture, or does it add friction without adding quality?
-2. Is run-explorer the right dashboard surface, or should it be integrated into cmux-sprint as panels?
-3. What is the relationship between caf-team and upstream claude-agentic-framework? Is caf-team meant to be upstreamed or permanently diverged?
-4. Are the 128 Python hooks + 25 Rust hooks too complex? What's the maintenance cost at this scale?
-5. What does "done" look like for caf-team? Ship it as a product? Use it internally? Open source it?
+### Phase 1: Schema contract (P0, ~2h CC)
+1. Audit all fields session_recorder.rs writes to JSONL
+2. Add TypeScript types to `apps/run-explorer/shared/types.ts` mirroring those fields
+3. Update sessionParser.ts to use the typed interface
+4. Add smoke test: read a real `~/.caf/sessions/*.jsonl` file, verify parse doesn't produce undefined fields
+
+### Phase 2: Dashboard consolidation (P1, ~4h CC)
+1. Audit `apps/observability/`: what views does it have that run-explorer lacks?
+2. Implement missing views in run-explorer (hook event log? per-tool cost breakdown?)
+3. Verify JSONL covers the same data as events.db for those views
+4. Delete `apps/observability/`
+5. Update CLAUDE.md, README, install.sh
+
+### Phase 3: Session ↔ orch correlation (P1, ~3h CC)
+1. session_recorder.rs: read `CAF_ORCH_ID` from env, write to session JSONL if set
+2. orch-shared init: export `CAF_ORCH_ID` for subprocesses
+3. SessionDetailView: show "spawned by orch run X" link if `orch_run_id` present
+4. RunDetailView: show list of sessions spawned during this run
+
+### Phase 4: Config cleanup (P2, ~1h CC)
+1. `run-explorer/server/src/config.ts`: read port + orch path from env vars
+2. `run-explorer/client`: use `VITE_API_URL` env var for API base
+3. `bin/orch-shared`: source orch path from same env var or well-known location
+4. Document all env vars in README
+
+---
+
+## Premises (for CEO review)
+
+1. JSONL is the right long-term storage format (not SQLite). Simpler, human-readable, already working.
+2. The consultant model is correct and stable.
+3. One dashboard is strictly better than two partial ones.
+4. The session layer is the highest-value incomplete piece (schema fragility is a real risk).
+5. Session ↔ orch correlation is genuinely useful for debugging multi-agent runs.
+
+---
+
+## Out of Scope
+
+- cmux as agent orchestration (done, removed)
+- Upstream contribution to claude-agentic-framework (diverge for now)
+- Strengthening consultant model (good enough)
+- New agent types
+- TUI dashboard
+
+---
+
+## Decision Audit Trail
+
+| # | Phase | Decision | Classification | Principle | Rationale | Rejected |
+|---|-------|----------|----------------|-----------|-----------|---------|
+| 1 | CEO | cmux orchestration removed | Mechanical | P3 (pragmatic) | Tested and failed, burned tokens | Keep cmux-sprint |
+| 2 | CEO | JSONL over SQLite | Taste → decided | P5 (explicit) | Already working, human-readable | SQLite (queryable but adds tooling) |
+| 3 | CEO | Merge dashboards | Mechanical | P4 (DRY) | Two apps doing same thing | Keep separate |
+| 4 | CEO | Consultant model unchanged | Mechanical | P3 (pragmatic) | Working well, no evidence of friction | Strengthen |

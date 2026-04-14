@@ -2,42 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-09 (17:16 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (8699b21d) by Tom Kwon
-**Changed:**
-  CLAUDE.md |  2 +-
-  README.md | 16 ++++++----------
-  2 files changed, 7 insertions(+), 11 deletions(-)
-
-## 2026-04-10 (05:14 UTC) · @Tom Kwon
-**Commit:** feat: cmux sprint system + mempalace stub cleanup (9d879894) by Tom Kwon
-**Changed:**
-  bin/cmux-sprint                                    | 293 ++++++++++++++++++
-  bin/sprint-view                                    | 327 +++++++++++++++++++++
-  data/sprint_config.yaml                            |  16 +-
-  .../hooks_SubagentStop/sprint_palace_store.py      |  99 +------
-  global-skills/sprint/SKILL.md                      |  27 +-
-  lib/agent_display.py                               | 171 +++++++++++
-  lib/cmux_client.py                                 | 112 +++++++
-  PLAN.md => specs/PLAN.md                           |   0
-  tests/test_cmux_integration.py                     | 266 +++++++++++++++++
-  9 files changed, 1206 insertions(+), 105 deletions(-)
-
-## 2026-04-10 (07:25 UTC) · @Tom Kwon
-**Commit:** feat: cmux-native dashboard — always-on report + sprint panels via cteam (82d5d2fa) by Tom Kwon
-**Changed:**
-  CLAUDE.md                                          |   2 +-
-  README.md                                          |   6 +-
-  bin/cmux-sprint                                    |   2 +
-  bin/cteam                                          |  64 ++++
-  dashboard/activity_report.py                       | 187 ++++++++++
-  dashboard/sprint_dashboard.py                      | 373 ++++++++++++++++++++
-  dashboard/sprint_overview.py                       | 154 +++++++++
-  dashboard/sprint_report.py                         | 383 +++++++++++++++++++++
-  .../framework/automation/activity_logger.py        | 114 ++++++
-  global-skills/sprint/SKILL.md                      |  40 +--
-  ... and 2 more files
-
 ## 2026-04-10 (16:48 UTC) · @Tom Kwon
 **Commit:** feat: cmux-native per-task report panes + session tracker (4fece86a) by Tom Kwon
 **Changed:**
@@ -301,3 +265,32 @@
   apps/run-explorer/shared/types.ts                  |   1 +
   install.sh                                         |  55 +++++
   8 files changed, 423 insertions(+), 172 deletions(-)
+
+## 2026-04-14 (07:21 UTC) · @Tom Kwon
+**Commit:** chore: remove dead sprint/cmux/mempalace systems + ship session layer (12e1736d) by Tom Kwon
+**Changed:**
+  .claude/ARCHITECTURE.md                            |  517 ++++----
+  .claude/FACTS.md                                   |    6 +-
+  .claude/MEMORY.md                                  |   28 +-
+  .claude/PROJECT_CONTEXT.md                         |  141 ++-
+  CLAUDE.md                                          |    6 +-
+  README.md                                          |   11 +-
+  apps/run-explorer/client/src/App.vue               |    1 +
+  .../client/src/composables/useSessions.ts          |   29 +
+  apps/run-explorer/client/src/router/index.ts       |    4 +
+  .../client/src/views/SessionDetailView.vue         |  201 +++
+  ... and 49 more files
+
+## 2026-04-14 (07:26 UTC) · @Tom Kwon
+**Commit:** chore(tidy): update doc counts, commit autoplan output (a056aee9) by Tom Kwon
+**Changed:**
+  CLAUDE.md                   |   4 +-
+  specs/CURRENT-STATE-PLAN.md | 108 ++++++++++++++++++++++++++++++++++++++++++++
+  2 files changed, 110 insertions(+), 2 deletions(-)
+
+## 2026-04-14 (07:44 UTC) · @Tom Kwon
+**Commit:** fix(hooks): remove deleted hook refs from template, regenerate settings (f69c539e) by Tom Kwon
+**Changed:**
+  CLAUDE.md                        |  6 +++---
+  templates/settings.json.template | 18 ------------------
+  2 files changed, 3 insertions(+), 21 deletions(-)

@@ -65,9 +65,9 @@ from datetime import datetime, timezone
 
 CAF_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAF_DIR / "lib"))
-import cmux_client as cmux  # noqa
+# cmux_client removed — cmux used only as CLI via subprocess below
 
-ORCH_BASE = Path.home() / ".caf" / "orch"
+ORCH_BASE = Path(os.environ.get("CAF_ORCH_DIR", str(Path.home() / ".caf" / "orch")))
 
 
 def ts() -> str:
@@ -396,7 +396,6 @@ def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> Non
         print(f"[orch-shared] broadcast written to discoveries.jsonl (no active panes to notify)")
         return
 
-    cmux_bin = CAF_DIR / "bin" / "cmux-sprint"
     alert = (
         f"[BROADCAST from {from_lead} — topic: {topic}]\n"
         f"{message}\n\n"
@@ -406,16 +405,17 @@ def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> Non
         f"If no, continue as planned."
     )
 
+    # Write broadcast alert to per-lead message files (agents poll these)
     sent = []
     for name in recipients:
         try:
-            subprocess.run(
-                [sys.executable, str(cmux_bin), "send-agent", orch_id, name, alert],
-                check=False, timeout=10,
-            )
+            msg_file = Path(f"/tmp/caf_orch/{orch_id}/messages/{name}.msg")
+            msg_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(msg_file, "a") as mf:
+                mf.write(alert + "\n")
             sent.append(name)
         except Exception as exc:
-            print(f"[orch-shared] could not send to {name}: {exc}", file=sys.stderr)
+            print(f"[orch-shared] could not write message for {name}: {exc}", file=sys.stderr)
 
     print(f"[orch-shared] broadcast '{topic}' → {', '.join(sent) or 'none'}")
 

@@ -1,11 +1,14 @@
 import { homedir } from 'node:os'
 import { join } from 'path'
+import os from 'os'
 
-export const PORT = parseInt(process.env['BUN_PORT'] ?? '3001', 10)
+export const PORT = parseInt(process.env.RUN_EXPLORER_PORT ?? '3001', 10)
 
-export const ORCH_BASE_DIR = join(homedir(), '.caf', 'orch')
+export const ORCH_BASE_DIR = process.env.CAF_ORCH_DIR ?? join(os.homedir(), '.caf', 'orch')
 
-export const EVENTS_DB_PATH = join(import.meta.dir, '../../../../apps/observability/server/events.db')
+export const SESSIONS_BASE_DIR = process.env.CAF_SESSIONS_DIR ?? join(os.homedir(), '.caf', 'sessions')
+
+export const EVENTS_DB_PATH = process.env.CAF_EVENTS_DB ?? join(homedir(), '.caf', 'events.db')
 
 export const RECENT_EVENTS_LIMIT = 10
 
