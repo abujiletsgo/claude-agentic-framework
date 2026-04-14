@@ -1,5 +1,5 @@
 ---
-name: codex
+name: gemini
 preamble-tier: 3
 version: 2.0.0
 description: |
@@ -25,9 +25,9 @@ allowed-tools:
 
 {{BASE_BRANCH_DETECT}}
 
-# /codex — Gemini Second Opinion
+# /gemini — Gemini Second Opinion
 
-You are running the `/codex` skill. This drives the Gemini CLI (`gemini -p`) to get an
+You are running the `/gemini` skill. This drives the Gemini CLI (`gemini -p`) to get an
 independent, brutally honest second opinion from a different AI system.
 
 Gemini is direct, technically precise, and challenges assumptions. Present its output
@@ -332,7 +332,7 @@ GEMINI SAYS (consult):
 ════════════════════════════════════════════════════════════
 <full output, verbatim>
 ════════════════════════════════════════════════════════════
-Run /codex again to continue this conversation (Gemini --resume).
+Run /gemini again to continue this conversation (Gemini --resume).
 ```
 
 7. After presenting, note any points where Gemini's analysis differs from your own
@@ -350,7 +350,7 @@ rm -f "$TMPERR" "$TMPRESP"
 
 Gemini CLI uses whatever model is configured in `~/.gemini/config.yaml` (default:
 `gemini-2.5-pro`). If the user wants a specific model, pass `-m <model>`:
-`/codex review -m gemini-2.5-flash`
+`/gemini review -m gemini-2.5-flash`
 
 ---
 

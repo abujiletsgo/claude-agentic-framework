@@ -1,5 +1,5 @@
 ---
-name: codex
+name: gemini
 preamble-tier: 3
 version: 2.0.0
 description: |
@@ -50,7 +50,7 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"codex","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+echo '{"skill":"gemini","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 # zsh-compatible: use find instead of glob to avoid NOMATCH error
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do
@@ -75,7 +75,7 @@ else
   echo "LEARNINGS: 0"
 fi
 # Session timeline: record skill start (local-only, never sent anywhere)
-~/.claude/skills/gstack/bin/gstack-timeline-log '{"skill":"codex","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
+~/.claude/skills/gstack/bin/gstack-timeline-log '{"skill":"gemini","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
 # Check if CLAUDE.md has routing rules
 _HAS_ROUTING="no"
 if [ -f CLAUDE.md ] && grep -q "## Skill routing" CLAUDE.md 2>/dev/null; then
@@ -482,7 +482,7 @@ artifacts that inform the plan, not code changes:
 
 - `$B` commands (browse: screenshots, page inspection, navigation, snapshots)
 - `$D` commands (design: generate mockups, variants, comparison boards, iterate)
-- `/codex` skill (gemini -p: outside voice, plan review, adversarial challenge)
+- `/gemini` skill (gemini -p: outside voice, plan review, adversarial challenge)
 - Writing to `~/.gstack/` (config, analytics, review logs, design artifacts, learnings)
 - Writing to the plan file (already allowed by plan mode)
 - `open` commands for viewing generated artifacts (comparison boards, HTML previews)
@@ -540,7 +540,7 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | \`/plan-ceo-review\` | Scope & strategy | 0 | — | — |
-| Gemini Review | \`/codex review\` | Independent 2nd opinion | 0 | — | — |
+| Gemini Review | \`/gemini review\` | Independent 2nd opinion | 0 | — | — |
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 | DX Review | \`/plan-devex-review\` | Developer experience gaps | 0 | — | — |
@@ -591,9 +591,9 @@ branch name wherever the instructions say "the base branch" or `<default>`.
 
 ---
 
-# /codex — Gemini Second Opinion
+# /gemini — Gemini Second Opinion
 
-You are running the `/codex` skill. This drives the Gemini CLI (`gemini -p`) to get an
+You are running the `/gemini` skill. This drives the Gemini CLI (`gemini -p`) to get an
 independent, brutally honest second opinion from a different AI system.
 
 Gemini is direct, technically precise, and challenges assumptions. Present its output
@@ -968,7 +968,7 @@ GEMINI SAYS (consult):
 ════════════════════════════════════════════════════════════
 <full output, verbatim>
 ════════════════════════════════════════════════════════════
-Run /codex again to continue this conversation (Gemini --resume).
+Run /gemini again to continue this conversation (Gemini --resume).
 ```
 
 7. After presenting, note any points where Gemini's analysis differs from your own
@@ -986,7 +986,7 @@ rm -f "$TMPERR" "$TMPRESP"
 
 Gemini CLI uses whatever model is configured in `~/.gemini/config.yaml` (default:
 `gemini-2.5-pro`). If the user wants a specific model, pass `-m <model>`:
-`/codex review -m gemini-2.5-flash`
+`/gemini review -m gemini-2.5-flash`
 
 ---
 

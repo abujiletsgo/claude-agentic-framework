@@ -464,7 +464,7 @@ artifacts that inform the plan, not code changes:
 
 - `$B` commands (browse: screenshots, page inspection, navigation, snapshots)
 - `$D` commands (design: generate mockups, variants, comparison boards, iterate)
-- `/codex` skill (gemini -p: outside voice, plan review, adversarial challenge)
+- `/gemini` skill (gemini -p: outside voice, plan review, adversarial challenge)
 - Writing to `~/.gstack/` (config, analytics, review logs, design artifacts, learnings)
 - Writing to the plan file (already allowed by plan mode)
 - `open` commands for viewing generated artifacts (comparison boards, HTML previews)
@@ -522,7 +522,7 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | \`/plan-ceo-review\` | Scope & strategy | 0 | — | — |
-| Gemini Review | \`/codex review\` | Independent 2nd opinion | 0 | — | — |
+| Gemini Review | \`/gemini review\` | Independent 2nd opinion | 0 | — | — |
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 | DX Review | \`/plan-devex-review\` | Developer experience gaps | 0 | — | — |
