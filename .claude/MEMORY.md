@@ -2,28 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (17:21 UTC) · @Tom Kwon
-**Commit:** feat: caf-hud — always-on Rust TUI with idle mode + job tabs + auto-launch (96e46936) by Tom Kwon
-**Changed:**
-  .gitignore                                        |    3 +
-  Cargo.lock                                        | 1260 +++++++++++++++++++++
-  Cargo.toml                                        |    9 +
-  bin/cmux-sprint                                   |   56 +-
-  caf-hooks/Cargo.toml                              |    6 -
-  caf-hud/Cargo.toml                                |   12 +
-  caf-hud/src/main.rs                               |  882 +++++++++++++++
-  global-hooks/framework/session/session_startup.py |    1 +
-  global-hooks/framework/session/spawn_hud.py       |   70 ++
-  global-skills/orchestrate/SKILL.md                |   26 +-
-  ... and 1 more files
-
-## 2026-04-10 (17:33 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (82d6a85d) by Tom Kwon
-**Changed:**
-  CLAUDE.md | 2 +-
-  README.md | 6 +++---
-  2 files changed, 4 insertions(+), 4 deletions(-)
-
 ## 2026-04-10 (17:39 UTC) · @Tom Kwon
 **Commit:** docs: auto-regenerate from repo state (ca4b3cf6) by Tom Kwon
 **Changed:**
@@ -292,3 +270,33 @@
   apps/observability/client/package.json             |   27 -
   apps/observability/client/postcss.config.js        |    6 -
   ... and 67 more files
+
+## 2026-04-14 (13:46 UTC) · @Tom Kwon
+**Commit:** feat(gstack): switch /codex second opinion to Gemini CLI (a825ab88) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |  40 +-
+  global-skills/gstack/SKILL.md                      |   4 +-
+  global-skills/gstack/autoplan/SKILL.md             |   4 +-
+  global-skills/gstack/benchmark/SKILL.md            |   4 +-
+  global-skills/gstack/browse/SKILL.md               |   4 +-
+  global-skills/gstack/canary/SKILL.md               |   4 +-
+  global-skills/gstack/checkpoint/SKILL.md           |   4 +-
+  global-skills/gstack/codex/SKILL.md                | 439 +++++++++-----------
+  global-skills/gstack/codex/SKILL.md.tmpl           | 445 +++++++++------------
+  global-skills/gstack/cso/SKILL.md                  |   4 +-
+  ... and 26 more files
+
+## 2026-04-17 (04:21 UTC) · @Tom Kwon
+**Commit:** refactor(gstack): rename /codex skill to /gemini (d1e0727d) by Tom Kwon
+**Changed:**
+  global-skills/gstack/SKILL.md                        |  4 ++--
+  global-skills/gstack/autoplan/SKILL.md               |  4 ++--
+  global-skills/gstack/benchmark/SKILL.md              |  4 ++--
+  global-skills/gstack/browse/SKILL.md                 |  4 ++--
+  global-skills/gstack/canary/SKILL.md                 |  4 ++--
+  global-skills/gstack/checkpoint/SKILL.md             |  4 ++--
+  global-skills/gstack/cso/SKILL.md                    |  4 ++--
+  global-skills/gstack/design-consultation/SKILL.md    |  4 ++--
+  global-skills/gstack/design-html/SKILL.md            |  4 ++--
+  global-skills/gstack/design-review/SKILL.md          |  4 ++--
+  ... and 25 more files

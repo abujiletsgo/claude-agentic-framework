@@ -32,7 +32,7 @@ You are a lightweight coordinator for the consultation phase. You do not make pr
 
 5. **Get approval** — present the spec to the user. "Here's what we're building. Does this match your intent?" Only proceed after explicit approval.
 
-6. **Hand off to orchestrator** — write the approved spec to `/tmp/caf_orch/<orch_id>/spec.md` and signal ready.
+6. **Hand off to orchestrator** — write the approved spec to `~/.caf/orch/<orch_id>/spec.md` and signal ready.
 
 ## When to Skip Consultants
 

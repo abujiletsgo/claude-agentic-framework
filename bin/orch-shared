@@ -52,6 +52,17 @@ Subcommands:
   write-retro <orch_id>
       Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
       Reads working memory, test results, and evaluation report.
+
+  write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>
+      Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update
+      running totals. Agents call this optionally to self-report token counts.
+
+  read-costs <orch_id>
+      Read actual token costs for a run from ~/.claude/logs/cost_tracking.jsonl.
+      Uses timestamp window from events.jsonl to identify run boundaries.
+      Prints a formatted cost summary (total + per-agent). Falls back to
+      cost.json["summary"] if no events.jsonl timestamp window is available.
+      Exit code 0 always (prints "(no cost data)" on failure).
 """
 
 import sys
@@ -60,6 +71,7 @@ import os
 import time
 import fcntl
 import subprocess
+import tempfile
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -133,6 +145,27 @@ def cmd_init(orch_id: str) -> None:
     meta_path = ORCH_BASE / orch_id / "meta.json"
     if not meta_path.exists():
         meta_path.write_text(json.dumps({"orch_id": orch_id, "cwd": str(Path.cwd())}))
+
+    # Write current_orch_id so session_recorder hook can correlate sessions to this run
+    caf_dir = Path.home() / ".caf"
+    caf_dir.mkdir(parents=True, exist_ok=True)  # ensure ~/.caf exists
+    current_orch_file = caf_dir / "current_orch_id"
+    try:
+        data = json.dumps({
+            "orch_id": orch_id,
+            "started_at": datetime.now(timezone.utc).isoformat()
+        })
+        # Atomic write: write to temp then rename
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=str(caf_dir), prefix=".current_orch_id_")
+        try:
+            os.write(tmp_fd, data.encode())
+            os.fsync(tmp_fd)
+        finally:
+            os.close(tmp_fd)
+        os.rename(tmp_path, str(current_orch_file))
+    except OSError as e:
+        print(f"[orch-shared] WARNING: could not write current_orch_id: {e}", file=sys.stderr)
+        # Non-fatal: orch run continues, sessions just won't be correlated
 
     print(f"[orch-shared] initialized shared workspace: {sd}")
 
@@ -685,6 +718,21 @@ def cmd_write_retro(orch_id: str) -> None:
             pass
     test_section = f"passed: {passed}  failed: {failed}  total: {passed + failed}"
 
+    # Cost section
+    cost_section = ""
+    for base in (job_dir, archive_dir):
+        cost_path = base / "cost.json"
+        if cost_path.exists():
+            try:
+                cost_data = json.loads(cost_path.read_text())
+                cost_section = f"""
+## Cost Estimate
+{cost_data.get('summary', 'N/A')}
+"""
+            except Exception:
+                pass
+            break
+
     retro_content = f"""# Retrospective — {orch_id}
 Generated: {ts()}
 
@@ -699,7 +747,7 @@ Generated: {ts()}
 
 ## Test Results
 {test_section}
-
+{cost_section}
 ## Gaps and Learnings
 (fill in manually after reviewing the run)
 """
@@ -709,6 +757,158 @@ Generated: {ts()}
     out_path = out_dir / "retro.md"
     out_path.write_text(retro_content)
     print(f"[orch-shared] retro written to {out_path}")
+
+
+# ---------------------------------------------------------------------------
+# write-cost
+# ---------------------------------------------------------------------------
+
+def cmd_write_cost(orch_id: str, agent_name: str, model: str,
+                   input_tokens: int, output_tokens: int) -> None:
+    """Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update summary."""
+    cost_path = ORCH_BASE / orch_id / "cost.json"
+    cost_path.parent.mkdir(parents=True, exist_ok=True)
+
+    entry = {
+        "ts": ts(),
+        "agent": agent_name,
+        "model": model,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+    }
+
+    # Read existing data or start fresh
+    cost_data: dict = {"entries": [], "summary": ""}
+    if cost_path.exists():
+        try:
+            cost_data = json.loads(cost_path.read_text())
+        except Exception:
+            cost_data = {"entries": [], "summary": ""}
+
+    cost_data.setdefault("entries", [])
+    cost_data["entries"].append(entry)
+
+    total_input = sum(e.get("input_tokens", 0) for e in cost_data["entries"])
+    total_output = sum(e.get("output_tokens", 0) for e in cost_data["entries"])
+    agent_count = len(cost_data["entries"])
+    cost_data["summary"] = (
+        f"Total: {total_input:,} input, {total_output:,} output tokens "
+        f"across {agent_count} agent(s)"
+    )
+
+    # Atomic write with lock
+    tmp_path = cost_path.with_suffix(".json.tmp")
+    with tmp_path.open("w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(cost_data, indent=2))
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    tmp_path.replace(cost_path)
+
+    print(f"[orch-shared] cost recorded for {agent_name}: {input_tokens} in, {output_tokens} out")
+    print(f"[orch-shared] running total: {cost_data['summary']}")
+
+
+# ---------------------------------------------------------------------------
+# read-costs
+# ---------------------------------------------------------------------------
+
+COST_LOG_PATH = Path.home() / ".claude" / "logs" / "cost_tracking.jsonl"
+
+
+def cmd_read_costs(orch_id: str) -> None:
+    """Read actual token costs for a run from cost_tracking.jsonl using events.jsonl window."""
+    events_path = ORCH_BASE / orch_id / "events.jsonl"
+    cost_json_path = ORCH_BASE / orch_id / "cost.json"
+
+    def _fallback() -> None:
+        if cost_json_path.exists():
+            try:
+                data = json.loads(cost_json_path.read_text())
+                summary = data.get("summary", "")
+                if summary:
+                    print(summary)
+                    return
+            except Exception:
+                pass
+        print("(no cost data)")
+
+    # Step 1: parse events.jsonl for min/max ts
+    min_ms: int | None = None
+    max_ms: int | None = None
+
+    if events_path.exists():
+        for line in events_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                ts_raw = obj.get("ts", "")
+                if not ts_raw:
+                    continue
+                epoch_ms = int(datetime.fromisoformat(ts_raw.replace("Z", "+00:00")).timestamp() * 1000)
+                if min_ms is None or epoch_ms < min_ms:
+                    min_ms = epoch_ms
+                if max_ms is None or epoch_ms > max_ms:
+                    max_ms = epoch_ms
+            except Exception:
+                continue
+
+    if min_ms is None or max_ms is None:
+        _fallback()
+        return
+
+    window_end = max_ms + 5 * 60 * 1000
+
+    # Step 2: read cost_tracking.jsonl and filter by window
+    if not COST_LOG_PATH.exists():
+        _fallback()
+        return
+
+    # agent_name -> {input_tokens, output_tokens, cost_usd, model}
+    per_agent: dict[str, dict] = {}
+
+    for line in COST_LOG_PATH.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+            epoch_ms = obj.get("epoch_ms", 0)
+            if epoch_ms < min_ms or epoch_ms > window_end:
+                continue
+            agent_name = obj.get("agent_name", "unknown")
+            model = obj.get("model", "")
+            if agent_name not in per_agent:
+                per_agent[agent_name] = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "model": model}
+            per_agent[agent_name]["input_tokens"] += int(obj.get("input_tokens", 0))
+            per_agent[agent_name]["output_tokens"] += int(obj.get("output_tokens", 0))
+            per_agent[agent_name]["cost_usd"] += float(obj.get("cost_usd", 0.0))
+            if model:
+                per_agent[agent_name]["model"] = model
+        except Exception:
+            continue
+
+    if not per_agent:
+        _fallback()
+        return
+
+    # Step 3: aggregate totals and print
+    total_input = sum(v["input_tokens"] for v in per_agent.values())
+    total_output = sum(v["output_tokens"] for v in per_agent.values())
+    total_cost = sum(v["cost_usd"] for v in per_agent.values())
+
+    print(f"Total: ${total_cost:.4f}  ({total_input:,} input, {total_output:,} output tokens)")
+    print()
+    print("Per agent:")
+    for agent_name, data in sorted(per_agent.items()):
+        model = data["model"]
+        cost = data["cost_usd"]
+        ni = data["input_tokens"]
+        no = data["output_tokens"]
+        print(f"  {agent_name:<30} {model:<20} ${cost:.4f}   {ni:,} in / {no:,} out")
 
 
 # ---------------------------------------------------------------------------
@@ -950,6 +1150,11 @@ Subcommands:
       Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
       Reads working memory, test results, and evaluation report.
 
+  write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>
+      Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update
+      running totals. Agents call this optionally to self-report token counts.
+      write-retro will include the cost summary if cost.json exists.
+
   message-lead <orch_id> <lead> <message>
       Send a message to a lead's cmux pane. Falls back to writing a message file
       at /tmp/caf_orch/<orch_id>/messages/<lead>.msg if cmux is unavailable.
@@ -1035,6 +1240,17 @@ def main() -> None:
             print("Usage: orch-shared write-retro <orch_id>", file=sys.stderr)
             sys.exit(1)
         cmd_write_retro(args[1])
+    elif sub == "write-cost":
+        if len(args) < 6:
+            print("Usage: orch-shared write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>",
+                  file=sys.stderr)
+            sys.exit(1)
+        cmd_write_cost(args[1], args[2], args[3], int(args[4]), int(args[5]))
+    elif sub == "read-costs":
+        if len(args) < 2:
+            print("Usage: orch-shared read-costs <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_read_costs(args[1])
     elif sub == "message-lead":
         if len(args) < 4:
             print("Usage: orch-shared message-lead <orch_id> <lead> <message>", file=sys.stderr)

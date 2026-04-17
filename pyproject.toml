@@ -1,0 +1,10 @@
+[project]
+name = "caf"
+version = "4.0"
+description = "Claude Agentic Framework"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.uv]

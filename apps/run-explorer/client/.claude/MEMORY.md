@@ -31,3 +31,18 @@
   bin/gen-lead                                       |  71 +-----
   bin/orch-shared                                    |  37 ++++
   ... and 29 more files
+
+## 2026-04-16 (06:08 UTC) · @Tom Kwon
+**Commit:** refactor(gstack): rename /codex skill to /gemini (d1e0727d) by Tom Kwon
+**Changed:**
+  global-skills/gstack/SKILL.md                        |  4 ++--
+  global-skills/gstack/autoplan/SKILL.md               |  4 ++--
+  global-skills/gstack/benchmark/SKILL.md              |  4 ++--
+  global-skills/gstack/browse/SKILL.md                 |  4 ++--
+  global-skills/gstack/canary/SKILL.md                 |  4 ++--
+  global-skills/gstack/checkpoint/SKILL.md             |  4 ++--
+  global-skills/gstack/cso/SKILL.md                    |  4 ++--
+  global-skills/gstack/design-consultation/SKILL.md    |  4 ++--
+  global-skills/gstack/design-html/SKILL.md            |  4 ++--
+  global-skills/gstack/design-review/SKILL.md          |  4 ++--
+  ... and 25 more files

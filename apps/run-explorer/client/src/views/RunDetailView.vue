@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, toRef, onMounted } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { useRunDetail } from '@/composables/useRunDetail'
+import { API_BASE_URL } from '@/config'
+import type { RunCosts } from '@shared/types'
 import { useOrchEvents } from '@/composables/useOrchEvents'
 import StatusBadge from '@/components/StatusBadge.vue'
 import WaveStepBar from '@/components/WaveStepBar.vue'
@@ -30,6 +32,39 @@ function formatDate(iso: string): string {
 const missionBriefHtml = computed(() => run.value?.missionBrief ? renderMarkdown(run.value.missionBrief) : '')
 const acceptanceCriteriaHtml = computed(() => run.value?.acceptanceCriteria ? renderMarkdown(run.value.acceptanceCriteria) : '')
 const evaluationFullHtml = computed(() => run.value?.evaluationFull ? renderMarkdown(run.value.evaluationFull) : '')
+
+const sessions = ref<Array<{ id: string; promptCount: number }>>([])
+const sessionsError = ref<string | null>(null)
+const sessionsLoading = ref(false)
+
+const loadSessions = async () => {
+  sessionsLoading.value = true
+  try {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(`${API_BASE_URL}/api/runs/${props.id}/sessions`, { signal: controller.signal })
+    if (!res.ok) throw new Error(`${res.status}`)
+    sessions.value = await res.json()
+  } catch (err) {
+    sessionsError.value = err instanceof Error ? err.message : 'failed to load sessions'
+  } finally {
+    sessionsLoading.value = false
+  }
+}
+
+const costs = ref<RunCosts | null>(null)
+
+async function fetchCosts() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/runs/${props.id}/costs`)
+    if (res.ok) costs.value = await res.json()
+  } catch { /* silent — cost data is optional */ }
+}
+
+onMounted(() => {
+  loadSessions()
+  fetchCosts()
+})
 </script>
 
 <template>
@@ -205,6 +240,58 @@ const evaluationFullHtml = computed(() => run.value?.evaluationFull ? renderMark
           </div>
         </div>
       </template>
+
+      <!-- Token & Cost Breakdown -->
+      <div v-if="costs" class="cost-section mt-6">
+        <h3 class="text-lg font-semibold mb-2">Token &amp; Cost Breakdown</h3>
+        <div class="cost-summary flex gap-4 mb-3 text-sm text-gray-600">
+          <span>Total: <strong>${{ costs.totalCostUsd.toFixed(4) }}</strong></span>
+          <span>Input: {{ costs.totalInputTokens.toLocaleString() }}t</span>
+          <span>Output: {{ costs.totalOutputTokens.toLocaleString() }}t</span>
+          <span>Cache: {{ costs.totalCacheReadTokens.toLocaleString() }}t</span>
+        </div>
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-1 pr-4">Agent</th>
+              <th class="text-left py-1 pr-4">Model</th>
+              <th class="text-right py-1 pr-4">Input</th>
+              <th class="text-right py-1 pr-4">Output</th>
+              <th class="text-right py-1 pr-4">Cache</th>
+              <th class="text-right py-1">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="a in costs.agents" :key="a.agentName" class="border-b border-gray-100">
+              <td class="py-1 pr-4 font-mono text-xs">{{ a.agentName }}</td>
+              <td class="py-1 pr-4 text-gray-500">{{ a.tier }}</td>
+              <td class="text-right py-1 pr-4">{{ a.inputTokens.toLocaleString() }}</td>
+              <td class="text-right py-1 pr-4">{{ a.outputTokens.toLocaleString() }}</td>
+              <td class="text-right py-1 pr-4">{{ a.cacheReadTokens.toLocaleString() }}</td>
+              <td class="text-right py-1">${{ a.costUsd.toFixed(4) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Spawned Sessions -->
+      <div class="mt-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Spawned Sessions</h2>
+        <div v-if="sessionsLoading" class="text-sm text-gray-400">Loading...</div>
+        <div v-else-if="sessionsError" class="text-sm text-red-500">{{ sessionsError }}</div>
+        <div v-else-if="sessions.length === 0" class="text-sm text-gray-400">No sessions recorded for this run.</div>
+        <div v-else class="space-y-2">
+          <RouterLink
+            v-for="s in sessions"
+            :key="s.id"
+            :to="`/sessions/${s.id}`"
+            class="block p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded hover:border-gray-300 dark:hover:border-slate-600"
+          >
+            <span class="font-mono text-sm text-gray-700 dark:text-slate-300">{{ s.id }}</span>
+            <span class="ml-3 text-xs text-gray-400 dark:text-slate-500">{{ s.promptCount }} prompts</span>
+          </RouterLink>
+        </div>
+      </div>
     </template>
   </div>
 </template>

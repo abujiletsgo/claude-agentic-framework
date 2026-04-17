@@ -37,7 +37,7 @@ Your job: understand your domain, draft ideas, identify dependencies. NO impleme
 1. Read your mission brief (the PO wrote it here)
 2. Register your domain: `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
 3. Spawn a **researcher (sonnet)** to read existing code in your domain
-4. Write your findings to `/tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`:
+4. Write your findings to `~/.caf/orch/<orch_id>/results/<your-name>-wave0.md`:
    ```markdown
    ## What exists in my domain
    [what you found]
@@ -51,7 +51,7 @@ Your job: understand your domain, draft ideas, identify dependencies. NO impleme
    - (none if fully independent)
    ```
 5. Append to shared memory: `bin/orch-shared append-memory <orch_id> '{"lead":"<your-name>","summary":"Wave 0 complete — <one line>"}'`
-6. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':0}))"`
+6. Write status: `python3 -c "import json; open('~/.caf/orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':0}))"`
 
 **Stop here. Do not spawn builders. Do not write code.**
 
@@ -61,15 +61,15 @@ Your job: understand your domain, draft ideas, identify dependencies. NO impleme
 
 You are a contract owner. Your job: finalize the interfaces your domain exposes.
 
-1. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
+1. Read your Wave 0 findings: `cat ~/.caf/orch/<orch_id>/results/<your-name>-wave0.md`
 2. The PO has injected what other leads need from you directly into this brief (see "What other leads need from you" section above) — no researcher spawn needed.
-3. Write clean contracts to `/tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md`:
+3. Write clean contracts to `~/.caf/orch/<orch_id>/results/<your-name>-contracts.md`:
    - Endpoint definitions (if api-lead)
    - Schema definitions (if data-lead)
    - Other interface specs
    Be specific: exact field names, types, required vs optional, error responses.
-4. Broadcast: `bin/orch-shared broadcast <orch_id> <your-name> "contracts-ready" "$(cat /tmp/caf_orch/<orch_id>/results/<your-name>-contracts.md)"`
-5. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':1}))"`
+4. Broadcast: `bin/orch-shared broadcast <orch_id> <your-name> "contracts-ready" "$(cat ~/.caf/orch/<orch_id>/results/<your-name>-contracts.md)"`
+5. Write status: `python3 -c "import json; open('~/.caf/orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':1}))"`
 
 ---
 
@@ -78,10 +78,10 @@ You are a contract owner. Your job: finalize the interfaces your domain exposes.
 Your job: implement your domain fully. You have everything you need.
 
 1. Read your mission brief (includes contracts from Wave 1)
-2. Read your Wave 0 findings: `cat /tmp/caf_orch/<orch_id>/results/<your-name>-wave0.md`
+2. Read your Wave 0 findings: `cat ~/.caf/orch/<orch_id>/results/<your-name>-wave0.md`
 3. Register your domain (idempotent — safe to re-run if you registered in Wave 0): `bin/orch-shared register-domain <orch_id> <your-name> "<glob>"`
 4. Spawn a **researcher (sonnet)** for any additional codebase context needed
-5. **Write your domain spec** to `/tmp/caf_orch/<orch_id>/results/<your-name>-spec.md`:
+5. **Write your domain spec** to `~/.caf/orch/<orch_id>/results/<your-name>-spec.md`:
    - What you're building (user stories + acceptance criteria)
    - Technical approach
    - How you're using the contracts from Wave 1
@@ -89,8 +89,8 @@ Your job: implement your domain fully. You have everything you need.
 6. Break spec into tasks → **spawn builders in parallel** (one per independent component)
 7. Request tests: `bin/orch-shared request-test <orch_id> <your-name> "<command>"`
 8. Spawn **critical-analyst** to review builder outputs against your spec
-9. Write final result to `/tmp/caf_orch/<orch_id>/results/<your-name>.md`
-10. Write status: `python3 -c "import json; open('/tmp/caf_orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':2}))"`
+9. Write final result to `~/.caf/orch/<orch_id>/results/<your-name>.md`
+10. Write status: `python3 -c "import json; open('~/.caf/orch/<orch_id>/<your-name>.status','w').write(json.dumps({'status':'done','wave':2}))"`
 
 **If you discover mid-Wave-2 that a contract is missing or wrong:**
 Don't block. Ask PO via `bin/orch-shared ask-pm` with the specific gap. PO will answer directly — no need to restart Wave 1.
@@ -111,7 +111,7 @@ Triggers (always flag these as decision points):
 ## Your Git Worktree
 You have an isolated branch for your changes:
   Branch: orch/<id>/<lead-name>
-  Worktree: /tmp/caf_orch/<id>/worktrees/<lead-name>/
+  Worktree: ~/.caf/orch/<id>/worktrees/<lead-name>/
 Work exclusively in this path. PM merges all branches at the end.
 
 ## Shared Workspace Protocol (REQUIRED)
@@ -154,10 +154,8 @@ If you find something that materially affects other leads' work:
 bin/orch-shared broadcast <id> <lead-name> "topic" "message"
 ```
 
-## Peer Messaging (cmux only)
-```
-bin/cmux-sprint send-agent <id> <other-lead-name> "message"
-```
+## Peer Messaging
+File-based messaging via `~/.caf/orch/<orch_id>/` is now the standard approach. The `bin/cmux-sprint send-agent` binary has been removed.
 
 ## When You Have a Question — Ask the PM (REQUIRED)
 
@@ -189,6 +187,6 @@ PO will answer directly — contracts are resolved between waves, not by blockin
 (Do NOT spawn researchers for topics already covered in Shared Research above)
 
 ## IPC (REQUIRED — do this last)
-Write `{"status":"done"}` to `/tmp/caf_orch/<id>/<lead-name>.status`
+Write `{"status":"done"}` to `~/.caf/orch/<id>/<lead-name>.status`
 Your result file MUST end with a criterion check and decision log.
 See: `global-skills/orchestrate/templates/result-format.md`

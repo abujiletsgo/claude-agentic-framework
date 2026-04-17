@@ -75,6 +75,7 @@ export interface SessionSummary {
   promptCount: number
   status: 'active' | 'ended'
   durationSeconds?: number
+  orchRunId?: string
 }
 
 export interface SessionMessage {
@@ -94,8 +95,9 @@ export interface SessionEvent {
   ts: string
   ms: number
   type: SessionEventType
-  cwd: string
+  cwd?: string
   prompt?: string  // only on UserPromptSubmit
+  orch_run_id?: string  // only on SessionStart when spawned by /orchestrate
 }
 
 export interface Session {
@@ -105,6 +107,7 @@ export interface Session {
   stopTs?: string       // ts of Stop event if present
   prompts: string[]     // all prompt previews in order
   cwd: string           // cwd from SessionStart
+  orchRunId?: string    // hoisted from SessionStart event's orch_run_id
 }
 
 export interface OrchEvent {
@@ -115,4 +118,23 @@ export interface OrchEvent {
   wave?: number         // optional wave number
   orch_id?: string      // optional orch job id
   reason?: string       // optional reason (seen on done events)
+}
+
+export interface AgentCost {
+  agentName: string
+  model: string
+  tier: string
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  costUsd: number
+}
+
+export interface RunCosts {
+  runId: string
+  totalCostUsd: number
+  totalInputTokens: number
+  totalOutputTokens: number
+  totalCacheReadTokens: number
+  agents: AgentCost[]
 }

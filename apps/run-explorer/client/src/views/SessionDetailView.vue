@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import type { SessionDetail } from '@shared/types'
 import { API_BASE_URL } from '@/config'
 
@@ -131,6 +131,15 @@ function eventColor(type: string): string {
           <div>
             <h1 class="text-lg font-semibold text-slate-900 dark:text-white tracking-tight font-mono">{{ session.id }}</h1>
             <p v-if="session.project" class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ session.project }}</p>
+            <div v-if="session.orchRunId" class="mt-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400">Spawned by orch run: </span>
+              <RouterLink
+                :to="`/runs/${session.orchRunId}`"
+                class="text-xs font-mono text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                {{ session.orchRunId }}
+              </RouterLink>
+            </div>
           </div>
           <span
             :class="[

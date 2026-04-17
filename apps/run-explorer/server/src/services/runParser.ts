@@ -35,24 +35,38 @@ async function fileMtime(filePath: string): Promise<Date | null> {
 // ─── parseRunStatus ──────────────────────────────────────────────────────────
 
 export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
+  // ── Consultant model (v5+): check events.jsonl for [done] broadcast ──────────
+  const eventsText = await readText(join(orchDir, 'events.jsonl'))
+  if (eventsText !== null) {
+    const hasDone = eventsText.split('\n').some((line) => {
+      try { return (JSON.parse(line) as Record<string, unknown>)['summary']?.toString().startsWith('[done]') } catch { return false }
+    })
+    // Check qa-report.md for verdict — match leading STATUS:/OVERALL: line or bare PASS/FAIL line
+    const qaText = await readText(join(orchDir, 'qa-report.md'))
+    if (qaText !== null) {
+      const isFail = /^\s*(STATUS|OVERALL)[:\s]+FAIL\b|^\s*\**FAIL\**\s*$/im.test(qaText)
+      const isPass = /^\s*(STATUS|OVERALL)[:\s]+PASS\b|^\s*\**PASS\**\s*$/im.test(qaText)
+      if (isFail) return 'FAIL'
+      if (isPass) return hasDone ? 'PASS' : 'IN_PROGRESS'
+    }
+    if (hasDone) return 'PASS'
+    // Has events but no [done] → still running
+    return 'IN_PROGRESS'
+  }
+
+  // ── Legacy lead model: .status files ─────────────────────────────────────────
   const entries = await listDir(orchDir)
   const statusFiles = entries.filter((e) => e.endsWith('.status'))
 
-  // Check for failed statuses
   for (const sf of statusFiles) {
     const raw = await readText(join(orchDir, sf))
     if (!raw) continue
     try {
       const parsed = JSON.parse(raw) as Record<string, unknown>
-      if (typeof parsed['status'] === 'string' && parsed['status'] === 'failed') {
-        return 'FAIL'
-      }
-    } catch {
-      // ignore
-    }
+      if (typeof parsed['status'] === 'string' && parsed['status'] === 'failed') return 'FAIL'
+    } catch { /* ignore */ }
   }
 
-  // Check evaluation_report.md
   const evalText = await readText(join(orchDir, 'evaluation_report.md'))
   if (evalText !== null) {
     const verdict = parseEvalVerdict(evalText)
@@ -60,7 +74,6 @@ export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
     if (verdict === 'SHIP') return 'PASS'
   }
 
-  // All statuses are "done" → waiting for eval
   if (statusFiles.length > 0) {
     let allDone = true
     for (const sf of statusFiles) {
@@ -69,9 +82,7 @@ export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
       try {
         const parsed = JSON.parse(raw) as Record<string, unknown>
         if (parsed['status'] !== 'done') { allDone = false; break }
-      } catch {
-        allDone = false; break
-      }
+      } catch { allDone = false; break }
     }
     if (allDone) return 'IN_PROGRESS'
   }
@@ -82,16 +93,22 @@ export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
 // ─── parseLeadCount ──────────────────────────────────────────────────────────
 
 export async function parseLeadCount(orchDir: string): Promise<number> {
+  // ── Consultant model (v5+): count agent result files in results/ ──────────────
+  const resultsEntries = await listDir(join(orchDir, 'results'))
+  if (resultsEntries.length > 0) {
+    const agentNames = new Set<string>()
+    for (const e of resultsEntries) {
+      if (e.endsWith('.md')) agentNames.add(e.replace(/\.md$/, ''))
+    }
+    return agentNames.size
+  }
+
+  // ── Legacy lead model: prompts/ directory ─────────────────────────────────────
   const entries = await listDir(join(orchDir, 'prompts'))
   const prefixes = new Set<string>()
   for (const e of entries) {
-    // Match wave-numbered files: backend-lead-wave0.md
     const mWave = e.match(/^(.+)-wave\d+\.md$/)
-    if (mWave && mWave[1] !== undefined) {
-      prefixes.add(mWave[1])
-      continue
-    }
-    // Match plain lead files: backend-lead.md
+    if (mWave && mWave[1] !== undefined) { prefixes.add(mWave[1]); continue }
     const mPlain = e.match(/^(.+)\.md$/)
     if (mPlain && mPlain[1] !== undefined) prefixes.add(mPlain[1])
   }
@@ -101,6 +118,23 @@ export async function parseLeadCount(orchDir: string): Promise<number> {
 // ─── parseWaveCount ──────────────────────────────────────────────────────────
 
 export async function parseWaveCount(orchDir: string): Promise<number> {
+  // ── Consultant model (v5+): count distinct wave-N broadcasts in events.jsonl ───
+  const eventsText = await readText(join(orchDir, 'events.jsonl'))
+  if (eventsText !== null) {
+    const waveNums = new Set<number>()
+    for (const line of eventsText.split('\n')) {
+      try {
+        const ev = JSON.parse(line) as Record<string, unknown>
+        const summary = ev['summary']?.toString() ?? ''
+        // Matches [wave-0b], [wave-1], [wave-2] etc.
+        const m = summary.match(/^\[wave-(\d+)/)
+        if (m && m[1] !== undefined) waveNums.add(parseInt(m[1], 10))
+      } catch { /* skip */ }
+    }
+    return waveNums.size
+  }
+
+  // ── Legacy lead model: prompts/ directory ─────────────────────────────────────
   const entries = await listDir(join(orchDir, 'prompts'))
   let max = -1
   let hasPlainLeads = false
@@ -113,9 +147,7 @@ export async function parseWaveCount(orchDir: string): Promise<number> {
       hasPlainLeads = true
     }
   }
-  // If we found wave-numbered files, return the max wave number
   if (max >= 0) return max
-  // Plain lead files (no wave suffix) → single-wave run at wave 0
   if (hasPlainLeads) return 0
   return 0
 }
@@ -271,13 +303,16 @@ export async function listRuns(): Promise<Run[]> {
     const orchDir = join(ORCH_BASE_DIR, dir)
     // must have at least one content sentinel to be shown:
     // - acceptance_criteria.md / mission_brief.md (old lead model)
-    // - spec.md (consultant model v5+)
-    const [criteriaText, briefText, specText] = await Promise.all([
+    // - spec.md or research.md (consultant model v5+)
+    // - qa-report.md (any completed run)
+    const [criteriaText, briefText, specText, researchText, qaText] = await Promise.all([
       readText(join(orchDir, 'acceptance_criteria.md')),
       readText(join(orchDir, 'mission_brief.md')),
       readText(join(orchDir, 'spec.md')),
+      readText(join(orchDir, 'research.md')),
+      readText(join(orchDir, 'qa-report.md')),
     ])
-    if (criteriaText === null && briefText === null && specText === null) continue
+    if (criteriaText === null && briefText === null && specText === null && researchText === null && qaText === null) continue
 
     const [startTime, leadCount, status, waveCount, tokenEstimate, project] = await Promise.all([
       parseStartTime(orchDir),

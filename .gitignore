@@ -11,6 +11,7 @@ caf-hooks/target/
 .claude/settings.json
 .claude/projects.json
 .claude/sessions.json
+.claude/worktrees/
 global-skills/gstack/.claude/
 
 # Tidy logs

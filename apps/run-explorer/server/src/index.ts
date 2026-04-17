@@ -18,7 +18,8 @@ import {
   handleGetCostProjection,
   handlePostCost,
 } from './handlers/costs'
-import { handleGetSessions, handleGetSessionDetail } from './handlers/sessions'
+import { handleGetSessions, handleGetSessionDetail, handleGetRunSessions } from './handlers/sessions'
+import { handleGetRunCosts } from './handlers/runCosts'
 import type { ApiError } from '../../shared/types'
 
 const server = Bun.serve({
@@ -31,6 +32,12 @@ const server = Bun.serve({
     // OPTIONS preflight
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS })
+    }
+
+    // GET /health and /api/health (fast, no filesystem access)
+    if (req.method === 'GET' && (pathname === '/health' || pathname === '/api/health')) {
+      const body = JSON.stringify({ status: 'ok', ts: new Date().toISOString() })
+      return new Response(body, { status: 200, headers: CORS_HEADERS })
     }
 
     // WebSocket upgrade for /stream
@@ -56,6 +63,18 @@ const server = Bun.serve({
     const eventsMatch = pathname.match(/^\/api\/runs\/([^/]+)\/events$/)
     if (req.method === 'GET' && eventsMatch) {
       return handleGetOrchEvents(eventsMatch[1] ?? '')
+    }
+
+    // GET /api/runs/:id/sessions
+    const runSessionsMatch = pathname.match(/^\/api\/runs\/([^/]+)\/sessions$/)
+    if (req.method === 'GET' && runSessionsMatch) {
+      return handleGetRunSessions(runSessionsMatch[1] ?? '')
+    }
+
+    // GET /api/runs/:id/costs
+    const runCostsMatch = pathname.match(/^\/api\/runs\/([^/]+)\/costs$/)
+    if (req.method === 'GET' && runCostsMatch) {
+      return handleGetRunCosts(runCostsMatch[1] ?? '')
     }
 
     // GET /api/runs/:id

@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAF-Team v5.1 — Claude Agentic Framework</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+  <style>
+    /* ============================================================
+       CSS VARIABLES
+    ============================================================ */
+    :root {
+      --font-display: 'Space Grotesk', 'Noto Sans KR', system-ui, sans-serif;
+      --font-body: 'Noto Sans KR', 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      --bg-slide: #F7F7F9;
+      --bg-card: #FFFFFF;
+      --bg-code: #1E1E2E;
+      --bg-tag: #EEEDF4;
+
+      --accent: #5E6AD2;
+      --accent-light: #EEF0FF;
+      --accent-dark: #4A54B8;
+
+      --opus: #7C3AED;
+      --opus-bg: #F5F0FF;
+      --sonnet: #2563EB;
+      --sonnet-bg: #EFF4FF;
+      --haiku: #D97706;
+      --haiku-bg: #FFFBEB;
+
+      --rust: #EA580C;
+      --rust-bg: #FFF4EE;
+      --green: #059669;
+      --green-bg: #ECFDF5;
+      --red: #DC2626;
+      --cyan: #0891b2;
+
+      --text-900: #0F172A;
+      --text-600: #475569;
+      --text-400: #94A3B8;
+
+      --border: #E4E4E7;
+      --border-hover: #A1A1AA;
+      --shadow-card: 0 1px 3px hsl(240deg 15% 50% / 0.06), 0 4px 12px hsl(240deg 15% 50% / 0.08);
+      --shadow-hover: 0 4px 16px hsl(240deg 15% 50% / 0.12), 0 8px 32px hsl(240deg 15% 50% / 0.1);
+
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ============================================================
+       BASE RESET
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--text-900);
+      overflow: hidden;
+      width: 100vw;
+      height: 100dvh;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .deck-container {
+      display: flex;
+      flex-direction: row;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      height: 100dvh;
+      background: #FFFFFF;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .main {
+      flex: 1;
+      height: 100dvh;
+      background: var(--bg-slide);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================================
+       PROGRESS BAR
+    ============================================================ */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 220px;
+      height: 3px;
+      background: var(--accent);
+      transition: width 340ms var(--ease);
+      z-index: 100;
+    }
+
+    /* ============================================================
+       SLIDE WRAPPER & SLIDES
+    ============================================================ */
+    .slide-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 52px 64px;
+      overflow-y: auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* ============================================================
+       SLIDE COUNTER
+    ============================================================ */
+    .slide-counter {
+      position: absolute;
+      bottom: 20px;
+      right: 28px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-400);
+      letter-spacing: 0.05em;
+      z-index: 10;
+      user-select: none;
+    }
+
+    /* ============================================================
+       SIDEBAR LOGO
+    ============================================================ */
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .logo-version {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-400);
+      letter-spacing: 0.02em;
+    }
+
+    /* ============================================================
+       SIDEBAR NAV
+    ============================================================ */
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 180ms var(--ease), border-color 180ms var(--ease);
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-tag);
+    }
+
+    .nav-item.active {
+      border-left-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .nav-item.active .nav-eyebrow,
+    .nav-item.active .nav-num {
+      color: var(--accent);
+    }
+
+    .nav-item.active .nav-title {
+      color: var(--text-900);
+    }
+
+    .nav-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-400);
+      letter-spacing: 0.05em;
+    }
+
+    .nav-eyebrow {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-400);
+      line-height: 1.4;
+    }
+
+    .nav-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-600);
+      line-height: 1.3;
+    }
+
+    /* ============================================================
+       CARDS
+    ============================================================ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      transition: transform 240ms var(--ease), box-shadow 240ms var(--ease), border-color 240ms var(--ease);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--border-hover);
+    }
+
+    .card.accent-rust { border-left: 3px solid var(--rust); }
+    .card.accent-blue { border-left: 3px solid var(--sonnet); }
+    .card.accent-accent { border-left: 3px solid var(--accent); }
+    .card.accent-green { border-left: 3px solid var(--green); }
+    .card.accent-purple { border-left: 3px solid var(--opus); }
+    .card.accent-cyan { border-left: 3px solid var(--cyan); }
+    .card.accent-gray { border-left: 3px solid var(--text-400); }
+    .card.accent-haiku { border-left: 3px solid var(--haiku); }
+
+    /* ============================================================
+       TABLES
+    ============================================================ */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-body);
+      font-size: 13px;
+    }
+
+    .table th {
+      background: var(--bg-tag);
+      color: var(--text-600);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-600);
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table tr:hover td {
+      background: var(--bg-tag);
+    }
+
+    /* ============================================================
+       CODE BLOCKS
+    ============================================================ */
+    .code-block {
+      background: var(--bg-code);
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.65;
+      color: #CDD6F4;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .code-block .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #CDD6F4;
+      font-family: var(--font-display);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 180ms var(--ease);
+    }
+
+    .code-block:hover .copy-btn {
+      opacity: 1;
+    }
+
+    /* Catppuccin Mocha syntax colors */
+    .code-block .kw { color: #CBA6F7; } /* keyword/purple */
+    .code-block .st { color: #A6E3A1; } /* string/green */
+    .code-block .cm { color: #6C7086; } /* comment/gray */
+    .code-block .fn { color: #89B4FA; } /* function/blue */
+    .code-block .nm { color: #FAB387; } /* number/peach */
+    .code-block .op { color: #89DCEB; } /* operator/cyan */
+    .code-block .lb { color: #F38BA8; } /* label/red */
+
+    /* ============================================================
+       TAGS & BADGES
+    ============================================================ */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 3px 10px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .tag-default { background: var(--bg-tag); color: var(--text-600); }
+    .tag-accent { background: var(--accent-light); color: var(--accent-dark); }
+    .tag-rust { background: var(--rust-bg); color: var(--rust); }
+    .tag-blue { background: var(--sonnet-bg); color: var(--sonnet); }
+    .tag-green { background: var(--green-bg); color: var(--green); }
+    .tag-purple { background: var(--opus-bg); color: var(--opus); }
+    .tag-haiku { background: var(--haiku-bg); color: var(--haiku); }
+    .tag-cyan { background: #ECFEFF; color: var(--cyan); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-accent { background: var(--accent-light); color: var(--accent); }
+    .badge-rust { background: var(--rust-bg); color: var(--rust); }
+    .badge-blue { background: var(--sonnet-bg); color: var(--sonnet); }
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-purple { background: var(--opus-bg); color: var(--opus); }
+    .badge-haiku { background: var(--haiku-bg); color: var(--haiku); }
+
+    /* ============================================================
+       GRADIENT BACKGROUNDS
+    ============================================================ */
+    .bg-grad-purple {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .bg-grad-dark-blue {
+      background: linear-gradient(160deg, #0f0c29, #302b63);
+    }
+
+    .bg-grad-indigo {
+      background: linear-gradient(160deg, #1a1a2e, #16213e);
+    }
+
+    .bg-grad-indigo-deep {
+      background: linear-gradient(160deg, #1e1b4b, #312e81);
+    }
+
+    .bg-grad-light {
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    }
+
+    /* ============================================================
+       ANIMATE-IN BASE
+    ============================================================ */
+    .animate-in {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    /* ============================================================
+       KOREAN TYPOGRAPHY
+    ============================================================ */
+    .ko, p, li, td, th {
+      word-break: keep-all;
+      line-height: 1.75;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-display);
+      color: var(--text-900);
+      word-break: keep-all;
+      line-height: 1.3;
+    }
+
+    .eyebrow {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-400);
+      margin-bottom: 8px;
+    }
+
+    .eyebrow-white {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+
+    /* ============================================================
+       WAVE FLOW COMPONENT
+    ============================================================ */
+    .wave-flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      width: 100%;
+    }
+
+    .wave-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wave-card-strip {
+      height: 4px;
+      width: 100%;
+    }
+
+    .wave-card-body {
+      padding: 16px;
+      flex: 1;
+    }
+
+    .wave-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--text-400);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       LAYER STACK COMPONENT
+    ============================================================ */
+    .layer-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 10px;
+    }
+
+    .layer-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .layer-token-pill {
+      margin-left: auto;
+      background: var(--bg-tag);
+      border-radius: 9999px;
+      padding: 3px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-600);
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       CIRCUIT BREAKER STATE FLOW
+    ============================================================ */
+    .cb-flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cb-node {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 9999px;
+      padding: 6px 16px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .cb-node::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.8;
+    }
+
+    .cb-node-closed { background: var(--green-bg); color: var(--green); }
+    .cb-node-open { background: #FEF2F2; color: var(--red); }
+    .cb-node-half { background: var(--haiku-bg); color: var(--haiku); }
+
+    .cb-arrow {
+      color: var(--text-400);
+      font-size: 13px;
+      font-family: var(--font-display);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       STAT COUNTERS
+    ============================================================ */
+    .stat-counter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1;
+      color: #FFFFFF;
+    }
+
+    .stat-label {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    /* ============================================================
+       EVENT TAG GROUPS
+    ============================================================ */
+    .event-group {
+      margin-bottom: 16px;
+    }
+
+    .event-group-label {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-400);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .event-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* ============================================================
+       ROUTE MOCKUP
+    ============================================================ */
+    .route-mockup {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .route-mockup-header {
+      padding: 12px 16px;
+      background: var(--bg-tag);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-600);
+      letter-spacing: 0.04em;
+    }
+
+    .route-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      transition: background 150ms var(--ease);
+      cursor: default;
+    }
+
+    .route-item:last-child {
+      border-bottom: none;
+    }
+
+    .route-item:hover {
+      background: var(--bg-tag);
+    }
+
+    .route-item.active {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+    }
+
+    .route-path {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .route-item.active .route-path {
+      color: var(--accent-dark);
+    }
+
+    .route-name {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-600);
+    }
+
+    /* ============================================================
+       MOBILE RESPONSIVE
+    ============================================================ */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 44px;
+        min-width: 44px;
+      }
+
+      .sidebar-logo {
+        padding: 14px 0;
+        justify-content: center;
+      }
+
+      .logo-version,
+      .nav-eyebrow,
+      .nav-title,
+      .nav-num {
+        display: none;
+      }
+
+      .nav-item {
+        padding: 12px 0;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .progress-bar {
+        left: 44px;
+      }
+
+      .slide {
+        padding: 28px 24px;
+      }
+
+      .main {
+        width: calc(100vw - 44px);
+      }
+    }
+
+    /* ============================================================
+       MEMORY DIAGRAM (CSS replacement for mermaid-memory)
+    ============================================================ */
+    .mem-diagram { font-family: 'Space Grotesk', system-ui, sans-serif; width: 100%; max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; background: #0f0f0f; border: 1px solid #222; border-radius: 10px; overflow: hidden; }
+    .mem-layer { padding: 14px 18px 12px; border-left: 4px solid transparent; }
+    .mem-layer.l3 { background: #1a0f2e; border-left-color: #6b3fa0; }
+    .mem-layer.l2 { background: #0a2535; border-left-color: #1a8098; }
+    .mem-layer.l1 { background: #0d2e1a; border-left-color: #2e7d47; }
+    .mem-layer.l0 { background: #2a2a2a; border-left-color: #555; }
+    .mem-layer-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+    .mem-layer-id { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 4px; line-height: 1; color: #fff; }
+    .l3 .mem-layer-id { background: #6b3fa0; }
+    .l2 .mem-layer-id { background: #1a8098; }
+    .l1 .mem-layer-id { background: #2e7d47; }
+    .l0 .mem-layer-id { background: #555; }
+    .mem-layer-name { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+    .l3 .mem-layer-name { color: #d4b8ff; }
+    .l2 .mem-layer-name { color: #a0e8f8; }
+    .l1 .mem-layer-name { color: #a6f4c5; }
+    .l0 .mem-layer-name { color: #ccc; }
+    .mem-layer-scope { font-size: 10px; color: #666; margin-left: auto; }
+    .mem-layer-files { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 6px; }
+    .mem-layer-files code { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+    .l3 .mem-layer-files code { background: rgba(107,63,160,0.25); color: #b48df5; }
+    .l2 .mem-layer-files code { background: rgba(26,128,152,0.2); color: #5dd3f0; }
+    .l1 .mem-layer-files code { background: rgba(46,125,71,0.2); color: #6ee09b; }
+    .l0 .mem-layer-files code { background: rgba(85,85,85,0.2); color: #aaa; }
+    .mem-layer-badge { font-size: 10px; color: #555; }
+    .mem-arrow-row { display: flex; align-items: stretch; background: #080808; border-top: 1px solid #222; border-bottom: 1px solid #222; }
+    .mem-arrow { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 10.5px; }
+    .mem-arrow--up { color: #4ade80; border-right: 1px solid #222; justify-content: flex-end; text-align: right; }
+    .mem-arrow--down { color: #60c8f5; }
+    .arrow-glyph { font-size: 15px; line-height: 1; flex-shrink: 0; }
+
+    /* ============================================================
+       SYSTEM ARCHITECTURE DIAGRAM (CSS replacement for mermaid-arch)
+    ============================================================ */
+    .sys-diagram { font-family: 'Space Grotesk', system-ui, sans-serif; width: 100%; max-width: 680px; margin: 0 auto; background: #0f0f0f; border: 1px solid #222; border-radius: 10px; padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .sys-row { display: flex; align-items: center; gap: 0; }
+    .sys-row--top { justify-content: space-between; }
+    .sys-row--bottom { justify-content: center; gap: 0; }
+    .sys-node { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 11px 13px; min-width: 130px; max-width: 165px; flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
+    .sys-node--wide { min-width: 200px; max-width: 220px; }
+    .sys-node--entry { border-top: 3px solid #888; }
+    .sys-node--rust { border-top: 3px solid #e87d3e; }
+    .sys-node--python { border-top: 3px solid #3e9ae8; }
+    .sys-node--storage { border-top: 3px solid #a855f7; }
+    .sys-node--ui { border-top: 3px solid #22d3ee; }
+    .sys-node-icon { font-size: 15px; line-height: 1; margin-bottom: 2px; }
+    .sys-node-title { font-size: 13px; font-weight: 700; color: #e8e8e8; }
+    .sys-node-sub { font-size: 10px; color: #666; line-height: 1.4; margin-top: 2px; }
+    .sys-node-detail { font-size: 9px; color: #444; line-height: 1.5; margin-top: 4px; padding-top: 4px; border-top: 1px solid #222; }
+    .sys-node-paths { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; padding-top: 4px; border-top: 1px solid #222; }
+    .sys-node-paths code { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #b48df5; background: rgba(107,63,160,0.15); padding: 1px 5px; border-radius: 3px; }
+    .sys-connector { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; padding: 0 4px; }
+    .sys-conn-label { font-size: 9px; color: #444; }
+    .sys-conn-arrow { font-size: 13px; color: #333; line-height: 1; }
+    .sys-connector--read .sys-conn-arrow { color: #60c8f5; }
+    .sys-connector--read .sys-conn-label { color: #60c8f5; opacity: 0.7; }
+    .sys-vert-arrows { display: flex; justify-content: space-around; padding: 0 30px; }
+    .sys-vert-arrow { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .sys-vert-line { width: 1px; height: 24px; background: #333; }
+    .sys-vert-label { font-size: 9px; color: #444; text-align: center; max-width: 90px; }
+    .sys-vert-arrow-glyph { font-size: 13px; color: #444; line-height: 1; }
+
+    /* ============================================================
+       INTRO PROBLEM COMPARISON (Slide 1)
+    ============================================================ */
+    .intro-problem { max-width: 640px; margin: 0 auto 24px; }
+    .intro-problem-row { display: flex; align-items: center; gap: 16px; }
+    .intro-problem-col { flex: 1; background: white; border: 1px solid #E4E4E7; border-radius: 10px; padding: 14px 16px; }
+    .intro-problem-col--before { border-top: 3px solid #F87171; }
+    .intro-problem-col--after { border-top: 3px solid #34D399; }
+    .intro-problem-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+    .intro-problem-col--before .intro-problem-label { color: #EF4444; }
+    .intro-problem-col--after .intro-problem-label { color: #10B981; }
+    .intro-problem-col ul { margin: 0; padding-left: 16px; font-size: 12px; color: #64748B; line-height: 1.8; }
+    .intro-problem-arrow { font-size: 22px; color: #5E6AD2; flex-shrink: 0; }
+
+    /* ============================================================
+       STARTUP EXAMPLE (Slide 4)
+    ============================================================ */
+    .startup-example { margin-top: 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 16px; }
+    .startup-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; }
+    .startup-example code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a6f4c5; line-height: 1.6; }
+
+    /* ============================================================
+       ORCHESTRATE MODEL BOX (Slide 5)
+    ============================================================ */
+    .orchestrate-model-box { margin-top: 14px; background: var(--accent-light); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 18px; font-size: 13px; color: var(--accent-dark); line-height: 1.7; font-family: 'Noto Sans KR', sans-serif; }
+
+    /* ============================================================
+       PREREQS BOX & ENV TABLE (Slide 12)
+    ============================================================ */
+    .prereqs-box { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+    .prereqs-box strong { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 10px; }
+    .prereqs-box ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-600); line-height: 1.9; }
+    .prereqs-box ul code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-tag); padding: 1px 6px; border-radius: 3px; color: var(--accent-dark); }
+    .env-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .env-table th { background: var(--bg-tag); font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-600); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .env-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-600); font-size: 12px; }
+    .env-table tr:last-child td { border-bottom: none; }
+    .env-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-dark); }
+
+    /* ============================================================
+       SKILLS LEGEND (Slide 11)
+    ============================================================ */
+    .skills-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--text-600); font-family: 'Space Grotesk', sans-serif; }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+    /* ============================================================
+       SLIDE CONTENT HELPER CLASSES
+    ============================================================ */
+    .slide-eyebrow { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-400); margin-bottom: 8px; }
+    .slide-title { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-900); margin: 0 0 4px; }
+    .slide-subtitle { font-size: 13px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; line-height: 1.65; margin-bottom: 4px; }
+    .slide-header { margin-bottom: 4px; }
+    .card-icon { font-size: 20px; margin-bottom: 8px; }
+    .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-900); margin-bottom: 6px; }
+    .card-title code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-tag); padding: 1px 6px; border-radius: 3px; color: var(--text-600); font-weight: 400; }
+    .card-body { font-size: 13px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; line-height: 1.65; }
+    .card-why { font-size: 11px; color: var(--text-400); font-family: 'Noto Sans KR', sans-serif; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; line-height: 1.6; }
+    .wave-strip { height: 4px; background: var(--wave-color, var(--accent)); }
+    .wave-label { font-size: 11px; font-weight: 700; color: var(--text-400); font-family: 'Space Grotesk', sans-serif; padding: 12px 16px 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .wave-name { font-size: 15px; font-weight: 700; color: var(--text-900); font-family: 'Space Grotesk', sans-serif; padding: 0 16px 4px; }
+    .wave-note { font-size: 11px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; padding: 0 16px 14px; line-height: 1.5; }
+    .layer-name { font-size: 14px; font-weight: 600; color: var(--text-900); font-family: 'Space Grotesk', sans-serif; }
+    .layer-name em { font-style: normal; font-size: 12px; color: var(--text-400); font-weight: 400; margin-left: 4px; }
+    .layer-path { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-dark); background: var(--accent-light); padding: 2px 6px; border-radius: 3px; }
+    .layer-desc { font-size: 12px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; }
+    .layer-token { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-400); margin-left: auto; white-space: nowrap; }
+    .tag.rust { background: var(--rust-bg); color: var(--rust); }
+    .cb-node.closed { background: var(--green-bg); color: var(--green); }
+    .cb-node.open { background: #FEF2F2; color: var(--red); }
+    .cb-node.half { background: var(--haiku-bg); color: var(--haiku); }
+
+    /* ── Detail Drawer ──────────────────────────────── */
+    .detail-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.35);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .detail-overlay.open { opacity: 1; pointer-events: all; }
+
+    .detail-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(480px, 92vw);
+      background: white;
+      border-left: 1px solid #E4E4E7;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+      z-index: 201;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-drawer.open { transform: translateX(0); }
+
+    .detail-drawer-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #F1F5F9;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      flex-shrink: 0;
+    }
+    .detail-drawer-title {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 16px; font-weight: 700;
+      color: #0F172A; line-height: 1.3;
+    }
+    .detail-drawer-close {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid #E4E4E7;
+      background: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #64748B;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .detail-drawer-close:hover { background: #F1F5F9; color: #0F172A; }
+
+    .detail-drawer-body {
+      flex: 1; overflow-y: auto;
+      padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .detail-section p {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 13.5px; color: #374151;
+      line-height: 1.75; margin: 0 0 10px;
+    }
+    .detail-section p:last-child { margin-bottom: 0; }
+
+    .detail-label {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #94A3B8; margin-bottom: 8px;
+    }
+
+    .detail-code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 11.5px; line-height: 1.7;
+      background: #0F172A; color: #E2E8F0;
+      border-radius: 8px; padding: 14px 16px;
+      white-space: pre; overflow-x: auto;
+    }
+
+    .detail-paths {
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .detail-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: #5E6AD2;
+      background: #EEF0FF; border-radius: 4px;
+      padding: 3px 8px; display: inline-block;
+    }
+
+    /* Clickable component hint */
+    .detail-trigger {
+      cursor: pointer;
+      position: relative;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .detail-trigger:hover { transform: translateY(-1px); }
+    .detail-trigger::after {
+      content: '↗';
+      position: absolute; top: 6px; right: 8px;
+      font-size: 10px; opacity: 0;
+      color: #5E6AD2;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    .detail-trigger:hover::after { opacity: 0.7; }
+    /* For tags (inline) — use a different indicator */
+    .detail-trigger.tag-trigger::after { display: none; }
+    .detail-trigger.tag-trigger { outline: none; }
+    .detail-trigger.tag-trigger:hover {
+      outline: 2px solid #5E6AD2;
+      outline-offset: 1px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck-container">
+
+  <!-- ============================================================
+       SIDEBAR
+  ============================================================ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-text">CAF</span>
+      <span class="logo-version">v5.1</span>
+    </div>
+    <nav class="sidebar-nav">
+
+      <div class="nav-item active" onclick="goTo(0, -1)" data-target="0">
+        <span class="nav-num">01</span>
+        <span class="nav-eyebrow">소개</span>
+        <span class="nav-title">Intro</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(1, current < 1 ? 1 : -1)" data-target="1">
+        <span class="nav-num">02</span>
+        <span class="nav-eyebrow">개요</span>
+        <span class="nav-title">Overview</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(2, current < 2 ? 1 : -1)" data-target="2">
+        <span class="nav-num">03</span>
+        <span class="nav-eyebrow">메모리</span>
+        <span class="nav-title">Memory</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(3, current < 3 ? 1 : -1)" data-target="3">
+        <span class="nav-num">04</span>
+        <span class="nav-eyebrow">다이어그램</span>
+        <span class="nav-title">Diagram</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(4, current < 4 ? 1 : -1)" data-target="4">
+        <span class="nav-num">05</span>
+        <span class="nav-eyebrow">오케스트레이션</span>
+        <span class="nav-title">Orchestrate</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(5, current < 5 ? 1 : -1)" data-target="5">
+        <span class="nav-num">06</span>
+        <span class="nav-eyebrow">아키텍처</span>
+        <span class="nav-title">Architecture</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(6, current < 6 ? 1 : -1)" data-target="6">
+        <span class="nav-num">07</span>
+        <span class="nav-eyebrow">훅</span>
+        <span class="nav-title">Hooks</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(7, current < 7 ? 1 : -1)" data-target="7">
+        <span class="nav-num">08</span>
+        <span class="nav-eyebrow">분류기</span>
+        <span class="nav-title">Caddy</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(8, current < 8 ? 1 : -1)" data-target="8">
+        <span class="nav-num">09</span>
+        <span class="nav-eyebrow">보안</span>
+        <span class="nav-title">Security</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(9, current < 9 ? 1 : -1)" data-target="9">
+        <span class="nav-num">10</span>
+        <span class="nav-eyebrow">탐색기</span>
+        <span class="nav-title">Explorer</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(10, current < 10 ? 1 : -1)" data-target="10">
+        <span class="nav-num">11</span>
+        <span class="nav-eyebrow">에이전트</span>
+        <span class="nav-title">Agents</span>
+      </div>
+
+      <div class="nav-item" onclick="goTo(11, current < 11 ? 1 : -1)" data-target="11">
+        <span class="nav-num">12</span>
+        <span class="nav-eyebrow">시작</span>
+        <span class="nav-title">Start</span>
+      </div>
+
+    </nav>
+  </aside>
+
+  <!-- ============================================================
+       MAIN
+  ============================================================ -->
+  <main class="main">
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <!-- Slide wrapper -->
+    <div class="slide-wrapper">
+
+      <!-- Slide 0: Intro -->
+      <section class="slide bg-grad-purple" data-slide="0">
+<div class="slide-inner" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 40px;">
+  <div class="animate-in" style="letter-spacing: 0.18em; font-size: 12px; font-weight: 600; opacity: 0.75; text-transform: uppercase; margin-bottom: 20px; font-family: var(--font-display);">CLAUDE AGENTIC FRAMEWORK</div>
+  <h1 class="animate-in" style="font-family: var(--font-display); font-weight: 800; font-size: clamp(52px, 7vw, 80px); margin: 0 0 12px; color: white; line-height: 1.05;">CAF-Team</h1>
+  <div class="animate-in" style="font-family: var(--font-body); font-size: 22px; opacity: 0.9; margin-bottom: 36px;">종합 아키텍처 가이드 v5.1</div>
+  <div class="animate-in" style="width: 120px; height: 1px; background: rgba(255,255,255,0.4); margin: 0 auto 28px;"></div>
+  <div class="animate-in intro-problem" style="max-width: 640px; margin: 0 auto 24px;">
+    <div class="intro-problem-row">
+      <div class="intro-problem-col intro-problem-col--before">
+        <div class="intro-problem-label">Without CAF</div>
+        <ul>
+          <li>한 번에 하나의 대화만</li>
+          <li>세션 간 메모리 없음</li>
+          <li>수동 품질 확인</li>
+          <li>단일 순차 에이전트</li>
+        </ul>
+      </div>
+      <div class="intro-problem-arrow">→</div>
+      <div class="intro-problem-col intro-problem-col--after">
+        <div class="intro-problem-label">With CAF</div>
+        <ul>
+          <li>병렬 전문 에이전트 팀</li>
+          <li>세션 전반 영구 메모리</li>
+          <li>자동 안전 가드레일</li>
+          <li>완전한 실행 관찰 가능성</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in" style="display: flex; gap: 48px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px;">
+    <div class="stat-counter">
+      <div class="stat-number" data-count="22" style="font-family: var(--font-display); font-size: 52px; font-weight: 700; color: white; line-height: 1;">0</div>
+      <div class="stat-label" style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">에이전트</div>
+    </div>
+    <div class="stat-counter">
+      <div class="stat-number" data-count="30" style="font-family: var(--font-display); font-size: 52px; font-weight: 700; color: white; line-height: 1;">0</div>
+      <div class="stat-label" style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">스킬</div>
+    </div>
+    <div class="stat-counter">
+      <div class="stat-number" data-count="48" style="font-family: var(--font-display); font-size: 52px; font-weight: 700; color: white; line-height: 1;">0</div>
+      <div class="stat-label" style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">훅</div>
+    </div>
+    <div class="stat-counter">
+      <div class="stat-number" data-count="16" style="font-family: var(--font-display); font-size: 52px; font-weight: 700; color: white; line-height: 1;">0</div>
+      <div class="stat-label" style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">이벤트</div>
+    </div>
+  </div>
+  <div class="animate-in" style="font-family: var(--font-body); font-size: 14px; opacity: 0.7; max-width: 560px; line-height: 1.7;">모든 Claude Code 세션에서 작동하는 자율형 multi-agent orchestration platform</div>
+  <div class="animate-in" style="position: absolute; bottom: 28px; right: 36px; font-size: 12px; opacity: 0.5; font-family: var(--font-display);">← → 탐색</div>
+</div>
+      </section>
+
+      <!-- Slide 1: Overview -->
+      <section class="slide" data-slide="1">
+<div class="slide-inner" style="padding: 48px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">SYSTEM OVERVIEW</div>
+    <h2 class="slide-title">시스템 구성</h2>
+    <div class="slide-subtitle animate-in">Claude Code 이벤트 발생 시 → caf-hooks(Rust)가 먼저 차단/기록 → global-hooks(Python)이 복잡한 로직 실행 → 데이터는 ~/.caf/에 저장 → Run Explorer가 시각화</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; align-content: start; margin-top: 24px;">
+    <div class="card animate-in detail-trigger" style="border-left-color: var(--rust)" onclick="openDrawer('caf-hooks')">
+      <div class="card-icon"><i class="ph-bold ph-cpu"></i></div>
+      <div class="card-title"><strong>caf-hooks</strong> <code>Rust Binary</code></div>
+      <div class="card-body">48개 훅 · 16개 이벤트 · 6–32x 빠름</div>
+      <div class="card-why">Rust를 선택한 이유: PreToolUse는 모든 도구 호출 전에 실행. 지연 추가 금지.</div>
+    </div>
+    <div class="card animate-in detail-trigger" style="border-left-color: var(--sonnet)" onclick="openDrawer('global-hooks')">
+      <div class="card-icon"><i class="ph-bold ph-puzzle-piece"></i></div>
+      <div class="card-title"><strong>global-hooks</strong> <code>Python</code></div>
+      <div class="card-body">자동화 · 가드레일 · 메모리 기록</div>
+      <div class="card-why">Python으로 구현: 복잡한 로직(LLM 분류, DB 쓰기)은 성능보다 유연성 우선.</div>
+    </div>
+    <div class="card animate-in detail-trigger" style="border-left-color: var(--accent)" onclick="openDrawer('skill-orchestrate')">
+      <div class="card-icon"><i class="ph-bold ph-graph"></i></div>
+      <div class="card-title"><strong>/orchestrate</strong> <code>Skill</code></div>
+      <div class="card-body">Wave 기반 병렬 실행 · PO + 컨설턴트</div>
+      <div class="card-why">PO 에이전트가 비전 설정 → 컨설턴트가 스펙 작성 → 병렬 빌더가 구현.</div>
+    </div>
+    <div class="card animate-in detail-trigger" style="border-left-color: var(--green)" onclick="openDrawer('run-explorer')">
+      <div class="card-icon"><i class="ph-bold ph-monitor"></i></div>
+      <div class="card-title"><strong>Run Explorer</strong> <code>Vue 3 + Bun</code></div>
+      <div class="card-body">:3001 서버 · :5173 클라이언트</div>
+      <div class="card-why">:3001 API 서버(Bun) + :5173 Vue 클라이언트. 프로덕션은 단일 :3001으로 서빙.</div>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 2: Memory System -->
+      <section class="slide" data-slide="2">
+<div class="slide-inner" style="padding: 48px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">MEMORY SYSTEM</div>
+    <h2 class="slide-title">메모리 시스템 — 4개의 레이어</h2>
+    <div class="slide-subtitle animate-in">Claude는 세션 간 기억이 없습니다. CAF는 세션 시작 시 구조화된 프로젝트 히스토리 ~2,800 토큰을 주입합니다. (Claude 모델 컨텍스트 창: 200K 토큰)</div>
+  </div>
+  <div style="display: flex; gap: 32px; flex: 1; margin-top: 20px;">
+    <div style="flex: 0 0 58%; display: flex; flex-direction: column; gap: 10px;">
+      <div class="layer-bar animate-in detail-trigger" style="border-left-color: var(--accent); flex-direction: column; align-items: flex-start; gap: 4px;" onclick="openDrawer('mem-l3')">
+        <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+          <span class="layer-badge">L3</span>
+          <span class="layer-name">시맨틱 <em>Semantic</em></span>
+          <code class="layer-path">~/.claude/memory/</code>
+          <span class="layer-desc">글로벌 · 무기한 · 항상 주입</span>
+          <span class="layer-token">~800 토큰</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-400); font-family: 'Noto Sans KR', sans-serif; padding-left: 4px;">~/.claude/ 아래. 모든 프로젝트에서 공유. CLAUDE.md를 통해 항상 주입.</div>
+      </div>
+      <div class="layer-bar animate-in detail-trigger" style="border-left-color: var(--cyan); flex-direction: column; align-items: flex-start; gap: 4px;" onclick="openDrawer('mem-l2')">
+        <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+          <span class="layer-badge">L2</span>
+          <span class="layer-name">에피소딕 <em>Episodic</em></span>
+          <code class="layer-path">.claude/MEMORY.md</code>
+          <span class="layer-desc">프로젝트별 · 부분 주입</span>
+          <span class="layer-token">~2,000 토큰</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-400); font-family: 'Noto Sans KR', sans-serif; padding-left: 4px;">Git diff 기반 auto_memory_writer.py가 Stop 훅에서 MEMORY.md 자동 갱신.</div>
+      </div>
+      <div class="layer-bar animate-in detail-trigger" style="border-left-color: var(--green); flex-direction: column; align-items: flex-start; gap: 4px;" onclick="openDrawer('mem-l1')">
+        <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+          <span class="layer-badge">L1</span>
+          <span class="layer-name">워킹 <em>Working</em></span>
+          <code class="layer-path">PROJECT_CONTEXT.md</code>
+          <span class="layer-desc">세션 범위 · 자동 주입</span>
+          <span class="layer-token">~1,000 토큰</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-400); font-family: 'Noto Sans KR', sans-serif; padding-left: 4px;">현재 세션 TaskList, 수정 파일 경로, 인-세션 결정. 세션 종료 시 소멸.</div>
+      </div>
+      <div class="layer-bar animate-in detail-trigger" style="border-left-color: var(--text-400); flex-direction: column; align-items: flex-start; gap: 4px;" onclick="openDrawer('mem-l0')">
+        <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+          <span class="layer-badge">L0</span>
+          <span class="layer-name">감각 <em>Sensory</em></span>
+          <code class="layer-path">현재 턴</code>
+          <span class="layer-desc">일시적 · 영속성 없음</span>
+          <span class="layer-token">무제한</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-400); font-family: 'Noto Sans KR', sans-serif; padding-left: 4px;">현재 도구 출력. 각 응답 후 폐기. Claude의 단기 작업 버퍼.</div>
+      </div>
+      <div class="animate-in" style="font-size: 11px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; background: var(--bg-tag); border-radius: 8px; padding: 8px 12px; line-height: 1.65;">
+        신뢰 우선순위: CONFIRMED 사실 &gt; CLAUDE.md 규칙 &gt; 추론. CONFIRMED = validate_facts.py로 코드에서 직접 검증된 사실.
+      </div>
+      <div class="animate-in" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; background: var(--accent-light); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 16px; font-size: 13px; color: var(--accent-dark); font-weight: 600; font-family: var(--font-display);">
+        <i class="ph-bold ph-lightning"></i> 자동 주입 합계: ~2,800 토큰
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div class="animate-in" style="font-size: 13px; font-weight: 700; color: var(--text-600); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-family: var(--font-display);">신뢰 계층 Trust Hierarchy</div>
+      <div class="animate-in" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-card);">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">①</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-900); font-family: var(--font-display);">CONFIRMED 사실</div>
+          <div style="font-size: 11px; color: var(--text-600);">최고 신뢰도</div>
+        </div>
+      </div>
+      <div class="animate-in" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-card);">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #EA580C; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">②</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-900); font-family: var(--font-display);">글로벌 MEMORY</div>
+          <div style="font-size: 11px; color: var(--text-600);">크로스 프로젝트</div>
+        </div>
+      </div>
+      <div class="animate-in" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-card);">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #D97706; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">③</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-900); font-family: var(--font-display);">프로젝트 MEMORY</div>
+          <div style="font-size: 11px; color: var(--text-600);">Git diff 기반</div>
+        </div>
+      </div>
+      <div class="animate-in" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-card);">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--sonnet); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">④</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-900); font-family: var(--font-display);">PROJECT_CONTEXT</div>
+          <div style="font-size: 11px; color: var(--text-600);">Git 해시 검증</div>
+        </div>
+      </div>
+      <div class="animate-in" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-card);">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--text-400); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">⑤</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-900); font-family: var(--font-display);">추론 Inference</div>
+          <div style="font-size: 11px; color: var(--text-600);">최저 신뢰도</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 3: Memory Diagram -->
+      <section class="slide bg-grad-dark-blue" data-slide="3">
+<div class="slide-inner" style="background: linear-gradient(160deg, #0f0c29, #302b63); color: white; padding: 48px 52px; display: flex; flex-direction: column;">
+  <div class="animate-in" style="margin-bottom: 8px;">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; font-family: var(--font-display);">MEMORY ARCHITECTURE</div>
+    <h2 style="font-family: var(--font-display); font-size: 32px; font-weight: 700; color: white; margin: 6px 0 0;">Memory Architecture <span style="font-size: 18px; font-weight: 400; opacity: 0.7; font-family: var(--font-body);">레이어 간 데이터 흐름</span></h2>
+  </div>
+  <div class="animate-in" style="flex: 1; margin-top: 16px; display: flex; flex-direction: column; gap: 0;">
+    <div class="mem-diagram" role="img" aria-label="CAF 4-Layer Memory Architecture">
+      <div class="mem-layer l3">
+        <div class="mem-layer-header">
+          <span class="mem-layer-id">L3</span>
+          <span class="mem-layer-name">SEMANTIC</span>
+          <span class="mem-layer-scope">global · indefinite TTL</span>
+        </div>
+        <div class="mem-layer-files">
+          <code>~/.claude/memory/MEMORY.md</code>
+          <code>~/.claude/agents/</code>
+          <code>~/.claude/skills/</code>
+        </div>
+        <div class="mem-layer-badge">~800 tok · always injected via CLAUDE.md · cross-project patterns</div>
+      </div>
+      <div class="mem-arrow-row">
+        <div class="mem-arrow mem-arrow--up"><span class="arrow-label">cross-project patterns ↑</span></div>
+        <div class="mem-arrow mem-arrow--down"><span class="arrow-glyph">↓</span><span class="arrow-label">always injected via CLAUDE.md</span></div>
+      </div>
+      <div class="mem-layer l2">
+        <div class="mem-layer-header">
+          <span class="mem-layer-id">L2</span>
+          <span class="mem-layer-name">EPISODIC</span>
+          <span class="mem-layer-scope">project · project lifetime</span>
+        </div>
+        <div class="mem-layer-files">
+          <code>.claude/PROJECT_CONTEXT.md</code>
+          <code>.claude/FACTS.md</code>
+          <code>.claude/MEMORY.md</code>
+        </div>
+        <div class="mem-layer-badge">~2000 tok auto-injected · FACTS/MEMORY read on-demand</div>
+      </div>
+      <div class="mem-arrow-row">
+        <div class="mem-arrow mem-arrow--up"><span class="arrow-label">consolidation at session end ↑</span></div>
+        <div class="mem-arrow mem-arrow--down"><span class="arrow-glyph">↓</span><span class="arrow-label">auto_prime: PROJECT_CONTEXT.md prepended</span></div>
+      </div>
+      <div class="mem-layer l1">
+        <div class="mem-layer-header">
+          <span class="mem-layer-id">L1</span>
+          <span class="mem-layer-name">WORKING</span>
+          <span class="mem-layer-scope">session · session only</span>
+        </div>
+        <div class="mem-layer-files">
+          <code>TaskList state</code>
+          <code>Modified file paths</code>
+          <code>In-session decisions</code>
+        </div>
+        <div class="mem-layer-badge">~1000 tok · managed by auto_context_manager.py</div>
+      </div>
+      <div class="mem-arrow-row">
+        <div class="mem-arrow mem-arrow--up"><span class="arrow-label">promotion on repeat (3+ turns) ↑</span></div>
+        <div class="mem-arrow mem-arrow--down"><span class="arrow-glyph">↓</span><span class="arrow-label">raw tool output</span></div>
+      </div>
+      <div class="mem-layer l0">
+        <div class="mem-layer-header">
+          <span class="mem-layer-id">L0</span>
+          <span class="mem-layer-name">SENSORY</span>
+          <span class="mem-layer-scope">ephemeral · 1 turn TTL</span>
+        </div>
+        <div class="mem-layer-files">
+          <code>Current tool output</code>
+          <code>Raw input being processed</code>
+        </div>
+        <div class="mem-layer-badge">unlimited · discarded after each response</div>
+      </div>
+    </div>
+    <div class="startup-example animate-in">
+      <div class="startup-label">세션 시작 시 실행:</div>
+      <code>session_startup.py → PROJECT_CONTEXT.md (~1,000 tok) prepend → CLAUDE.md inject (~800 tok) → 총 ~2,800 tok 자동 주입</code>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 4: /orchestrate -->
+      <section class="slide" data-slide="4">
+<div class="slide-inner" style="padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">/ORCHESTRATE</div>
+    <h2 class="slide-title">Wave 기반 병렬 실행</h2>
+    <div class="slide-subtitle">예시: "/orchestrate add Stripe webhook" → Wave 0a: frontend+backend-consultant 스펙 질문 → Wave 0b: 3개 researcher 병렬 리서치 → Wave 1: builder-api+builder-test 동시 구현 → Wave 2: validator(Haiku) 테스트 실행</div>
+  </div>
+  <div style="display: flex; gap: 16px; margin-top: 24px; align-items: stretch;">
+    <div class="wave-card animate-in detail-trigger" style="--wave-color: #7C3AED" onclick="openDrawer('wave-0a')">
+      <div class="wave-strip"></div>
+      <div class="wave-label">Wave 0a</div>
+      <div class="wave-name">컨설테이션</div>
+      <div class="wave-note">Standard/Complex만</div>
+    </div>
+    <div style="display: flex; align-items: center; color: var(--text-400); font-size: 20px; margin-top: 12px;">→</div>
+    <div class="wave-card animate-in detail-trigger" style="--wave-color: #2563EB" onclick="openDrawer('wave-0b')">
+      <div class="wave-strip"></div>
+      <div class="wave-label">Wave 0b</div>
+      <div class="wave-name">리서치</div>
+      <div class="wave-note">병렬 리서처 · Sonnet</div>
+    </div>
+    <div style="display: flex; align-items: center; color: var(--text-400); font-size: 20px; margin-top: 12px;">→</div>
+    <div class="wave-card animate-in detail-trigger" style="--wave-color: #EA580C" onclick="openDrawer('wave-1')">
+      <div class="wave-strip"></div>
+      <div class="wave-label">Wave 1</div>
+      <div class="wave-name">빌드</div>
+      <div class="wave-note">병렬 빌더 · Haiku/Sonnet</div>
+    </div>
+    <div style="display: flex; align-items: center; color: var(--text-400); font-size: 20px; margin-top: 12px;">→</div>
+    <div class="wave-card animate-in detail-trigger" style="--wave-color: #059669" onclick="openDrawer('wave-2')">
+      <div class="wave-strip"></div>
+      <div class="wave-label">Wave 2</div>
+      <div class="wave-name">QA 루프</div>
+      <div class="wave-note">검증 + 자가 치유 · Haiku</div>
+    </div>
+  </div>
+  <div class="animate-in" style="margin-top: 20px; overflow: hidden; border-radius: 10px; border: 1px solid var(--border);">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-body);">
+      <thead>
+        <tr style="background: var(--bg-tag);">
+          <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--text-600);">복잡도</th>
+          <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--text-600);">언제</th>
+          <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--text-600);">팀 규모</th>
+          <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--text-600);">Wave 순서</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top: 1px solid var(--border);">
+          <td style="padding: 10px 16px; font-weight: 600; color: var(--text-400);">Trivial</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">단순 변경</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">직접 처리</td>
+          <td style="padding: 10px 16px; color: var(--text-400);">—</td>
+        </tr>
+        <tr style="border-top: 1px solid var(--border); background: #fafafa;">
+          <td style="padding: 10px 16px; font-weight: 600; color: var(--green);">Simple</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">단일 파일 버그</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">3 에이전트</td>
+          <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text-900);">0b→1→2</td>
+        </tr>
+        <tr style="border-top: 1px solid var(--border);">
+          <td style="padding: 10px 16px; font-weight: 600; color: var(--accent);">Standard</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">멀티파일 기능</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">5–6 에이전트</td>
+          <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text-900);">0a→0b→1→2</td>
+        </tr>
+        <tr style="border-top: 1px solid var(--border); background: #fafafa;">
+          <td style="padding: 10px 16px; font-weight: 600; color: var(--opus);">Complex</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">크로스 도메인</td>
+          <td style="padding: 10px 16px; color: var(--text-600);">8+ 에이전트</td>
+          <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text-900);">0a→0b→1→2</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="animate-in" style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 8px; background: var(--haiku-bg); border: 1px solid var(--haiku); border-radius: 999px; padding: 6px 16px;">
+      <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--haiku);"></div>
+      <span style="font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--haiku);">Haiku</span>
+      <span style="font-size: 12px; color: var(--text-600);">정확한 교체 · 기계적 작업</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; background: var(--sonnet-bg); border: 1px solid var(--sonnet); border-radius: 999px; padding: 6px 16px;">
+      <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--sonnet);"></div>
+      <span style="font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--sonnet);">Sonnet</span>
+      <span style="font-size: 12px; color: var(--text-600);">로직 · 보안 · 멀티파일</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; background: var(--opus-bg); border: 1px solid var(--opus); border-radius: 999px; padding: 6px 16px;">
+      <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--opus);"></div>
+      <span style="font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--opus);">Opus</span>
+      <span style="font-size: 12px; color: var(--text-600);">조율 · 아키텍처 결정</span>
+    </div>
+  </div>
+  <div class="orchestrate-model-box animate-in">
+    <strong>PO + Consultant 모델</strong>: PO(Product Owner) 에이전트가 요청을 분석하고 비전을 설정합니다. 컨설턴트(frontend/backend/architecture/security)가 대화식으로 스펙을 작성합니다. 스펙이 승인되면 병렬 빌더가 구현을 시작합니다. 컨설턴트는 코드를 작성하지 않습니다. 자가 치유: Wave 2 실패 시 에러 출력이 새 builder 서브에이전트에 주입. 최대 2회 반복.
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 5: Architecture -->
+      <section class="slide bg-grad-indigo" data-slide="5">
+<div class="slide-inner" style="background: linear-gradient(160deg, #1a1a2e, #16213e); color: white; padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="animate-in" style="margin-bottom: 12px;">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; font-family: var(--font-display);">ARCHITECTURE</div>
+    <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 700; color: white; margin: 6px 0 0;">System Architecture <span style="font-size: 16px; font-weight: 400; opacity: 0.7; font-family: var(--font-body);">전체 의존성 맵</span></h2>
+  </div>
+  <div class="animate-in" style="flex: 1; margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+    <div class="sys-diagram" role="img" aria-label="CAF System Architecture">
+      <div class="sys-row sys-row--top">
+        <div class="sys-node sys-node--entry">
+          <div class="sys-node-icon">⬛</div>
+          <div class="sys-node-title">Claude Code</div>
+          <div class="sys-node-sub">CLI entry point<br>settings.json wires hooks</div>
+        </div>
+        <div class="sys-connector">
+          <span class="sys-conn-label">hook events</span>
+          <span class="sys-conn-arrow">→</span>
+        </div>
+        <div class="sys-node sys-node--rust">
+          <div class="sys-node-icon">🦀</div>
+          <div class="sys-node-title">caf-hooks</div>
+          <div class="sys-node-sub">Rust binary · 5–30ms<br>critical-path interception</div>
+          <div class="sys-node-detail">session_recorder · damage_control<br>orch_depth_tracker · doctor</div>
+        </div>
+        <div class="sys-connector">
+          <span class="sys-conn-label">subprocess</span>
+          <span class="sys-conn-arrow">→</span>
+        </div>
+        <div class="sys-node sys-node--python">
+          <div class="sys-node-icon">🐍</div>
+          <div class="sys-node-title">global-hooks</div>
+          <div class="sys-node-sub">Python · 48 hooks<br>16 events · complex logic</div>
+          <div class="sys-node-detail">auto_fact_extractor · memory_writer<br>circuit_breaker · epistemic_guard</div>
+        </div>
+      </div>
+      <div class="sys-vert-arrows">
+        <div class="sys-vert-arrow">
+          <div class="sys-vert-line"></div>
+          <div class="sys-vert-arrow-glyph">↓</div>
+          <div class="sys-vert-label">write sessions</div>
+        </div>
+        <div class="sys-vert-arrow">
+          <div class="sys-vert-line"></div>
+          <div class="sys-vert-arrow-glyph">↓</div>
+          <div class="sys-vert-label">write facts &amp; memory</div>
+        </div>
+      </div>
+      <div class="sys-row sys-row--bottom">
+        <div class="sys-node sys-node--storage sys-node--wide">
+          <div class="sys-node-icon">🗄️</div>
+          <div class="sys-node-title">~/.caf/ storage</div>
+          <div class="sys-node-sub">File-based persistence</div>
+          <div class="sys-node-paths">
+            <code>orch/{id}/</code>
+            <code>sessions/*.jsonl</code>
+            <code>current_orch_id</code>
+          </div>
+        </div>
+        <div class="sys-connector sys-connector--read">
+          <span class="sys-conn-arrow">→</span>
+          <span class="sys-conn-label">reads storage</span>
+        </div>
+        <div class="sys-node sys-node--ui">
+          <div class="sys-node-icon">🖥️</div>
+          <div class="sys-node-title">Run Explorer</div>
+          <div class="sys-node-sub">Vue 3 dashboard<br>Bun API server</div>
+          <div class="sys-node-detail">sessions · runs · cost<br>localhost:3001</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in" style="margin-top: 12px; font-size: 12px; opacity: 0.55; font-family: var(--font-display);">Blast-Radius 원칙: shared/types.ts 변경 시 → Rust 바이너리 재컴파일 + TypeScript 타입 동시 업데이트 필요. 변경 전 의존성 맵 확인.</div>
+</div>
+      </section>
+
+      <!-- Slide 6: Hooks -->
+      <section class="slide" data-slide="6">
+<div class="slide-inner" style="padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">HOOK SYSTEM</div>
+    <h2 class="slide-title">16개 이벤트 · 48개 훅</h2>
+    <div class="slide-subtitle animate-in">훅(Hook): Claude Code가 특정 이벤트 발생 시 자동으로 실행하는 스크립트. PreToolUse 훅은 도구 실행 전에 실행되어 차단 가능. exit code 1 반환 시 Claude가 해당 작업을 실행하지 않음. Compact: Claude Code가 컨텍스트 창 한계 도달 시 대화를 압축하는 내부 동작. PreCompact/PostCompact 훅으로 이 과정 전후에 실행.</div>
+  </div>
+  <div style="display: flex; gap: 28px; flex: 1; margin-top: 24px;">
+    <div style="flex: 0 0 52%; display: flex; flex-direction: column; gap: 16px;">
+      <div class="animate-in">
+        <div style="font-size: 11px; font-weight: 700; color: var(--sonnet); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">세션</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag tag-trigger detail-trigger" style="background: #EFF4FF; color: var(--sonnet); border: 1px solid #BFDBFE;" onclick="openDrawer('hook-sessionstart')">SessionStart</span>
+          <span class="tag tag-trigger detail-trigger" style="background: #EFF4FF; color: var(--sonnet); border: 1px solid #BFDBFE;" onclick="openDrawer('hook-sessionend')">SessionEnd</span>
+          <span class="tag tag-trigger detail-trigger" style="background: #EFF4FF; color: var(--sonnet); border: 1px solid #BFDBFE;" onclick="openDrawer('hook-userpromptsubmit')">UserPromptSubmit</span>
+          <span class="tag tag-trigger detail-trigger" style="background: #EFF4FF; color: var(--sonnet); border: 1px solid #BFDBFE;" onclick="openDrawer('hook-stop')">Stop</span>
+          <span class="tag" style="background: #EFF4FF; color: var(--sonnet); border: 1px solid #BFDBFE;">StopFailure</span>
+        </div>
+      </div>
+      <div class="animate-in">
+        <div style="font-size: 11px; font-weight: 700; color: var(--haiku); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">도구</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag tag-trigger detail-trigger" style="background: var(--haiku-bg); color: var(--haiku); border: 1px solid #FDE68A;" onclick="openDrawer('hook-pretooluse')">PreToolUse</span>
+          <span class="tag tag-trigger detail-trigger" style="background: var(--haiku-bg); color: var(--haiku); border: 1px solid #FDE68A;" onclick="openDrawer('hook-posttooluse')">PostToolUse</span>
+          <span class="tag" style="background: var(--haiku-bg); color: var(--haiku); border: 1px solid #FDE68A;">PostToolUseFailure</span>
+        </div>
+      </div>
+      <div class="animate-in">
+        <div style="font-size: 11px; font-weight: 700; color: var(--opus); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">에이전트</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag" style="background: var(--opus-bg); color: var(--opus); border: 1px solid #DDD6FE;">SubagentStart</span>
+          <span class="tag" style="background: var(--opus-bg); color: var(--opus); border: 1px solid #DDD6FE;">SubagentStop</span>
+          <span class="tag" style="background: var(--opus-bg); color: var(--opus); border: 1px solid #DDD6FE;">TaskCompleted</span>
+        </div>
+      </div>
+      <div class="animate-in">
+        <div style="font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">시스템</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag" style="background: var(--green-bg); color: var(--green); border: 1px solid #A7F3D0;">PreCompact</span>
+          <span class="tag" style="background: var(--green-bg); color: var(--green); border: 1px solid #A7F3D0;">PostCompact</span>
+          <span class="tag" style="background: var(--green-bg); color: var(--green); border: 1px solid #A7F3D0;">CwdChanged</span>
+          <span class="tag" style="background: var(--green-bg); color: var(--green); border: 1px solid #A7F3D0;">FileChanged</span>
+          <span class="tag" style="background: var(--green-bg); color: var(--green); border: 1px solid #A7F3D0;">ConfigChange</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+      <div class="card animate-in" style="border-left-color: var(--rust)">
+        <div class="card-icon"><i class="ph-bold ph-bug"></i></div>
+        <div class="card-title"><strong>caf-hooks Rust</strong></div>
+        <div class="card-body" style="margin-bottom: 12px;">19개 훅 · 5-30ms</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag rust">session-recorder</span>
+          <span class="tag rust">damage-control</span>
+          <span class="tag rust">orch-depth-tracker</span>
+        </div>
+      </div>
+      <div class="card animate-in" style="border-left-color: var(--sonnet)">
+        <div class="card-icon"><i class="ph-bold ph-code"></i></div>
+        <div class="card-title"><strong>global-hooks Python</strong></div>
+        <div class="card-body" style="margin-bottom: 12px;">29개 훅 · uv run</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag">auto-memory-writer</span>
+          <span class="tag">fact-extractor</span>
+          <span class="tag">circuit-breaker</span>
+          <span class="tag">caddy-classifier</span>
+        </div>
+      </div>
+      <div class="animate-in" style="background: var(--bg-tag); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-600); font-family: 'Noto Sans KR', sans-serif; line-height: 1.65;">
+        Rust 훅: 크리티컬 패스 (PreToolUse = 모든 도구 호출 전). 5-30ms 오버헤드. Python 훅: 복잡한 로직 (LLM 분류, DB 쓰기, 메모리 갱신). uv run으로 실행.
+      </div>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 7: Caddy Classifier -->
+      <section class="slide" data-slide="7">
+<div class="slide-inner" style="padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">CADDY CLASSIFIER</div>
+    <h2 class="slide-title">자동 작업 분류 시스템</h2>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px;">
+    <div class="card animate-in" style="border-left-color: var(--accent); padding: 16px 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">Complexity</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <span class="tag">simple</span><span class="tag">moderate</span><span class="tag">complex</span><span class="tag">massive</span>
+      </div>
+    </div>
+    <div class="card animate-in" style="border-left-color: var(--rust); padding: 16px 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--rust); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">Type</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <span class="tag">implement</span><span class="tag">fix</span><span class="tag">refactor</span><span class="tag">research</span><span class="tag">test</span><span class="tag">review</span><span class="tag">document</span>
+      </div>
+    </div>
+    <div class="card animate-in" style="border-left-color: var(--green); padding: 16px 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">Quality</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <span class="tag">standard</span><span class="tag">high</span><span class="tag">critical</span>
+      </div>
+    </div>
+    <div class="card animate-in" style="border-left-color: var(--cyan); padding: 16px 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--font-display);">Scope</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <span class="tag">focused</span><span class="tag">moderate</span><span class="tag">broad</span><span class="tag">unknown</span>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in" style="margin-top: 18px; display: flex; align-items: center; gap: 0; flex-wrap: wrap;">
+    <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 16px; font-family: var(--font-display);">전략</div>
+    <div style="display: flex; align-items: center; gap: 0; flex-wrap: wrap;">
+      <div class="detail-trigger" style="background: #EFF4FF; border: 1px solid #BFDBFE; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #1E40AF; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-direct')">direct</div>
+      <div style="color: var(--text-400); margin: 0 6px; font-size: 14px;">→</div>
+      <div class="detail-trigger" style="background: #DBEAFE; border: 1px solid #93C5FD; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #1D4ED8; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-research')">research</div>
+      <div style="color: var(--text-400); margin: 0 6px; font-size: 14px;">→</div>
+      <div class="detail-trigger" style="background: #BFDBFE; border: 1px solid #60A5FA; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #1E40AF; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-team')">team</div>
+      <div style="color: var(--text-400); margin: 0 6px; font-size: 14px;">→</div>
+      <div class="detail-trigger" style="background: #93C5FD; border: 1px solid #3B82F6; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: white; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-orchestrate')">orchestrate</div>
+      <div style="color: var(--text-400); margin: 0 6px; font-size: 14px;">→</div>
+      <div class="detail-trigger" style="background: #3B82F6; border: 1px solid #2563EB; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: white; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-rlm')">rlm</div>
+      <div style="color: var(--text-400); margin: 0 6px; font-size: 14px;">→</div>
+      <div class="detail-trigger" style="background: #2563EB; border: 1px solid #1D4ED8; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: white; font-family: var(--font-display); cursor:pointer;" onclick="openDrawer('strategy-fusion')">fusion</div>
+    </div>
+  </div>
+  <div class="code-block animate-in" style="margin-top: 18px;" data-code='입력    "Stripe webhook 처리를 결제 시스템에 추가해줘"\n분류    moderate · implement · high · moderate\n전략    orchestrate   신뢰도: 82%'>
+    <button class="copy-btn" onclick="navigator.clipboard.writeText('입력    &quot;Stripe webhook 처리를 결제 시스템에 추가해줘&quot;\n분류    moderate · implement · high · moderate\n전략    orchestrate   신뢰도: 82%')"><i class="ph-bold ph-copy"></i></button>
+    <div style="font-family: var(--font-mono); font-size: 13px; line-height: 1.9;">
+      <div><span class="kw">입력</span>    <span class="str">"Stripe webhook 처리를 결제 시스템에 추가해줘"</span></div>
+      <div><span class="kw">분류</span>    <span style="color: #CDD6F4;">moderate</span> <span style="color: #585B70;">·</span> <span style="color: #CDD6F4;">implement</span> <span style="color: #585B70;">·</span> <span style="color: #A6E3A1;">high</span> <span style="color: #585B70;">·</span> <span style="color: #CDD6F4;">moderate</span></div>
+      <div><span class="kw">전략</span>    <span style="color: #89DCEB;">orchestrate</span>   <span style="color: #585B70;">신뢰도:</span> <span style="color: #A6E3A1;">82%</span></div>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 8: Security -->
+      <section class="slide bg-grad-indigo-deep" data-slide="8">
+<div class="slide-inner" style="background: linear-gradient(160deg, #1e1b4b, #312e81); color: white; padding: 48px 52px; display: flex; flex-direction: column;">
+  <div class="animate-in" style="margin-bottom: 24px;">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; font-family: var(--font-display);">SECURITY</div>
+    <h2 style="font-family: var(--font-display); font-size: 32px; font-weight: 700; color: white; margin: 6px 0 4px;">보안 시스템</h2>
+    <div style="font-size: 16px; opacity: 0.7; font-family: var(--font-body);">3-Tier 방어 체계</div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; flex: 1;">
+    <div class="animate-in detail-trigger" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-left: 4px solid #60A5FA; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px; cursor:pointer;" onclick="openDrawer('sec-permissions')">
+      <div style="width: 40px; height: 40px; background: rgba(96,165,250,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="ph-bold ph-lock-key" style="font-size: 20px; color: #93C5FD;"></i>
+      </div>
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: white; font-family: var(--font-display);">Permissions <code style="font-family: var(--font-mono); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px;">settings.json</code></div>
+        <div style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">allow/deny 규칙 · 첫 번째 방어선 · 클릭하여 자세히 보기</div>
+      </div>
+    </div>
+    <div class="animate-in detail-trigger" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-left: 4px solid #FCA5A5; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px; cursor:pointer;" onclick="openDrawer('sec-damage-control')">
+      <div style="width: 40px; height: 40px; background: rgba(252,165,165,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="ph-bold ph-shield-warning" style="font-size: 20px; color: #FCA5A5;"></i>
+      </div>
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: white; font-family: var(--font-display);">Damage Control <code style="font-family: var(--font-mono); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px;">100+ 패턴</code></div>
+        <div style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">rm -rf · DROP TABLE · force push 차단 · 클릭하여 자세히 보기</div>
+      </div>
+    </div>
+    <div class="animate-in detail-trigger" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-left: 4px solid #86EFAC; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px; cursor:pointer;" onclick="openDrawer('sec-circuit-breaker')">
+      <div style="width: 40px; height: 40px; background: rgba(134,239,172,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="ph-bold ph-lightning" style="font-size: 20px; color: #86EFAC;"></i>
+      </div>
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: white; font-family: var(--font-display);">Circuit Breaker <code style="font-family: var(--font-mono); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px;">자동 복구</code></div>
+        <div style="font-size: 13px; opacity: 0.75; margin-top: 4px; font-family: var(--font-body);">실패 격리 → 60초 쿨다운 → 자동 복구 · 클릭하여 자세히 보기</div>
+      </div>
+    </div>
+  </div>
+  <div class="cb-flow animate-in" style="margin-top: 24px;">
+    <div class="cb-node closed">CLOSED</div>
+    <div class="cb-arrow">→ 실패 →</div>
+    <div class="cb-node open">OPEN</div>
+    <div class="cb-arrow">→ 60초 →</div>
+    <div class="cb-node half">HALF-OPEN</div>
+    <div class="cb-arrow">→ 성공 →</div>
+    <div class="cb-node closed">CLOSED</div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 9: Run Explorer -->
+      <section class="slide" data-slide="9">
+<div class="slide-inner" style="padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">RUN EXPLORER</div>
+    <h2 class="slide-title">실행 관찰 대시보드</h2>
+    <div class="slide-subtitle" style="font-size: 12px; margin-top: 6px;"><strong>RUN</strong>: /orchestrate 호출 1회 (예: orch_1776166096). &nbsp;·&nbsp; <strong>SESSION</strong>: Claude Code 대화창 1개. &nbsp;·&nbsp; 1 Run = N Sessions (/orchestrate가 서브에이전트 스폰 시)</div>
+  </div>
+  <div style="display: flex; gap: 28px; flex: 1; margin-top: 16px;">
+    <div style="flex: 0 0 38%;">
+      <div class="animate-in" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card); overflow: hidden; height: 100%;">
+        <div style="background: var(--bg-tag); padding: 10px 16px; font-size: 11px; font-weight: 700; color: var(--text-600); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-display);">Routes</div>
+        <div style="padding: 8px 0;">
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/</span><span style="font-size: 11px; color: var(--text-400);">RunListView</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; background: var(--accent-light);"><span style="color: var(--accent-dark);">/runs/:id</span><span style="font-size: 11px; color: var(--accent);">RunDetailView ●</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/sessions</span><span style="font-size: 11px; color: var(--text-400);">SessionListView</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/sessions/:id</span><span style="font-size: 11px; color: var(--text-400);">SessionDetailView</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/compare</span><span style="font-size: 11px; color: var(--text-400);">비교 분석</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/live</span><span style="font-size: 11px; color: var(--text-400);">라이브 이벤트</span></div>
+          <div style="padding: 10px 16px; font-size: 13px; font-family: var(--font-mono); color: var(--text-600); display: flex; justify-content: space-between;"><span style="color: var(--accent);">/health</span><span style="font-size: 11px; color: var(--text-400);">시스템 헬스</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 18px;">
+      <div class="animate-in" style="overflow: hidden; border-radius: 10px; border: 1px solid var(--border);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: var(--bg-tag);">
+              <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--text-600);">Method</th>
+              <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--text-600);">Endpoint</th>
+              <th style="padding: 10px 16px; text-align: left; font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--text-600);">설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top: 1px solid var(--border); cursor:pointer;" class="detail-trigger" onclick="openDrawer('api-runs')">
+              <td style="padding: 9px 16px;"><span style="background: #DCFCE7; color: #166534; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display);">GET</span></td>
+              <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--accent);">/api/runs</td>
+              <td style="padding: 9px 16px; font-size: 12px; color: var(--text-600);">모든 오케스트레이션 런 ↗</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border); background: #fafafa; cursor:pointer;" class="detail-trigger" onclick="openDrawer('api-sessions')">
+              <td style="padding: 9px 16px;"><span style="background: #DCFCE7; color: #166534; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display);">GET</span></td>
+              <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--accent);">/api/sessions</td>
+              <td style="padding: 9px 16px; font-size: 12px; color: var(--text-600);">녹화된 세션 목록 ↗</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border); cursor:pointer;" class="detail-trigger" onclick="openDrawer('api-run-sessions')">
+              <td style="padding: 9px 16px;"><span style="background: #DCFCE7; color: #166534; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display);">GET</span></td>
+              <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--accent);">/api/runs/:id/sessions</td>
+              <td style="padding: 9px 16px; font-size: 12px; color: var(--text-600);">런별 세션 연결 ↗</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border); background: #fafafa;">
+              <td style="padding: 9px 16px;"><span style="background: #DCFCE7; color: #166534; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display);">GET</span></td>
+              <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--accent);">/health</td>
+              <td style="padding: 9px 16px; font-size: 12px; color: var(--text-600);">서버 헬스 체크</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border);">
+              <td style="padding: 9px 16px;"><span style="background: #FEF9C3; color: #854D0E; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; font-family: var(--font-display);">WS</span></td>
+              <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--accent);">/stream</td>
+              <td style="padding: 9px 16px; font-size: 12px; color: var(--text-600);">실시간 이벤트 스트림</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="animate-in" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; box-shadow: var(--shadow-card);">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; font-family: var(--font-display);">Run ID Correlation</div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; font-family: var(--font-mono);">
+          <span style="background: var(--accent-light); color: var(--accent-dark); border-radius: 6px; padding: 4px 10px;">orch-shared init</span>
+          <span style="color: var(--text-400);">→</span>
+          <span style="background: var(--bg-tag); color: var(--text-900); border-radius: 6px; padding: 4px 10px;">~/.caf/current_orch_id</span>
+          <span style="color: var(--text-400);">→</span>
+          <span style="background: var(--rust-bg); color: var(--rust); border-radius: 6px; padding: 4px 10px;">session_recorder.rs</span>
+          <span style="color: var(--text-400);">→</span>
+          <span style="background: var(--bg-tag); color: var(--text-900); border-radius: 6px; padding: 4px 10px;">orch_run_id</span>
+          <span style="color: var(--text-400);">→</span>
+          <span style="background: var(--green-bg); color: var(--green); border-radius: 6px; padding: 4px 10px;">Run Explorer UI</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 10: Agents & Skills -->
+      <section class="slide" data-slide="10">
+<div class="slide-inner" style="padding: 44px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">AGENTS &amp; SKILLS</div>
+    <h2 class="slide-title">전체 목록</h2>
+  </div>
+  <div style="display: flex; gap: 14px; margin-top: 20px;">
+    <div class="animate-in" style="flex: 0 0 auto; min-width: 140px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card); overflow: hidden;">
+      <div style="background: var(--opus); padding: 10px 16px; font-size: 12px; font-weight: 700; color: white; font-family: var(--font-display);">Opus · 2</div>
+      <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">orchestrator</span>
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">project-architect</span>
+      </div>
+    </div>
+    <div class="animate-in" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card); overflow: hidden;">
+      <div style="background: var(--sonnet); padding: 10px 16px; font-size: 12px; font-weight: 700; color: white; font-family: var(--font-display);">Sonnet · 15</div>
+      <div style="padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">po</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">critical-analyst</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">researcher</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">meta-agent</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">scout-report-suggest</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">builder</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">debugger</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">onboard-builder</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">onboard-planner</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">academic-researcher</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">code-researcher</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">frontend-consultant</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">backend-consultant</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">architecture-consultant</span>
+        <span class="tag" style="background: var(--sonnet-bg); color: var(--sonnet);">security-consultant</span>
+      </div>
+    </div>
+    <div class="animate-in" style="flex: 0 0 auto; min-width: 160px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card); overflow: hidden;">
+      <div style="background: var(--haiku); padding: 10px 16px; font-size: 12px; font-weight: 700; color: white; font-family: var(--font-display);">Haiku · 4</div>
+      <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">docs-scraper</span>
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">validator</span>
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">agent-watchdog</span>
+        <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-900);">health-checker</span>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in" style="margin-top: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; box-shadow: var(--shadow-card);">
+    <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; font-family: var(--font-display);">30 Skills</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+      <span class="tag" style="background: var(--accent-light); color: var(--accent-dark);">orchestrate</span>
+      <span class="tag" style="background: var(--accent-light); color: var(--accent-dark);">consult</span>
+      <span class="tag" style="background: var(--accent-light); color: var(--accent-dark);">plan</span>
+      <span class="tag" style="background: var(--accent-light); color: var(--accent-dark);">po</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">builder</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">debugger</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">simplify</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">test-generator</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">code-review</span>
+      <span class="tag" style="background: var(--rust-bg); color: var(--rust);">refactoring-assistant</span>
+      <span class="tag" style="background: var(--opus-bg); color: var(--opus);">arch-map</span>
+      <span class="tag" style="background: var(--opus-bg); color: var(--opus);">investigate</span>
+      <span class="tag" style="background: var(--opus-bg); color: var(--opus);">security-scanner</span>
+      <span class="tag" style="background: var(--green-bg); color: var(--green);">checkpoint</span>
+      <span class="tag" style="background: var(--green-bg); color: var(--green);">facts</span>
+      <span class="tag" style="background: var(--green-bg); color: var(--green);">learn</span>
+      <span class="tag">commit</span>
+      <span class="tag">tidy</span>
+      <span class="tag">doctor</span>
+      <span class="tag">health</span>
+      <span class="tag">cmux-skill</span>
+      <span class="tag">loop</span>
+      <span class="tag">schedule</span>
+      <span class="tag">onboard</span>
+      <span class="tag">autoplan</span>
+      <span class="tag">prime</span>
+      <span class="tag">rollback</span>
+      <span class="tag">worktree</span>
+      <span class="tag">docs</span>
+      <span class="tag">makeskill</span>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <!-- Slide 11: Getting Started -->
+      <section class="slide bg-grad-light" data-slide="11">
+<div class="slide-inner" style="background: linear-gradient(135deg, #f5f7fa, #c3cfe2); padding: 48px 52px; display: flex; flex-direction: column;">
+  <div class="slide-header animate-in">
+    <div class="slide-eyebrow">GETTING STARTED</div>
+    <h2 class="slide-title">시작하기</h2>
+  </div>
+  <div style="display: flex; gap: 24px; flex: 1; margin-top: 28px;">
+    <div class="animate-in" style="flex: 1; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-card);">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; font-family: var(--font-display);">설치</div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-display);">①</div>
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-900); background: var(--bg-tag); padding: 6px 10px; border-radius: 6px;">git clone + cd caf-team</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-display);">②</div>
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-900); background: var(--bg-tag); padding: 6px 10px; border-radius: 6px;">bash install.sh</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-display);">③</div>
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-900); background: var(--bg-tag); padding: 6px 10px; border-radius: 6px;">Claude Code 재시작</div>
+            <div style="font-size: 11px; color: var(--text-400); margin-top: 4px;">훅이 settings.json에 등록됨</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 16px; padding: 12px 14px; background: #FFF9F0; border: 1px solid #FDE68A; border-radius: 8px; font-size: 11px; color: #92400E; line-height: 1.6;">
+        <strong>Prerequisites:</strong> Rust (cargo) · Bun runtime · Python 3.11+ + uv · Claude Code Max plan<br>
+        <strong>install.sh:</strong> Rust 바이너리 컴파일 → 훅/스킬 심볼릭 링크 → settings.json 생성
+      </div>
+    </div>
+    <div class="animate-in" style="flex: 1; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-card);">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; font-family: var(--font-display);">명령어</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="background: var(--accent-light); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <code style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-dark); font-weight: 600;">/orchestrate</code>
+          <span style="font-size: 11px; color: var(--accent);">멀티 에이전트 조율</span>
+        </div>
+        <div style="background: var(--bg-tag); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <code style="font-family: var(--font-mono); font-size: 13px; color: var(--text-900); font-weight: 600;">/consult</code>
+          <span style="font-size: 11px; color: var(--text-600);">전문가 컨설테이션</span>
+        </div>
+        <div style="background: var(--bg-tag); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <code style="font-family: var(--font-mono); font-size: 13px; color: var(--text-900); font-weight: 600;">/tidy</code>
+          <span style="font-size: 11px; color: var(--text-600);">코드베이스 정리</span>
+        </div>
+        <div style="background: var(--bg-tag); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <code style="font-family: var(--font-mono); font-size: 13px; color: var(--text-900); font-weight: 600;">/arch-map</code>
+          <span style="font-size: 11px; color: var(--text-600);">아키텍처 맵 생성</span>
+        </div>
+      </div>
+    </div>
+    <div class="animate-in" style="flex: 1; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-card);">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; font-family: var(--font-display);">환경 변수</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <thead>
+          <tr style="background: var(--bg-tag);">
+            <th style="padding: 6px 10px; text-align: left; font-family: var(--font-display); font-size: 10px; font-weight: 700; color: var(--text-600); border-bottom: 1px solid var(--border);">Variable</th>
+            <th style="padding: 6px 10px; text-align: left; font-family: var(--font-display); font-size: 10px; font-weight: 700; color: var(--text-600); border-bottom: 1px solid var(--border);">기본값</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--accent-dark); font-weight: 600; white-space: nowrap;">RUN_EXPLORER_PORT</td>
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--text-600);">3001</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border); background: #fafafa;">
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--accent-dark); font-weight: 600; white-space: nowrap;">CAF_ORCH_DIR</td>
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--text-600);">~/.caf/orch</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--accent-dark); font-weight: 600; white-space: nowrap;">CAF_SESSIONS_DIR</td>
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--text-600);">~/.caf/sessions</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--accent-dark); font-weight: 600; white-space: nowrap;">CAF_EVENTS_DB</td>
+            <td style="padding: 7px 10px; font-family: var(--font-mono); color: var(--text-600);">events.db</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="animate-in" style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-600); font-family: var(--font-display); font-weight: 500; letter-spacing: 0.04em;">
+    Built with Claude Code · CAF-Team v5.1
+  </div>
+</div>
+      </section>
+
+    </div>
+
+    <!-- Slide counter -->
+    <div class="slide-counter" id="slide-counter">1 / 12</div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+  // ---- State ----
+  let current = 0;
+  const TOTAL = 12;
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const navItems = Array.from(document.querySelectorAll('.nav-item'));
+  const progressBar = document.getElementById('progress-bar');
+  const slideCounter = document.getElementById('slide-counter');
+
+  // ---- Counter animation ----
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+  function animateCounter(el, target, duration = 1200) {
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min((now - start) / duration, 1);
+      el.textContent = Math.round(easeOutQuart(p) * target);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  function startCounters() {
+    setTimeout(() => {
+      document.querySelectorAll('[data-count]').forEach(el => {
+        animateCounter(el, parseInt(el.dataset.count));
+      });
+    }, 400);
+  }
+
+  // ---- Content stagger ----
+  function triggerSlideContent(slideIndex) {
+    const slide = slides[slideIndex];
+    const items = slide.querySelectorAll('.animate-in');
+    items.forEach((item, i) => {
+      item.style.opacity = '0';
+      item.style.transform = 'translateY(16px)';
+      setTimeout(() => {
+        item.style.transition = 'opacity 400ms var(--ease), transform 400ms var(--ease)';
+        item.style.opacity = '1';
+        item.style.transform = 'translateY(0)';
+      }, 60 + i * 70);
+    });
+  }
+
+  // ---- Update nav & progress ----
+  function updateNav() {
+    navItems.forEach((item, i) => {
+      item.classList.toggle('active', i === current);
+    });
+    const pct = TOTAL > 1 ? ((current + 1) / TOTAL) * 100 : 100;
+    progressBar.style.width = pct + '%';
+    slideCounter.textContent = `${current + 1} / ${TOTAL}`;
+  }
+
+  // ---- Navigation ----
+  function goTo(n, direction = 1) {
+    if (n < 0 || n >= TOTAL || n === current) return;
+    const leaving = slides[current];
+    const entering = slides[n];
+    // direction: 1=forward(right to left), -1=backward
+    entering.style.transform = `translateX(${direction * 60}px)`;
+    entering.style.opacity = '0';
+    entering.style.display = 'flex';
+    requestAnimationFrame(() => {
+      leaving.style.transition = 'transform 340ms var(--ease), opacity 340ms var(--ease)';
+      leaving.style.transform = `translateX(${direction * -60}px)`;
+      leaving.style.opacity = '0';
+      entering.style.transition = 'transform 340ms var(--ease), opacity 340ms var(--ease)';
+      entering.style.transform = 'translateX(0)';
+      entering.style.opacity = '1';
+      setTimeout(() => {
+        leaving.style.display = 'none';
+        leaving.style.transform = '';
+        leaving.style.opacity = '';
+      }, 350);
+    });
+    current = n;
+    updateNav();
+    triggerSlideContent(n);
+    if (n === 0) startCounters();
+  }
+
+  // ---- Keyboard navigation ----
+  document.addEventListener('keydown', e => {
+    const drawerOpen = document.getElementById('detail-drawer')?.classList.contains('open');
+    if (e.key === 'Escape' && drawerOpen) { closeDrawer(); return; }
+    if (drawerOpen) return; // don't navigate slides while drawer is open
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') goTo(current + 1, 1);
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') goTo(current - 1, -1);
+  });
+
+  // ---- Touch swipe ----
+  let touchX = 0;
+  document.addEventListener('touchstart', e => touchX = e.touches[0].clientX, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = touchX - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) goTo(current + (dx > 0 ? 1 : -1), dx > 0 ? 1 : -1);
+  }, { passive: true });
+
+  // ---- Init: show slide 0, trigger content, start counters ----
+  (function init() {
+    slides[0].style.display = 'flex';
+    slides[0].style.opacity = '1';
+    slides[0].style.transform = 'translateX(0)';
+    updateNav();
+    triggerSlideContent(0);
+    startCounters();
+  })();
+
+  // ── Detail Drawer System ────────────────────────────────────────
+  const DETAIL_DATA = {
+    /* Slide 2 — Overview */
+    'caf-hooks': {
+      title: 'caf-hooks — Rust 바이너리 훅 인터셉터',
+      body: `<p>caf-hooks는 모든 Claude Code 도구 호출을 가로채는 컴파일된 Rust 바이너리입니다. 16개 이벤트 타입에 걸쳐 48개의 훅 이벤트를 처리하며 <strong>5–30ms</strong>에 실행됩니다. 모든 도구 호출 전에 실행되는 PreToolUse에서도 체감 지연 제로를 달성합니다.</p>
+<p>네 가지 핵심 훅: <code>session_recorder</code>는 JSONL 이벤트 스트림을 <code>~/.caf/sessions/</code>에 기록하고, <code>damage_control</code>은 100개 이상의 파괴적 명령 패턴을 매칭하여 차단하며, <code>orch_depth_tracker</code>는 무한 orchestrator 재귀를 방지하고, <code>doctor</code>는 헬스 자가 점검을 제공합니다.</p>
+<p><code>caf-hooks/src/</code>를 수정한 후에는 <code>cargo build --release</code>로 재빌드하고 <code>bash install.sh</code>를 다시 실행하세요.</p>`,
+      example: `Claude Code event → caf-hooks binary (5–30ms)
+  ↓ damage_control check → block or allow
+  ↓ session_recorder → ~/.caf/sessions/<session_id>.jsonl
+  ↓ orch_depth_tracker → check recursion depth`,
+      paths: ['caf-hooks/src/hooks/', 'caf-hooks/src/main.rs', 'templates/settings.json.template']
+    },
+    'global-hooks': {
+      title: 'global-hooks — Python 로직 레이어',
+      body: `<p>global-hooks는 caf-hooks의 Python 대응 컴포넌트입니다. Rust가 크리티컬 패스(차단, 기록)를 담당하는 동안, Python은 복잡한 비동기 로직을 처리합니다: LLM 기반 사실 추출, 메모리 쓰기, circuit-breaker 상태, 요청 분류.</p>
+<p>29개의 Python 훅이 16개 이벤트 타입을 커버합니다. 모두 <code>uv run</code>으로 실행됩니다. 핵심 훅: <code>auto_fact_extractor.py</code> (PostToolUse → FACTS.md), <code>auto_memory_writer.py</code> (Stop → git diff를 통해 MEMORY.md), <code>circuit_breaker_wrapper.py</code> (3회 실패 후 60초간 훅 비활성화), <code>caddy/analyze_request.py</code> (UserPromptSubmit → 작업 복잡도 분류).</p>
+<p>여기서 Rust 대신 Python을 선택한 이유는 사후 작업에서 유연성과 생태계(LLM API, SQLite, regex)가 원시 속도보다 중요하기 때문입니다.</p>`,
+      example: `# Stop event fires:
+auto_memory_writer.py
+  → git diff HEAD → extract changed files + decisions
+  → append to .claude/MEMORY.md (max 30 entries)
+
+# Hook crashes 3 times in 60s:
+circuit_breaker_wrapper.py
+  → writes OPEN state to ~/.claude/circuit_breakers/
+  → hook bypassed for 60s → auto-reset`,
+      paths: ['global-hooks/framework/', 'global-hooks/framework/guardrails/', 'global-hooks/framework/memory/', 'data/caddy_config.yaml']
+    },
+    'skill-orchestrate': {
+      title: '/orchestrate — 웨이브 기반 병렬 실행',
+      body: `<p><code>/orchestrate</code>는 핵심 멀티 에이전트 스킬입니다. 호출 시 반드시 첫 번째 액션이어야 합니다 — orchestrator는 직접 작업하지 않고 병렬 서브 에이전트 팀을 생성합니다. 이는 우회 시도를 차단하는 UserPromptSubmit 훅으로 강제됩니다.</p>
+<p>컨설턴트 우선 모델: Wave 0a는 도메인 컨설턴트(frontend, backend, architecture, security)를 파견해 대화형으로 요구사항을 수집합니다. Wave 0b는 병렬 researcher를 실행합니다. Wave 1은 병렬 builder를 생성합니다(기계적 변경에는 Haiku, 다중 파일 추론에는 Sonnet). Wave 2는 자가 치유 기능을 갖춘 Haiku validator를 실행합니다 — 사용자에게 에스컬레이션하기 전 최대 2회 재시도.</p>
+<p>작업 복잡도가 웨이브 선택을 결정합니다: Trivial = direct (모든 웨이브 건너뜀); Simple = 0b→1→2 (에이전트 3개); Standard/Complex = 0a→0b→1→2 (에이전트 5–8개 이상).</p>`,
+      example: `User: /orchestrate add Stripe webhook to payment service
+
+Wave 0a: frontend-consultant + backend-consultant
+  → ask 6 questions about API shape, auth, error handling
+  → produce spec.md
+
+Wave 0b: researcher-stripe, researcher-security (parallel, Sonnet)
+  → read Stripe docs + codebase + security patterns
+
+Wave 1: builder-api, builder-test (parallel)
+  → builder-api: Haiku (exact spec → exact code)
+  → builder-test: Haiku (test template → test file)
+
+Wave 2: validator (Haiku)
+  → run tests → FAIL → debugger → builder-fix → retry`,
+      paths: ['global-skills/orchestrate/SKILL.md', '~/.caf/orch/<orch_id>/', '~/.caf/current_orch_id']
+    },
+    'run-explorer': {
+      title: 'Run Explorer — 실행 가시성 대시보드',
+      body: `<p>Run Explorer는 모든 orchestration run과 Claude Code 세션을 시각화하는 Vue 3 + Bun 웹 대시보드입니다. 퇴역한 Rust TUI(caf-hud)를 대체합니다. Bun API 서버는 포트 3001에서 실행되며 <code>~/.caf/orch/</code>와 <code>~/.caf/sessions/</code>에서 직접 읽습니다.</p>
+<p><strong>RUN</strong>: 하나의 <code>/orchestrate</code> 호출로, <code>orch_&lt;timestamp&gt;</code>로 식별됩니다. <strong>SESSION</strong>: 하나의 Claude Code 대화 창. orchestrator가 서브 에이전트를 생성하면 하나의 Run = N개의 Session이 됩니다.</p>
+<p>Session↔Run 연관은 <code>~/.caf/current_orch_id</code>를 통해 작동합니다: <code>bin/orch-shared init</code>이 run ID를 원자적으로 씁니다(tempfile + rename), <code>session_recorder.rs</code>는 SessionStart 시 4시간 만료 확인과 함께 이를 읽습니다.</p>`,
+      example: `cd apps/run-explorer
+bun run server/src/index.ts
+# Open: http://localhost:3001
+
+# Routes:
+/              → list all orchestration runs
+/runs/:id      → run detail: waves, leads, timeline
+/sessions      → all recorded sessions (with project filter)
+/sessions/:id  → session detail: prompts, tool calls, cost
+/compare       → side-by-side run comparison
+/live          → real-time WebSocket event stream`,
+      paths: ['apps/run-explorer/server/src/index.ts', 'apps/run-explorer/client/src/', 'apps/run-explorer/shared/types.ts']
+    },
+
+    /* Slide 3 — Memory Layers */
+    'mem-l3': {
+      title: 'L3 Semantic — 전역 크로스 프로젝트 패턴',
+      body: `<p>L3는 가장 신뢰도가 높고 수명이 긴 메모리 레이어입니다. <code>~/.claude/</code> 아래에 위치하며 모든 프로젝트에서 공유됩니다. 매 세션 시작 시 자동으로 주입됩니다(CLAUDE.md를 통해 ~800 토큰). 전역 <code>~/.claude/memory/MEMORY.md</code>(크로스 프로젝트 요약), <code>~/.claude/agents/</code>(22개 에이전트 정의), <code>~/.claude/skills/</code>(30개 스킬 정의)를 포함합니다.</p>
+<p>이 레이어는 항상 주입되므로, 모든 새 프로젝트는 별도 설정 없이 CAF의 전체 에이전트 목록과 행동 규칙을 상속받습니다. 신뢰 순위: 최고. FACTS.md의 CONFIRMED 사실이 모든 추론보다 우선합니다.</p>
+<p><code>auto_memory_writer.py</code>로 작성됩니다(크로스 프로젝트 패턴). <code>validate_facts.py</code>로 90일 후 정리됩니다. <code>bash install.sh</code>로 관리됩니다(심볼릭 링크 생성).</p>`,
+      example: `~/.claude/
+  memory/MEMORY.md    ← cross-project patterns, user preferences
+  agents/             ← 22 agents (symlinked from global-agents/)
+  skills/             ← 30 skills (symlinked from global-skills/)
+  CLAUDE.md           ← injects all of the above at session start
+
+Injection: ~800 tokens, every session, every project`,
+      paths: ['~/.claude/memory/MEMORY.md', '~/.claude/agents/', '~/.claude/skills/', 'install.sh']
+    },
+    'mem-l2': {
+      title: 'L2 Episodic — 프로젝트 생애주기 세션 히스토리',
+      body: `<p>L2는 프로젝트 범위이며 프로젝트 생애주기 동안 지속됩니다. 주요 파일: <code>.claude/PROJECT_CONTEXT.md</code> (<code>session_startup.py</code>가 세션 시작 시 ~1,000 토큰 자동 주입), <code>.claude/FACTS.md</code> (검증된 사실, 필요 시 읽기), <code>.claude/MEMORY.md</code> (세션 요약, 최대 30개 항목, 필요 시 읽기).</p>
+<p><code>auto_memory_writer.py</code>는 Stop 시 실행되어 <code>git diff</code>로 세션 중 변경된 내용을 파악한 후 구조화된 요약을 MEMORY.md에 추가합니다. <code>auto_fact_extractor.py</code>는 PostToolUse 시 실행되어 사실을 추출하고 분류합니다.</p>
+<p>L2 내 신뢰 계층: CONFIRMED 사실 &gt; CLAUDE.md 규칙 &gt; 추론. CONFIRMED는 <code>validate_facts.py</code>가 현재 소스 코드에 대해 해당 사실을 검증했음을 의미합니다.</p>`,
+      example: `# Session ends → auto_memory_writer.py:
+git diff HEAD~1..HEAD → extract: 3 files modified
+  → append to .claude/MEMORY.md:
+  "Added Stripe webhook handler (handlers/webhook.ts).
+   Modified types.ts + index.ts. orch_1776168272."
+
+# Force-refresh PROJECT_CONTEXT.md:
+rm .claude/PROJECT_CONTEXT.md
+# Next session start → /prime regenerates it`,
+      paths: ['.claude/PROJECT_CONTEXT.md', '.claude/FACTS.md', '.claude/MEMORY.md', 'global-hooks/framework/memory/auto_memory_writer.py']
+    },
+    'mem-l1': {
+      title: 'L1 Working — 세션 내 상태',
+      body: `<p>L1은 세션 범위이며 자동으로 관리됩니다. 현재 TaskList 상태(in_progress / completed 마커), 지금까지 수정된 파일 경로, 주요 세션 중 결정 사항을 보유합니다. 이를 통해 Claude는 파일을 처음부터 다시 읽지 않고도 여러 턴에 걸쳐 일관된 다단계 계획을 유지할 수 있습니다.</p>
+<p>세션이 종료되면 <code>auto_memory_writer.py</code>가 L1의 패턴을 L2로 승격합니다. 3회 이상 참조된 항목이 승격 후보입니다. ~1,000 토큰 예산은 <code>auto_context_manager.py</code>가 관리합니다.</p>`,
+      example: `Current session L1 state:
+
+TaskList:
+  [in_progress] Add Stripe webhook handler
+  [completed]   Write unit tests (handlers/webhook.test.ts)
+  [completed]   Update shared/types.ts
+
+Modified files this session:
+  apps/run-explorer/server/src/handlers/webhook.ts
+  apps/run-explorer/shared/types.ts
+
+Key decision: Use Bun.serve() not Express for webhook endpoint.`,
+      paths: ['global-hooks/framework/session/auto_context_manager.py']
+    },
+    'mem-l0': {
+      title: 'L0 Sensory — 일시적 도구 출력',
+      body: `<p>L0는 즉각적인 단일 턴 버퍼입니다: 지금 처리 중인 원시 도구 출력. 방금 읽은 파일 내용, 방금 생성된 bash 출력, 방금 반환된 검색 결과. 토큰 제한이 없습니다 — 전체 200K 컨텍스트 창을 사용할 수 있습니다 — 하지만 L0의 모든 내용은 각 응답 후 폐기됩니다.</p>
+<p>L0의 모든 인사이트는 명시적으로 보존해야 합니다: Claude가 L1에 메모를 작성하거나, 훅이 캡처하거나(PostToolUse에서 <code>auto_fact_extractor.py</code>가 사실 추출), 또는 사용자가 다음 턴에 다시 참조해야 합니다.</p>`,
+      example: `Turn: "Run tests and fix any failures"
+→ Claude runs: bun test
+→ 67-line test output lands in L0 (no token limit)
+→ Claude reads failures, fixes handlers/runs.ts
+→ Response sent
+
+Next turn: L0 cleared.
+The test output is gone unless Claude wrote a summary
+or created a TaskList entry from it.`,
+      paths: []
+    },
+
+    /* Slide 5 — /orchestrate waves */
+    'wave-0a': {
+      title: 'Wave 0a — 대화형 컨설팅',
+      body: `<p>Wave 0a는 요구사항 수집 단계로, Simple 작업에서는 건너뜁니다. orchestrator는 작업이 건드리는 내용에 따라 도메인 컨설턴트 에이전트를 <strong>병렬로</strong> 하나 이상 생성합니다: <code>frontend-consultant</code>, <code>backend-consultant</code>, <code>architecture-consultant</code>, 또는 <code>security-consultant</code>.</p>
+<p>각 컨설턴트는 기존 코드베이스를 읽은 후 <code>AskUserQuestion</code>을 통해 사용자에게 타겟 질문을 합니다. 코드를 <strong>작성하지 않습니다</strong>. Q&amp;A 후 각각 spec 섹션을 생성합니다. orchestrator는 모든 섹션을 하나의 <code>spec.md</code>로 종합하고 진행 전 사용자 승인을 요청합니다.</p>`,
+      example: `Task: "Add user authentication"
+
+Wave 0a consultants spawned (parallel):
+  frontend-consultant → reads existing Vue components
+    "Should login be a modal or full page? JWT or session cookie?"
+  backend-consultant  → reads existing API routes
+    "Existing auth middleware? Password hashing strategy?"
+  security-consultant → scans for auth attack surface
+    "Rate limiting on login endpoint? CSRF protection?"
+
+→ 3 spec sections synthesized → spec.md created
+→ User approves → Wave 0b begins`,
+      paths: ['global-agents/frontend-consultant.md', 'global-agents/backend-consultant.md', 'global-agents/security-consultant.md']
+    },
+    'wave-0b': {
+      title: 'Wave 0b — 병렬 리서치',
+      body: `<p>Wave 0b는 각각의 고유한 리서치 질문마다 하나의 researcher 에이전트를 생성합니다, 모두 단일 병렬 배치로. researcher는 Grep, Glob, Read, WebFetch, MCP 도구(papers, context7, GitHub)를 사용해 정보를 수집합니다. 코드를 작성하지 않습니다.</p>
+<p>Wave 0a의 spec이 리서치 대상을 정의합니다: 코드베이스의 기존 패턴, 라이브러리 문서, 보안 우려사항, 알려진 실패 패턴. 각 researcher는 발견 내용을 <code>research.md</code>에 추가합니다. orchestrator는 결과를 읽고 Wave 1 전에 spec을 업데이트할 수 있습니다.</p>`,
+      example: `Wave 0b researchers (all parallel, Sonnet):
+  researcher-patterns: grep codebase for auth patterns
+    → finds existing JWT middleware in utils/auth.ts
+    → adds to research.md
+  researcher-docs: fetches library docs via context7
+    → gets exact API for chosen auth library
+    → adds to research.md
+  researcher-security: checks OWASP top 10 for auth
+    → flags missing rate limiting
+    → adds to research.md`,
+      paths: ['~/.caf/orch/<orch_id>/research.md', 'global-agents/researcher.md']
+    },
+    'wave-1': {
+      title: 'Wave 1 — 병렬 빌드',
+      body: `<p>Wave 1은 여러 builder 에이전트를 병렬로 생성하며, 각각 spec의 독립적인 작업 스트림 하나를 담당합니다. builder는 spec을 읽고 정확히 명세된 내용을 구현합니다 — 리서치나 아키텍처 결정을 하지 않습니다.</p>
+<p>모델 선택이 중요합니다: 정확한 파일/라인/교체가 명시된 기계적 변경에는 Haiku; 다중 파일 추론이나 모호한 spec에는 Sonnet. 최소 팀은 builder 1명이지만, 표준 작업은 일반적으로 2–4개를 생성합니다.</p>
+<p>각 builder는 완료 시 <code>results/builder-&lt;name&gt;.md</code>에 빌드 로그를 작성합니다.</p>`,
+      example: `Wave 1 builders (all parallel):
+  builder-api (Sonnet): implements auth handler + middleware
+    → reads spec section: Backend
+    → writes handlers/auth.ts, middleware/jwt.ts
+    → build log → results/builder-api.md
+
+  builder-types (Haiku): updates TypeScript types
+    → spec says: "add User interface to shared/types.ts"
+    → exact 3-line change → done in 20s
+
+  builder-tests (Haiku): writes test file
+    → spec has exact test cases → fills template`,
+      paths: ['~/.caf/orch/<orch_id>/results/', 'global-agents/builder.md']
+    },
+    'wave-2': {
+      title: 'Wave 2 — QA + 자가 치유',
+      body: `<p>Wave 2는 builder 후에 항상 실행됩니다. Haiku validator가 spec을 읽고 테스트를 실행한 후 세부 내용과 함께 PASS 또는 FAIL을 <code>qa-report.md</code>에 보고합니다.</p>
+<p><strong>PASS 시</strong> (Standard/Complex 작업): <code>critical-analyst</code> (Sonnet)이 품질, 엣지 케이스, 영향 범위를 위해 전체 diff와 spec을 검토합니다. APPROVE/CONCERNS/REJECT를 보고합니다.</p>
+<p><strong>FAIL 시</strong> (첫 번째 실패): <code>debugger</code> 에이전트가 코드 작성 없이 근본 원인을 진단하고, 디버그 보고서가 주입된 새 builder가 생성됩니다. 두 번째 실패 시 <code>rework.md</code>와 함께 사용자에게 에스컬레이션합니다. 최대 2회 반복 — 절대 무한 루프 없음.</p>`,
+      example: `Wave 2:
+validator (Haiku) → bun test → 2 failures found → FAIL
+  → writes qa-report.md with exact error messages
+
+debugger (Sonnet) → reads qa-report.md + source
+  → diagnoses: "JWT secret not passed to middleware"
+  → writes debug-report.md
+
+builder-fix (Sonnet) → reads debug-report.md
+  → patches middleware/jwt.ts line 47
+  → build log → results/builder-fix.md
+
+validator (Haiku) → bun test → all pass → PASS
+  → critical-analyst: APPROVE`,
+      paths: ['~/.caf/orch/<orch_id>/qa-report.md', 'global-agents/validator.md', 'global-agents/debugger.md']
+    },
+
+    /* Slide 6 — Hook events */
+    'hook-pretooluse': {
+      title: 'PreToolUse — 모든 도구 호출 전',
+      body: `<p>PreToolUse는 Claude가 도구 호출(Bash, Read, Edit, Write 등)을 실행하기 전에 동기적으로 실행됩니다. 모든 도구에서 실행되기 때문에 시스템에서 가장 크리티컬 패스 훅입니다. 이것이 caf-hooks가 Python이 아닌 Rust로 5–30ms에 이를 처리하는 이유입니다.</p>
+<p>여기에 등록된 damage_control 훅은 도구 입력을 100개 이상의 파괴적 서명과 패턴 매칭합니다. 일치하면 exit code 1을 반환하고 Claude는 도구를 실행하지 않습니다. orchestrator_tool_guard도 여기서 실행되어 orchestrator가 Read/Edit을 직접 사용하는 것을 방지합니다.</p>`,
+      example: `Claude wants to run: bash rm -rf ./node_modules
+
+PreToolUse fires:
+  damage_control checks: "rm -rf" → matches pattern
+  Returns: {"decision": "block", "reason": "recursive delete detected"}
+  Exit code: 1
+
+Claude Code: tool blocked. Informs user.
+Claude never executes the rm command.`,
+      paths: ['caf-hooks/src/hooks/damage_control.rs', 'global-hooks/damage-control/patterns.yaml']
+    },
+    'hook-posttooluse': {
+      title: 'PostToolUse — 모든 도구 호출 후',
+      body: `<p>PostToolUse는 모든 도구 호출 완료 후 실행됩니다. CAF는 여기에 9개의 훅을 등록합니다 — 모든 이벤트 타입 중 가장 많습니다. 가시성과 메모리 추출이 이루어지는 곳입니다: 도구 출력을 사용할 수 있으며 사용자를 차단하지 않고 분석할 수 있습니다.</p>
+<p>핵심 PostToolUse 훅: <code>auto_fact_extractor.py</code> (도구 출력에서 CONFIRMED 사실 추출), <code>epistemic_guard.py</code> (3단계 OBSERVED/INFERRED/SPECULATIVE 레이블링 규율 강제), <code>hook_state_manager.py</code> (circuit breaker 상태 추적).</p>`,
+      example: `Claude reads a file → PostToolUse fires:
+  auto_fact_extractor.py:
+    input: file content of apps/run-explorer/shared/types.ts
+    output: "CONFIRMED: SessionSummary has orchRunId?: string"
+    → appended to .claude/FACTS.md
+
+Claude runs bash test → PostToolUse fires:
+  epistemic_guard.py:
+    checks if Claude's pending response distinguishes
+    OBSERVED (test output) from INFERRED (what it means)`,
+      paths: ['global-hooks/framework/facts/auto_fact_extractor.py', 'global-hooks/framework/guardrails/epistemic_guard.py']
+    },
+    'hook-sessionstart': {
+      title: 'SessionStart — 세션 초기화',
+      body: `<p>SessionStart는 Claude Code가 대화를 열 때 실행됩니다. CAF는 여기에 2개의 훅을 등록합니다. <code>session_startup.py</code>는 사용자의 첫 번째 턴 전에 <code>.claude/PROJECT_CONTEXT.md</code>(~1,000 토큰)를 대화 컨텍스트에 앞에 추가합니다 — 이것이 자동 프라임 메커니즘입니다.</p>
+<p><code>session_recorder.rs</code> (Rust)는 SessionStart 시 JSONL 이벤트 기록을 시작하기 위해 실행됩니다. <code>~/.caf/current_orch_id</code>를 읽어 세션을 활성 orchestration run에 연결합니다(4시간 만료 확인 포함).</p>`,
+      example: `Claude Code opens:
+  SessionStart event fires
+
+  session_startup.py:
+    reads .claude/PROJECT_CONTEXT.md
+    prepends to conversation context
+    → user's first message already has ~2,800 tok of context
+
+  session_recorder.rs:
+    reads ~/.caf/current_orch_id → "orch_1776168272"
+    creates ~/.caf/sessions/abc123.jsonl
+    writes: {"type":"SessionStart","orchRunId":"orch_1776168272",...}`,
+      paths: ['global-hooks/framework/session/session_startup.py', 'caf-hooks/src/hooks/session_recorder.rs']
+    },
+    'hook-sessionend': {
+      title: 'SessionEnd — 세션 종료 & 메모리 기록',
+      body: `<p>SessionEnd는 Claude Code 대화창이 닫힐 때 발생합니다. <code>auto_memory_writer.py</code>가 <code>git diff</code>를 실행해 세션 중 변경된 파일을 파악하고, 구조화된 요약을 <code>.claude/MEMORY.md</code>에 추가합니다. <code>session_recorder.rs</code>는 최종 세션 이벤트를 기록합니다.</p>`,
+      example: `Claude Code 종료:
+  SessionEnd 발생
+
+  auto_memory_writer.py:
+    git diff HEAD → 3개 파일 변경
+    → .claude/MEMORY.md에 추가:
+    "Session 2026-04-14: detail drawer 시스템 추가.
+     수정: docs/caf-deck.html. orch_1776168272."
+
+  session_recorder.rs:
+    {"type":"SessionEnd","durationSeconds":1847,...} 기록
+    ~/.caf/sessions/abc123.jsonl 닫기`,
+      paths: ['global-hooks/framework/memory/auto_memory_writer.py', 'caf-hooks/src/hooks/session_recorder.rs']
+    },
+    'hook-stop': {
+      title: 'Stop — Claude 응답 완료 후',
+      body: `<p>Stop은 Claude가 응답을 완료할 때마다(매 턴) 발생합니다. CAF는 여기에 10개의 훅을 등록했으며 — 모든 이벤트 중 가장 많습니다. Claude의 응답을 차단하지 않아야 하는 비동기 메모리·팩트 관리의 주요 실행 지점입니다.</p>
+<p>핵심 Stop 훅: <code>auto_memory_writer.py</code> (세션 요약), <code>validate_facts.py</code> (90일 이상 된 FACTS.md 항목 정리), <code>enforce_orchestrate.py</code> (오케스트레이터가 파일을 직접 읽었는지 검사).</p>`,
+      example: `Claude 응답 완료 → Stop 발생 (10개 훅 실행):
+
+  auto_fact_extractor.py:  → FACTS.md 업데이트
+  validate_facts.py:       → 90일 이상 항목 정리
+  enforce_orchestrate.py:  → 오케스트레이터가 파일 직접 읽었나?
+                              읽었으면 → 사용자에게 경고
+  hook_state_manager.py:   → 서킷 브레이커 카운터 업데이트`,
+      paths: ['global-hooks/framework/', 'global-hooks/framework/guardrails/enforce_orchestrate.py']
+    },
+    'hook-userpromptsubmit': {
+      title: 'UserPromptSubmit — 사용자 메시지 처리 전',
+      body: `<p>UserPromptSubmit는 사용자가 메시지를 제출한 후, Claude가 이를 보기 전에 발생합니다. CAF는 여기에 6개의 훅을 등록했습니다. 가장 중요한 것은 <code>caddy/analyze_request.py</code>(Caddy 분류기)로, Haiku LLM 호출을 사용해 요청을 복잡도/유형/품질/범위로 분류하고 처리 전략을 추천합니다.</p>
+<p>이 외에도: <code>epistemic_guard.py</code> (인식론적 레이블링 규칙 주입), <code>circuit_breaker_wrapper.py</code> (훅 OPEN 상태 확인).</p>`,
+      example: `사용자 입력: "auth 미들웨어 버그 수정해줘"
+
+UserPromptSubmit 발생:
+  caddy/analyze_request.py:
+    LLM 분류 → simple / fix / high / focused
+    추천 전략: direct (신뢰도: 88%)
+    → [Caddy] 접두사로 컨텍스트에 추가
+
+  epistemic_guard.py:
+    주입: "OBSERVED / INFERRED / SPECULATIVE 구분 필요"
+
+Claude는 사용자 메시지 + Caddy 컨텍스트 + 가드 알림을 함께 봄`,
+      paths: ['global-hooks/framework/guardrails/', 'data/caddy_config.yaml']
+    },
+
+    /* Slide 7 — Caddy strategies */
+    'strategy-direct': {
+      title: 'direct — 단일 파일 집중 수정',
+      body: `<p><code>direct</code>는 기본 전략입니다: Claude가 관련 파일을 읽고 서브에이전트 없이 문제를 수정합니다. 요청이 단순할 때 사용됩니다 (파일 위치 파악, 명확한 원인, 1–2개 파일 변경). Read→Fix→Done 루프.</p>
+<p>Caddy가 direct로 라우팅하는 경우: 명확한 오류 메시지가 있는 버그 수정, 단일 파일 리팩토링, 설정 변경, 텍스트 수정 등 파일 내용만으로 답이 명확한 작업.</p>`,
+      example: `사용자: "SessionDetailView.vue 47번째 줄 오타 수정해줘"
+
+전략: direct
+  Claude → SessionDetailView.vue 읽기
+  Claude → 47번째 줄 수정
+  완료. 서브에이전트 없음. 오케스트레이션 없음.
+
+direct를 트리거하는 Caddy 분류:
+  Complexity: simple
+  Type: fix
+  Quality: standard
+  Scope: focused`,
+      paths: []
+    },
+    'strategy-research': {
+      title: 'research — 코드베이스 탐색 필요',
+      body: `<p><code>research</code>는 답을 찾기 위해 여러 파일을 읽거나 코드베이스를 탐색해야 할 때 사용됩니다. Claude는 Grep, Glob, 타깃 Read를 사용해 변경 전 시스템을 파악합니다. 단일 에이전트 — 오케스트레이션 없음.</p>`,
+      example: `사용자: "세션 타이머가 왜 NaN으로 표시되나요?"
+
+전략: research
+  Claude → 전체 파일에서 "durationSeconds" grep
+  Claude → sessionParser.ts, types.ts 읽기
+  Claude → NaN 가드 누락 버그 원인 추적
+  Claude → sessionParser.ts 수정 (가드 추가)
+
+Caddy 분류:
+  Complexity: simple
+  Type: fix
+  Quality: standard
+  Scope: moderate`,
+      paths: []
+    },
+    'strategy-orchestrate': {
+      title: 'orchestrate — 웨이브 기반 멀티에이전트',
+      body: `<p><code>orchestrate</code>는 컨설턴트 → 리서치 → 빌드 → QA 웨이브로 구성된 전체 <code>/orchestrate</code> 스킬을 호출합니다. 여러 파일에 걸친 기능, 불명확한 범위, 또는 여러 도메인의 전문 지식이 필요한 작업에 사용됩니다.</p>`,
+      example: `사용자: "Run Explorer에 실시간 세션 비용 추적 추가해줘"
+
+전략: orchestrate (complexity: complex, scope: broad)
+  → Skill("orchestrate") 호출
+  → Wave 0a: backend + frontend 컨설턴트
+  → Wave 0b: 리서처 3명 (API, 비용 계산, SSE)
+  → Wave 1: 빌더 3명 (server, client, types)
+  → Wave 2: validator + critical-analyst`,
+      paths: ['global-skills/orchestrate/SKILL.md']
+    },
+    'strategy-rlm': {
+      title: 'rlm — 재귀형 멀티에이전트',
+      body: `<p><code>rlm</code> (Recursive Language Model)은 대규모 작업을 위한 피라미드 프로토콜입니다. 루트 오케스트레이터가 리드 에이전트를 생성하고, 각 리드는 워커 에이전트를 생성하며, 워커가 결과를 상위로 보고합니다. 여러 단계의 재귀로 수백 개의 에이전트를 병렬 실행할 수 있습니다.</p>
+<p>사용 케이스: 전체 시스템 리팩토링, 대규모 문서 생성, 종합 테스트 스위트 작성, 또는 10개 이상의 독립 작업 흐름이 있는 모든 작업.</p>`,
+      example: `사용자: "caf-hooks 전체 코드베이스에 대한 종합 테스트 생성해줘"
+
+전략: rlm
+  root-orch 생성:
+    lead-session   → 워커 3명 생성 (session 훅)
+    lead-safety    → 워커 4명 생성 (damage control 테스트)
+    lead-orch      → 워커 2명 생성 (depth tracker 테스트)
+    lead-doctor    → 워커 2명 생성 (health check 테스트)
+  → 병렬 워커 11명, 리드 4명, 루트 1명`,
+      paths: ['global-skills/rlm/SKILL.md']
+    },
+    'strategy-fusion': {
+      title: 'fusion — N개 병렬 접근법 중 최선 선택',
+      body: `<p><code>fusion</code>은 N개의 독립 에이전트가 동일한 문제를 서로 다른 방식으로 해결한 뒤, 최선의 결과를 합성합니다. 최적 해법이 불확실할 때 사용 — 여러 경로를 탐색하고 가장 강력한 결과를 선택합니다.</p>
+<p>유용한 케이스: 여러 유효한 접근법이 있는 알고리즘 설계, 다양한 인터랙션 패턴의 UI 설계, 트레이드오프가 큰 아키텍처 결정.</p>`,
+      example: `사용자: "세션 비용 추적 데이터 모델 설계해줘"
+
+전략: fusion (N=3)
+  agent-1 → 접근법: flat JSONL 이벤트 + 읽을 때 집계
+  agent-2 → 접근법: SQLite + 사전 계산된 롤업
+  agent-3 → 접근법: 인메모리 캐시 + 주기적 플러시
+
+  evaluator → 3가지 설계 모두 검토
+    → 우승: agent-2 (SQLite) — Run Explorer 쿼리에 최적`,
+      paths: ['global-skills/fusion/SKILL.md']
+    },
+    'strategy-team': {
+      title: 'team — 경량 멀티에이전트',
+      body: `<p><code>team</code>은 전체 웨이브 구조 없이 2–4개의 전문 에이전트를 생성하는 경량 오케스트레이션입니다. 컨설팅(Wave 0a)을 건너뛰고 바로 병렬 실행으로 진입합니다. 범위가 명확한 작업에서는 전체 orchestrate보다 빠릅니다.</p>`,
+      example: `사용자: "새 세션 필드에 맞춰 TypeScript 타입과 Vue 컴포넌트 모두 업데이트해줘"
+
+전략: team
+  builder-types  → shared/types.ts 업데이트
+  builder-vue    → SessionListView.vue + SessionDetailView.vue 업데이트
+  validator      → 타입 호환성 검사
+
+Wave 0a 없음 (범위 명확), Wave 0b 없음 (리서치 불필요).`,
+      paths: []
+    },
+
+    /* Slide 8 — Security */
+    'sec-permissions': {
+      title: 'Permissions — settings.json 허용/거부 규칙',
+      body: `<p>Claude Code의 내장 권한 시스템. CAF는 <code>"allow": ["*"]</code>(전체 자율 모드)로 설정하지만 프로젝트별로 구성 가능합니다. 권한은 <code>templates/settings.json.template</code>에서 정의되며 <code>bash install.sh</code>로 배포됩니다. <code>settings.json</code>을 직접 편집하지 마세요 — 매 설치 시 재생성됩니다.</p>
+<p>권한 모드: <code>default</code> (위험한 작업 시 확인 요청), <code>acceptEdits</code> (편집 자동 수락), <code>bypassPermissions</code> (완전 자동), <code>plan</code> (계획 우선). CAF는 오케스트레이터에 <code>bypassPermissions</code>를 사용합니다.</p>`,
+      example: `# templates/settings.json.template
+{
+  "permissions": {
+    "allow": ["*"],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [...damage_control 훅...],
+    "UserPromptSubmit": [...caddy 훅...]
+  }
+}
+
+# CAF의 실제 보호는 훅에서 나옵니다, 권한 설정이 아닙니다.
+# Damage control이 allow/deny 패턴보다 정밀합니다.`,
+      paths: ['templates/settings.json.template', 'install.sh']
+    },
+    'sec-damage-control': {
+      title: 'Damage Control — 100+ 패턴 매처',
+      body: `<p>Damage control은 PreToolUse 훅으로, Claude가 무언가를 실행하기 전에 모든 도구 입력을 100개 이상의 파괴적 서명과 패턴 매칭합니다. 셸 명령(재귀 삭제, 디스크 초기화), SQL(DROP TABLE, TRUNCATE), git(메인에 강제 푸시, 하드 리셋), 네트워크(브로드캐스트 패킷), 파일 작업(백업 없이 덮어쓰기)을 커버합니다.</p>
+<p>패턴은 <code>global-hooks/damage-control/patterns.yaml</code>에 정의됩니다. 새 패턴 추가는 YAML 항목만 추가하면 됩니다 — 코드 변경 없음. 훅은 30ms 미만 오버헤드로 Rust 바이너리에서 실행됩니다.</p>`,
+      example: `차단을 트리거하는 패턴:
+
+Shell:   rm -rf /  |  find / -exec rm  |  dd if=/dev/zero
+SQL:     DROP TABLE  |  TRUNCATE  |  DELETE FROM (WHERE 없음)
+Git:     push --force origin main  |  reset --hard HEAD~
+Network: broadcast  |  flood  |  iptables -F
+
+사용자에게 표시: "Damage control 차단: 재귀 삭제 감지됨.
+                 계속 진행이 필요한 이유를 설명하세요."`,
+      paths: ['global-hooks/damage-control/patterns.yaml', 'caf-hooks/src/hooks/damage_control.rs']
+    },
+    'sec-circuit-breaker': {
+      title: 'Circuit Breaker — 자동 훅 장애 격리',
+      body: `<p>서킷 브레이커는 단일 훅 고장이 Claude Code 세션 전체를 망가뜨리는 연쇄 장애를 방지합니다. 상태: CLOSED (정상), OPEN (훅 우회), HALF-OPEN (테스트 호출). 임계값: 60초 내 3회 실패 → OPEN. 60초 후 → HALF-OPEN → 테스트 호출 → 성공 → CLOSED.</p>
+<p>OPEN 상태에서는 <strong>실패한 훅만 우회되며, Claude 자체는 계속 작동합니다</strong>. Claude는 정상적으로 작동하고 해당 훅의 보호만 일시적으로 비활성화됩니다. 의도적으로 fail-open 설계 — 메모리 훅이 망가져도 코딩을 막아서는 안 됩니다.</p>`,
+      example: `auto_memory_writer.py가 ImportError로 충돌:
+  14:01:00 실패 1 → 기록
+  14:01:15 실패 2 → 기록
+  14:01:30 실패 3 → OPEN 상태
+
+  ~/.claude/circuit_breakers/auto_memory_writer.json:
+  {"state": "OPEN", "opened_at": 1776168272, "failures": 3}
+
+  14:02:30 → HALF-OPEN → 테스트 호출
+  → 성공 → CLOSED
+  → auto_memory_writer 재개
+
+수동 초기화: 상태 파일 삭제`,
+      paths: ['global-hooks/framework/guardrails/circuit_breaker_wrapper.py', '~/.claude/circuit_breakers/']
+    },
+
+    /* Slide 9 — Run Explorer API endpoints */
+    'api-runs': {
+      title: 'GET /api/runs — 모든 오케스트레이션 런',
+      body: `<p><code>~/.caf/orch/</code>에서 발견된 모든 런의 요약 목록을 반환합니다. 각 런 디렉토리에는 <code>spec.md</code>, <code>discoveries.jsonl</code>, <code>results/</code> 서브디렉토리가 있습니다. 서버는 이 파일들을 직접 읽습니다 — 런 생성 시 데이터베이스 쓰기 없음.</p>`,
+      example: `GET /api/runs
+
+Response:
+[
+  {
+    "id": "orch_1776168272",
+    "startTime": "2026-04-14T10:30:00Z",
+    "status": "completed",
+    "waveCount": 4,
+    "leadCount": 2,
+    "project": "caf-team",
+    "tokenEstimate": 48300
+  },
+  ...
+]`,
+      paths: ['~/.caf/orch/', 'apps/run-explorer/server/src/handlers/runs.ts']
+    },
+    'api-sessions': {
+      title: 'GET /api/sessions — 녹화된 모든 세션',
+      body: `<p><code>~/.caf/sessions/</code>에서 발견된 모든 세션의 요약 목록을 반환합니다. 각 세션은 <code>session_recorder.rs</code>가 작성한 JSONL 파일입니다. 서버는 타이밍을 위해 첫 번째와 마지막 이벤트를 파싱하고, orchRunId가 있으면 추출하며, 프롬프트 메시지 수를 셉니다.</p>`,
+      example: `GET /api/sessions
+
+Response:
+[
+  {
+    "id": "abc123def456",
+    "startTime": "2026-04-14T10:28:00Z",
+    "endTime": "2026-04-14T11:15:00Z",
+    "durationSeconds": 2820,
+    "promptCount": 47,
+    "project": "caf-team",
+    "orchRunId": "orch_1776168272",
+    "status": "ended"
+  }
+]`,
+      paths: ['~/.caf/sessions/', 'apps/run-explorer/server/src/services/sessionParser.ts']
+    },
+    'api-run-sessions': {
+      title: 'GET /api/runs/:id/sessions — 런에 속한 세션',
+      body: `<p><code>orchRunId === runId</code>인 모든 세션을 반환합니다. Run Detail 뷰가 특정 오케스트레이션 런에 어떤 Claude Code 대화창이 참여했는지 보여주는 방식입니다. 오케스트레이터가 Agent 도구로 서브에이전트를 생성하면 하나의 런이 여러 세션을 생성할 수 있습니다.</p>`,
+      example: `GET /api/runs/orch_1776168272/sessions
+
+Response:
+[
+  {"id": "abc123", "promptCount": 47, ...},  ← main session
+  {"id": "def456", "promptCount": 12, ...},  ← builder-api agent
+  {"id": "ghi789", "promptCount": 8,  ...}   ← builder-test agent
+]
+
+# 1 run → 3 sessions (orchestrator + 2 parallel builders)`,
+      paths: ['apps/run-explorer/server/src/handlers/sessions.ts']
+    }
+  };
+
+  function openDrawer(key) {
+    const data = DETAIL_DATA[key];
+    if (!data) return;
+
+    const drawer = document.getElementById('detail-drawer');
+    const overlay = document.getElementById('detail-overlay');
+    const title = document.getElementById('detail-drawer-title');
+    const body = document.getElementById('detail-drawer-body');
+
+    title.textContent = data.title;
+
+    let html = `<div class="detail-section">${data.body}</div>`;
+
+    if (data.example) {
+      html += `
+      <div>
+        <div class="detail-label">예시</div>
+        <pre class="detail-code">${escapeHtml(data.example)}</pre>
+      </div>`;
+    }
+
+    if (data.paths && data.paths.length > 0) {
+      html += `
+      <div>
+        <div class="detail-label">관련 파일</div>
+        <div class="detail-paths">
+          ${data.paths.map(p => `<span class="detail-path">${p}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    html += `<div style="font-size:10px;color:#94A3B8;text-align:center;padding-top:10px;border-top:1px solid #F1F5F9;margin-top:8px;">ESC 또는 바깥 클릭으로 닫기</div>`;
+    body.innerHTML = html;
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    document.getElementById('detail-drawer').classList.remove('open');
+    document.getElementById('detail-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Close on overlay click and Escape key
+  document.getElementById('detail-overlay').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+</script>
+
+<!-- Detail Drawer -->
+<div id="detail-overlay" class="detail-overlay"></div>
+<div id="detail-drawer" class="detail-drawer">
+  <div class="detail-drawer-header">
+    <div id="detail-drawer-title" class="detail-drawer-title"></div>
+    <button class="detail-drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+  </div>
+  <div id="detail-drawer-body" class="detail-drawer-body"></div>
+</div>
+
+</body>
+</html>

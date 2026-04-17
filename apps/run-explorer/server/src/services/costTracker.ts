@@ -9,6 +9,7 @@
 
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import type { RunCosts, AgentCost } from '../../../shared/types'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ export interface CostProjection {
 // ── Constants ────────────────────────────────────────────────────
 
 const COST_LOG_PATH = join(homedir(), '.claude', 'logs', 'cost_tracking.jsonl')
+const SESSIONS_DIR = join(homedir(), '.caf', 'sessions')
 
 // ── Core Functions ───────────────────────────────────────────────
 
@@ -307,4 +309,79 @@ function calculateCost(inputTokens: number, outputTokens: number, model: string)
   const inputCost = (inputTokens / 1_000_000) * pricing.input
   const outputCost = (outputTokens / 1_000_000) * pricing.output
   return Math.round((inputCost + outputCost) * 1e6) / 1e6
+}
+
+// ── Per-Run Cost Aggregation ─────────────────────────────────────
+
+interface OrchBroadcastEvent {
+  ts: string
+}
+
+const ORCH_DIR = join(homedir(), '.caf', 'orch')
+
+/**
+ * Join strategy: use events.jsonl timestamps to bound the run window.
+ * cost_tracking.jsonl uses the PARENT session ID, not sub-agent session IDs,
+ * so session-file-based join fails. Timestamp window from events.jsonl is accurate.
+ */
+export async function getRunCosts(runId: string): Promise<RunCosts | null> {
+  // Step 1: Read all cost entries
+  const entries = await readEntries()
+  if (entries.length === 0) return null
+
+  // Step 2: Get run time window from events.jsonl
+  const eventsPath = join(ORCH_DIR, runId, 'events.jsonl')
+  const eventsText = await Bun.file(eventsPath).text().catch(() => null)
+  if (!eventsText) return null
+
+  let minMs = Infinity
+  let maxMs = -Infinity
+  for (const line of eventsText.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    try {
+      const ev = JSON.parse(trimmed) as OrchBroadcastEvent
+      if (ev.ts) {
+        const ms = new Date(ev.ts).getTime()
+        if (ms < minMs) minMs = ms
+        if (ms > maxMs) maxMs = ms
+      }
+    } catch { /* skip */ }
+  }
+  if (minMs === Infinity) return null
+
+  // Add 5-minute buffer after last event to catch stragglers
+  const windowEndMs = maxMs + 5 * 60 * 1000
+
+  // Step 3: Filter cost entries to run time window and aggregate per agent
+  const runEntries = entries.filter((e) => e.epoch_ms >= minMs && e.epoch_ms <= windowEndMs)
+
+  const agentMap = new Map<string, AgentCost>()
+  for (const e of runEntries) {
+    const existing = agentMap.get(e.agent_name)
+    if (existing) {
+      existing.inputTokens += e.input_tokens
+      existing.outputTokens += e.output_tokens
+      existing.cacheReadTokens += (e.metadata?.cache_read_tokens as number | undefined) ?? 0
+      existing.costUsd += e.cost_usd
+    } else {
+      agentMap.set(e.agent_name, {
+        agentName: e.agent_name,
+        model: e.model,
+        tier: e.tier,
+        inputTokens: e.input_tokens,
+        outputTokens: e.output_tokens,
+        cacheReadTokens: (e.metadata?.cache_read_tokens as number | undefined) ?? 0,
+        costUsd: e.cost_usd,
+      })
+    }
+  }
+
+  const agents = [...agentMap.values()].sort((a, b) => b.costUsd - a.costUsd)
+  const totalCostUsd = agents.reduce((s, a) => s + a.costUsd, 0)
+  const totalInputTokens = agents.reduce((s, a) => s + a.inputTokens, 0)
+  const totalOutputTokens = agents.reduce((s, a) => s + a.outputTokens, 0)
+  const totalCacheReadTokens = agents.reduce((s, a) => s + a.cacheReadTokens, 0)
+
+  return { runId, totalCostUsd, totalInputTokens, totalOutputTokens, totalCacheReadTokens, agents }
 }

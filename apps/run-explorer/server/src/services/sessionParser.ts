@@ -7,12 +7,13 @@ const SESSIONS_DIR = join(homedir(), '.caf', 'sessions')
 
 export interface SessionSummary {
   id: string
-  startTime: string
+  startTime?: string
   endTime?: string
   project?: string
   promptCount: number
   status: 'active' | 'ended'
   durationSeconds?: number
+  orchRunId?: string
 }
 
 export interface SessionMessage {
@@ -64,17 +65,17 @@ function buildSummary(sessionId: string, events: RawEvent[]): SessionSummary {
   const stopEvent  = events.find((e) => e.type === 'Stop')
   const prompts    = events.filter((e) => e.type === 'UserPromptSubmit')
 
-  const startTime = events[0]?.ts ?? new Date(0).toISOString()
+  const startTime = startEvent?.ts ?? undefined
   const endTime   = stopEvent?.ts
   const status: 'active' | 'ended' = stopEvent ? 'ended' : 'active'
   const project   = extractProject(startEvent?.cwd ?? events[0]?.cwd)
+  const orchRunId = startEvent?.orch_run_id
 
-  let durationSeconds: number | undefined
-  if (events[0] && stopEvent) {
-    durationSeconds = Math.round((stopEvent.ms - events[0].ms) / 1000)
-  }
+  const durationSeconds = (stopEvent?.ms && events[0]?.ms)
+    ? Math.round((stopEvent.ms - events[0].ms) / 1000)
+    : undefined
 
-  return { id: sessionId, startTime, endTime, project, promptCount: prompts.length, status, durationSeconds }
+  return { id: sessionId, startTime, endTime, project, promptCount: prompts.length, status, durationSeconds, orchRunId }
 }
 
 // ─── listSessions ─────────────────────────────────────────────────────────────
@@ -97,7 +98,12 @@ export async function listSessions(): Promise<SessionSummary[]> {
     summaries.push(buildSummary(sessionId, events))
   }
 
-  summaries.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+  summaries.sort((a, b) => {
+    const ta = a.startTime ? new Date(a.startTime).getTime() : 0
+    const tb = b.startTime ? new Date(b.startTime).getTime() : 0
+    if (isNaN(ta) || isNaN(tb)) return 0
+    return tb - ta
+  })
   return summaries
 }
 
@@ -106,7 +112,9 @@ export async function listSessions(): Promise<SessionSummary[]> {
 export async function getSessionDetail(id: string): Promise<SessionDetail | null> {
   const filePath = join(SESSIONS_DIR, `${id}.jsonl`)
   const events = await readJsonl(filePath)
-  if (events.length === 0) return null
+  if (events.length === 0) {
+    return { id, startTime: '', promptCount: 0, status: 'active', messages: [] }
+  }
 
   const summary = buildSummary(id, events)
   const messages: SessionMessage[] = events.map((e, i) => ({

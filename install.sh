@@ -364,7 +364,16 @@ for skill_dir in "$REPO_DIR"/global-skills/*/; do
   skill_name=$(basename "$skill_dir")
   ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
 done
-echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
+# Also link gstack sub-skills directly so they're invokable by name
+for skill_dir in "$REPO_DIR"/global-skills/gstack/*/; do
+  [ -f "$skill_dir/SKILL.md" ] || continue
+  skill_name=$(basename "$skill_dir")
+  # Don't overwrite if global-skills already linked this name
+  [ -e "$CLAUDE_DIR/skills/$skill_name" ] && continue
+  ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+done
+GSTACK_COUNT=$(find "$REPO_DIR/global-skills/gstack" -maxdepth 1 -mindepth 1 -type d -name "*/SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
+echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills + gstack sub-skills"
 # Ensure auto-generated skills directory exists (used by auto_skill_generator hook)
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "$CLAUDE_DIR/data"
@@ -503,12 +512,21 @@ else
 fi
 
 # Check ~/.claude/skills/ symlinks
-SKILL_COUNT=$(ls -d "$HOME/.claude/skills/"*/ 2>/dev/null | grep -v auto-generated | wc -l | tr -d ' ')
+SKILL_COUNT=$(find ~/.claude/skills/ -maxdepth 1 -type l -exec sh -c 'target=$(readlink "$1"); [[ "$target" == */global-skills/* ]] && echo "$1"' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
 REPO_SKILL_COUNT=$(ls -d "$REPO_DIR/global-skills/"*/ 2>/dev/null | wc -l | tr -d ' ')
-if [ "$SKILL_COUNT" = "$REPO_SKILL_COUNT" ]; then
-  echo "  skills: OK ($SKILL_COUNT symlinks)"
+# Count gstack sub-skills that will actually be linked (those with SKILL.md not already in global-skills)
+GSTACK_LINKED=0
+for _gd in "$REPO_DIR/global-skills/gstack/"/*/; do
+  [ -f "$_gd/SKILL.md" ] || continue
+  _gname=$(basename "$_gd")
+  [ -d "$REPO_DIR/global-skills/$_gname" ] && continue  # already linked from global-skills
+  GSTACK_LINKED=$((GSTACK_LINKED + 1))
+done
+EXPECTED_SKILL_COUNT=$((REPO_SKILL_COUNT + GSTACK_LINKED))
+if [ "$SKILL_COUNT" = "$EXPECTED_SKILL_COUNT" ]; then
+  echo "  skills: OK ($SKILL_COUNT symlinks: $REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
 else
-  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT, repo has $REPO_SKILL_COUNT"
+  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT, expected $EXPECTED_SKILL_COUNT ($REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
   DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
 fi
 
