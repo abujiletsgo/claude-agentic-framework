@@ -41,7 +41,6 @@ guides/              10 engineering guides
 docs/                5 reference docs
 data/                model_tiers.yaml + knowledge-db/
 templates/           settings.json.template
-apps/observability/  Vue 3 + Bun (ports 4000/5173)
 archive/             Archived commands, skills, hooks
 ```
 
