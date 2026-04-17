@@ -152,7 +152,6 @@ guides/              {d['GUIDE_COUNT']} engineering guides
 docs/                {d['DOC_COUNT']} reference docs
 data/                model_tiers.yaml + knowledge-db/
 templates/           settings.json.template
-apps/observability/  Vue 3 + Bun (ports 4000/5173)
 archive/             Archived commands, skills, hooks
 ```
 

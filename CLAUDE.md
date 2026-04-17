@@ -5,7 +5,7 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        48 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
+global-hooks/        43 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:1, hooks_Stop:9, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:4, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
 global-agents/       22 agents (22 root + 0 team)
 global-commands/     17 commands
 global-skills/       28 skills
