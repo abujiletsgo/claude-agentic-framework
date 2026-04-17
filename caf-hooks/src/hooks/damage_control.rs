@@ -61,14 +61,18 @@ fn get_config_path() -> PathBuf {
         }
     }
 
+    // CAF_HOOKS_DIR env var — primary candidate
+    if let Ok(dir) = std::env::var("CAF_HOOKS_DIR") {
+        let p = PathBuf::from(dir).join("patterns.yaml");
+        if p.exists() {
+            return p;
+        }
+    }
+
     // Script-relative: look in the same dir as this binary, and parent dirs
     // In production, the binary lives alongside the global-hooks dir
     // Try the canonical location relative to CLAUDE_PROJECT_DIR or current dir
     let candidates = [
-        // Absolute canonical path used in the CAF repo layout
-        PathBuf::from(
-            "/Users/tomkwon/Documents/claude-agentic-framework/global-hooks/damage-control/patterns.yaml",
-        ),
         // Relative to CWD
         PathBuf::from("global-hooks/damage-control/patterns.yaml"),
         PathBuf::from("damage-control/patterns.yaml"),
@@ -88,6 +92,7 @@ fn get_config_path() -> PathBuf {
 fn load_config() -> DamageControlConfig {
     let path = get_config_path();
     if !path.exists() {
+        eprintln!("[WARN] damage-control: patterns.yaml not found at any candidate path — running with ZERO patterns. Set CAF_HOOKS_DIR env var.");
         return DamageControlConfig::default();
     }
     let text = match std::fs::read_to_string(&path) {

@@ -26,6 +26,8 @@ except ImportError:
     except ImportError:
         HAS_PORTALOCKER = False
 
+import os
+
 try:
     from .state_schema import (
         HookState,
@@ -42,6 +44,38 @@ except ImportError:
         CircuitState,
         get_current_timestamp,
     )
+
+
+def _normalize_hook_key_inline(key: str) -> str:
+    """
+    Inline key normalization for migration — converts full-path or space-joined
+    CB keys to canonical kebab-case short names.
+    """
+    parts = key.split()
+    skip = {'uv', 'run', '--no-project', 'python', 'python3', '--'}
+    for part in reversed(parts):
+        if part.endswith('.py'):
+            return os.path.splitext(os.path.basename(part))[0].replace('_', '-').lower()
+        if part and not part.startswith('-') and part not in skip and '/' not in part:
+            clean = part.replace('_', '-').lower()
+            if clean not in skip:
+                return clean
+    return key  # fallback: unchanged
+
+
+def migrate_long_path_keys(state: dict) -> dict:
+    """Migrate old full-path CB keys to canonical short keys."""
+    if 'hooks' not in state:
+        return state
+    new_hooks = {}
+    for key, value in state['hooks'].items():
+        if ' ' in key or '/' in key:
+            normalized = _normalize_hook_key_inline(key)
+            new_hooks[normalized] = value
+        else:
+            new_hooks[key] = value
+    state['hooks'] = new_hooks
+    return state
 
 
 class HookStateManager:
@@ -122,6 +156,7 @@ class HookStateManager:
             with self._lock_file(f, exclusive=False):
                 try:
                     data = json.load(f)
+                    data = migrate_long_path_keys(data)
                     return HookStateData.from_dict(data)
                 except (json.JSONDecodeError, KeyError, TypeError) as e:
                     raise ValueError(f"Corrupted state file: {e}") from e

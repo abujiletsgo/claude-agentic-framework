@@ -1,6 +1,6 @@
 ---
 name: solve
-description: Redirect to /orchestrate — the unified entry point for all complex work including autonomous problem-solving.
+description: "Alias for /orchestrate — DO NOT dispatch independently. Routes all input directly to the orchestrator. Not a competing trigger."
 user-invocable: true
 ---
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Agentic Framework v4.1 — 종합 운영 가이드</title>
+<title>Claude Agentic Framework v5.2 — 종합 운영 가이드</title>
 <style>
   :root {
     --bg: #fafaf8;
@@ -553,9 +553,9 @@
 <body>
 
 <header>
-  <div class="eyebrow">Claude Agentic Framework v4.1</div>
+  <div class="eyebrow">Claude Agentic Framework v5.2</div>
   <h1><span>종합</span> 운영 가이드</h1>
-  <p>모든 Claude Code session에서 작동하는 자율형 multi-agent orchestration platform. Hook 42개, Agent 15개, Command 16개, Skill 20개를 하나의 프레임워크로 통합합니다.</p>
+  <p>모든 Claude Code session에서 작동하는 자율형 multi-agent orchestration platform. Hook 48개, Agent 22개, Command 17개, Skill 28개를 하나의 프레임워크로 통합합니다.</p>
 </header>
 
 <nav>
@@ -582,17 +582,17 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="overview">
     <div class="eyebrow-sm">개요</div>
-    <h2>v4.1 핵심 숫자</h2>
-    <p class="section-desc">하나의 저장소, 하나의 설치, 하나의 진실 소스. Opus-first 아키텍처로 Max plan에서 최적 성능을 발휘합니다.</p>
+    <h2>v5.2 핵심 숫자</h2>
+    <p class="section-desc">하나의 저장소, 하나의 설치, 하나의 진실 소스. Opus-first 아키텍처로 Max plan에서 최적 성능을 발휘합니다. v5.x부터 컨설턴트 우선 모델로 전환 — Wave 0에서 사용자↔컨설턴트 대화로 spec을 먼저 작성한 후 빌더를 병렬 실행합니다.</p>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num">42</div><div class="stat-label">Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">48</div><div class="stat-label">Hooks</div></div>
       <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Events</div></div>
       <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Async Hooks</div></div>
-      <div class="stat-card"><div class="stat-num">15</div><div class="stat-label">Agents</div></div>
-      <div class="stat-card"><div class="stat-num">16</div><div class="stat-label">Commands</div></div>
-      <div class="stat-card"><div class="stat-num">20</div><div class="stat-label">Skills</div></div>
-      <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">Rust Hooks</div></div>
+      <div class="stat-card"><div class="stat-num">22</div><div class="stat-label">Agents</div></div>
+      <div class="stat-card"><div class="stat-num">17</div><div class="stat-label">Commands</div></div>
+      <div class="stat-card"><div class="stat-num">28</div><div class="stat-label">Skills</div></div>
+      <div class="stat-card"><div class="stat-num">22</div><div class="stat-label">Rust Hooks</div></div>
     </div>
 
     <div class="flow">
@@ -606,15 +606,15 @@
         </div>
         <div class="gl-card global">
           <h3>global-agents/</h3>
-          <div class="gl-item"><div class="gl-item-name">15개 에이전트</div><div class="gl-item-desc">4 Opus + 6 Sonnet + 3 Haiku + 2 Reference</div></div>
+          <div class="gl-item"><div class="gl-item-name">22개 에이전트</div><div class="gl-item-desc">2 Opus + 15 Sonnet + 4 Haiku</div></div>
         </div>
         <div class="gl-card global">
           <h3>global-commands/</h3>
-          <div class="gl-item"><div class="gl-item-name">16개 명령어</div><div class="gl-item-desc">슬래시 명령어 시스템</div></div>
+          <div class="gl-item"><div class="gl-item-name">17개 명령어</div><div class="gl-item-desc">슬래시 명령어 시스템</div></div>
         </div>
         <div class="gl-card global">
           <h3>global-skills/</h3>
-          <div class="gl-item"><div class="gl-item-name">20개 스킬</div><div class="gl-item-desc">자동 트리거 가능</div></div>
+          <div class="gl-item"><div class="gl-item-name">28개 스킬</div><div class="gl-item-desc">자동 트리거 가능</div></div>
         </div>
         <div class="gl-card local">
           <h3>data/</h3>
@@ -1032,8 +1032,8 @@
   <!-- ════════════════════════════════════════════ -->
   <section id="agents">
     <div class="eyebrow-sm">에이전트</div>
-    <h2>Agent System &mdash; 15 Agents</h2>
-    <p class="section-desc">4개의 Opus, 6개의 Sonnet, 3개의 Haiku 에이전트 + 2개의 Reference 문서. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다.</p>
+    <h2>Agent System &mdash; 22 Agents</h2>
+    <p class="section-desc">2개의 Opus, 15개의 Sonnet, 4개의 Haiku 에이전트. 각 에이전트는 특화된 역할, 도구 제한, 격리 수준을 가집니다. v5.x부터 리드 에이전트 대신 읽기 전용 컨설턴트 에이전트 4개가 추가됩니다 — Wave 0에서 질문하고 spec을 작성하며, 코드는 직접 작성하지 않습니다.</p>
 
     <div class="gl-grid" style="margin-bottom:12px;">
       <div class="gl-card global">
@@ -1126,6 +1126,68 @@
         <div class="gl-item"><div class="gl-item-name">모델 선택 이유</div><div class="gl-item-desc">speed &gt; quality</div></div>
         <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">문서 수집, 포맷팅, 요약. 복잡한 추론이 불필요한 반복 작업.</div></div>
         <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">Opus 토큰을 절약하면서 대량 문서 작업을 빠르게 처리.</div></div>
+      </div>
+
+      <!-- ── v5.x 신규: 컨설턴트 에이전트 (Wave 0a) ── -->
+      <div class="gl-card global">
+        <h3>architecture-consultant <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 0a 아키텍처 컨설턴트 &middot; 읽기 전용</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Grep, Glob, AskUserQuestion</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">시스템 토폴로지를 읽고, 설계 트레이드오프·폭발 반경·인터페이스 계약을 질문하여 아키텍처 spec을 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">빌드 전 설계 결정을 명확히 하여 나중에 값비싼 재작업을 방지합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>backend-consultant <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 0a 백엔드 컨설턴트 &middot; 읽기 전용</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Grep, Glob, AskUserQuestion</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">서버/데이터 레이어를 읽고, 명확화 질문을 통해 탄탄한 백엔드 spec을 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">코드를 작성하지 않으므로 편향 없이 현재 상태를 분석합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>frontend-consultant <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 0a 프론트엔드 컨설턴트 &middot; 읽기 전용</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Grep, Glob, AskUserQuestion</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">기존 UI 코드베이스를 읽고, 명확화 질문을 통해 탄탄한 프론트엔드 spec을 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">빌드 시작 전 UI spec을 먼저 확정하여 대규모 변경을 최소화합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>security-consultant <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 0a 보안 컨설턴트 &middot; 읽기 전용</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Read, Grep, Glob, AskUserQuestion</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">인증, 입력 처리, 데이터 저장, 외부 통합을 다루는 작업에서 위협 분석 후 보안 spec을 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">보안 결함을 빌드 전에 발견하는 것이 배포 후 발견보다 훨씬 저렴합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>po <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Product Owner &middot; Wave 0 퍼실리테이터</code>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">작업 범위에 따라 관련 컨설턴트를 로드하고, spec 출력을 종합하여 orchestrator로 라우팅합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">컨설턴트 대화를 조율하여 완전한 spec을 생성합니다. /orchestrate의 Wave 0 진입점.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>onboard-planner <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 0 온보딩 &middot; 스택 감지</code>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">레포 구조 분석, 매니페스트 파일로 기술 스택 감지, context7로 프레임워크 컨벤션 조회, 온보딩 계획을 /tmp/onboard_plan.md에 작성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">새 기여자가 신속하게 프로젝트에 적응할 수 있도록 자동화합니다.</div></div>
+      </div>
+
+      <div class="gl-card global">
+        <h3>onboard-builder <span class="tag sonnet">Sonnet</span></h3>
+        <code class="gl-path">역할: Wave 1 온보딩 &middot; 파일 생성기</code>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">/tmp/onboard_plan.md를 읽고 CLAUDE.md, .claude/settings.json, PROJECT_CONTEXT.md, QUICKSTART.md, FACTS.md, MEMORY.md를 생성합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">계획 파일 기반으로 모든 온보딩 파일을 일관되게 생성합니다.</div></div>
+      </div>
+
+      <div class="gl-card local">
+        <h3>health-checker <span class="tag haiku">Haiku</span></h3>
+        <code class="gl-path">역할: CAF 상태 점검 &middot; 항상 Haiku</code>
+        <div class="gl-item"><div class="gl-item-name">tools</div><div class="gl-item-desc">Bash, Read</div></div>
+        <div class="gl-item"><div class="gl-item-name">역할</div><div class="gl-item-desc">git, hooks, MCP 서버 상태를 점검하고 결과를 마크다운 표로 포맷합니다.</div></div>
+        <div class="gl-item"><div class="gl-item-name">왜 필요한가</div><div class="gl-item-desc">빠르고 저렴한 Haiku로 시스템 상태를 확인합니다.</div></div>
       </div>
     </div>
 
@@ -3747,7 +3809,7 @@
 </div>
 
 <footer>
-  Claude Agentic Framework v4.1 &middot; Hook 42개 &middot; Event 16개 &middot; Agent 15개 &middot; Command 16개 &middot; Skill 20개
+  Claude Agentic Framework v5.2 &middot; Hook 48개 &middot; Event 16개 &middot; Agent 22개 &middot; Command 17개 &middot; Skill 28개
   <br><br>
   <span style="color:var(--faint);">Opus-first on Max plan &middot; One repo, one install, one source of truth</span>
 </footer>

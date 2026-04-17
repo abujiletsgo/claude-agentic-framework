@@ -50,6 +50,9 @@ caddy:
     # Planning and design -> brainstorm skill
     planning: brainstorm
 
+    # Time-boxed sprint execution -> tmux-sprint orchestrator
+    sprint: tmux_sprint
+
   # Model selection for the Caddy system
   model_selection:
     # Caddy itself uses Opus for deep reasoning about meta-coordination
@@ -70,6 +73,7 @@ caddy:
       docs-scraper: haiku
       agent-watchdog: haiku
       quick_task: haiku
+      sprint-lead: sonnet
 
     # maxTurns caps per role — prevents runaway token burn
     role_max_turns:
@@ -104,6 +108,11 @@ caddy:
     test-scout: true
     tidy: true
     worktree: true
+    research-academic: true
+    research-code: true
+    research-news: true
+    research-docs: true
+    sprint: true
 
   # Skill security audit configuration
   # Caddy audits skills for dangerous patterns before recommending them

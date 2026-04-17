@@ -1,0 +1,1265 @@
+#!/usr/bin/env python3
+"""
+orch-shared — Shared workspace operations for /orchestrate jobs.
+
+All state lives under /tmp/caf_orch/<orch_id>/shared/.
+
+Subcommands:
+  init <orch_id>
+      Create the shared/ directory structure for a new job.
+
+  register-domain <orch_id> <lead> <glob1> [glob2 ...]
+      Claim file ownership. Other leads must message <lead> before touching
+      any matching path. Writes to shared/domains.json.
+
+  check-domain <orch_id> <file>
+      Print which lead owns <file>, or "unclaimed". Exit 0 always.
+
+  append-memory <orch_id> '<json>'
+      Append one JSON line to shared/working_memory.jsonl.
+      Required fields: lead, summary. Optional: reason, changed, next, topic.
+
+  read-memory <orch_id> [n]
+      Print last n entries from working_memory.jsonl (default 20).
+
+  request-test <orch_id> <lead> <command>
+      Enqueue a test run. Writes to shared/test_queue.jsonl.
+      The shared validator pane picks this up and writes to test_results.jsonl.
+
+  read-tests <orch_id> [n]
+      Print last n test results from shared/test_results.jsonl (default 10).
+
+  broadcast <orch_id> <from_lead> <topic> <message>
+      Append a discovery to shared/discoveries.jsonl and send it via
+      send-agent to every other lead pane in surfaces.json.
+      Use for critical findings that may affect other leads' work.
+
+  list-surfaces <orch_id>
+      Print surfaces.json — all known lead → surface_id mappings.
+
+  status <orch_id>
+      Print a health table for a running orch job: pending questions, queued tests,
+      memory entries, registered domains, active surfaces, per-lead wave status.
+
+  merge-results <orch_id>
+      Consolidate all results/<lead>-*.md files into shared/merged_results.md.
+      Works standalone — no cmux dependency. Agents-only compatible.
+
+  read-events <orch_id> [n]
+      Print last n events from events.jsonl (default 20).
+      Events are written by bin/orch-event when leads change state.
+
+  write-retro <orch_id>
+      Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+      Reads working memory, test results, and evaluation report.
+
+  write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>
+      Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update
+      running totals. Agents call this optionally to self-report token counts.
+
+  read-costs <orch_id>
+      Read actual token costs for a run from ~/.claude/logs/cost_tracking.jsonl.
+      Uses timestamp window from events.jsonl to identify run boundaries.
+      Prints a formatted cost summary (total + per-agent). Falls back to
+      cost.json["summary"] if no events.jsonl timestamp window is available.
+      Exit code 0 always (prints "(no cost data)" on failure).
+"""
+
+import sys
+import json
+import os
+import time
+import fcntl
+import subprocess
+import tempfile
+from pathlib import Path
+from datetime import datetime, timezone
+
+CAF_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(CAF_DIR / "lib"))
+# cmux_client removed — cmux used only as CLI via subprocess below
+
+ORCH_BASE = Path(os.environ.get("CAF_ORCH_DIR", str(Path.home() / ".caf" / "orch")))
+
+
+def ts() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def shared_dir(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id / "shared"
+
+
+def surfaces_path(orch_id: str) -> Path:
+    return ORCH_BASE / orch_id / "surfaces.json"
+
+
+def load_surfaces(orch_id: str) -> dict:
+    p = surfaces_path(orch_id)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
+
+
+def _emit_event(orch_id: str, agent: str, status: str, summary: str = "") -> None:
+    """Append one event line to /tmp/caf_orch/<orch_id>/events.jsonl.
+    Called internally by orch-shared operations so read-events shows a
+    unified log of all workspace activity, not just orch-event calls."""
+    entry: dict = {"ts": ts(), "agent": agent, "status": status}
+    if summary:
+        entry["summary"] = summary
+    p = ORCH_BASE / orch_id / "events.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+# ---------------------------------------------------------------------------
+# init
+# ---------------------------------------------------------------------------
+
+def cmd_init(orch_id: str) -> None:
+    sd = shared_dir(orch_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    (sd / "research").mkdir(exist_ok=True)
+    (sd / "worktrees").mkdir(exist_ok=True)
+
+    # Seed empty files so leads don't need to check existence
+    for fname in ("working_memory.jsonl", "test_queue.jsonl",
+                  "test_results.jsonl", "discoveries.jsonl", "questions.jsonl"):
+        p = sd / fname
+        if not p.exists():
+            p.write_text("")
+
+    if not (sd / "domains.json").exists():
+        (sd / "domains.json").write_text(json.dumps({}))
+
+    # Record project CWD so dashboards can filter by project
+    meta_path = ORCH_BASE / orch_id / "meta.json"
+    if not meta_path.exists():
+        meta_path.write_text(json.dumps({"orch_id": orch_id, "cwd": str(Path.cwd())}))
+
+    # Write current_orch_id so session_recorder hook can correlate sessions to this run
+    caf_dir = Path.home() / ".caf"
+    caf_dir.mkdir(parents=True, exist_ok=True)  # ensure ~/.caf exists
+    current_orch_file = caf_dir / "current_orch_id"
+    try:
+        data = json.dumps({
+            "orch_id": orch_id,
+            "started_at": datetime.now(timezone.utc).isoformat()
+        })
+        # Atomic write: write to temp then rename
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=str(caf_dir), prefix=".current_orch_id_")
+        try:
+            os.write(tmp_fd, data.encode())
+            os.fsync(tmp_fd)
+        finally:
+            os.close(tmp_fd)
+        os.rename(tmp_path, str(current_orch_file))
+    except OSError as e:
+        print(f"[orch-shared] WARNING: could not write current_orch_id: {e}", file=sys.stderr)
+        # Non-fatal: orch run continues, sessions just won't be correlated
+
+    print(f"[orch-shared] initialized shared workspace: {sd}")
+
+
+# ---------------------------------------------------------------------------
+# register-domain
+# ---------------------------------------------------------------------------
+
+def cmd_register_domain(orch_id: str, lead: str, globs: list[str]) -> None:
+    import fnmatch as _fnmatch
+
+    p = shared_dir(orch_id) / "domains.json"
+    try:
+        domains: dict = json.loads(p.read_text())
+    except Exception:
+        domains = {}
+
+    conflicts = []
+    for g in globs:
+        for existing_glob, existing_lead in domains.items():
+            if existing_lead == lead:
+                continue  # same lead re-registering — idempotent
+            # Overlap: either pattern matches the other as a path-like string
+            if _fnmatch.fnmatch(existing_glob, g) or _fnmatch.fnmatch(g, existing_glob):
+                conflicts.append((g, existing_glob, existing_lead))
+
+    if conflicts:
+        for (new_g, existing_g, existing_lead) in conflicts:
+            msg = (
+                f"[orch-shared] CONFLICT: {lead!r} wants {new_g!r} but it overlaps "
+                f"with {existing_g!r} owned by {existing_lead!r}"
+            )
+            print(msg, file=sys.stderr)
+
+        # Write to discoveries.jsonl so PO and broadcast consumers can see it
+        disc_path = shared_dir(orch_id) / "discoveries.jsonl"
+        disc_path.parent.mkdir(parents=True, exist_ok=True)
+        with disc_path.open("a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                for (new_g, existing_g, existing_lead) in conflicts:
+                    entry = {
+                        "ts": ts(),
+                        "from": "orch-shared",
+                        "topic": "domain-conflict",
+                        "message": (
+                            f"{lead} wants '{new_g}' but it overlaps with "
+                            f"'{existing_g}' owned by {existing_lead}"
+                        ),
+                    }
+                    f.write(json.dumps(entry) + "\n")
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+
+        print(
+            f"[orch-shared] {len(conflicts)} conflict(s) written to discoveries.jsonl. "
+            f"Resolve before proceeding.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    for g in globs:
+        domains[g] = lead
+
+    p.write_text(json.dumps(domains, indent=2))
+    try:
+        _emit_event(orch_id, lead, "domain-claim", f"registered: {', '.join(globs)}")
+    except Exception:
+        pass
+    print(f"[orch-shared] {lead} registered domains: {', '.join(globs)}")
+
+
+# ---------------------------------------------------------------------------
+# check-domain
+# ---------------------------------------------------------------------------
+
+def cmd_check_domain(orch_id: str, file_path: str) -> None:
+    p = shared_dir(orch_id) / "domains.json"
+    try:
+        domains: dict = json.loads(p.read_text())
+    except Exception:
+        domains = {}
+
+    import fnmatch
+    for pattern, lead in domains.items():
+        if fnmatch.fnmatch(file_path, pattern):
+            print(f"{lead}")
+            return
+    print("unclaimed")
+
+
+# ---------------------------------------------------------------------------
+# append-memory
+# ---------------------------------------------------------------------------
+
+def cmd_append_memory(orch_id: str, payload: str) -> None:
+    try:
+        entry = json.loads(payload)
+    except json.JSONDecodeError as e:
+        print(f"[orch-shared] invalid JSON: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    entry["ts"] = ts()
+    p = shared_dir(orch_id) / "working_memory.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, entry.get("lead", "?"), "memory", entry.get("summary", "")[:80])
+    except Exception:
+        pass
+    print(f"[orch-shared] memory written: {entry.get('summary', '')[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# read-memory
+# ---------------------------------------------------------------------------
+
+def cmd_read_memory(orch_id: str, n: int = 20) -> None:
+    p = shared_dir(orch_id) / "working_memory.jsonl"
+    if not p.exists():
+        print("(no entries)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    for line in lines:
+        try:
+            e = json.loads(line)
+            lead    = e.get("lead", "?")
+            summary = e.get("summary", "")
+            reason  = e.get("reason", "")
+            changed = e.get("changed", "")
+            next_   = e.get("next", "")
+            t       = e.get("ts", "")[:16]
+            print(f"[{t}] {lead}: {summary}")
+            if reason:  print(f"         why:     {reason}")
+            if changed: print(f"         changed: {changed}")
+            if next_:   print(f"         next:    {next_}")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# read-events
+# ---------------------------------------------------------------------------
+
+def cmd_read_events(orch_id: str, n: int = 20) -> None:
+    p = ORCH_BASE / orch_id / "events.jsonl"
+    if not p.exists():
+        print("(no events)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    if not lines:
+        print("(no events)")
+        return
+    for line in lines:
+        try:
+            e = json.loads(line)
+            t       = e.get("ts", "")
+            hhmm    = t[11:16] if len(t) >= 16 else "??:??"
+            wave    = e.get("wave", "?")
+            agent   = e.get("agent", "?")
+            status  = e.get("status", "?")
+            summary = e.get("summary", "")
+            summary_part = f"  {summary}" if summary else ""
+            print(f"[{hhmm}] wave{wave}  {agent:<24}  {status:<8}{summary_part}")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# request-test
+# ---------------------------------------------------------------------------
+
+def cmd_request_test(orch_id: str, lead: str, command: str) -> None:
+    entry = {
+        "ts": ts(),
+        "lead": lead,
+        "command": command,
+        "status": "queued",
+    }
+    p = shared_dir(orch_id) / "test_queue.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, lead, "test-req", command[:80])
+    except Exception:
+        pass
+    print(f"[orch-shared] test queued for {lead}: {command[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# read-tests
+# ---------------------------------------------------------------------------
+
+def cmd_read_tests(orch_id: str, n: int = 10) -> None:
+    p = shared_dir(orch_id) / "test_results.jsonl"
+    if not p.exists():
+        print("(no results yet)")
+        return
+    lines = [l for l in p.read_text().splitlines() if l.strip()][-n:]
+    for line in lines:
+        try:
+            e = json.loads(line)
+            status  = e.get("status", "?")
+            lead    = e.get("lead", "?")
+            command = e.get("command", "")[:50]
+            t       = e.get("ts", "")[:16]
+            passed  = e.get("passed", "?")
+            icon    = "✓" if status == "passed" else "✗" if status == "failed" else "·"
+            print(f"[{t}] {icon} {lead}: {command}  ({passed})")
+        except Exception:
+            print(line)
+
+
+# ---------------------------------------------------------------------------
+# broadcast
+# ---------------------------------------------------------------------------
+
+def cmd_broadcast(orch_id: str, from_lead: str, topic: str, message: str) -> None:
+    """
+    Append a discovery to discoveries.jsonl and send it to every other
+    lead pane via cmux send-agent. Used for critical cross-domain findings.
+    """
+    entry = {
+        "ts": ts(),
+        "from": from_lead,
+        "topic": topic,
+        "message": message,
+    }
+    p = shared_dir(orch_id) / "discoveries.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+    try:
+        _emit_event(orch_id, from_lead, "broadcast", f"[{topic}] {message[:80]}")
+    except Exception:
+        pass
+
+    surfaces = load_surfaces(orch_id)
+    recipients = [
+        name for name in surfaces
+        if name != from_lead and not name.startswith("_")
+        and name not in ("dashboard", "validator")
+    ]
+
+    if not recipients:
+        print(f"[orch-shared] broadcast written to discoveries.jsonl (no active panes to notify)")
+        return
+
+    alert = (
+        f"[BROADCAST from {from_lead} — topic: {topic}]\n"
+        f"{message}\n\n"
+        f"Does this affect your current work? If yes, adjust your plan and note it "
+        f"in shared/working_memory.jsonl via: bin/orch-shared append-memory {orch_id} "
+        f"'{{\"lead\":\"<you>\",\"summary\":\"adjusted plan: ...\",\"reason\":\"broadcast from {from_lead}\"}}'.\n"
+        f"If no, continue as planned."
+    )
+
+    # Write broadcast alert to per-lead message files (agents poll these)
+    sent = []
+    for name in recipients:
+        try:
+            msg_file = Path(f"/tmp/caf_orch/{orch_id}/messages/{name}.msg")
+            msg_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(msg_file, "a") as mf:
+                mf.write(alert + "\n")
+            sent.append(name)
+        except Exception as exc:
+            print(f"[orch-shared] could not write message for {name}: {exc}", file=sys.stderr)
+
+    print(f"[orch-shared] broadcast '{topic}' → {', '.join(sent) or 'none'}")
+
+
+# ---------------------------------------------------------------------------
+# ask-pm
+# ---------------------------------------------------------------------------
+
+def cmd_ask_pm(orch_id: str, lead: str, question: str, critical: str = "no") -> None:
+    """
+    Lead asks PM a question. Writes to shared/questions.jsonl with status="pending".
+    Lead should then poll wait-answer <orch_id> <question_id> for a response.
+    """
+    import uuid
+    q_id = str(uuid.uuid4())[:8]
+    entry = {
+        "ts": ts(),
+        "id": q_id,
+        "lead": lead,
+        "question": question,
+        "critical": critical.lower() in ("yes", "true", "1"),
+        "status": "pending",
+        "answer": None,
+    }
+    p = shared_dir(orch_id) / "questions.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(entry) + "\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    try:
+        _emit_event(orch_id, lead, "question", question[:80])
+    except Exception:
+        pass
+    print(f"[orch-shared] question {q_id} posted by {lead}")
+    print(f"  Q: {question[:80]}")
+    print(f"  Wait for answer: bin/orch-shared wait-answer {orch_id} {q_id}")
+
+
+# ---------------------------------------------------------------------------
+# wait-answer
+# ---------------------------------------------------------------------------
+
+def cmd_wait_answer(orch_id: str, question_id: str, timeout: int = 120) -> None:
+    """
+    Lead polls for an answer to question_id. Blocks until answered or timeout.
+    Exits 0 with answer on stdout. Exits 1 on timeout (lead should proceed with
+    conservative assumption and log it).
+    """
+    p = shared_dir(orch_id) / "questions.jsonl"
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if p.exists():
+            for line in p.read_text().splitlines():
+                try:
+                    e = json.loads(line)
+                    if e.get("id") == question_id and e.get("status") == "answered":
+                        print(e.get("answer", ""))
+                        return
+                except Exception:
+                    pass
+        time.sleep(3)
+    print(f"[orch-shared] wait-answer timed out after {timeout}s for question {question_id}",
+          file=sys.stderr)
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# answer-question
+# ---------------------------------------------------------------------------
+
+def cmd_answer_question(orch_id: str, question_id: str, answer: str) -> None:
+    """
+    PM answers a pending question. Rewrites the questions.jsonl entry in-place.
+    """
+    p = shared_dir(orch_id) / "questions.jsonl"
+    if not p.exists():
+        print(f"[orch-shared] no questions file found", file=sys.stderr)
+        sys.exit(1)
+
+    lines = p.read_text().splitlines()
+    updated = False
+    new_lines = []
+    for line in lines:
+        try:
+            e = json.loads(line)
+            if e.get("id") == question_id and e.get("status") == "pending":
+                e["status"] = "answered"
+                e["answer"] = answer
+                e["answered_ts"] = ts()
+                new_lines.append(json.dumps(e))
+                updated = True
+                continue
+        except Exception:
+            pass
+        new_lines.append(line)
+
+    if not updated:
+        print(f"[orch-shared] question {question_id!r} not found or already answered",
+              file=sys.stderr)
+        sys.exit(1)
+
+    import tempfile
+    tmp = p.with_suffix('.jsonl.tmp')
+    with tmp.open('w') as f:
+        f.write('\n'.join(new_lines) + '\n')
+    tmp.replace(p)  # atomic on POSIX
+    try:
+        _emit_event(orch_id, "pm", "answer", answer[:80])
+    except Exception:
+        pass
+    print(f"[orch-shared] answered question {question_id}: {answer[:60]}")
+
+
+# ---------------------------------------------------------------------------
+# pending-questions
+# ---------------------------------------------------------------------------
+
+def cmd_pending_questions(orch_id: str) -> None:
+    """Print all unanswered questions. Called by PM (and surfaced by poll-agents)."""
+    p = shared_dir(orch_id) / "questions.jsonl"
+    if not p.exists():
+        print("(no questions file)")
+        return
+    pending = []
+    for line in p.read_text().splitlines():
+        try:
+            e = json.loads(line)
+            if e.get("status") == "pending":
+                pending.append(e)
+        except Exception:
+            pass
+    if not pending:
+        print("(no pending questions)")
+        return
+    for e in pending:
+        crit = " [CRITICAL]" if e.get("critical") else ""
+        print(f"  [{e.get('id')}]{crit} from {e.get('lead','?')} at {e.get('ts','')[:16]}")
+        print(f"    Q: {e.get('question','')}")
+        print(f"    Answer: bin/orch-shared answer-question {orch_id} {e.get('id')} '<answer>'")
+        print()
+
+
+# ---------------------------------------------------------------------------
+# cleanup
+# ---------------------------------------------------------------------------
+
+def cmd_cleanup(orch_id: str) -> None:
+    """Archive results to ~/.claude/data/orch_results/<id>/, then remove /tmp/caf_orch/<id>/"""
+    import shutil
+
+    src = ORCH_BASE / orch_id
+    if not src.exists():
+        print(f"[orch-shared] nothing to clean: {src} not found")
+        return
+
+    # Archive results
+    archive_base = Path.home() / ".claude" / "data" / "orch_results"
+    archive_base.mkdir(parents=True, exist_ok=True)
+    dest = archive_base / orch_id
+
+    results_src = src / "results"
+    if results_src.exists():
+        shutil.copytree(str(results_src), str(dest / "results"), dirs_exist_ok=True)
+
+    # Also archive acceptance_criteria, evaluation_report, and meta.json
+    for fname in ("acceptance_criteria.md", "evaluation_report.md", "report.md", "merge_report.md", "meta.json"):
+        f = src / fname
+        if f.exists():
+            dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(f), str(dest / fname))
+
+    # Capture retrospective before wiping /tmp state
+    try:
+        cmd_write_retro(orch_id)
+    except Exception as e:
+        print(f"[orch-shared] retro write failed (non-fatal): {e}", file=sys.stderr)
+
+    # Remove /tmp state
+    shutil.rmtree(str(src))
+    print(f"[orch-shared] archived results to {dest}")
+    print(f"[orch-shared] removed {src}")
+
+
+# ---------------------------------------------------------------------------
+# write-retro
+# ---------------------------------------------------------------------------
+
+def cmd_write_retro(orch_id: str) -> None:
+    """Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+    Reads working memory, test results, evaluation report, and acceptance criteria.
+    Call this after cleanup (or before — it reads /tmp state + archived results)."""
+    import shutil as _shutil
+
+    # Try /tmp first (job still active), then archive
+    job_dir = ORCH_BASE / orch_id
+    archive_dir = Path.home() / ".claude" / "data" / "orch_results" / orch_id
+
+    def _read(rel: str) -> str:
+        for base in (job_dir, archive_dir):
+            p = base / rel
+            if p.exists():
+                try:
+                    return p.read_text(errors="replace")
+                except Exception:
+                    pass
+        return ""
+
+    # Task line from acceptance_criteria.md
+    task_line = ""
+    for line in _read("acceptance_criteria.md").splitlines():
+        stripped = line.strip()
+        if "**Task**:" in line:
+            task_line = line.split("**Task**:", 1)[-1].strip()
+            break
+        if stripped in ("## Task", "### Task"):
+            # next non-empty non-heading line
+            found_heading = True
+        elif locals().get("found_heading") and stripped and not stripped.startswith("#"):
+            task_line = stripped
+            break
+
+    # Verdict from evaluation_report.md
+    verdict = ""
+    eval_text = _read("evaluation_report.md")
+    if "## Overall Verdict" in eval_text:
+        for line in eval_text.split("## Overall Verdict", 1)[1].splitlines():
+            line = line.strip()
+            if line:
+                verdict = line[:120]
+                break
+
+    # Working memory entries (last 20)
+    mem_lines = []
+    raw_mem = _read("shared/working_memory.jsonl")
+    for line in raw_mem.splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+            lead = e.get("lead", "?")
+            summary = e.get("summary", "")
+            reason = e.get("reason", "")
+            t = e.get("ts", "")[:16]
+            mem_lines.append(f"- [{t}] **{lead}**: {summary}")
+            if reason:
+                mem_lines.append(f"  - why: {reason}")
+        except Exception:
+            pass
+    mem_section = "\n".join(mem_lines[-20:]) if mem_lines else "(none)"
+
+    # Test results
+    passed = failed = 0
+    raw_tests = _read("shared/test_results.jsonl")
+    for line in raw_tests.splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+            if e.get("status") == "passed":
+                passed += 1
+            elif e.get("status") == "failed":
+                failed += 1
+        except Exception:
+            pass
+    test_section = f"passed: {passed}  failed: {failed}  total: {passed + failed}"
+
+    # Cost section
+    cost_section = ""
+    for base in (job_dir, archive_dir):
+        cost_path = base / "cost.json"
+        if cost_path.exists():
+            try:
+                cost_data = json.loads(cost_path.read_text())
+                cost_section = f"""
+## Cost Estimate
+{cost_data.get('summary', 'N/A')}
+"""
+            except Exception:
+                pass
+            break
+
+    retro_content = f"""# Retrospective — {orch_id}
+Generated: {ts()}
+
+## Task
+{task_line or "(unknown — no acceptance_criteria.md found)"}
+
+## Verdict
+{verdict or "(unknown — no evaluation_report.md found)"}
+
+## Working Memory (last 20 entries)
+{mem_section}
+
+## Test Results
+{test_section}
+{cost_section}
+## Gaps and Learnings
+(fill in manually after reviewing the run)
+"""
+
+    out_dir = archive_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "retro.md"
+    out_path.write_text(retro_content)
+    print(f"[orch-shared] retro written to {out_path}")
+
+
+# ---------------------------------------------------------------------------
+# write-cost
+# ---------------------------------------------------------------------------
+
+def cmd_write_cost(orch_id: str, agent_name: str, model: str,
+                   input_tokens: int, output_tokens: int) -> None:
+    """Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update summary."""
+    cost_path = ORCH_BASE / orch_id / "cost.json"
+    cost_path.parent.mkdir(parents=True, exist_ok=True)
+
+    entry = {
+        "ts": ts(),
+        "agent": agent_name,
+        "model": model,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+    }
+
+    # Read existing data or start fresh
+    cost_data: dict = {"entries": [], "summary": ""}
+    if cost_path.exists():
+        try:
+            cost_data = json.loads(cost_path.read_text())
+        except Exception:
+            cost_data = {"entries": [], "summary": ""}
+
+    cost_data.setdefault("entries", [])
+    cost_data["entries"].append(entry)
+
+    total_input = sum(e.get("input_tokens", 0) for e in cost_data["entries"])
+    total_output = sum(e.get("output_tokens", 0) for e in cost_data["entries"])
+    agent_count = len(cost_data["entries"])
+    cost_data["summary"] = (
+        f"Total: {total_input:,} input, {total_output:,} output tokens "
+        f"across {agent_count} agent(s)"
+    )
+
+    # Atomic write with lock
+    tmp_path = cost_path.with_suffix(".json.tmp")
+    with tmp_path.open("w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.write(json.dumps(cost_data, indent=2))
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    tmp_path.replace(cost_path)
+
+    print(f"[orch-shared] cost recorded for {agent_name}: {input_tokens} in, {output_tokens} out")
+    print(f"[orch-shared] running total: {cost_data['summary']}")
+
+
+# ---------------------------------------------------------------------------
+# read-costs
+# ---------------------------------------------------------------------------
+
+COST_LOG_PATH = Path.home() / ".claude" / "logs" / "cost_tracking.jsonl"
+
+
+def cmd_read_costs(orch_id: str) -> None:
+    """Read actual token costs for a run from cost_tracking.jsonl using events.jsonl window."""
+    events_path = ORCH_BASE / orch_id / "events.jsonl"
+    cost_json_path = ORCH_BASE / orch_id / "cost.json"
+
+    def _fallback() -> None:
+        if cost_json_path.exists():
+            try:
+                data = json.loads(cost_json_path.read_text())
+                summary = data.get("summary", "")
+                if summary:
+                    print(summary)
+                    return
+            except Exception:
+                pass
+        print("(no cost data)")
+
+    # Step 1: parse events.jsonl for min/max ts
+    min_ms: int | None = None
+    max_ms: int | None = None
+
+    if events_path.exists():
+        for line in events_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                ts_raw = obj.get("ts", "")
+                if not ts_raw:
+                    continue
+                epoch_ms = int(datetime.fromisoformat(ts_raw.replace("Z", "+00:00")).timestamp() * 1000)
+                if min_ms is None or epoch_ms < min_ms:
+                    min_ms = epoch_ms
+                if max_ms is None or epoch_ms > max_ms:
+                    max_ms = epoch_ms
+            except Exception:
+                continue
+
+    if min_ms is None or max_ms is None:
+        _fallback()
+        return
+
+    window_end = max_ms + 5 * 60 * 1000
+
+    # Step 2: read cost_tracking.jsonl and filter by window
+    if not COST_LOG_PATH.exists():
+        _fallback()
+        return
+
+    # agent_name -> {input_tokens, output_tokens, cost_usd, model}
+    per_agent: dict[str, dict] = {}
+
+    for line in COST_LOG_PATH.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+            epoch_ms = obj.get("epoch_ms", 0)
+            if epoch_ms < min_ms or epoch_ms > window_end:
+                continue
+            agent_name = obj.get("agent_name", "unknown")
+            model = obj.get("model", "")
+            if agent_name not in per_agent:
+                per_agent[agent_name] = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "model": model}
+            per_agent[agent_name]["input_tokens"] += int(obj.get("input_tokens", 0))
+            per_agent[agent_name]["output_tokens"] += int(obj.get("output_tokens", 0))
+            per_agent[agent_name]["cost_usd"] += float(obj.get("cost_usd", 0.0))
+            if model:
+                per_agent[agent_name]["model"] = model
+        except Exception:
+            continue
+
+    if not per_agent:
+        _fallback()
+        return
+
+    # Step 3: aggregate totals and print
+    total_input = sum(v["input_tokens"] for v in per_agent.values())
+    total_output = sum(v["output_tokens"] for v in per_agent.values())
+    total_cost = sum(v["cost_usd"] for v in per_agent.values())
+
+    print(f"Total: ${total_cost:.4f}  ({total_input:,} input, {total_output:,} output tokens)")
+    print()
+    print("Per agent:")
+    for agent_name, data in sorted(per_agent.items()):
+        model = data["model"]
+        cost = data["cost_usd"]
+        ni = data["input_tokens"]
+        no = data["output_tokens"]
+        print(f"  {agent_name:<30} {model:<20} ${cost:.4f}   {ni:,} in / {no:,} out")
+
+
+# ---------------------------------------------------------------------------
+# status
+# ---------------------------------------------------------------------------
+
+def cmd_status(orch_id: str) -> None:
+    sd = shared_dir(orch_id)
+    initialized = sd.exists()
+
+    print(f"=== orch job: {orch_id} ===")
+    print()
+
+    status_label = "initialized" if initialized else "NOT INITIALIZED"
+    print(f"Shared workspace: {sd}/  [{status_label}]")
+    print()
+
+    def count_lines(path: Path) -> int:
+        if not path.exists():
+            return 0
+        return sum(1 for l in path.read_text().splitlines() if l.strip())
+
+    def count_pending_questions(path: Path) -> int:
+        if not path.exists():
+            return 0
+        count = 0
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                if json.loads(line).get("status") == "pending":
+                    count += 1
+            except Exception:
+                pass
+        return count
+
+    pending_q = count_pending_questions(sd / "questions.jsonl")
+    queued_tests = count_lines(sd / "test_queue.jsonl")
+    test_results = count_lines(sd / "test_results.jsonl")
+    memory_entries = count_lines(sd / "working_memory.jsonl")
+
+    print(f"  Pending questions : {pending_q}")
+    print(f"  Queued tests      : {queued_tests}")
+    print(f"  Test results      : {test_results}")
+    print(f"  Memory entries    : {memory_entries}")
+    print()
+
+    # Domains
+    domains_path = sd / "domains.json"
+    try:
+        domains: dict = json.loads(domains_path.read_text()) if domains_path.exists() else {}
+    except Exception:
+        domains = {}
+    print(f"Domains registered: {len(domains)}")
+    if domains:
+        for glob, lead in domains.items():
+            print(f"  {glob}  →  {lead}")
+    else:
+        print("  (none)")
+    print()
+
+    # Surfaces
+    surfaces = load_surfaces(orch_id)
+    print(f"Active surfaces: {len(surfaces)}")
+    if surfaces:
+        for name, sid in surfaces.items():
+            print(f"  {name}  →  {sid}")
+    else:
+        print("  (none registered)")
+    print()
+
+    # Lead status files
+    job_dir = ORCH_BASE / orch_id
+    status_files = sorted(job_dir.glob("*.status")) if job_dir.exists() else []
+    print("Lead status:")
+    if not status_files:
+        print("  (no .status files found)")
+    else:
+        for sf in status_files:
+            lead_name = sf.stem
+            try:
+                data = json.loads(sf.read_text())
+                wave = data.get("wave", "?")
+                lead_status = data.get("status", "?")
+                print(f"  {lead_name:<20} wave {wave}  {lead_status}")
+            except Exception:
+                print(f"  {lead_name:<20} (unreadable)")
+
+
+# ---------------------------------------------------------------------------
+# merge-results
+# ---------------------------------------------------------------------------
+
+def cmd_merge_results(orch_id: str) -> None:
+    results_dir = ORCH_BASE / orch_id / "results"
+
+    if not results_dir.exists() or not any(results_dir.glob("*.md")):
+        print("(no results found)")
+        return
+
+    md_files = list(results_dir.glob("*.md"))
+
+    def sort_key(p: Path) -> tuple:
+        name = p.name
+        if "-wave0.md" in name:
+            return (0, name)
+        elif "-contracts.md" in name:
+            return (1, name)
+        elif "-spec.md" in name:
+            return (2, name)
+        else:
+            return (2, name)
+
+    md_files.sort(key=sort_key)
+
+    def wave_label(p: Path) -> str:
+        name = p.name
+        if name.endswith("-wave0.md"):
+            return "Wave 0 (Exploration)"
+        elif name.endswith("-contracts.md"):
+            return "Wave 1 (Contracts)"
+        elif name.endswith("-spec.md"):
+            return "Wave 2 (Spec)"
+        else:
+            # Check if it's a plain <lead>.md
+            stem = p.stem
+            if "-" not in stem:
+                return "Wave 2 (Result)"
+            # anything else — use the raw suffix
+            parts = stem.split("-", 1)
+            if len(parts) > 1:
+                return parts[1]
+            return stem
+
+    sd = shared_dir(orch_id)
+    sd.mkdir(parents=True, exist_ok=True)
+    out_path = sd / "merged_results.md"
+
+    leads_seen = set()
+    sections = []
+    for f in md_files:
+        stem = f.stem
+        # derive lead name: strip known suffixes
+        for suffix in ("-wave0", "-contracts", "-spec"):
+            if stem.endswith(suffix):
+                lead_name = stem[: -len(suffix)]
+                break
+        else:
+            lead_name = stem
+        leads_seen.add(lead_name)
+
+        label = wave_label(f)
+        content = f.read_text()
+        sections.append(f"## {lead_name} — {label}\n{content}\n\n---\n")
+
+    timestamp = ts()
+    header = f"# Merged Results — {orch_id}\nGenerated: {timestamp}\n\n"
+    out_path.write_text(header + "\n".join(sections))
+
+    print(f"[orch-shared] merged {len(md_files)} files from {len(leads_seen)} leads → shared/merged_results.md")
+
+
+# ---------------------------------------------------------------------------
+# message-lead
+# ---------------------------------------------------------------------------
+
+def cmd_message_lead(orch_id: str, lead_name: str, message: str) -> None:
+    """
+    Send a message to a lead's cmux pane. Try cmux first (local dev),
+    fall back to writing to a message file the lead can poll (CI/headless).
+    """
+    import subprocess
+
+    # Cmux approach: send to the lead's pane
+    cmux_result = subprocess.run(
+        ["cmux", "send-pane", f"{orch_id}-{lead_name}", message],
+        capture_output=True
+    )
+
+    if cmux_result.returncode != 0:
+        # Fallback: write to a message file the lead can poll
+        msg_file = Path(f"/tmp/caf_orch/{orch_id}/messages/{lead_name}.msg")
+        msg_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(msg_file, "a") as f:
+            f.write(f"{message}\n")
+        print(f"[orch-shared] message written to {msg_file} (cmux not available)")
+    else:
+        print(f"[orch-shared] message sent to {lead_name} via cmux")
+
+
+# ---------------------------------------------------------------------------
+# list-surfaces
+# ---------------------------------------------------------------------------
+
+def cmd_list_surfaces(orch_id: str) -> None:
+    surfaces = load_surfaces(orch_id)
+    if not surfaces:
+        print("(no surfaces registered)")
+        return
+    for name, sid in surfaces.items():
+        print(f"  {name:<24} {sid}")
+
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+
+USAGE = """\
+Usage: orch-shared <subcommand> [args...]
+
+Subcommands:
+  init <orch_id>
+  register-domain <orch_id> <lead> <glob1> [glob2 ...]
+  check-domain <orch_id> <file>
+  append-memory <orch_id> '<json>'
+  read-memory <orch_id> [n]
+  request-test <orch_id> <lead> <command>
+  read-tests <orch_id> [n]
+  broadcast <orch_id> <from_lead> <topic> <message>
+  ask-pm <orch_id> <lead> <question> [critical=yes|no]
+  wait-answer <orch_id> <question_id> [timeout_seconds]
+  answer-question <orch_id> <question_id> <answer>
+  pending-questions <orch_id>
+  list-surfaces <orch_id>
+  cleanup <orch_id>        Archive results, remove /tmp/caf_orch/<orch_id>/
+  status <orch_id>
+      Print a health table for a running orch job: pending questions, queued tests,
+      memory entries, registered domains, active surfaces, per-lead wave status.
+
+  merge-results <orch_id>
+      Consolidate all results/<lead>-*.md files into shared/merged_results.md.
+      Works standalone — no cmux dependency. Agents-only compatible.
+
+  read-events <orch_id> [n]
+      Print last n events from events.jsonl (default 20).
+      Events are written by bin/orch-event when leads change state.
+
+  write-retro <orch_id>
+      Capture post-run retrospective to ~/.claude/data/orch_results/<id>/retro.md.
+      Reads working memory, test results, and evaluation report.
+
+  write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>
+      Append agent token usage to ~/.caf/orch/<orch_id>/cost.json and update
+      running totals. Agents call this optionally to self-report token counts.
+      write-retro will include the cost summary if cost.json exists.
+
+  message-lead <orch_id> <lead> <message>
+      Send a message to a lead's cmux pane. Falls back to writing a message file
+      at /tmp/caf_orch/<orch_id>/messages/<lead>.msg if cmux is unavailable.
+"""
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        print(USAGE)
+        return
+
+    sub = args[0]
+
+    if sub == "init":
+        cmd_init(args[1])
+    elif sub == "register-domain":
+        if len(args) < 4:
+            print("Usage: orch-shared register-domain <orch_id> <lead> <glob1> ...", file=sys.stderr)
+            sys.exit(1)
+        cmd_register_domain(args[1], args[2], args[3:])
+    elif sub == "check-domain":
+        cmd_check_domain(args[1], args[2])
+    elif sub == "append-memory":
+        cmd_append_memory(args[1], args[2])
+    elif sub == "read-memory":
+        cmd_read_memory(args[1], int(args[2]) if len(args) > 2 else 20)
+    elif sub == "request-test":
+        cmd_request_test(args[1], args[2], args[3])
+    elif sub == "read-tests":
+        cmd_read_tests(args[1], int(args[2]) if len(args) > 2 else 10)
+    elif sub == "broadcast":
+        if len(args) < 5:
+            print("Usage: orch-shared broadcast <orch_id> <from_lead> <topic> <message>", file=sys.stderr)
+            sys.exit(1)
+        cmd_broadcast(args[1], args[2], args[3], args[4])
+    elif sub == "ask-pm":
+        if len(args) < 4:
+            print("Usage: orch-shared ask-pm <orch_id> <lead> <question> [critical=yes|no]",
+                  file=sys.stderr)
+            sys.exit(1)
+        critical = args[4] if len(args) > 4 else "no"
+        cmd_ask_pm(args[1], args[2], args[3], critical)
+    elif sub == "wait-answer":
+        if len(args) < 3:
+            print("Usage: orch-shared wait-answer <orch_id> <question_id> [timeout_seconds]",
+                  file=sys.stderr)
+            sys.exit(1)
+        timeout = int(args[3]) if len(args) > 3 else 120
+        cmd_wait_answer(args[1], args[2], timeout)
+    elif sub == "answer-question":
+        if len(args) < 4:
+            print("Usage: orch-shared answer-question <orch_id> <question_id> <answer>",
+                  file=sys.stderr)
+            sys.exit(1)
+        cmd_answer_question(args[1], args[2], args[3])
+    elif sub == "pending-questions":
+        cmd_pending_questions(args[1])
+    elif sub == "list-surfaces":
+        cmd_list_surfaces(args[1])
+    elif sub == "cleanup":
+        if len(args) < 2:
+            print("Usage: orch-shared cleanup <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_cleanup(args[1])
+    elif sub == "status":
+        if len(args) < 2:
+            print("Usage: orch-shared status <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_status(args[1])
+    elif sub == "merge-results":
+        if len(args) < 2:
+            print("Usage: orch-shared merge-results <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_merge_results(args[1])
+    elif sub == "read-events":
+        if len(args) < 2:
+            print("Usage: orch-shared read-events <orch_id> [n]", file=sys.stderr)
+            sys.exit(1)
+        cmd_read_events(args[1], int(args[2]) if len(args) > 2 else 20)
+    elif sub == "write-retro":
+        if len(args) < 2:
+            print("Usage: orch-shared write-retro <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_write_retro(args[1])
+    elif sub == "write-cost":
+        if len(args) < 6:
+            print("Usage: orch-shared write-cost <orch_id> <agent_name> <model> <input_tokens> <output_tokens>",
+                  file=sys.stderr)
+            sys.exit(1)
+        cmd_write_cost(args[1], args[2], args[3], int(args[4]), int(args[5]))
+    elif sub == "read-costs":
+        if len(args) < 2:
+            print("Usage: orch-shared read-costs <orch_id>", file=sys.stderr)
+            sys.exit(1)
+        cmd_read_costs(args[1])
+    elif sub == "message-lead":
+        if len(args) < 4:
+            print("Usage: orch-shared message-lead <orch_id> <lead> <message>", file=sys.stderr)
+            sys.exit(1)
+        cmd_message_lead(args[1], args[2], args[3])
+    else:
+        print(f"[orch-shared] unknown subcommand: {sub!r}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

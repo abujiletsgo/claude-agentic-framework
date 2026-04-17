@@ -5,10 +5,10 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        39 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:0, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:1, hooks_Stop:7, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:3, hooks_TaskCompleted:1, hooks_UserPromptSubmit:5)
-global-agents/       14 agents (14 root + 0 team)
-global-commands/     16 commands
-global-skills/       24 skills
+global-hooks/        48 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
+global-agents/       22 agents (22 root + 0 team)
+global-commands/     17 commands
+global-skills/       28 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
 ```
@@ -21,8 +21,8 @@ templates/           settings.json.template (edit this, run install.sh)
 
 ```
   Opus (2): orchestrator, project-architect
-Sonnet (6): critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger
- Haiku (3): docs-scraper, validator, agent-watchdog
+Sonnet (15): po, critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger, onboard-builder, onboard-planner, academic-researcher, code-researcher, frontend-consultant, backend-consultant, architecture-consultant, security-consultant
+ Haiku (4): docs-scraper, validator, agent-watchdog, health-checker
 ```
 
 ## Context Discipline

@@ -18,9 +18,32 @@ Manage git worktrees so you can run multiple Claude Code sessions on the same pr
 /worktree remove <branch>     # Remove worktree by branch name (safe: checks for uncommitted work)
 /worktree clean               # Prune stale/missing worktrees
 /worktree status              # Show git status across all active worktrees
+/worktree sprint <id>         # Create worktrees for all leads in a sprint, print launch commands
 ```
 
 If invoked with no sub-command: run `/worktree list`.
+
+---
+
+## Sprint Integration
+
+`/worktree sprint <id>` creates one worktree per lead role defined in the sprint's status.json.
+
+### Behavior
+
+1. Read `/tmp/caf_sprint/<id>/status.json` to get active lead roles
+2. For each lead role, create a worktree:
+   - Branch: `sprint/<id>/<role>` (e.g., `sprint/abc123/engineering-lead`)
+   - Path: `/tmp/caf_sprint/<id>/worktrees/<role>`
+3. Print launch commands for each worktree:
+   ```
+   cd /tmp/caf_sprint/<id>/worktrees/<role> && claude
+   ```
+4. If no sprint ID found or status.json missing, error with: "No active sprint '<id>'. Run /sprint first."
+
+### Teardown
+
+Sprint worktrees are cleaned up by `bin/tmux-sprint teardown <id>` — this command calls `git worktree remove` for each path under `/tmp/caf_sprint/<id>/worktrees/`. You can also clean them manually with `/worktree remove sprint/<id>/<role>`.
 
 ---
 

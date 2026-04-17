@@ -1,3 +1,9 @@
+---
+name: research-code
+description: "Internal routing guide for code pattern research — GitHub search, implementation patterns, library usage"
+user-invocable: false
+---
+
 # Code Research Skill
 
 ## Trigger

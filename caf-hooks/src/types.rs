@@ -202,6 +202,8 @@ pub struct GlobalStats {
     pub total_failures: u64,
     pub hooks_disabled: u64,
     pub last_updated: String,
+    #[serde(default)]
+    pub doctor_run_count: u64,
 }
 
 impl Default for GlobalStats {
@@ -211,6 +213,7 @@ impl Default for GlobalStats {
             total_failures: 0,
             hooks_disabled: 0,
             last_updated: chrono::Utc::now().to_rfc3339(),
+            doctor_run_count: 0,
         }
     }
 }

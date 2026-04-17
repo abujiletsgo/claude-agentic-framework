@@ -13,6 +13,7 @@ tiers:
       - Orchestration, planning, architecture
       - Complex multi-step coordination
       - Recursive exploration controllers
+      - Multi-agent coordination requiring strategic decisions
 
   sonnet:
     model_id: claude-sonnet-4-6
@@ -25,6 +26,7 @@ tiers:
       - Agent/skill generation
       - Codebase scouting and reporting
       - Critical analysis
+      - Code research and codebase analysis (Wave 0 researchers — reasoning required)
 
   haiku:
     model_id: claude-haiku-4-5
@@ -34,10 +36,11 @@ tiers:
       - Documentation scraping
       - Data formatting and mechanical transforms
       - Status reporting and TTS summaries
+      - Researcher for mechanical listings only (file inventories, not code analysis)
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 2 Opus, 6 Sonnet, 3 Haiku (+ 1 Sonnet/Haiku dynamic: builder)
-# Removed: rlm-root (now /rlm command), solve (protocols folded into orchestrator)
+# 2 Opus, 18 Sonnet, 4 Haiku
+# Consultant model: Wave 0a = user ↔ consultants, Wave 0b = researchers, Wave 1 = builders, Wave 2 = QA loop
 
 agent_tiers:
   opus:
@@ -45,17 +48,28 @@ agent_tiers:
     - project-architect       # Architecture design, agent ecosystem creation
 
   sonnet:
+    - po                      # Product Owner — consultation facilitator, spec synthesizer
     - critical-analyst        # Critical thinking, risk analysis
     - researcher              # Research and analysis
     - meta-agent              # Agent file generation
     - scout-report-suggest    # Codebase scouting
-    - builder                 # Pure implementation — default Sonnet, Haiku for mechanical tasks
+    - builder                 # Pure implementation
     - debugger                # Root cause analysis + fix plan writing
+    - onboard-builder         # Wave 1 onboarding — generates project files from plan
+    - onboard-planner         # Wave 0 onboarding — detects stack, writes plan
+    - academic-researcher     # Academic paper search and citation graph traversal
+    - code-researcher         # Cross-repo code pattern search via GitHub MCP
+    # ── Domain consultants (Wave 0a — read-only, interactive, spec producers) ──
+    - frontend-consultant     # UI, UX, components — asks questions, produces frontend spec
+    - backend-consultant      # API, data, services — asks questions, produces backend spec
+    - architecture-consultant # System design, blast radius — asks questions, produces contracts
+    - security-consultant     # Auth, input handling, threat model — asks questions, produces security spec
 
   haiku:
     - docs-scraper            # Documentation scraping (speed > depth)
     - validator               # Test running + pass/fail reporting
     - agent-watchdog          # Background anomaly detection
+    - health-checker          # CAF health checks — mechanical, no reasoning needed
 
 # ─── Skill Overrides ────────────────────────────────────────────────
 

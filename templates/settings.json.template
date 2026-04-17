@@ -4,7 +4,8 @@
   "version": "1.0",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "ANTHROPIC_CUSTOM_HEADERS": "anthropic-beta: extended-cache-ttl-2025-04-11"
+    "ANTHROPIC_CUSTOM_HEADERS": "anthropic-beta: extended-cache-ttl-2025-04-11,advisor-tool-2026-03-01",
+    "PATH": "/Users/tomkwon/.local/bin:/opt/homebrew/bin:/usr/bin:/Users/tomkwon/.cargo/bin:/usr/local/bin:/bin"
   },
   "model": "sonnet",
   "permissions": {
@@ -33,9 +34,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_startup.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py --failure-threshold 5 -- uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_startup.py",
             "timeout": 60,
             "statusMessage": "Initializing session..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks session-recorder",
+            "timeout": 5
           }
         ]
       }
@@ -88,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks epistemic-guard",
+            "command": "__REPO_DIR__/target/release/caf-hooks epistemic-guard",
             "timeout": 5,
             "_comment": "Rust: Inject epistemic discipline reminder for analysis/interpretation prompts"
           }
@@ -98,9 +108,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks enforce-orchestrate",
+            "command": "__REPO_DIR__/target/release/caf-hooks enforce-orchestrate",
             "timeout": 5,
             "_comment": "Rust: Enforce Skill tool invocation when /orchestrate is detected"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks session-recorder",
+            "timeout": 5
           }
         ]
       }
@@ -112,7 +131,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orchestrator-tool-guard",
+            "command": "__REPO_DIR__/target/release/caf-hooks orchestrator-tool-guard",
             "timeout": 5,
             "_comment": "Rust: Block orchestrator from using file/search/exec tools directly — forces delegation to subagents"
           }
@@ -133,7 +152,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks damage-control",
+            "command": "__REPO_DIR__/target/release/caf-hooks damage-control",
             "timeout": 5,
             "_comment": "Rust: 10.6x faster security gate"
           }
@@ -166,7 +185,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks context-bundle-logger",
+            "command": "__REPO_DIR__/target/release/caf-hooks context-bundle-logger",
             "timeout": 8,
             "async": true,
             "_comment": "Rust: ASYNC bundle logging (CB built-in)"
@@ -178,7 +197,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-error-analyzer",
+            "command": "__REPO_DIR__/target/release/caf-hooks auto-error-analyzer",
             "timeout": 8,
             "_comment": "Rust: error classification (CB built-in)"
           }
@@ -189,7 +208,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-refine",
+            "command": "__REPO_DIR__/target/release/caf-hooks auto-refine",
             "timeout": 6,
             "_comment": "Rust: auto-refine suggestions (CB built-in)"
           }
@@ -210,7 +229,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks --cb auto-escalate",
+            "command": "__REPO_DIR__/target/release/caf-hooks --cb auto-escalate",
             "timeout": 5,
             "async": true,
             "_comment": "Rust: ASYNC: escalation advice delivered on next turn"
@@ -246,7 +265,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks --cb auto-fact-extractor",
+            "command": "__REPO_DIR__/target/release/caf-hooks --cb auto-fact-extractor",
             "timeout": 5,
             "async": true,
             "_comment": "Rust: ASYNC: fact extraction writes to disk, result delivered next turn"
@@ -255,14 +274,24 @@
       }
     ],
 
-    "PostToolUseFailure": [],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks --cb auto-error-analyzer",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
 
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
             "timeout": 5
           }
         ]
@@ -271,7 +300,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
             "timeout": 5
           }
         ]
@@ -280,7 +309,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks auto-memory-writer",
+            "command": "__REPO_DIR__/target/release/caf-hooks auto-memory-writer",
             "timeout": 10,
             "_comment": "Rust: write session summary to .claude/MEMORY.md"
           }
@@ -290,7 +319,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
             "timeout": 5,
             "_comment": "Layer 2: prune stale facts from FACTS.md"
           }
@@ -321,10 +350,40 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks voice-done",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/activity_logger.py",
+            "timeout": 8,
+            "async": true,
+            "_comment": "ASYNC: append session summary to activity_log.jsonl for dashboard"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks voice-done",
             "timeout": 5,
             "async": true,
             "_comment": "Rust: ASYNC voice notification is fire-and-forget"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/health/hook_health_monitor.py",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks session-recorder",
+            "timeout": 5
           }
         ]
       }
@@ -336,7 +395,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks stop-failure-recovery",
+            "command": "__REPO_DIR__/target/release/caf-hooks stop-failure-recovery",
             "timeout": 5,
             "_comment": "Rust: Handle all API failures with typed recovery advice"
           }
@@ -349,7 +408,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks subagent-tracker",
+            "command": "__REPO_DIR__/target/release/caf-hooks subagent-tracker",
             "timeout": 5,
             "async": true,
             "_comment": "Rust: v4.0: Track subagent spawning with agent_id/agent_type"
@@ -360,7 +419,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orch-depth-tracker",
+            "command": "__REPO_DIR__/target/release/caf-hooks orch-depth-tracker",
             "timeout": 5,
             "_comment": "Rust: Track orchestration nesting depth for tool guard"
           }
@@ -373,7 +432,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks subagent-tracker",
+            "command": "__REPO_DIR__/target/release/caf-hooks subagent-tracker",
             "timeout": 5
           }
         ]
@@ -382,7 +441,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks orch-depth-tracker",
+            "command": "__REPO_DIR__/target/release/caf-hooks orch-depth-tracker",
             "timeout": 5,
             "_comment": "Rust: Track orchestration nesting depth for tool guard"
           }
@@ -392,10 +451,39 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks session-cost-tracker",
+            "command": "__REPO_DIR__/target/release/caf-hooks session-cost-tracker",
             "timeout": 8,
             "async": true,
             "_comment": "Rust: ASYNC: reads agent transcript + records cost — fire-and-forget"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/lead_result_store.py",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/lead_memory_writer.py",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks voice-done",
+            "timeout": 5,
+            "async": true,
+            "_comment": "Rust: ASYNC contextual voice notification on subagent completion"
           }
         ]
       }
@@ -406,7 +494,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks task-quality-gate",
+            "command": "__REPO_DIR__/target/release/caf-hooks task-quality-gate",
             "timeout": 10,
             "_comment": "Rust: Validate task completion criteria before marking done"
           }
@@ -433,7 +521,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks file-watcher",
+            "command": "__REPO_DIR__/target/release/caf-hooks file-watcher",
             "timeout": 10,
             "async": true,
             "_comment": "Rust: React to dependency file changes"
@@ -447,7 +535,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks audit-config-change",
+            "command": "__REPO_DIR__/target/release/caf-hooks audit-config-change",
             "timeout": 5,
             "_comment": "Rust: Audit configuration changes for security"
           }
@@ -474,7 +562,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__REPO_DIR__/caf-hooks/target/release/caf-hooks post-compact-verify",
+            "command": "__REPO_DIR__/target/release/caf-hooks post-compact-verify",
             "timeout": 5,
             "async": true,
             "_comment": "Rust: Verify critical state survived compaction"
@@ -508,6 +596,13 @@
       "type": "url",
       "url": "https://doxa.papersflow.ai/mcp",
       "transport": "streamable-http"
+    },
+    "sourcegraph": {
+      "command": "sourcegraph-mcp",
+      "env": {
+        "SOURCEGRAPH_URL": "https://sourcegraph.com",
+        "SOURCEGRAPH_TOKEN": "${SRC_ACCESS_TOKEN}"
+      }
     }
   },
   "enabledPlugins": {

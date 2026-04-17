@@ -1,70 +1,35 @@
-# General
-.DS_Store
-.env
-.env.local
-.env.*.local
-*.log
-
-# Runtime data
-data/logs/
-data/tts_queue/
-
-# Python
 __pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-# lib/ is used for framework utilities — track Python source, ignore compiled artifacts
-!lib/
-!lib/*.py
-parts/
-sdist/
-var/
-wheels/
+*.pyc
+.mempalace/
 *.egg-info/
-.installed.cfg
-*.egg
-.pytest_cache/
-.coverage
-htmlcov/
+.DS_Store
 
-# Bun / Node / TypeScript
-node_modules/
-bun.lockb
-bun.lock
-dist/
-out/
-*.tsbuildinfo
-.npm
-
-# SQLite
-*.db
-*.db-wal
-*.db-shm
-
-# Rust
+# Rust build artifacts
 caf-hooks/target/
 
-# Astral UV
-.uv/
-.python-version
-
-# Project-local mempalace (per-project knowledge store)
-.mempalace/
-
-.claude/PROJECT_CONTEXT.md
+# Claude Code local state (generated, not project config)
 .claude/settings.json
+.claude/projects.json
+.claude/sessions.json
+.claude/worktrees/
+global-skills/gstack/.claude/
 
-# Runtime logs (generated at runtime, not source)
+# Tidy logs
 logs/
-apps/observability/client/logs/
-apps/observability/client/.claude/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Rust build artifacts
+target/
+
+# Observability SQLite DB (runtime state)
+apps/observability/server/events.db
+apps/observability/server/events.db-shm
+apps/observability/server/events.db-wal
+
+# Lead agent episodic memory (per-project, not committed)
+.claude/lead-memories/
+apps/run-explorer-solo/

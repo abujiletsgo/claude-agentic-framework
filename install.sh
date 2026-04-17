@@ -143,10 +143,30 @@ echo ""
 echo "[0b/11] Creating required directories..."
 mkdir -p "$CLAUDE_DIR/data/compressed_context"
 mkdir -p "$CLAUDE_DIR/data/knowledge-db"
+# legacy: circuit_breakers/ dir is unused; CB state is in hook_state.json
 mkdir -p "$CLAUDE_DIR/circuit_breakers"
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "/tmp/claude"
+mkdir -p "$HOME/.caf/orch"
+mkdir -p "$HOME/.caf/orch_state" "$HOME/.caf/health"
 echo "  -> ~/.claude/data/, circuit_breakers/, skills/auto-generated/, /tmp/claude/"
+echo "  -> ~/.caf/orch/ (persistent orchestration run store)"
+echo "  -> ~/.caf/orch_state/ ~/.caf/health/ (hook health monitoring)"
+
+# 0b2. Symlink bin/orch-shared to ~/.local/bin so all repos can use it
+echo "[0b2/11] Installing orch-shared globally..."
+mkdir -p "$HOME/.local/bin"
+ln -sf "$REPO_DIR/bin/orch-shared" "$HOME/.local/bin/orch-shared"
+chmod +x "$REPO_DIR/bin/orch-shared"
+echo "  -> ~/.local/bin/orch-shared (symlink → $REPO_DIR/bin/orch-shared)"
+echo "     All repos can now use 'orch-shared' without a local bin/ directory."
+
+# 0b3. Symlink lib/ to ~/.claude/lib/ so shared libs work from any project
+echo "[0b3/11] Installing shared libs globally..."
+mkdir -p "$CLAUDE_DIR/lib"
+ln -sf "$REPO_DIR/lib/toon_utils.py" "$CLAUDE_DIR/lib/toon_utils.py"
+ln -sf "$REPO_DIR/lib/agent_display.py" "$CLAUDE_DIR/lib/agent_display.py"
+echo "  -> ~/.claude/lib/ (symlinks → $REPO_DIR/lib/)"
 
 # 0c. Pre-warm uv dependency cache (prevents first-run hook timeouts)
 echo "[0c/11] Pre-warming hook dependencies..."
@@ -281,11 +301,14 @@ done
 
 # Inject PATH into env block of settings.json
 export HOOK_PATH
+export REPO_DIR
 SETTINGS_CONTENT=$(echo "$SETTINGS_CONTENT" | python3 -c "
 import json, sys, os
 data = json.load(sys.stdin)
 hook_path = os.environ['HOOK_PATH']
+repo_dir = os.environ['REPO_DIR']
 data.setdefault('env', {})['PATH'] = hook_path
+data['env']['CAF_HOOKS_DIR'] = repo_dir + '/global-hooks/damage-control'
 json.dump(data, sys.stdout, indent=2)
 ")
 
@@ -341,7 +364,16 @@ for skill_dir in "$REPO_DIR"/global-skills/*/; do
   skill_name=$(basename "$skill_dir")
   ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
 done
-echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
+# Also link gstack sub-skills directly so they're invokable by name
+for skill_dir in "$REPO_DIR"/global-skills/gstack/*/; do
+  [ -f "$skill_dir/SKILL.md" ] || continue
+  skill_name=$(basename "$skill_dir")
+  # Don't overwrite if global-skills already linked this name
+  [ -e "$CLAUDE_DIR/skills/$skill_name" ] && continue
+  ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+done
+GSTACK_COUNT=$(find "$REPO_DIR/global-skills/gstack" -maxdepth 1 -mindepth 1 -type d -name "*/SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
+echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills + gstack sub-skills"
 # Ensure auto-generated skills directory exists (used by auto_skill_generator hook)
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "$CLAUDE_DIR/data"
@@ -449,6 +481,60 @@ else
   echo "           Try:   uv cache clean && bash install.sh"
 fi
 rm -f "$SMOKE_FILE"
+
+echo "[10b/11] Doctor checks..."
+DOCTOR_ERRORS=0
+
+# Check ~/.caf/orch/ exists and is writable
+if [ -d "$HOME/.caf/orch" ] && [ -w "$HOME/.caf/orch" ]; then
+  echo "  ~/.caf/orch/: OK (orchestration run store)"
+else
+  echo "  WARNING: ~/.caf/orch/ missing or not writable"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check orch-shared is accessible globally
+if command -v orch-shared >/dev/null 2>&1 || [ -f "$HOME/.local/bin/orch-shared" ]; then
+  echo "  orch-shared: OK (global)"
+else
+  echo "  WARNING: orch-shared not in PATH — cross-repo orchestration logging won't work"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check ~/.claude/agents/ has the right symlinks count
+AGENT_COUNT=$(ls "$HOME/.claude/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+REPO_AGENT_COUNT=$(ls "$REPO_DIR/global-agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$AGENT_COUNT" = "$REPO_AGENT_COUNT" ]; then
+  echo "  agents: OK ($AGENT_COUNT symlinks)"
+else
+  echo "  WARNING: agents mismatch — ~/.claude/agents/ has $AGENT_COUNT, repo has $REPO_AGENT_COUNT"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+# Check ~/.claude/skills/ symlinks
+SKILL_COUNT=$(find ~/.claude/skills/ -maxdepth 1 -type l -exec sh -c 'target=$(readlink "$1"); [[ "$target" == */global-skills/* ]] && echo "$1"' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+REPO_SKILL_COUNT=$(ls -d "$REPO_DIR/global-skills/"*/ 2>/dev/null | wc -l | tr -d ' ')
+# Count gstack sub-skills that will actually be linked (those with SKILL.md not already in global-skills)
+GSTACK_LINKED=0
+for _gd in "$REPO_DIR/global-skills/gstack/"/*/; do
+  [ -f "$_gd/SKILL.md" ] || continue
+  _gname=$(basename "$_gd")
+  [ -d "$REPO_DIR/global-skills/$_gname" ] && continue  # already linked from global-skills
+  GSTACK_LINKED=$((GSTACK_LINKED + 1))
+done
+EXPECTED_SKILL_COUNT=$((REPO_SKILL_COUNT + GSTACK_LINKED))
+if [ "$SKILL_COUNT" = "$EXPECTED_SKILL_COUNT" ]; then
+  echo "  skills: OK ($SKILL_COUNT symlinks: $REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
+else
+  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT, expected $EXPECTED_SKILL_COUNT ($REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
+  DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
+fi
+
+if [ "$DOCTOR_ERRORS" -eq 0 ]; then
+  echo "  All doctor checks passed."
+else
+  echo "  $DOCTOR_ERRORS doctor check(s) failed — re-run bash install.sh to fix."
+fi
 
 echo "[11/11] Installation complete."
 echo "  uv:      $(uv --version)"
