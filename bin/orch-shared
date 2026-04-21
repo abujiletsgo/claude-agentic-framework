@@ -141,6 +141,12 @@ def cmd_init(orch_id: str) -> None:
     if not (sd / "domains.json").exists():
         (sd / "domains.json").write_text(json.dumps({}))
 
+    # Initialize iteration counters
+    for counter in ("fail_count", "concerns_count"):
+        counter_path = ORCH_BASE / orch_id / counter
+        if not counter_path.exists():
+            counter_path.write_text("0\n")
+
     # Record project CWD so dashboards can filter by project
     meta_path = ORCH_BASE / orch_id / "meta.json"
     if not meta_path.exists():

@@ -11,6 +11,7 @@
 /// - Always exits 0 (never blocks, tracking only).
 use serde_json::Value;
 use std::fs;
+use std::path::PathBuf;
 
 use crate::io::read_stdin_value;
 use crate::state::{orch_depth_path, orch_guard_marker_path, orch_state_dir};
@@ -54,6 +55,58 @@ fn touch_marker() {
     let json = serde_json::json!({"ts": ts});
     let _ = fs::create_dir_all(orch_state_dir());
     let _ = fs::write(orch_guard_marker_path(), json.to_string());
+}
+
+/// Write a start-timing file for the agent being started.
+/// Never errors — all results are silently dropped to keep the hook non-blocking.
+fn write_agent_start_time(data: &Value) {
+    // Resolve agent name: check tool_input.name, tool_input.agent_name, tool_input.subagent_type
+    let raw_name = data
+        .get("tool_input")
+        .and_then(|ti| {
+            ti.get("name")
+                .or_else(|| ti.get("agent_name"))
+                .or_else(|| ti.get("subagent_type"))
+        })
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    // Sanitize: replace non-alphanumeric (except '-') with '_', truncate to 64 chars
+    let sanitized: String = raw_name
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+        .take(64)
+        .collect();
+
+    // Session ID: read from data["session_id"], fallback "unknown", take first 8 chars
+    let session_id = data
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+    let session_id_8: String = session_id.chars().take(8).collect();
+
+    // Build directory path: ~/.caf/state/agent_starts/
+    let dir: PathBuf = match dirs::home_dir() {
+        Some(home) => home.join(".caf").join("state").join("agent_starts"),
+        None => return,
+    };
+    let _ = fs::create_dir_all(&dir);
+
+    // File name: <agent_name_sanitized>_<session_id_8>.json
+    let filename = format!("{}_{}.json", sanitized, session_id_8);
+    let file_path = dir.join(filename);
+
+    // Build JSON content
+    let started_at_epoch_ms = chrono::Utc::now().timestamp_millis() as u64;
+    let content = serde_json::json!({
+        "agent_name": raw_name,
+        "session_id": session_id,
+        "started_at_epoch_ms": started_at_epoch_ms,
+    });
+
+    let _ = fs::write(file_path, content.to_string());
 }
 
 /// Check if the agent being started/stopped is an orchestrator by inspecting
@@ -132,5 +185,7 @@ pub fn run() {
         let depth = get_depth();
         let new_depth = depth + 1;
         set_depth(new_depth);
+
+        write_agent_start_time(&data);
     }
 }

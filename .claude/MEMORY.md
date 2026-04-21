@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (17:39 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (ca4b3cf6) by Tom Kwon
-**Changed:**
-  CLAUDE.md | 2 +-
-  README.md | 6 +++---
-  2 files changed, 4 insertions(+), 4 deletions(-)
-
 ## 2026-04-10 (17:41 UTC) · @Tom Kwon
 **Commit:** docs: orchestrate — explicit parallel researchers in Wave 0, use haiku model (992de748) by Tom Kwon
 **Changed:**
@@ -300,3 +293,18 @@
   global-skills/gstack/design-html/SKILL.md            |  4 ++--
   global-skills/gstack/design-review/SKILL.md          |  4 ++--
   ... and 25 more files
+
+## 2026-04-21 (16:33 UTC) · @Tom Kwon
+**Commit:** feat(v5.2): session cost tracking, gstack fix, tidy memory audit, orch improvements (68534240) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |   52 +-
+  .gitignore                                         |    1 +
+  CLAUDE.md                                          |    2 +-
+  README.md                                          |   10 +-
+  apps/run-explorer/client/.claude/MEMORY.md         |   15 +
+  .../client/src/composables/useSessions.ts          |    6 +-
+  .../client/src/views/RunDetailView.vue             |   91 +-
+  .../client/src/views/SessionDetailView.vue         |   11 +-
+  .../client/src/views/SessionListView.vue           |  154 +-
+  apps/run-explorer/server/.claude/MEMORY.md         |   15 +
+  ... and 41 more files

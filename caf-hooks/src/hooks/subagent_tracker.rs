@@ -9,6 +9,7 @@
 /// - Appends tracking record to ~/.claude/data/agent_tracking.jsonl
 /// - On anomalies: appends to /tmp/caf_watchdog.md and ~/.claude/data/subagent_alerts.jsonl
 /// - Always exits 0 (never blocks)
+use std::io::Write;
 use std::path::PathBuf;
 
 use chrono::Utc;
@@ -20,6 +21,9 @@ use crate::types::HookOutput;
 
 /// Output below this character count is considered suspiciously empty
 const MINIMUM_MEANINGFUL_OUTPUT: usize = 50;
+
+const NUDGE_THRESHOLD_MS: u64 = 300_000;
+const NUDGE_PROMPT: &str = "Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision, stop immediately, write what you have to your results file, and append BLOCKED: <reason>. Do not keep retrying silently.";
 
 /// Patterns that signal a failed/errored agent response (match Python exactly)
 const ERROR_PATTERNS: &[&str] = &[
@@ -47,6 +51,50 @@ fn tracking_path() -> PathBuf {
 fn alerts_path() -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
     home.join(".claude").join("data").join("subagent_alerts.jsonl")
+}
+
+fn sanitize_agent_name(name: &str) -> String {
+    name.chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+        .take(64)
+        .collect()
+}
+
+fn write_nudge_log(
+    agent_name: &str,
+    session_id: &str,
+    elapsed_ms: u64,
+    anomalies: &[String],
+    output_length: usize,
+) {
+    let inner = || -> Option<()> {
+        let home = dirs::home_dir()?;
+        let logs_dir = home.join(".caf").join("logs");
+        std::fs::create_dir_all(&logs_dir).ok()?;
+        let nudge_path = logs_dir.join("nudge_log.jsonl");
+
+        let timestamp = Utc::now().to_rfc3339();
+        let entry = serde_json::json!({
+            "timestamp": timestamp,
+            "agent_name": agent_name,
+            "session_id": session_id,
+            "elapsed_ms": elapsed_ms,
+            "nudge_content": NUDGE_PROMPT,
+            "anomalies": anomalies,
+            "output_length": output_length,
+        });
+        let line = serde_json::to_string(&entry).ok()?;
+
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&nudge_path)
+            .ok()?;
+        file.write_all(line.as_bytes()).ok()?;
+        file.write_all(b"\n").ok()?;
+        Some(())
+    };
+    inner();
 }
 
 pub fn run() {
@@ -179,6 +227,35 @@ pub fn run() {
             "error_excerpt": error_excerpt,
         });
         let _ = try_append_jsonl(&alerts_path(), &alert);
+    }
+
+    // ── Elapsed time tracking & nudge log ─────────────────────────────────
+    let session_id = data
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+    let session_id_8: String = session_id.chars().take(8).collect();
+    let agent_name_sanitized = sanitize_agent_name(&agent_name);
+
+    if let Some(home) = dirs::home_dir() {
+        let starts_dir = home.join(".caf").join("state").join("agent_starts");
+        let start_file = starts_dir.join(format!("{}_{}.json", agent_name_sanitized, session_id_8));
+        if start_file.exists() {
+            let parse_and_nudge = || -> Option<()> {
+                let content = std::fs::read_to_string(&start_file).ok()?;
+                let json: Value = serde_json::from_str(&content).ok()?;
+                let started_at = json.get("started_at_epoch_ms")?.as_u64()?;
+                let now_epoch_ms = Utc::now().timestamp_millis() as u64;
+                let elapsed_ms = now_epoch_ms.saturating_sub(started_at);
+                std::fs::remove_file(&start_file).ok();
+                if elapsed_ms > NUDGE_THRESHOLD_MS {
+                    write_nudge_log(&agent_name, &session_id, elapsed_ms, &anomaly_types, output_length);
+                }
+                Some(())
+            };
+            parse_and_nudge();
+        }
     }
 
     write_output(&HookOutput::empty());
