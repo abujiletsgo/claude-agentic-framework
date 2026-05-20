@@ -33,3 +33,6 @@ apps/observability/server/events.db-wal
 # Lead agent episodic memory (per-project, not committed)
 .claude/lead-memories/
 apps/run-explorer-solo/
+
+# Runtime scheduled-task lock
+.claude/scheduled_tasks.lock
