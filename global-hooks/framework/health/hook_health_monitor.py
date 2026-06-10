@@ -41,7 +41,6 @@ def load_hook_state() -> dict:
 def save_hook_state(state: dict):
     import fcntl
     tmp = HOOK_STATE_FILE.with_suffix('.tmp')
-    tmp.write_text(json.dumps(state, indent=2, default=str))
     with open(HOOK_STATE_FILE, 'r+') as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         try:

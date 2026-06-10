@@ -54,9 +54,15 @@ def normalize_hook_key(command: list) -> str:
                 return clean
     return os.path.splitext(os.path.basename(command[-1]))[0].replace('_', '-').lower()
 
-from circuit_breaker import CircuitBreaker, CircuitBreakerDecision
-from hook_state_manager import HookStateManager
-from config_loader import load_config
+# Fail-open: if the CB machinery can't import (e.g. pyyaml/pydantic missing),
+# the wrapper must still execute the wrapped command rather than exit 1.
+try:
+    from circuit_breaker import CircuitBreaker, CircuitBreakerDecision
+    from hook_state_manager import HookStateManager
+    from config_loader import load_config
+    _CB_AVAILABLE = True
+except ImportError:
+    _CB_AVAILABLE = False
 
 
 def parse_args() -> Optional[tuple]:
@@ -190,6 +196,15 @@ def main() -> int:
 
     # Build canonical CB key for state tracking
     hook_cmd = normalize_hook_key(command)
+
+    if not _CB_AVAILABLE:
+        # CB deps unavailable — run the wrapped command directly.
+        exit_code, stdout, stderr = execute_command(command)
+        if stdout:
+            print(stdout, end="")
+        if stderr:
+            print(stderr, end="", file=sys.stderr)
+        return exit_code
 
     try:
         # Load configuration

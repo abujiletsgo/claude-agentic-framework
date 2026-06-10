@@ -81,7 +81,6 @@ def main():
         "automation/auto_prime.py",
         "automation/inject_lessons.py",
         "automation/inject_always_loaded_skills.py",
-        "session/spawn_hud.py",
     ]
 
     messages = []

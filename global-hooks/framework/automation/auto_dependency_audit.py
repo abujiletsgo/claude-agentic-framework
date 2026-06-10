@@ -193,7 +193,9 @@ def run_audit(manager_name, command):
             try:
                 data = json.loads(result.stdout)
                 dependencies = data.get("dependencies", [])
-                vuln_count = len(dependencies)
+                # pip-audit lists ALL packages; only those with a non-empty
+                # "vulns" array are actually vulnerable.
+                vuln_count = sum(1 for dep in dependencies if dep.get("vulns"))
                 if vuln_count > 0:
                     output_lines.append(f"pip-audit: Found {vuln_count} vulnerabilities")
                     for dep in dependencies[:5]:

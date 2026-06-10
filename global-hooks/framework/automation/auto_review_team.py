@@ -221,8 +221,9 @@ def main():
         # Read hook input from stdin
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError as e:
+        # Fail open: a malformed payload must never surface as a hook error.
         print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(0)
 
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})

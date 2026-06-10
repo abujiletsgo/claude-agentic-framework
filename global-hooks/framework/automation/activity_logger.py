@@ -32,11 +32,14 @@ def git(args: list, cwd: str) -> str:
 def get_compressed_tasks(session_id: str) -> list[str]:
     if not SUMMARY_DIR.exists():
         return []
-    prefix = session_id[:8] if session_id and len(session_id) >= 8 else session_id
+    # Filenames are md5(session_id:task_id) hashes (see auto_context_manager
+    # summary_path), so match on the session_id field inside each file.
     tasks = []
-    for f in sorted(SUMMARY_DIR.glob(f"{prefix}*.json")):
+    for f in sorted(SUMMARY_DIR.glob("*.json")):
         try:
             data = json.loads(f.read_text())
+            if data.get("session_id") != session_id:
+                continue
             subj = data.get("subject", "")
             outcome = data.get("outcome", "")
             if subj:
