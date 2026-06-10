@@ -166,6 +166,9 @@ echo "[0b3/11] Installing shared libs globally..."
 mkdir -p "$CLAUDE_DIR/lib"
 ln -sf "$REPO_DIR/lib/toon_utils.py" "$CLAUDE_DIR/lib/toon_utils.py"
 ln -sf "$REPO_DIR/lib/agent_display.py" "$CLAUDE_DIR/lib/agent_display.py"
+# Caddy config — analyze_request.py reads ~/.claude/caddy_config.yaml
+# (the config file's own header prescribes this symlink)
+ln -sf "$REPO_DIR/data/caddy_config.yaml" "$CLAUDE_DIR/caddy_config.yaml"
 echo "  -> ~/.claude/lib/ (symlinks → $REPO_DIR/lib/)"
 
 # 0c. Pre-warm uv dependency cache (prevents first-run hook timeouts)
@@ -372,7 +375,6 @@ for skill_dir in "$REPO_DIR"/global-skills/gstack/*/; do
   [ -e "$CLAUDE_DIR/skills/$skill_name" ] && continue
   ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
 done
-GSTACK_COUNT=$(find "$REPO_DIR/global-skills/gstack" -maxdepth 1 -mindepth 1 -type d -name "*/SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
 echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills + gstack sub-skills"
 # Ensure auto-generated skills directory exists (used by auto_skill_generator hook)
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"

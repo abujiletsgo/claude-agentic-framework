@@ -77,6 +77,14 @@ echo "[6/6] Scripts & templates..."
 remove_dir_symlinks "$CLAUDE_DIR/scripts"
 remove_dir_symlinks "$CLAUDE_DIR/templates"
 
+# ─── Misc symlinks created by install.sh ─────────────────
+# (orch-shared global bin, shared lib helpers, caddy config)
+
+remove_symlink "$HOME/.local/bin/orch-shared" 2>/dev/null || true
+remove_symlink "$CLAUDE_DIR/lib/toon_utils.py" 2>/dev/null || true
+remove_symlink "$CLAUDE_DIR/lib/agent_display.py" 2>/dev/null || true
+remove_symlink "$CLAUDE_DIR/caddy_config.yaml" 2>/dev/null || true
+
 # ─── Done ─────────────────────────────────────────────────
 
 echo ""
@@ -86,7 +94,6 @@ echo "  Removed: $removed symlinks"
 echo "  Skipped: $skipped (not pointing to this repo)"
 echo ""
 echo "NOTE: settings.json was NOT reverted automatically."
-echo "  To restore: cp ~/.claude/backups/*/settings.json ~/.claude/settings.json"
-echo "  Or re-run:  $REPO_DIR/install.sh"
+echo "  To restore it, re-run:  $REPO_DIR/install.sh"
 echo ""
 echo "Repo files remain at: $REPO_DIR"

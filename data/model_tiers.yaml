@@ -39,7 +39,7 @@ tiers:
       - Researcher for mechanical listings only (file inventories, not code analysis)
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 2 Opus, 18 Sonnet, 4 Haiku
+# 2 Opus, 15 Sonnet, 4 Haiku
 # Consultant model: Wave 0a = user ↔ consultants, Wave 0b = researchers, Wave 1 = builders, Wave 2 = QA loop
 
 agent_tiers:

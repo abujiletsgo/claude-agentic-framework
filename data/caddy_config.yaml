@@ -47,11 +47,9 @@ caddy:
     # Critical quality decisions (security, production) -> Best-of-N
     critical: fusion
 
-    # Planning and design -> brainstorm skill
-    planning: brainstorm
-
-    # Time-boxed sprint execution -> tmux-sprint orchestrator
-    sprint: tmux_sprint
+    # Planning and design -> orchestrate (consultant-first spec phase)
+    # (brainstorm and tmux_sprint skills were removed with the sprint system)
+    planning: orchestrate
 
   # Model selection for the Caddy system
   model_selection:
@@ -73,7 +71,6 @@ caddy:
       docs-scraper: haiku
       agent-watchdog: haiku
       quick_task: haiku
-      sprint-lead: sonnet
 
     # maxTurns caps per role — prevents runaway token burn
     role_max_turns:
@@ -112,7 +109,6 @@ caddy:
     research-code: true
     research-news: true
     research-docs: true
-    sprint: true
 
   # Skill security audit configuration
   # Caddy audits skills for dangerous patterns before recommending them
