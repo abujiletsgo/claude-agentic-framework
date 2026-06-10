@@ -84,7 +84,7 @@ export async function parseRunStatus(orchDir: string): Promise<RunStatus> {
         if (parsed['status'] !== 'done') { allDone = false; break }
       } catch { allDone = false; break }
     }
-    if (allDone) return 'IN_PROGRESS'
+    if (allDone) return 'PASS'
   }
 
   return 'UNKNOWN'
@@ -213,7 +213,7 @@ export async function parseLeadSummaries(orchDir: string): Promise<LeadSummary[]
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Record<string, unknown>
-        if (parsed['status'] === 'done') status = 'IN_PROGRESS'
+        if (parsed['status'] === 'done') status = 'PASS'
         else if (parsed['status'] === 'failed') status = 'FAIL'
       } catch {
         // keep UNKNOWN

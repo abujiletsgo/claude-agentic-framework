@@ -70,7 +70,6 @@ export interface CostProjection {
 // ── Constants ────────────────────────────────────────────────────
 
 const COST_LOG_PATH = join(homedir(), '.claude', 'logs', 'cost_tracking.jsonl')
-const SESSIONS_DIR = join(homedir(), '.caf', 'sessions')
 
 // ── Core Functions ───────────────────────────────────────────────
 
@@ -212,7 +211,7 @@ export async function getDailyBreakdown(days: number = 7): Promise<DailySummary[
 }
 
 export async function getCostProjection(days: number = 7): Promise<CostProjection> {
-  const daily = await getDailyBreakdown(7)
+  const daily = await getDailyBreakdown(days)
 
   const activeDays = daily.filter((d) => d.total_cost > 0)
 

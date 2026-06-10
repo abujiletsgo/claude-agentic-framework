@@ -23,7 +23,7 @@ export function getRecentEvents(dbPath: string, limit: number): Event[] {
     return rows.map((row) => ({
       id: row.id,
       type: row.hook_event_type,
-      timestamp: new Date(row.timestamp * 1000).toISOString(),
+      timestamp: new Date(row.timestamp).toISOString(),
       metadata: row.payload.slice(0, 200),
     }))
   } catch {

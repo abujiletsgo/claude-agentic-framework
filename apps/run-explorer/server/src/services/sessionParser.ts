@@ -1,9 +1,9 @@
-import { readdir, readFile } from 'fs/promises'
+import { readdir, readFile, access } from 'fs/promises'
 import { join } from 'path'
-import { homedir } from 'node:os'
 import type { Session, SessionEvent, SessionEventType } from '../../../shared/types'
+import { SESSIONS_BASE_DIR } from '../config'
 
-const SESSIONS_DIR = join(homedir(), '.caf', 'sessions')
+const SESSIONS_DIR = SESSIONS_BASE_DIR
 
 export interface SessionSummary {
   id: string
@@ -111,6 +111,12 @@ export async function listSessions(): Promise<SessionSummary[]> {
 
 export async function getSessionDetail(id: string): Promise<SessionDetail | null> {
   const filePath = join(SESSIONS_DIR, `${id}.jsonl`)
+  // Return null (→ 404) when the file does not exist at all
+  try {
+    await access(filePath)
+  } catch {
+    return null
+  }
   const events = await readJsonl(filePath)
   if (events.length === 0) {
     return { id, startTime: '', promptCount: 0, status: 'active', messages: [] }

@@ -26,7 +26,15 @@ export function useCosts() {
         fetch(`${API_BASE_URL}/api/costs/summary?period=week`),
         fetch(`${API_BASE_URL}/api/costs/daily?days=7`),
       ])
-      if (summaryRes.ok) summary.value = await summaryRes.json()
+      if (summaryRes.ok) {
+        const wire = await summaryRes.json()
+        summary.value = {
+          totalCost: wire.total_cost,
+          totalTokens: (wire.total_input_tokens ?? 0) + (wire.total_output_tokens ?? 0),
+          sessionCount: wire.session_count,
+          period: wire.period,
+        }
+      }
       if (dailyRes.ok) daily.value = await dailyRes.json()
     } catch {
       // ignore

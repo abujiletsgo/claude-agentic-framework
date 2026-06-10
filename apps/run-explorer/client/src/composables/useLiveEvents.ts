@@ -17,7 +17,7 @@ export interface FilterOptions {
   hook_event_types: string[]
 }
 
-const WS_URL = API_BASE_URL.replace(/^http/, 'ws') + '/stream'
+const WS_URL = API_BASE_URL.replace(/^http/, 'ws').replace(/\/+$/, '') + '/stream'
 
 export function useLiveEvents() {
   const events = ref<LiveEvent[]>([])
