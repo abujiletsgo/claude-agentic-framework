@@ -17,8 +17,8 @@ import sys
 from pathlib import Path
 import json
 
-# Add framework directory to path
-framework_dir = Path.home() / "Documents" / "claude-agentic-framework" / "global-hooks" / "framework"
+# Add framework directory to path (repo-relative, like audit_skill.py)
+framework_dir = Path(__file__).resolve().parent.parent / "global-hooks" / "framework"
 sys.path.insert(0, str(framework_dir))
 
 from caddy.skill_auditor import SkillAuditor

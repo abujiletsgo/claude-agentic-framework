@@ -22,51 +22,8 @@ install:
 uninstall:
     bash {{project_root}}/uninstall.sh
 
-# ─── Observability System ─────────────────────────────────
-
-# Start observability server + client (foreground, Ctrl+C to stop)
-obs-start:
-    {{project_root}}/scripts/start-system.sh
-
-# Stop observability processes and clean up
-obs-stop:
-    {{project_root}}/scripts/reset-system.sh
-
-# Stop then start observability
-obs-restart: obs-stop obs-start
-
-# ─── Observability Server (Bun, port 4000) ────────────────
-
-# Install server dependencies
-server-install:
-    cd {{project_root}}/apps/observability/server && bun install
-
-# Start server in dev mode (watch)
-server:
-    cd {{project_root}}/apps/observability/server && SERVER_PORT={{server_port}} bun run dev
-
-# Start server in production mode
-server-prod:
-    cd {{project_root}}/apps/observability/server && SERVER_PORT={{server_port}} bun run start
-
-# ─── Observability Client (Vue + Vite, port 5173) ─────────
-
-# Install client dependencies
-client-install:
-    cd {{project_root}}/apps/observability/client && bun install
-
-# Start client dev server
-client:
-    cd {{project_root}}/apps/observability/client && VITE_PORT={{client_port}} bun run dev
-
-# Build client for production
-client-build:
-    cd {{project_root}}/apps/observability/client && bun run build
-
-# Install all observability dependencies (server + client)
-obs-install: server-install client-install
-
 # ─── Database ──────────────────────────────────────────────
+# (events.db is written by hooks and read by apps/run-explorer)
 
 # Clear SQLite WAL files
 db-clean-wal:
@@ -77,25 +34,6 @@ db-clean-wal:
 db-reset:
     rm -f {{project_root}}/apps/observability/server/events.db {{project_root}}/apps/observability/server/events.db-wal {{project_root}}/apps/observability/server/events.db-shm
     @echo "Database reset"
-
-# ─── Testing ───────────────────────────────────────────────
-
-# Send a test event to the observability server
-test-event:
-    curl -s -X POST http://localhost:{{server_port}}/events \
-      -H "Content-Type: application/json" \
-      -d '{"source_app":"test","session_id":"test-1234","hook_event_type":"PreToolUse","payload":{"tool_name":"Bash","tool_input":{"command":"echo hello"}}}' \
-      | head -c 200
-    @echo ""
-
-# Check server + client health
-health:
-    @curl -sf http://localhost:{{server_port}}/health > /dev/null 2>&1 \
-      && echo "Server: UP (port {{server_port}})" \
-      || echo "Server: DOWN (port {{server_port}})"
-    @curl -sf http://localhost:{{client_port}} > /dev/null 2>&1 \
-      && echo "Client: UP (port {{client_port}})" \
-      || echo "Client: DOWN (port {{client_port}})"
 
 # ─── Hooks ─────────────────────────────────────────────────
 
@@ -120,29 +58,29 @@ model-tiers:
 
 # Show model usage costs for the last week
 model-usage:
-    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --last-week --by-agent
+    uv run {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --last-week --by-agent
 
 # Show today's costs
 model-usage-today:
-    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --today --by-agent
+    uv run {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --today --by-agent
 
 # Show daily cost breakdown
 model-usage-daily days="7":
-    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --daily {{days}}
+    uv run {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --daily {{days}}
 
 # Show cost projection
 model-usage-projection days="7":
-    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --projection {{days}}
+    uv run {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --projection {{days}}
 
 # Generate sample cost data for testing
 model-usage-sample days="7":
-    python3 {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --generate-sample {{days}}
+    uv run {{project_root}}/global-hooks/framework/monitoring/model_usage_cli.py --generate-sample {{days}}
 
 # ─── Security ─────────────────────────────────────────────
 
 # Generate skills.lock with SHA-256 hashes of all skill files
 skills-lock:
-    python3 {{project_root}}/scripts/generate_skills_lock.py
+    uv run {{project_root}}/scripts/generate_skills_lock.py
 
 # Verify skills integrity against skills.lock
 skills-verify:
@@ -150,14 +88,14 @@ skills-verify:
 
 # Audit a single skill for security issues (e.g. just audit-skill code-review)
 audit-skill skill:
-    python3 {{project_root}}/scripts/audit_skill.py {{skill}}
+    uv run {{project_root}}/scripts/audit_skill.py {{skill}}
 
 # Audit all installed skills for security issues
 audit-all-skills:
     @for skill in {{project_root}}/global-skills/*/; do \
         name=$(basename "$skill"); \
         echo "--- $name ---"; \
-        python3 {{project_root}}/scripts/audit_skill.py "$name" || true; \
+        uv run {{project_root}}/scripts/audit_skill.py "$name" || true; \
         echo ""; \
     done
 
@@ -168,23 +106,13 @@ audit-local-skills:
         echo ""; \
         for skill_dir in .claude/skills/*/; do \
             if [ -d "$skill_dir" ]; then \
-                python3 {{project_root}}/scripts/audit_local_skill.py "$skill_dir" || true; \
+                uv run {{project_root}}/scripts/audit_local_skill.py "$skill_dir" || true; \
                 echo ""; \
             fi \
         done; \
     else \
         echo "No .claude/skills/ directory found in current project"; \
     fi
-
-# Review blocked skills interactively and whitelist safe ones
-review-blocked-skills:
-    python3 {{project_root}}/scripts/review_blocked_skills.py .
-
-# ─── Open ──────────────────────────────────────────────────
-
-# Open the observability dashboard in browser
-open:
-    open http://localhost:{{client_port}}
 
 # ─── Team Health ─────────────────────────────────────────
 

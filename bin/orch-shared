@@ -667,6 +667,7 @@ def cmd_write_retro(orch_id: str) -> None:
 
     # Task line from acceptance_criteria.md
     task_line = ""
+    in_task_section = False
     for line in _read("acceptance_criteria.md").splitlines():
         stripped = line.strip()
         if "**Task**:" in line:
@@ -674,8 +675,11 @@ def cmd_write_retro(orch_id: str) -> None:
             break
         if stripped in ("## Task", "### Task"):
             # next non-empty non-heading line
-            found_heading = True
-        elif locals().get("found_heading") and stripped and not stripped.startswith("#"):
+            in_task_section = True
+        elif stripped.startswith("#"):
+            # a different heading ends the Task section
+            in_task_section = False
+        elif in_task_section and stripped:
             task_line = stripped
             break
 

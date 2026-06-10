@@ -132,12 +132,6 @@ else
     echo -e "  ${RED}FAIL${NC} data/model_tiers.yaml missing"
 fi
 
-skill_file="$(cd "$(dirname "$0")/../global-skills/multi-model-tiers" && pwd)/SKILL.md"
-if [ -f "$skill_file" ]; then
-    echo -e "  ${GREEN}PASS${NC} global-skills/multi-model-tiers/SKILL.md exists"
-else
-    echo -e "  ${RED}FAIL${NC} global-skills/multi-model-tiers/SKILL.md missing"
-fi
 echo ""
 
 # Cross-check YAML vs frontmatter
