@@ -241,10 +241,7 @@ fn extract_from_bash(cmd: &str, output: &str, is_error: bool) -> Vec<(&'static s
     } else {
         // Failure: check GOTCHA patterns against combined output
         for (i, pat) in gotcha_patterns().iter().enumerate() {
-            if let Some(caps) = pat.captures_at(output, 0).or_else(|| {
-                // Try case-insensitive via the already-compiled pattern
-                pat.captures(output)
-            }) {
+            if let Some(caps) = pat.captures(output) {
                 let template = GOTCHA_PATTERNS_STR[i].1;
                 let fact_text = build_gotcha_fact(template, &caps);
                 facts.push(("GOTCHAS", fact_text));

@@ -213,17 +213,11 @@ pub fn run() {
         return;
     }
 
-    let session_id = data
-        .get("session_id")
-        .and_then(|v| v.as_str())
-        .or_else(|| std::env::var("CLAUDE_SESSION_ID").ok().as_deref().map(|_| ""))
-        .unwrap_or("unknown");
-
-    // Re-fetch via env if not in JSON (mirrors Python fallback)
-    let session_id = if session_id.is_empty() {
-        std::env::var("CLAUDE_SESSION_ID").unwrap_or_else(|_| "unknown".to_string())
-    } else {
-        session_id.to_string()
+    // Session id: JSON field, then CLAUDE_SESSION_ID env, then "unknown"
+    // (mirrors Python fallback).
+    let session_id = match data.get("session_id").and_then(|v| v.as_str()) {
+        Some(s) if !s.is_empty() => s.to_string(),
+        _ => std::env::var("CLAUDE_SESSION_ID").unwrap_or_else(|_| "unknown".to_string()),
     };
 
     let mut state = load_state(&session_id);

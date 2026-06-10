@@ -52,7 +52,7 @@ fn calculate_cost(input_tokens: u64, output_tokens: u64, pricing: &Pricing) -> f
     let input_cost = (input_tokens as f64 / 1_000_000.0) * pricing.input;
     let output_cost = (output_tokens as f64 / 1_000_000.0) * pricing.output;
     // Round to 6 decimal places (matches Python round(..., 6))
-    (input_cost + output_cost * 1_000_000.0).round() / 1_000_000.0
+    ((input_cost + output_cost) * 1_000_000.0).round() / 1_000_000.0
 }
 
 struct TokenUsage {
@@ -256,4 +256,31 @@ pub fn run() {
     let _ = try_append_jsonl(&session_file, &session_record);
 
     write_output(&HookOutput::empty());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculate_cost_rounds_to_six_decimals() {
+        // 1M input + 1M output tokens at sonnet pricing = $3 + $15 = $18 exactly.
+        let p = Pricing { input: 3.00, output: 15.00, tier: "sonnet" };
+        assert_eq!(calculate_cost(1_000_000, 1_000_000, &p), 18.0);
+    }
+
+    #[test]
+    fn calculate_cost_small_token_counts() {
+        // 100 input + 200 output at opus pricing:
+        // (100/1M)*15 + (200/1M)*75 = 0.0015 + 0.015 = 0.0165
+        let p = Pricing { input: 15.00, output: 75.00, tier: "opus" };
+        let cost = calculate_cost(100, 200, &p);
+        assert!((cost - 0.0165).abs() < 1e-9, "got {cost}");
+    }
+
+    #[test]
+    fn calculate_cost_zero_tokens_is_zero() {
+        let p = Pricing { input: 3.00, output: 15.00, tier: "sonnet" };
+        assert_eq!(calculate_cost(0, 0, &p), 0.0);
+    }
 }
