@@ -25,16 +25,16 @@ If reversing a prior position, acknowledge the reversal explicitly.";
 
 // Analysis patterns — mirrors Python ANALYSIS_PATTERNS list
 static ANALYSIS_PATTERNS_STR: &[&str] = &[
-    r"(?i)\b(?:analyz|analyse|interpret|evaluat|assess)\b",
+    r"(?i)\b(?:analyz|analyse|interpret|evaluat|assess)\w*\b",
     r"(?i)\b(?:what does .* (?:mean|show|tell|indicate|suggest|imply))",
     r"(?i)\b(?:why (?:is|are|did|does|do|was|were))\b",
     r"(?i)\b(?:explain|understand|make sense of)\b.*\b(?:data|results?|numbers?|output|findings?|pattern)\b",
     r"(?i)\b(?:performance|accuracy|results?|metrics?|statistics?|returns?|p&l|pnl|sharpe|drawdown)\b",
     r"(?i)\b(?:backtest|forward test|live results?|track record)\b",
     r"(?i)\b(?:alpha|beta|signal|edge|predictive|forecast)\b",
-    r"(?i)\b(?:caus|correlat|driv|contribut|factor|reason|because)\b.*\b(?:why|how|what)\b",
+    r"(?i)\b(?:caus|correlat|driv|contribut|factor|reason|because)\w*\b.*\b(?:why|how|what)\b",
     r"(?i)\b(?:what (?:caused|drove|explains?))\b",
-    r"(?i)\b(?:better|worse|best|worst|outperform|underperform|compar)\b",
+    r"(?i)\b(?:better|worse|best|worst|outperform|underperform|compar)\w*\b",
     r"(?i)\b(?:which (?:is|are|was|were) (?:better|best|more))\b",
     r"(?i)\b(?:story|narrative|thesis|theory|hypothesis|conclusion)\b",
     r"(?i)\b(?:what(?:'s| is) (?:going on|happening)|what do you (?:think|make of))\b",

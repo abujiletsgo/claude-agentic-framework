@@ -102,6 +102,15 @@ bashToolPatterns:
   - pattern: '\bdd\s+.*of=/dev/'
     reason: dd writing to device
 
+  - pattern: '\bdd\s+.*if=/dev/(zero|random|urandom)\b'
+    reason: dd overwriting a target with zero/random data
+
+  - pattern: '\btruncate\b.*\s-s\s*0\b'
+    reason: truncate -s 0 destroys file contents
+
+  - pattern: '\bshred\b'
+    reason: shred irreversibly destroys file data
+
   # ---------------------------------------------------------------------------
   # PROCESS DESTRUCTION
   # ---------------------------------------------------------------------------

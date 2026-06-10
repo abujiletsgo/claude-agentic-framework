@@ -29,7 +29,7 @@ from pathlib import Path
 # Prompts that involve interpretation, analysis, or evaluation of data/results
 ANALYSIS_PATTERNS = [
     # Data analysis
-    r"\b(?:analyz|analyse|interpret|evaluat|assess)\b",
+    r"\b(?:analyz|analyse|interpret|evaluat|assess)\w*\b",
     r"\b(?:what does .* (?:mean|show|tell|indicate|suggest|imply))",
     r"\b(?:why (?:is|are|did|does|do|was|were))\b",
     r"\b(?:explain|understand|make sense of)\b.*\b(?:data|results?|numbers?|output|findings?|pattern)\b",
@@ -38,10 +38,10 @@ ANALYSIS_PATTERNS = [
     r"\b(?:backtest|forward test|live results?|track record)\b",
     r"\b(?:alpha|beta|signal|edge|predictive|forecast)\b",
     # Causation/correlation
-    r"\b(?:caus|correlat|driv|contribut|factor|reason|because)\b.*\b(?:why|how|what)\b",
+    r"\b(?:caus|correlat|driv|contribut|factor|reason|because)\w*\b.*\b(?:why|how|what)\b",
     r"\b(?:what (?:caused|drove|explains?))\b",
     # Comparison/ranking
-    r"\b(?:better|worse|best|worst|outperform|underperform|compar)\b",
+    r"\b(?:better|worse|best|worst|outperform|underperform|compar)\w*\b",
     r"\b(?:which (?:is|are|was|were) (?:better|best|more))\b",
     # Narrative construction
     r"\b(?:story|narrative|thesis|theory|hypothesis|conclusion)\b",

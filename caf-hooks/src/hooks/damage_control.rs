@@ -160,8 +160,11 @@ fn parse_patterns_yaml(text: &str) -> DamageControlConfig {
         let line = raw_line;
         let stripped = line.trim_start();
 
-        // Skip pure comment lines
-        if stripped.starts_with('#') {
+        // Skip pure comment lines and blank lines. (A blank line must NOT
+        // fall through to the top-level-header branch below — it would reset
+        // the section to None and silently drop every entry after the first
+        // blank line within a section.)
+        if stripped.starts_with('#') || stripped.is_empty() {
             continue;
         }
 
@@ -473,7 +476,11 @@ struct OpPattern {
 
 const WRITE_PATTERNS: &[OpPattern] = &[
     OpPattern { template: r">\s*{path}", operation: "write" },
-    OpPattern { template: r"\btee\s+(?!.*-a).*{path}", operation: "write" },
+    // Python uses a (?!.*-a) lookahead here, but the regex crate has no
+    // lookahead — the pattern failed to compile and was silently skipped.
+    // WRITE_PATTERNS is only ever used alongside APPEND_PATTERNS (read-only
+    // checks block both), so matching any tee to the path is equivalent.
+    OpPattern { template: r"\btee\s+.*{path}", operation: "write" },
 ];
 
 const APPEND_PATTERNS: &[OpPattern] = &[
@@ -585,6 +592,7 @@ fn check_path_patterns(
 // Bash command check
 // ---------------------------------------------------------------------------
 
+#[derive(Debug)]
 enum BashCheckResult {
     Allow,
     Block(String),
@@ -613,7 +621,10 @@ fn check_bash_command(command: &str, config: &DamageControlConfig) -> BashCheckR
     for zero_path in &config.zero_access_paths {
         if is_glob_pattern(zero_path) {
             // Match against unquoted tokens only, with word-boundary check
-            let glob_re_str = format!("{}(?!\\w)", glob_to_regex(zero_path));
+            // NB: the regex crate has no lookahead — (?!\w) fails to compile
+            // and would silently disable this check. Use a consuming
+            // equivalent: glob followed by a non-word char or end-of-string.
+            let glob_re_str = format!(r"{}(?:[^\w]|$)", glob_to_regex(zero_path));
             if let Ok(re) = Regex::new(&format!("(?i){}", glob_re_str)) {
                 if re.is_match(&unquoted_command) {
                     return BashCheckResult::Block(format!(
@@ -741,5 +752,43 @@ pub fn run() {
     } else {
         // Unknown tool — fail-open
         println!("{{}}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SAMPLE_YAML: &str = "bashToolPatterns:\n  - pattern: '\\brm\\s+-rf\\b'\n    reason: rm recursive force\n\n  # comment between entries\n  - pattern: '\\bshred\\b'\n    reason: shred destroys data\n\nzeroAccessPaths:\n  - \"*.env\"\n\n  - \".ssh/\"\n\nreadOnlyPaths:\n  - \"README.md\"\n";
+
+    #[test]
+    fn parser_survives_blank_lines_within_sections() {
+        let config = parse_patterns_yaml(SAMPLE_YAML);
+        // Regression: blank lines used to reset the section to None,
+        // dropping every entry after the first blank line.
+        assert_eq!(config.bash_tool_patterns.len(), 2, "both bash patterns parse");
+        assert_eq!(config.bash_tool_patterns[1].pattern, r"\bshred\b");
+        assert_eq!(config.zero_access_paths, vec!["*.env", ".ssh/"]);
+        assert_eq!(config.read_only_paths, vec!["README.md"]);
+    }
+
+    #[test]
+    fn zero_access_glob_blocks_matching_file() {
+        // Regression: the (?!\w) lookahead is unsupported by the regex crate;
+        // Regex::new failed and the glob check was silently skipped.
+        let config = parse_patterns_yaml(SAMPLE_YAML);
+        match check_bash_command("cat secrets.env", &config) {
+            BashCheckResult::Block(_) => {}
+            other => panic!("expected Block for cat secrets.env, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn benign_command_allowed() {
+        let config = parse_patterns_yaml(SAMPLE_YAML);
+        match check_bash_command("echo hello world", &config) {
+            BashCheckResult::Allow => {}
+            other => panic!("expected Allow for echo, got {:?}", other),
+        }
     }
 }
