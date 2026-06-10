@@ -7,7 +7,7 @@
 """
 Custom Status Line - Minimal + Action Emojis + Loading Animation
 
-Display: Opus  main  ~/project  42%  ⚡🔬🌐
+Display: Claude Sonnet 4.5  main  ~/project  42%  ⚡🔬🌐
 
 Features:
 - Minimal info (model, branch, directory, context %)
@@ -84,7 +84,7 @@ def get_context_percentage(hook_input):
     return 0
 
 def get_model_tier(hook_input):
-    """Get model tier (Opus/Sonnet/Haiku)."""
+    """Get model display name and tier."""
     # Claude Code sends model as dict with display_name
     model_info = hook_input.get("model", {})
     if isinstance(model_info, dict):
@@ -94,15 +94,19 @@ def get_model_tier(hook_input):
     else:
         model = ""
 
-    model_lower = model.lower()
+    return model if model else "Claude"
+
+
+def get_model_family(model_name):
+    """Return the model family for color coding."""
+    model_lower = model_name.lower()
     if "opus" in model_lower:
         return "Opus"
     elif "sonnet" in model_lower:
         return "Sonnet"
     elif "haiku" in model_lower:
         return "Haiku"
-
-    return model[:10] if model else "Claude"
+    return "other"
 
 def get_active_team_members():
     """
@@ -184,7 +188,8 @@ def build_status_line(hook_input):
     """Build the status line output."""
 
     # Get info
-    model_tier = get_model_tier(hook_input)
+    model_name = get_model_tier(hook_input)
+    model_family = get_model_family(model_name)
     branch = get_git_branch()
     project = get_project_dir()
     context_pct = get_context_percentage(hook_input)
@@ -196,17 +201,17 @@ def build_status_line(hook_input):
     # Build segments
     segments = []
 
-    # Model tier
-    if model_tier == "Opus":
+    # Model name with family-based color
+    if model_family == "Opus":
         color = FG_MAGENTA
-    elif model_tier == "Sonnet":
+    elif model_family == "Sonnet":
         color = FG_CYAN
-    elif model_tier == "Haiku":
+    elif model_family == "Haiku":
         color = FG_GREEN
     else:
         color = FG_WHITE
 
-    segments.append(f"{color}{BOLD}{model_tier}{RESET}")
+    segments.append(f"{color}{BOLD}{model_name}{RESET}")
 
     # Git branch (if available)
     if branch:

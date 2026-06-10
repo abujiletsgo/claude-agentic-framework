@@ -10,20 +10,54 @@
   "model": "sonnet",
   "permissions": {
     "allow": [
+      "Agent(*)",
+      "AskUserQuestion(*)",
       "Bash(*)",
-      "Read(*)",
+      "CronCreate(*)",
+      "CronDelete(*)",
+      "CronList(*)",
       "Edit(*)",
-      "Write(*)",
-      "Task(*)",
+      "EnterPlanMode(*)",
+      "EnterWorktree(*)",
+      "ExitPlanMode(*)",
+      "ExitWorktree(*)",
       "Glob(*)",
       "Grep(*)",
+      "ListMcpResourcesTool(*)",
+      "Monitor(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "PushNotification(*)",
+      "Read(*)",
+      "ReadMcpResourceTool(*)",
+      "RemoteTrigger(*)",
+      "ScheduleWakeup(*)",
+      "SendMessage(*)",
+      "Skill(*)",
+      "TaskCreate(*)",
+      "TaskGet(*)",
+      "TaskList(*)",
+      "TaskOutput(*)",
+      "TaskStop(*)",
+      "TaskUpdate(*)",
+      "TeamCreate(*)",
+      "TeamDelete(*)",
+      "ToolSearch(*)",
       "WebFetch(*)",
       "WebSearch(*)",
-      "NotebookEdit(*)",
-      "*"
+      "Workflow(*)",
+      "Write(*)",
+      "mcp__claude_ai_Gmail__*",
+      "mcp__claude_ai_Google_Calendar__*",
+      "mcp__claude_ai_Google_Drive__*",
+      "mcp__claude_ai_Notion__*",
+      "mcp__firecrawl-mcp__*",
+      "mcp__github__*",
+      "mcp__higgsfield__*",
+      "mcp__papers__*",
+      "mcp__plugin_context7_context7__*"
     ]
   },
-  "permissionMode": "bypassPermissions",
   "sandbox": {
     "enabled": false
   },
@@ -148,23 +182,24 @@
         ]
       },
       {
-        "matcher": "Bash|Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks damage-control",
-            "timeout": 5,
-            "_comment": "Rust: 10.6x faster security gate"
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_review_team.py",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "ASYNC: fire BEFORE the question appears so user hears alert first"
           }
         ]
       }
@@ -233,18 +268,6 @@
             "timeout": 5,
             "async": true,
             "_comment": "Rust: ASYNC: escalation advice delivered on next turn"
-          }
-        ]
-      },
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
-            "timeout": 5,
-            "async": true,
-            "_comment": "ASYNC: voice notifications are fire-and-forget"
           }
         ]
       },
@@ -475,17 +498,6 @@
             "timeout": 8
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks voice-done",
-            "timeout": 5,
-            "async": true,
-            "_comment": "Rust: ASYNC contextual voice notification on subagent completion"
-          }
-        ]
       }
     ],
 
@@ -573,35 +585,11 @@
 
   },
   "mcpServers": {
-    "officecli": {
-      "command": "officecli",
-      "args": ["mcp"],
-      "_comment": "OfficeCLI: create/read/edit Word, Excel, PowerPoint — used by /docs skill"
-    },
-    "papers": {
-      "command": "uv",
-      "args": ["run", "--with", "paper-search-mcp", "python", "-m", "paper_search_mcp.server"],
-      "env": {
-        "PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY": "${SEMANTIC_SCHOLAR_API_KEY:-}"
-      }
-    },
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-      }
-    },
-    "papersflow": {
-      "type": "url",
-      "url": "https://doxa.papersflow.ai/mcp",
-      "transport": "streamable-http"
-    },
-    "sourcegraph": {
-      "command": "sourcegraph-mcp",
-      "env": {
-        "SOURCEGRAPH_URL": "https://sourcegraph.com",
-        "SOURCEGRAPH_TOKEN": "${SRC_ACCESS_TOKEN}"
       }
     }
   },

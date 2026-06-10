@@ -25,12 +25,19 @@ Analyze complexity and size the team accordingly:
 Generate `orch_id` and initialize IPC:
 ```bash
 python3 -c "import time; print(f'orch_{int(time.time())}')"
-bin/orch-shared init <orch_id>
+orch-shared init <orch_id>
+```
+
+**CRITICAL — no silent fallbacks**: If `orch-shared init` fails for any reason (command not found, permission error, etc.), STOP immediately. Do not mkdir manually. Do not continue. Tell the user:
+```
+ORCHESTRATION SETUP FAILED
+Error: orch-shared init <orch_id> → <error message>
+Fix: ensure orch-shared is installed (run install.sh from caf-team), then retry.
 ```
 
 All IPC files live under `~/.caf/orch/<orch_id>/`. Write events at every wave boundary:
 ```bash
-bin/orch-shared broadcast <orch_id> orchestrator "wave-name" "starting X"
+orch-shared broadcast <orch_id> orchestrator "wave-name" "starting X"
 ```
 
 ---
@@ -99,7 +106,7 @@ Agent(name="builder-config", subagent_type="builder", model="haiku",
       prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Config. Make the exact changes specified. Write build log to ~/.caf/orch/<orch_id>/results/builder-config.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
 ```
 
-Write event: `bin/orch-shared broadcast <orch_id> orchestrator "build" "builders complete"`
+Write event: `orch-shared broadcast <orch_id> orchestrator "build" "builders complete"`
 
 ---
 
@@ -267,8 +274,8 @@ When a specialized workflow outperforms a generic builder:
 ## Final Report
 
 ```bash
-bin/orch-shared broadcast <orch_id> orchestrator "done" "run complete"
-bin/orch-shared write-retro <orch_id>
+orch-shared broadcast <orch_id> orchestrator "done" "run complete"
+orch-shared write-retro <orch_id>
 ```
 
 Write `~/.caf/orch/<orch_id>/report.md`:

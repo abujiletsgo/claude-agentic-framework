@@ -10,9 +10,11 @@
 /// - Run `say <phrase>` via Command::new (non-blocking, macOS only)
 /// - Always exits 0
 use serde_json::Value;
+use std::fs;
 use std::process::Command;
 
 use crate::io::read_stdin_value;
+use crate::state::orch_done_flag_path;
 
 /// Read the session's custom title from the transcript JSONL file.
 /// The first line (if present) may be: {"type":"custom-title","customTitle":"caf",...}
@@ -45,10 +47,19 @@ fn build_phrase(data: &Value) -> Option<String> {
 
     let session_name = get_session_name(data);
 
-    Some(match session_name {
-        Some(name) => format!("{} done", name),
-        None => "done".to_string(),
-    })
+    let _ = session_name;
+
+    // If orchestration just completed, clear the flag so it doesn't fire twice.
+    let flag = orch_done_flag_path();
+    if flag.exists() {
+        let _ = fs::remove_file(&flag);
+    }
+
+    // Stop fires every time Claude finishes a turn — this means "I'm done speaking,"
+    // not "I need input." Saying "input required" here was wrong: it announced an
+    // input prompt on every normal reply. Voice prompts for actual user input come
+    // from auto_voice_notifications.py (PreToolUse:AskUserQuestion).
+    Some("done".to_string())
 }
 
 pub fn run() {
@@ -74,10 +85,15 @@ pub fn run() {
         None => return,
     };
 
-    // Fire-and-forget: spawn say, don't wait
-    let _ = Command::new("say")
+    // Block until say finishes — the hook itself is async:true so this doesn't
+    // block Claude Code. Without waiting, the hook runner may reap the orphaned
+    // say child before it produces any audio.
+    if let Ok(mut child) = Command::new("/usr/bin/say")
         .arg(&phrase)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
-        .spawn();
+        .spawn()
+    {
+        let _ = child.wait();
+    }
 }

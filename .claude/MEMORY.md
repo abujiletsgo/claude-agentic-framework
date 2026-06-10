@@ -2,19 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (17:41 UTC) · @Tom Kwon
-**Commit:** docs: orchestrate — explicit parallel researchers in Wave 0, use haiku model (992de748) by Tom Kwon
-**Changed:**
-  global-skills/orchestrate/SKILL.md | 11 ++++++++---
-  1 file changed, 8 insertions(+), 3 deletions(-)
-
-## 2026-04-10 (17:44 UTC) · @Tom Kwon
-**Commit:** docs: auto-regenerate from repo state (60856569) by Tom Kwon
-**Changed:**
-  CLAUDE.md | 2 +-
-  README.md | 2 +-
-  2 files changed, 2 insertions(+), 2 deletions(-)
-
 ## 2026-04-10 (17:48 UTC) · @Tom Kwon
 **Commit:** fix: caf-hud idle mode showing 0 for hooks/agents/skills (021da08c) by Tom Kwon
 **Changed:**
@@ -308,3 +295,19 @@
   .../client/src/views/SessionListView.vue           |  154 +-
   apps/run-explorer/server/.claude/MEMORY.md         |   15 +
   ... and 41 more files
+
+## 2026-05-20 (08:31 UTC) · @Tom Kwon
+**Commit:** feat(orchestrate): Level 7 autonomous execution gaps — nudge log, CONCERNS flow, evaluator opt-in, Simple self-healing (4d77ad74) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                         |  22 ++++--
+  bin/orch-shared                           |   6 ++
+  caf-hooks/src/hooks/orch_depth_tracker.rs |  55 +++++++++++++++
+  caf-hooks/src/hooks/subagent_tracker.rs   |  77 +++++++++++++++++++++
+  global-skills/orchestrate/SKILL.md        | 109 ++++++++++++++++++++++++++++--
+  5 files changed, 257 insertions(+), 12 deletions(-)
+
+## 2026-06-10 (15:02 UTC) · @Tom Kwon
+**Commit:** chore(gitignore): ignore .claude/scheduled_tasks.lock (runtime lock) (4c6b256e) by Tom Kwon
+**Changed:**
+  .gitignore | 3 +++
+  1 file changed, 3 insertions(+)

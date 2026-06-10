@@ -5,7 +5,7 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ## Structure
 
 ```
-global-hooks/        48 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:9, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:6, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
+global-hooks/        46 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_PostCompact:1, hooks_PostToolUse:8, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:5, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
 global-agents/       22 agents (22 root + 0 team)
 global-commands/     17 commands
 global-skills/       30 skills
@@ -32,9 +32,10 @@ Sonnet (15): po, critical-analyst, researcher, meta-agent, scout-report-suggest,
 
 ## Execution Protocol
 
-1. **3+ steps** = TaskList. Mark in_progress/completed.
+1. **3+ steps** = write plan to `tasks/todo.md` with checkable items. Mark complete as you go.
 2. **Parallel** -- independent subagents in one message. Never serialize parallelizable work.
 3. **Validate** -- always verify implementation (tests, scripts). Never complete without validation.
+4. **Self-improvement** -- after any user correction: append lesson to `~/.claude/lessons.md` (pattern → rule to prevent recurrence).
 
 ## Key Rules
 
@@ -62,27 +63,7 @@ Trust: CONFIRMED facts > CLAUDE.md rules > inference. Local agents/skills overri
 
 ## Epistemic Discipline
 
-When making claims about data, results, or system behavior, you MUST distinguish between what the data shows and what you are inferring. This is non-negotiable.
-
-**Three-tier labeling:**
-- **OBSERVED** -- directly visible in data, logs, output, or source code. Cite the source (file:line, command output, data point).
-- **INFERRED** -- a conclusion you drew from observations. State the reasoning chain: "X was observed, which suggests Y because Z." Always flag with "This is an inference" or equivalent.
-- **SPECULATIVE** -- a hypothesis without strong supporting evidence. Flag explicitly: "Speculation:" or "One possible explanation:" -- never present as established fact.
-
-**Hard rules:**
-1. Never state an inference as if it were an observation. If you didn't directly see it in the data, say so.
-2. When presenting a narrative that connects multiple data points, explicitly flag which connections are observed vs. inferred.
-3. If you catch yourself building a confident-sounding story, pause and ask: "What does the data actually show vs. what am I adding?" Restructure if needed.
-4. When reversing a previous position, acknowledge the reversal explicitly and explain what new evidence changed your view. Never quietly replace one confident narrative with another.
-5. Quantitative claims require citing the actual numbers. "X has 73% accuracy" requires showing the calculation or source, not just stating it.
-6. When the data is ambiguous or insufficient, say so directly. "The data doesn't clearly show X" is always better than fabricating a confident interpretation.
-
-**Format for analytical responses:**
-```
-What the data shows: [observations with citations]
-What this suggests: [inferences with reasoning]
-What remains uncertain: [gaps, alternative explanations]
-```
+Label claims: **OBSERVED** (cite source) / **INFERRED** (state reasoning chain) / **SPECULATIVE** (flag explicitly). Never present an inference as an observation. When data is ambiguous, say so directly.
 
 ## Mistake Prevention
 

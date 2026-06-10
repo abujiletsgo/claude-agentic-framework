@@ -12,9 +12,10 @@
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 use crate::io::read_stdin_value;
-use crate::state::{orch_depth_path, orch_guard_marker_path, orch_state_dir};
+use crate::state::{orch_depth_path, orch_done_flag_path, orch_guard_marker_path, orch_state_dir};
 
 fn get_depth() -> i64 {
     let path = orch_depth_path();
@@ -165,9 +166,31 @@ pub fn run() {
         let new_depth = std::cmp::max(0, depth - 1);
         set_depth(new_depth);
 
-        // If orchestrator finished (back to depth 0), clean up
+        // If orchestrator finished (back to depth 0), clean up and announce immediately.
+        // We say "done" here directly rather than relying on the subsequent Stop event
+        // because the orchestrator's final response may not trigger a Stop event if
+        // agents were still pending when Claude output its last message.
         if new_depth == 0 && is_orchestrator_agent(&data) {
+            // Write flag so voice_done skips its own "input required" on the next Stop
+            let _ = fs::write(orch_done_flag_path(), "1");
             cleanup_marker();
+            // Say "done" immediately — blocking so audio completes before hook exits
+            if std::env::consts::OS == "macos" {
+                let voice_enabled = std::env::var("VOICE_NOTIFICATIONS")
+                    .unwrap_or_else(|_| "true".to_string())
+                    .to_lowercase()
+                    == "true";
+                if voice_enabled {
+                    if let Ok(mut child) = Command::new("/usr/bin/say")
+                        .arg("done")
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                    {
+                        let _ = child.wait();
+                    }
+                }
+            }
         }
     } else {
         // SubagentStart: increment depth

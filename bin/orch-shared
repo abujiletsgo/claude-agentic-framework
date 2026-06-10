@@ -724,20 +724,44 @@ def cmd_write_retro(orch_id: str) -> None:
             pass
     test_section = f"passed: {passed}  failed: {failed}  total: {passed + failed}"
 
-    # Cost section
+    # Cost section — real token costs correlated from cost_tracking.jsonl via
+    # the events.jsonl timestamp window. Falls back to the manual cost.json
+    # summary only when no real cost data can be correlated (legacy / fully
+    # manual tracking with an empty or missing events.jsonl).
     cost_section = ""
-    for base in (job_dir, archive_dir):
-        cost_path = base / "cost.json"
-        if cost_path.exists():
-            try:
-                cost_data = json.loads(cost_path.read_text())
-                cost_section = f"""
-## Cost Estimate
+    costs = _compute_run_costs(orch_id)
+    if costs is not None:
+        per_agent = costs["per_agent"]
+        agent_lines = []
+        for agent_name, data in sorted(
+            per_agent.items(), key=lambda kv: kv[1]["cost_usd"], reverse=True
+        ):
+            agent_lines.append(
+                f"| {agent_name} | {data['model'] or 'unknown'} | "
+                f"${data['cost_usd']:.4f} | {data['input_tokens']:,} | "
+                f"{data['output_tokens']:,} |"
+            )
+        cost_section = f"""
+## Cost (actual)
+**Total: ${costs['total_cost']:.4f}** — {costs['total_input']:,} input, {costs['total_output']:,} output tokens
+
+| Agent | Model | Cost | Input | Output |
+|-------|-------|------|-------|--------|
+{chr(10).join(agent_lines)}
+"""
+    else:
+        for base in (job_dir, archive_dir):
+            cost_path = base / "cost.json"
+            if cost_path.exists():
+                try:
+                    cost_data = json.loads(cost_path.read_text())
+                    cost_section = f"""
+## Cost Estimate (manual fallback)
 {cost_data.get('summary', 'N/A')}
 """
-            except Exception:
-                pass
-            break
+                except Exception:
+                    pass
+                break
 
     retro_content = f"""# Retrospective — {orch_id}
 Generated: {ts()}
@@ -823,24 +847,22 @@ def cmd_write_cost(orch_id: str, agent_name: str, model: str,
 COST_LOG_PATH = Path.home() / ".claude" / "logs" / "cost_tracking.jsonl"
 
 
-def cmd_read_costs(orch_id: str) -> None:
-    """Read actual token costs for a run from cost_tracking.jsonl using events.jsonl window."""
+def _compute_run_costs(orch_id: str) -> dict | None:
+    """Correlate real token costs to a run via the events.jsonl timestamp window.
+
+    Mirrors getRunCosts() in apps/run-explorer/server/src/services/costTracker.ts:
+    cost_tracking.jsonl uses the PARENT session id (not sub-agent session ids),
+    so a session-id join fails. Instead we bound the run with min/max ts from
+    events.jsonl + a 5-minute straggler buffer, then sum cost_tracking.jsonl
+    entries that fall inside that window.
+
+    Returns a dict with keys ``total_cost``, ``total_input``, ``total_output``
+    and ``per_agent`` (agent_name -> {input_tokens, output_tokens, cost_usd,
+    model}), or ``None`` when no real cost data can be correlated (caller should
+    fall back to the manual cost.json summary)."""
     events_path = ORCH_BASE / orch_id / "events.jsonl"
-    cost_json_path = ORCH_BASE / orch_id / "cost.json"
 
-    def _fallback() -> None:
-        if cost_json_path.exists():
-            try:
-                data = json.loads(cost_json_path.read_text())
-                summary = data.get("summary", "")
-                if summary:
-                    print(summary)
-                    return
-            except Exception:
-                pass
-        print("(no cost data)")
-
-    # Step 1: parse events.jsonl for min/max ts
+    # Step 1: parse events.jsonl for the run's min/max ts
     min_ms: int | None = None
     max_ms: int | None = None
 
@@ -863,15 +885,14 @@ def cmd_read_costs(orch_id: str) -> None:
                 continue
 
     if min_ms is None or max_ms is None:
-        _fallback()
-        return
+        return None
 
+    # Add a 5-minute buffer after the last event to catch stragglers
     window_end = max_ms + 5 * 60 * 1000
 
-    # Step 2: read cost_tracking.jsonl and filter by window
+    # Step 2: read cost_tracking.jsonl and filter to the run window
     if not COST_LOG_PATH.exists():
-        _fallback()
-        return
+        return None
 
     # agent_name -> {input_tokens, output_tokens, cost_usd, model}
     per_agent: dict[str, dict] = {}
@@ -898,15 +919,42 @@ def cmd_read_costs(orch_id: str) -> None:
             continue
 
     if not per_agent:
+        return None
+
+    return {
+        "total_cost": sum(v["cost_usd"] for v in per_agent.values()),
+        "total_input": sum(v["input_tokens"] for v in per_agent.values()),
+        "total_output": sum(v["output_tokens"] for v in per_agent.values()),
+        "per_agent": per_agent,
+    }
+
+
+def cmd_read_costs(orch_id: str) -> None:
+    """Read actual token costs for a run from cost_tracking.jsonl using events.jsonl window."""
+    cost_json_path = ORCH_BASE / orch_id / "cost.json"
+
+    def _fallback() -> None:
+        if cost_json_path.exists():
+            try:
+                data = json.loads(cost_json_path.read_text())
+                summary = data.get("summary", "")
+                if summary:
+                    print(summary)
+                    return
+            except Exception:
+                pass
+        print("(no cost data)")
+
+    costs = _compute_run_costs(orch_id)
+    if costs is None:
         _fallback()
         return
 
-    # Step 3: aggregate totals and print
-    total_input = sum(v["input_tokens"] for v in per_agent.values())
-    total_output = sum(v["output_tokens"] for v in per_agent.values())
-    total_cost = sum(v["cost_usd"] for v in per_agent.values())
-
-    print(f"Total: ${total_cost:.4f}  ({total_input:,} input, {total_output:,} output tokens)")
+    per_agent = costs["per_agent"]
+    print(
+        f"Total: ${costs['total_cost']:.4f}  "
+        f"({costs['total_input']:,} input, {costs['total_output']:,} output tokens)"
+    )
     print()
     print("Per agent:")
     for agent_name, data in sorted(per_agent.items()):

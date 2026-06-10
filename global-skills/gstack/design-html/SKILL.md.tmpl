@@ -5,16 +5,21 @@ version: 1.0.0
 description: |
   Design finalization: generates production-quality Pretext-native HTML/CSS.
   Works with approved mockups from /design-shotgun, CEO plans from /plan-ceo-review,
-  design review context from /plan-design-review, or from scratch with a user
-  description. Text actually reflows, heights are computed, layouts are dynamic.
+  design review context from /plan-design-review, Claude Design exports (HTML/zip
+  handoff from claude.ai/design), or from scratch with a user description.
+  Text actually reflows, heights are computed, layouts are dynamic.
   30KB overhead, zero deps. Smart API routing: picks the right Pretext patterns
   for each design type. Use when: "finalize this design", "turn this into HTML",
-  "build me a page", "implement this design", or after any planning skill.
+  "build me a page", "implement this design", "I exported from Claude Design",
+  "Claude Design handed off to you", or after any planning skill.
   Proactively suggest when user has approved a design or has a plan ready. (gstack)
 voice-triggers:
   - "build the design"
   - "code the mockup"
   - "make it real"
+  - "I exported from Claude Design"
+  - "Claude Design handed off"
+  - "implement the Claude Design export"
 allowed-tools:
   - Bash
   - Read
@@ -46,6 +51,8 @@ around obstacles.
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
 ```
+
+Also check if this session was initiated by a Claude Design handoff (claude.ai/design → "Handoff to Claude Code"). If the user's message contains a file path ending in `.html` or `.zip`, or mentions "Claude Design", treat that as a Claude Design export signal.
 
 Detect what design context exists for this project. Run all four checks:
 
@@ -126,18 +133,89 @@ Use AskUserQuestion:
 > B) Run /plan-design-review first — design review with visual mockups
 > C) Run /design-shotgun — jump straight to visual design exploration
 > D) Just describe it — tell me what you want and I'll design the HTML live
+> E) I have a Claude Design export — let me provide the file path
 
 If A, B, or C: tell the user to run that skill, then come back to /design-html.
 If D: proceed to Step 1 in "freeform mode." Ask the user for a screen name.
+If E: proceed to Case D below.
+
+### Case D: Claude Design export (claude.ai/design handoff)
+
+Trigger: user's message contains a file path to an `.html` or `.zip` file, mentions
+"Claude Design", "handed off from Claude Design", or selected E above.
+
+**Step D1: Locate the export file.**
+
+If the user provided a path, use it directly. Otherwise run:
+
+```bash
+# Check Downloads for recent Claude Design exports (within last 24h)
+setopt +o nomatch 2>/dev/null || true
+ls -t ~/Downloads/*.html ~/Downloads/*.zip 2>/dev/null | head -5
+ls -t /tmp/*.html /tmp/*.zip 2>/dev/null | head -5
+```
+
+If files found: show the list and use AskUserQuestion to confirm which one.
+If no files found: use AskUserQuestion to ask the user for the file path.
+
+**Step D2: Ingest the export.**
+
+For `.html` export: read the file directly with the Read tool.
+For `.zip` export:
+```bash
+_ZIPPATH="<user-provided-path>"
+_EXTRACT_DIR="/tmp/claude-design-export-$$"
+mkdir -p "$_EXTRACT_DIR"
+unzip -q "$_ZIPPATH" -d "$_EXTRACT_DIR"
+ls "$_EXTRACT_DIR"
+```
+Find the main HTML file in the extracted directory, then read it.
+
+**Step D3: Parse the Claude Design HTML.**
+
+Read the Claude Design export HTML. Extract:
+- Visual structure: what screens/sections exist, layout type (grid, flex, stack)
+- Color tokens: all CSS custom properties and hardcoded hex values
+- Typography: font families, sizes, weights, line-heights
+- Component inventory: buttons, cards, forms, nav, hero, etc.
+- Any embedded design system notes or comments
+- Responsive breakpoints already in the CSS
+
+**Step D4: Reconcile with project's DESIGN.md.**
+
+Read `DESIGN.md` if it exists. Project DESIGN.md tokens take priority over Claude Design
+values for brand-level properties (primary colors, font family, spacing scale).
+Claude Design values fill in the rest.
+
+If there are significant conflicts (different font family, clashing palette), use
+AskUserQuestion:
+> Your project's DESIGN.md uses [X] but the Claude Design export uses [Y].
+> Which should take priority for this implementation?
+> A) Use DESIGN.md (keep your existing design system)
+> B) Use Claude Design export values (adopt the new design)
+> C) I'll tell you which properties to override
+
+**Step D5: Set mode and screen name.**
+
+Mode is `claude-design-import`. Ask the user for a screen name to use for the output
+directory (e.g., "dashboard", "onboarding", "landing") unless it's obvious from the
+Claude Design export filename or content.
+
+Read `DESIGN.md` if it exists in the repo root. These tokens take priority for
+system-level values (fonts, brand colors, spacing scale).
+
+Proceed to Step 1 using the parsed Claude Design HTML as the visual reference.
+In Step 1, use the extracted spec from Step D3 as the implementation spec instead of
+running vision analysis — the HTML source is already the ground truth.
 
 ### Context summary
 
 After routing, output a brief context summary:
-- **Mode:** approved-mockup | plan-driven | freeform | evolve
-- **Visual reference:** path to approved PNG, or "none (plan-driven)" or "none (freeform)"
+- **Mode:** approved-mockup | plan-driven | freeform | evolve | claude-design-import
+- **Visual reference:** path to approved PNG, Claude Design export HTML path, or "none"
 - **CEO plan:** path or "none"
 - **Design tokens:** "DESIGN.md" or "none"
-- **Screen name:** from approved.json, user-provided, or inferred from CEO plan
+- **Screen name:** from approved.json, Claude Design filename, user-provided, or inferred
 
 ---
 

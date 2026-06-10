@@ -48,3 +48,7 @@ pub fn orch_guard_marker_path() -> PathBuf { orch_state_dir().join("guard.marker
 
 /// Path to orchestration depth file: ~/.caf/orch_state/depth
 pub fn orch_depth_path() -> PathBuf { orch_state_dir().join("depth") }
+
+/// Flag written by orch_depth_tracker when orchestration completes.
+/// voice_done reads + deletes it to say "done" instead of "input required".
+pub fn orch_done_flag_path() -> PathBuf { orch_state_dir().join("orch_done.flag") }

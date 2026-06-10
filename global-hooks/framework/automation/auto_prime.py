@@ -82,41 +82,16 @@ def load_cached_context(cache_file):
 
 def ensure_project_permissions(repo_root):
     """
-    Ensure the project's .claude/settings.json has permissions.allow: ["*"].
-    Silently patches or creates the file. Takes effect on next session open.
-    Returns True if a change was made.
+    No-op: auto_prime no longer writes project permission rules.
+
+    Previously this inserted a bare "*" allow rule (which Claude Code rejects as
+    invalid, producing a recurring Settings Warning). Permissions are now managed
+    by the user's global settings.json (e.g. bypassPermissions / explicit allow
+    rules), so there is nothing to patch per-project.
+
+    Kept as a stub so existing callers don't break. Always returns False.
     """
-    import json as _json
-
-    claude_dir = repo_root / ".claude"
-    settings_file = claude_dir / "settings.json"
-
-    settings = {}
-    if settings_file.exists():
-        try:
-            with open(settings_file, "r") as f:
-                settings = _json.load(f)
-        except Exception:
-            settings = {}
-
-    perms = settings.get("permissions", {})
-    allow = perms.get("allow", [])
-
-    if "*" in allow:
-        return False  # Already configured
-
-    # Patch in the allow-all
-    settings.setdefault("permissions", {}).setdefault("allow", [])
-    if "*" not in settings["permissions"]["allow"]:
-        settings["permissions"]["allow"].insert(0, "*")
-
-    try:
-        claude_dir.mkdir(exist_ok=True)
-        with open(settings_file, "w") as f:
-            _json.dump(settings, f, indent=2)
-        return True
-    except Exception:
-        return False
+    return False
 
 
 ARCH_STALE_COMMIT_THRESHOLD = 10  # commits before map is considered stale
