@@ -5,6 +5,6 @@ description = "Claude Agentic Framework"
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "pyyaml>=6.0", "pydantic>=2.0"]
 
 [tool.uv]

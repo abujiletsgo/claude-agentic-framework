@@ -21,15 +21,17 @@ from typing import Any, Optional
 
 try:
     import yaml
-except ImportError:
-    print("Error: PyYAML is required. Install with: pip install pyyaml", file=sys.stderr)
-    sys.exit(1)
+except ImportError as e:
+    raise ImportError(
+        "PyYAML is required for the guardrails system. Install with: uv add pyyaml"
+    ) from e
 
 try:
     from pydantic import BaseModel, Field, field_validator, ValidationError
-except ImportError:
-    print("Error: Pydantic is required. Install with: pip install pydantic", file=sys.stderr)
-    sys.exit(1)
+except ImportError as e:
+    raise ImportError(
+        "Pydantic is required for the guardrails system. Install with: uv add pydantic"
+    ) from e
 
 
 # Configuration Models (Pydantic for validation)
