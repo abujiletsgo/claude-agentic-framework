@@ -21,7 +21,7 @@ TIMINGS: list[dict] = []
 # ---------------------------------------------------------------------------
 
 try:
-    from auto_context_manager import estimate_context_pct, find_cold_tasks, build_task_registry  # type: ignore
+    from auto_context_manager import estimate_context_pct, find_cold_tasks, build_task_registry, count_assistant_turns  # type: ignore
     _CONTEXT_IMPORTABLE = True
     _CONTEXT_IMPORT_ERROR = ""
 except Exception as e:
@@ -72,6 +72,13 @@ def require_transcripts():
         pytest.skip(f"sample_transcripts.json not loadable: {_TRANSCRIPTS_LOAD_ERROR}")
 
 
+def to_transcript_format(messages: list[dict]) -> list[dict]:
+    """Wrap flat {role, content} fixture messages into the real Claude Code
+    transcript JSONL shape: {"type": <role>, "message": {role, content}}.
+    auto_context_manager reads msg["message"]["role"], not msg["role"]."""
+    return [{"type": m.get("role", ""), "message": m} for m in messages]
+
+
 # ---------------------------------------------------------------------------
 # Tests: estimate_context_pct
 # ---------------------------------------------------------------------------
@@ -98,12 +105,13 @@ def test_task_registry_builds_correctly():
     require_context()
     require_transcripts()
 
-    messages = TRANSCRIPTS["active_session"]["messages"]
+    messages = to_transcript_format(TRANSCRIPTS["active_session"]["messages"])
     registry = build_task_registry(messages)
     assert isinstance(registry, dict), f"Expected dict, got {type(registry)}"
     assert "task-001" in registry, f"task-001 not in registry. Keys: {list(registry.keys())}"
-    assert "Fix auth bug" in registry["task-001"], (
-        f"Expected 'Fix auth bug', got: {registry['task-001']}"
+    # Registry values are dicts: {"subject", "start_turn", "end_turn", "status"}
+    assert registry["task-001"]["subject"] == "Fix auth bug", (
+        f"Expected subject 'Fix auth bug', got: {registry['task-001']}"
     )
 
 
@@ -117,8 +125,10 @@ def test_cold_task_detection():
     require_context()
     require_transcripts()
 
-    messages = TRANSCRIPTS["complex_session"]["messages"]
-    cold = find_cold_tasks(messages)
+    messages = to_transcript_format(TRANSCRIPTS["complex_session"]["messages"])
+    registry = build_task_registry(messages)
+    current_turn = count_assistant_turns(messages)
+    cold = find_cold_tasks(messages, registry, current_turn)
     assert isinstance(cold, (list, set, dict)), f"Expected collection, got {type(cold)}"
     # task-A through task-E were all completed before the performance work began
     # At least one task should be detected as cold given the 80-turn transcript
@@ -133,8 +143,10 @@ def test_active_task_not_cold():
     require_context()
     require_transcripts()
 
-    messages = TRANSCRIPTS["complex_session"]["messages"]
-    cold = find_cold_tasks(messages)
+    messages = to_transcript_format(TRANSCRIPTS["complex_session"]["messages"])
+    registry = build_task_registry(messages)
+    current_turn = count_assistant_turns(messages)
+    cold = find_cold_tasks(messages, registry, current_turn)
     # task-E (monitoring) is wired into middleware in the last stretch
     # Convert to set of strings for uniform comparison
     cold_ids: set[str] = set()

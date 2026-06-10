@@ -22,8 +22,8 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 ORCH_SCRIPT = REPO_ROOT / "bin" / "orch-shared"
 
-# Real ORCH_BASE (hardcoded in script — no env override supported)
-ORCH_BASE = Path("/tmp/caf_orch")
+# Use a test-specific ORCH_BASE, injected via CAF_ORCH_DIR env var
+ORCH_BASE = Path("/tmp/caf_orch_test")
 
 TIMINGS: list[dict] = []
 
@@ -43,6 +43,7 @@ def run_orch(*args: str, orch_id: str) -> subprocess.CompletedProcess:
         ["python3", str(ORCH_SCRIPT), *args],
         capture_output=True,
         text=True,
+        env={**os.environ, "CAF_ORCH_DIR": str(ORCH_BASE)},
     )
 
 

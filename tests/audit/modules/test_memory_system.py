@@ -3,6 +3,8 @@ test_memory_system.py — Test memory writing and fact validation system.
 Builder-2 | CAF Audit Suite
 """
 from pathlib import Path
+import io
+import re
 import sys
 import json
 import subprocess
@@ -54,10 +56,22 @@ def require_facts():
         pytest.skip(f"validate_facts not importable: {_FACTS_IMPORT_ERROR}")
 
 
+# Real section headers used by fact_manager.SECTION_HEADERS — plain
+# "## CONFIRMED" headers are never matched by count_facts/prune_stale.
+FACT_HEADERS = {
+    "CONFIRMED": "## ✓ CONFIRMED",
+    "GOTCHAS": "## ⚠ GOTCHAS",
+    "PATHS": "## 📁 PATHS & ARCHITECTURE",
+    "PATTERNS": "## → PATTERNS",
+    "STALE": "## ✗ STALE",
+}
+
+
 def make_facts_md(entries_per_category: dict[str, list[str]]) -> str:
     lines = ["# Project Facts\n"]
     for category, facts in entries_per_category.items():
-        lines.append(f"\n## {category}\n")
+        header = FACT_HEADERS.get(category, f"## {category}")
+        lines.append(f"\n{header}\n")
         for fact in facts:
             lines.append(f"- {fact}\n")
     return "".join(lines)
@@ -110,6 +124,9 @@ def test_memory_entry_written_after_commit(temp_git_repo, monkeypatch):
     monkeypatch.setattr(amw, "REPO_ROOT", temp_git_repo, raising=False)
     monkeypatch.setattr(amw, "MEMORY_FILE", memory_file, raising=False)
 
+    # Provide stdin so main() can read it without OSError
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "session_id": "test-memory-001"})))
+
     # Try common entry points
     ran = False
     for fn_name in ("run", "write_memory", "main", "update_memory"):
@@ -117,6 +134,11 @@ def test_memory_entry_written_after_commit(temp_git_repo, monkeypatch):
         if callable(fn):
             try:
                 fn()
+                ran = True
+                break
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
                 ran = True
                 break
             except Exception:
@@ -166,11 +188,17 @@ def test_memory_entry_not_written_if_no_changes(tmp_path, monkeypatch):
     monkeypatch.setattr(amw, "REPO_ROOT", repo, raising=False)
     monkeypatch.setattr(amw, "MEMORY_FILE", memory_file, raising=False)
 
+    # Provide stdin so main() can read it without OSError
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "session_id": "test-memory-002"})))
+
     for fn_name in ("run", "write_memory", "main", "update_memory"):
         fn = getattr(amw, fn_name, None)
         if callable(fn):
             try:
                 fn()
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
             except Exception:
                 pass
             break
@@ -197,8 +225,13 @@ def test_memory_dedup_same_commit(temp_git_repo, monkeypatch):
         fn = getattr(amw, fn_name, None)
         if callable(fn):
             try:
+                monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "session_id": "test-memory-003"})))
                 fn()
+                monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "session_id": "test-memory-003"})))
                 fn()  # second call
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
             except Exception:
                 pass
             break
@@ -226,31 +259,41 @@ def test_memory_pruning_keeps_30(tmp_path, monkeypatch):
     (repo / "main.py").write_text("x = 1\n")
     subprocess.run(["git", "add", "."], cwd=repo, capture_output=True)
     subprocess.run(["git", "commit", "-m", "initial"], cwd=repo, capture_output=True)
+    # A working-tree change so build_entry() has something to record —
+    # otherwise main() exits before the pruning step.
+    (repo / "main.py").write_text("x = 2\n")
 
-    # Pre-populate 35 entries
-    memory_file = repo / "MEMORY.md"
-    entries = []
+    # Pre-populate 35 entries at the real location: <cwd>/.claude/MEMORY.md
+    (repo / ".claude").mkdir()
+    memory_file = repo / ".claude" / "MEMORY.md"
+    # Real entries are date-headed (## YYYY-MM-DD ...) — prune_old_entries
+    # splits on that pattern, not on arbitrary ## headers.
+    entries = ["# Project Memory\n"]
     for i in range(35):
-        entries.append(f"## Session {i+1}\n- Edited file_{i}.py\n- Fixed bug #{i}\n")
+        entries.append(f"## {date_str(35 - i)} session-{i+1}\n- Edited file_{i}.py\n- Fixed bug #{i}\n")
     memory_file.write_text("\n".join(entries))
 
     import auto_memory_writer as amw  # type: ignore
 
-    monkeypatch.setattr(amw, "REPO_ROOT", repo, raising=False)
-    monkeypatch.setattr(amw, "MEMORY_FILE", memory_file, raising=False)
+    # main() derives all paths from the cwd field in the stdin payload.
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({
+        "hookEventName": "Stop",
+        "session_id": "test-memory-004",
+        "cwd": str(repo),
+    })))
 
-    for fn_name in ("run", "write_memory", "main", "update_memory", "prune_memory"):
-        fn = getattr(amw, fn_name, None)
-        if callable(fn):
-            try:
-                fn()
-            except Exception:
-                pass
-            break
+    # Call main() directly — amw.run() is a git subprocess helper, not an
+    # entry point; probing entry points by name picked it up and silently
+    # swallowed the TypeError without ever running main().
+    try:
+        amw.main()
+    except SystemExit as e:
+        if e.code not in (0, None):
+            raise
 
     content = memory_file.read_text()
     # Count section headers as entry boundaries
-    section_count = sum(1 for line in content.splitlines() if line.startswith("## Session"))
+    section_count = sum(1 for line in content.splitlines() if re.match(r"## \d{4}-\d{2}-\d{2}", line))
     assert section_count <= 30, (
         f"Expected at most 30 entries after pruning, found {section_count}"
     )
@@ -266,23 +309,32 @@ def test_facts_stale_pruning_90_days(tmp_path, monkeypatch):
     require_facts()
 
     stale_date = date_str(91)
+    # prune_stale only prunes the STALE section (by design — see
+    # fact_manager.prune_stale docstring); CONFIRMED facts are never aged out.
     facts_content = make_facts_md({
-        "CONFIRMED": [
-            f"[{stale_date}] DB connection pooling enabled — confirmed in production",
+        "STALE": [
+            f"[{stale_date}] DB connection pooling enabled — superseded",
         ]
     })
-    facts_file = tmp_path / "FACTS.md"
+    (tmp_path / ".claude").mkdir(exist_ok=True)
+    facts_file = tmp_path / ".claude" / "FACTS.md"
     facts_file.write_text(facts_content)
 
     import validate_facts as vf  # type: ignore
 
     monkeypatch.setattr(vf, "FACTS_FILE", facts_file, raising=False)
 
+    # Provide stdin so main() can read it without OSError
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "cwd": str(tmp_path)})))
+
     for fn_name in ("run", "validate", "main", "prune_stale", "prune_facts"):
         fn = getattr(vf, fn_name, None)
         if callable(fn):
             try:
                 fn()
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
             except Exception:
                 pass
             break
@@ -299,22 +351,29 @@ def test_facts_recent_not_pruned(tmp_path, monkeypatch):
     require_facts()
 
     recent_date = date_str(89)
-    fact_text = f"[{recent_date}] Rate limiter configured at 100 req/min — confirmed"
+    fact_text = f"[{recent_date}] Rate limiter configured at 100 req/min — superseded"
     facts_content = make_facts_md({
-        "CONFIRMED": [fact_text]
+        "STALE": [fact_text]
     })
-    facts_file = tmp_path / "FACTS.md"
+    (tmp_path / ".claude").mkdir(exist_ok=True)
+    facts_file = tmp_path / ".claude" / "FACTS.md"
     facts_file.write_text(facts_content)
 
     import validate_facts as vf  # type: ignore
 
     monkeypatch.setattr(vf, "FACTS_FILE", facts_file, raising=False)
 
+    # Provide stdin so main() can read it without OSError
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "cwd": str(tmp_path)})))
+
     for fn_name in ("run", "validate", "main", "prune_stale", "prune_facts"):
         fn = getattr(vf, fn_name, None)
         if callable(fn):
             try:
                 fn()
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
             except Exception:
                 pass
             break
@@ -332,18 +391,25 @@ def test_facts_warning_at_50(tmp_path, monkeypatch, capsys):
 
     facts = [f"fact number {i}" for i in range(51)]
     facts_content = make_facts_md({"CONFIRMED": facts})
-    facts_file = tmp_path / "FACTS.md"
+    (tmp_path / ".claude").mkdir(exist_ok=True)
+    facts_file = tmp_path / ".claude" / "FACTS.md"
     facts_file.write_text(facts_content)
 
     import validate_facts as vf  # type: ignore
 
     monkeypatch.setattr(vf, "FACTS_FILE", facts_file, raising=False)
 
+    # Provide stdin so main() can read it without OSError
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"hookEventName": "Stop", "cwd": str(tmp_path)})))
+
     for fn_name in ("run", "validate", "main", "check_size", "warn_if_large"):
         fn = getattr(vf, fn_name, None)
         if callable(fn):
             try:
                 fn()
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    raise
             except Exception:
                 pass
             break
@@ -386,9 +452,10 @@ def test_fact_category_parsing(tmp_path, monkeypatch):
         "GOTCHAS": ["gotcha 1"],
         "PATHS": ["path 1", "path 2", "path 3"],
         "PATTERNS": ["pattern 1"],
-        "SPECULATIVE": ["speculation 1", "speculation 2"],
+        "STALE": ["[2025-01-01] old assumption 1", "[2025-01-01] old assumption 2"],
     })
-    facts_file = tmp_path / "FACTS.md"
+    (tmp_path / ".claude").mkdir(exist_ok=True)
+    facts_file = tmp_path / ".claude" / "FACTS.md"
     facts_file.write_text(facts_content)
 
     import validate_facts as vf  # type: ignore

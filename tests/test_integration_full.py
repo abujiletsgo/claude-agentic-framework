@@ -22,6 +22,7 @@ CONTEXT = FRAMEWORK / "context"
 CADDY = FRAMEWORK / "caddy"
 GUARDRAILS = FRAMEWORK / "guardrails"
 KNOWLEDGE = FRAMEWORK / "knowledge"
+SESSION = FRAMEWORK / "session"
 
 sys.path.insert(0, str(DAMAGE_CONTROL))
 sys.path.insert(0, str(AUTOMATION))
@@ -29,6 +30,7 @@ sys.path.insert(0, str(CONTEXT))
 sys.path.insert(0, str(CADDY))
 sys.path.insert(0, str(GUARDRAILS))
 sys.path.insert(0, str(KNOWLEDGE))
+sys.path.insert(0, str(SESSION))
 
 # Load damage-control module via importlib (filename has hyphen)
 import importlib.util as _ilu

@@ -10,8 +10,10 @@ import shutil
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent  # tests/audit/modules/test_rust_hooks.py -> repo root
-CAF_HOOKS_RELEASE = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-CAF_HOOKS_DEBUG = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+# The cargo workspace builds to <repo>/target/. (caf-hooks/target/ is a stale
+# pre-workspace location — checking it first ran months-old binaries.)
+CAF_HOOKS_RELEASE = REPO_ROOT / "target/release/caf-hooks"
+CAF_HOOKS_DEBUG = REPO_ROOT / "target/debug/caf-hooks"
 
 TIMINGS: list[dict] = []
 
@@ -178,10 +180,10 @@ def test_auto_refine_suggestion_on_warning():
         "auto-refine",
         {
             "hookEventName": "PostToolUse",
-            "tool_name": "Edit",
-            "tool_input": {"file_path": "/src/auth.py"},
+            "tool_name": "Skill",
+            "tool_input": {"skill": "review"},
             "tool_response": {
-                "stdout": "[WARNING] deprecated function used",
+                "output": "[WARNING] deprecated function used",
                 "success": True,
             },
         },

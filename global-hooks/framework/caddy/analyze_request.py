@@ -163,6 +163,9 @@ COMPLEXITY_SIGNALS = {
         "make tests for each", "make tests for every",
         "tests for all", "tests for each and every",
         "individually and complex", "and integrates all",
+        # Investigation/diagnosis prompts (multi-source root-cause work)
+        "root cause", "investigate", "diagnose", "research why",
+        "analyze all", "find the cause",
     ],
     "massive": [
         "entire codebase", "all files", "whole project", "everything",
@@ -251,8 +254,10 @@ STRATEGY_MAP = {
     ("simple", "standard"): "direct",
     ("simple", "high"): "direct",
     ("simple", "critical"): "fusion",
-    ("moderate", "standard"): "team",      # parallel builder+validator, lighter than orchestrate
-    ("moderate", "high"): "team",
+    # "team" was the removed lead/team system; moderate non-critical work
+    # routes direct (matches the 100-prompt ground truth: moderate→direct x22).
+    ("moderate", "standard"): "direct",
+    ("moderate", "high"): "direct",
     ("moderate", "critical"): "fusion",
     ("complex", "standard"): "orchestrate",
     ("complex", "high"): "orchestrate",
