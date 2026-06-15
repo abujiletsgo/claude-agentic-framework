@@ -205,6 +205,20 @@
       }
     ],
 
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/notifications/auto_voice_notifications.py",
+            "timeout": 5,
+            "async": true,
+            "_comment": "TTS alert when Claude needs the user (permission / idle wait). AskUserQuestion does not reliably fire PreToolUse, so Notification is the reliable audible trigger."
+          }
+        ]
+      }
+    ],
+
     "PostToolUse": [
       {
         "hooks": [

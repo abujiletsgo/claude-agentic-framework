@@ -1,14 +1,28 @@
 #!/usr/bin/env python3
 """
-auto_voice_notifications.py — TTS only when user input is required.
-Fires ONLY on AskUserQuestion tool calls.
+auto_voice_notifications.py — TTS when Claude needs the user.
 
-Picks the spoken phrase based on question content:
-  - "please confirm"  → confirmation-style ask (yes/no, are you sure, proceed?)
-  - "question"        → general question
-  - "input required"  → fallback when content can't be inspected
+Handles two hook events:
+  - PreToolUse / AskUserQuestion : speaks a phrase based on the question content
+  - Notification                 : speaks when Claude Code raises a notification
+                                   (permission needed, or idle waiting for input)
+
+The Notification event is the reliable one: AskUserQuestion is an interactive
+tool that does NOT always pass through the PreToolUse gate, so registering on
+Notification guarantees an audible alert whenever Claude is blocked on you.
+
+Phrases:
+  - "please confirm"   → confirmation-style ask (yes/no, are you sure, proceed?)
+  - "question"         → general question
+  - "permission needed"→ Notification asking to approve a tool
+  - "input required"   → fallback when content can't be inspected
+
+Voice: uses the macOS default system voice. To pin a specific voice, set the
+CAF_TTS_VOICE env var (e.g. CAF_TTS_VOICE="Zoe (Premium)") — see
+System Settings → Accessibility → Spoken Content → System Voice to install more.
 """
 import json
+import os
 import re
 import sys
 import subprocess
@@ -23,12 +37,13 @@ CONFIRM_PATTERNS = re.compile(
 
 
 def speak(text: str) -> None:
+    cmd = ["/usr/bin/say"]
+    voice = os.environ.get("CAF_TTS_VOICE", "").strip()
+    if voice:
+        cmd += ["-v", voice]
+    cmd.append(text)
     try:
-        subprocess.run(
-            ["/usr/bin/say", text],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
         pass
 
@@ -68,11 +83,20 @@ def main():
     except Exception:
         sys.exit(0)
 
-    if hook_input.get("tool_name", "") != "AskUserQuestion":
-        sys.exit(0)
+    tool_name = hook_input.get("tool_name", "")
+    event = hook_input.get("hook_event_name", "")
 
-    question_text = extract_question_text(hook_input.get("tool_input"))
-    speak(classify(question_text))
+    if tool_name == "AskUserQuestion":
+        question_text = extract_question_text(hook_input.get("tool_input"))
+        speak(classify(question_text))
+    elif event == "Notification" or hook_input.get("message"):
+        # Claude Code raised a notification — permission request or idle wait.
+        message = str(hook_input.get("message", "") or "")
+        if re.search(r"\b(permission|approve|allow|trust)\b", message, re.IGNORECASE):
+            speak("permission needed")
+        else:
+            speak("input required")
+
     sys.exit(0)
 
 
