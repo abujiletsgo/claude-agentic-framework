@@ -8,17 +8,17 @@ Perform a clean rollback of changes made during a failed orchestration session.
 
 ## Step 1: Find the rollback base
 
-If a SESSION_ID is provided in args (e.g. `/rollback abc12345`), read `/tmp/caf_{SESSION_ID}_plan.md` for `GIT_ROLLBACK_BASE`.
+Orchestration runs record their pre-work git hash at `~/.caf/orch/<orch_id>/rollback_base`.
 
-If no SESSION_ID, look for the most recent plan file:
+If an orch_id is provided in args (e.g. `/rollback orch_1234567890`), read `~/.caf/orch/<orch_id>/rollback_base`.
+
+If no orch_id, find the most recent run:
 ```bash
-ls -t /tmp/caf_*_plan.md 2>/dev/null | head -1
+ls -td ~/.caf/orch/*/ 2>/dev/null | head -1   # newest orch dir
+cat ~/.caf/orch/<orch_id>/rollback_base         # the GIT_ROLLBACK_BASE hash
 ```
 
-Read the file. Extract:
-- `GIT_ROLLBACK_BASE` — the git hash recorded before work began
-- `SESSION_ID` — for session cost reporting
-- The Iteration History table — to know what was changed
+Treat the single hash in `rollback_base` as `GIT_ROLLBACK_BASE` — the git hash recorded before work began. The `<orch_id>` directory name is the session id (used for cost reporting); `~/.caf/orch/<orch_id>/results/` shows what each builder changed.
 
 ## Step 2: Check current state
 

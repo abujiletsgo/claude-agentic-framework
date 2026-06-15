@@ -24,8 +24,10 @@ Analyze complexity and size the team accordingly:
 
 Generate `orch_id` and initialize IPC:
 ```bash
-python3 -c "import time; print(f'orch_{int(time.time())}')"
+uv run python3 -c "import time; print(f'orch_{int(time.time())}')"
 orch-shared init <orch_id>
+# Record the rollback base so /rollback can cleanly undo this run
+git rev-parse HEAD > ~/.caf/orch/<orch_id>/rollback_base 2>/dev/null || true
 ```
 
 **CRITICAL — no silent fallbacks**: If `orch-shared init` fails for any reason (command not found, permission error, etc.), STOP immediately. Do not mkdir manually. Do not continue. Tell the user:
@@ -183,12 +185,10 @@ QA report: ~/.caf/orch/<orch_id>/qa-report.md
 Determine: spec gap, wrong approach, or build error? Write updated spec section or diagnosis to ~/.caf/orch/<orch_id>/rework.md.""")
 ```
 
-2. Simultaneously, spawn Gemini CLI via cmux in a new terminal pane:
+2. Simultaneously, spawn Gemini CLI directly as a background subprocess (no terminal multiplexer needed):
 
 ```python
-import sys, os, time
-sys.path.insert(0, os.path.expanduser("~/.claude/lib"))
-import cmux_client as cmux
+import os, subprocess
 
 orch_id = "<orch_id>"
 prompt_file = os.path.expanduser(f"~/.caf/orch/{orch_id}/gemini_prompt.txt")
@@ -201,20 +201,13 @@ Review these evaluation concerns. Are they valid? Is the recommended fix sound?
 CONCERNS: see ~/.caf/orch/{orch_id}/evaluation_report.md
 SPEC: see ~/.caf/orch/{orch_id}/spec.md""")
 
-if cmux.is_available():
-    new_sid = cmux.new_split("right")
-    cmux.send_surface(new_sid,
-        f'gemini -p "$(cat {prompt_file})" -y -o text > {opinion_file} '
-        f'&& touch {sentinel_file}\n'
-    )
-    for _ in range(24):  # poll up to 120s
-        time.sleep(5)
-        if os.path.exists(sentinel_file):
-            break
-    cmux.focus_surface(os.environ["CMUX_SURFACE_ID"])
-else:
+cmd = f'gemini -p "$(cat {prompt_file})" -y -o text > {opinion_file} && touch {sentinel_file}'
+try:
+    # 120s cap; runs concurrently with the consultant analysis above
+    subprocess.run(cmd, shell=True, timeout=120, check=False)
+except (subprocess.TimeoutExpired, FileNotFoundError):
     with open(opinion_file, "w") as f:
-        f.write("GEMINI_UNAVAILABLE: cmux not running\n")
+        f.write("GEMINI_UNAVAILABLE: gemini CLI not installed or timed out\n")
 ```
 
 3. After both complete, verify Gemini ran:

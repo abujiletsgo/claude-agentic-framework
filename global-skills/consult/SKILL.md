@@ -108,7 +108,7 @@ After all consultants complete:
 
 Generate a timestamp:
 ```bash
-python3 -c "import time; print(f'consult_{int(time.time())}')"
+uv run python3 -c "import time; print(f'consult_{int(time.time())}')"
 ```
 
 Save the full accumulated spec to `/tmp/claude/consult_<id>.md` with this structure:
