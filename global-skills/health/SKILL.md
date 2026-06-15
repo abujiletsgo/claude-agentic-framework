@@ -1,6 +1,7 @@
 ---
 name: health
-description: "Check CAF system health — git status, MCP servers, hooks"
+description: "Check CAF framework infrastructure health: git cleanliness, hook wiring in settings.json, and MCP server registration. Triggers: 'check my hooks', 'are CAF hooks working', 'MCP server status', 'CAF infra health', '/health'."
+when_to_use: "Use specifically for CAF framework/infra diagnostics (hooks, MCP, git state). For code-quality health — typecheck, lint, tests, dead-code score — that is the gstack health skill; this skill does not run those."
 user-invocable: true
 ---
 

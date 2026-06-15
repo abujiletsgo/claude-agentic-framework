@@ -1,7 +1,7 @@
 ---
 name: code-review
-version: 0.1.0
-description: "This skill should be used when the user asks for a code review, quality check, or PR review. It performs thorough code reviews checking for bugs, security issues, performance problems, and style violations."
+description: "Lightweight review of a single file, function, or pasted snippet for bugs, security, performance, and style — for cases with no git diff or PR context."
+when_to_use: "Use for ad-hoc review of a specific file or inline code. For reviewing a PR or the current branch diff, prefer the more capable built-in /code-review and gstack `review` skills when available; use this only as the no-git/offline fallback."
 ---
 
 # Code Review Skill

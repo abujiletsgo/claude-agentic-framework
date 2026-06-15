@@ -1,7 +1,7 @@
 ---
 name: security-scanner
-version: 0.1.0
-description: "This skill should be used when the user asks for a security audit, vulnerability scan, or security hardening. It scans code for security vulnerabilities, misconfigurations, and unsafe patterns."
+description: "Lightweight security pattern scan of specific files or a small codebase for common vulnerabilities, misconfigurations, and unsafe patterns — no external tools required."
+when_to_use: "Use for a quick single-file or offline security pass. For a full audit (STRIDE threat model, dependency supply chain, secrets archaeology, trend tracking), prefer the gstack `cso` skill when installed; use this as the lightweight fallback."
 ---
 
 # Security Scanner Skill
