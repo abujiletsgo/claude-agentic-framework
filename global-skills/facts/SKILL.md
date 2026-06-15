@@ -1,6 +1,7 @@
 ---
 name: facts
 description: Manage FACTS.md — the project's living episodic memory layer. Use to add, list, retire, or inspect verified project facts.
+argument-hint: "list | add <CATEGORY> <text> | stale <pattern> | init | summary | purge-stale"
 scope: framework
 ---
 

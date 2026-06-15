@@ -1,6 +1,7 @@
 ---
 name: change-validator
 description: Before committing or handing off: verifies that changes match the plan, no unintended blast radius, tests pass, and conventions are followed. Project-aware — uses /tmp/caf_project_context.md and /tmp/caf_plan.md. Outputs a go/no-go decision.
+argument-hint: "[--staged] [--fix]"
 user-invocable: true
 ---
 

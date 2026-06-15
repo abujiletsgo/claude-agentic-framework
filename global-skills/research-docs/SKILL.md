@@ -12,9 +12,10 @@ framework documentation, "how to use X", configuration reference,
 or any official documentation lookup.
 
 ## Tools (priority order)
-1. WebFetch — direct URL fetch on known docs sites
-2. WebSearch — to find the right docs page
-3. Grep/Glob — if docs are local (node_modules, vendor, etc.)
+1. mcp__plugin_context7_context7__query-docs — ALWAYS try first for library/SDK/API/framework docs. Returns pre-extracted, structured content at ~5x better token efficiency than WebFetch. Use mcp__plugin_context7_context7__resolve-library-id first if the library id is unknown.
+2. WebFetch — direct URL fetch when context7 has no coverage (niche/internal docs)
+3. WebSearch — to find the right docs page
+4. Grep/Glob — if docs are local (node_modules, vendor, etc.)
 
 ## Model
 Haiku (docs extraction is simple, no deep reasoning needed).

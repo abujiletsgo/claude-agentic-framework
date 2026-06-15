@@ -1,5 +1,5 @@
 ---
-name: Error Analyzer
+name: error-analyzer
 version: 0.1.0
 description: "This skill should be used when the user encounters an error, exception, crash, stack trace, or needs help debugging failures. It analyzes errors, stack traces, and exceptions to identify root causes and suggest fixes."
 ---

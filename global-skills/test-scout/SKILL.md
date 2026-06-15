@@ -1,6 +1,7 @@
 ---
 name: test-scout
 description: Runs the project's test suite and categorizes failures with project-aware context. Uses /tmp/caf_project_context.md for the right command. Writes a structured failure report to /tmp/caf_test_report.md. Use before and after a build step to detect regressions.
+argument-hint: "[--baseline] [--compare]"
 user-invocable: true
 ---
 

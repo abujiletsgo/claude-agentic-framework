@@ -1,5 +1,5 @@
 ---
-name: Code Review
+name: code-review
 version: 0.1.0
 description: "This skill should be used when the user asks for a code review, quality check, or PR review. It performs thorough code reviews checking for bugs, security issues, performance problems, and style violations."
 ---

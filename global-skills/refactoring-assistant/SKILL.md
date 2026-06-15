@@ -1,5 +1,5 @@
 ---
-name: Refactoring Assistant
+name: refactoring-assistant
 version: 0.1.0
 description: "This skill should be used when the user asks to refactor, restructure, clean up, simplify, or reorganize code. It guides and executes code refactoring safely with testing and incremental changes."
 ---

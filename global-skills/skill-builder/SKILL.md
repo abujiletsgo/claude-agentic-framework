@@ -1,5 +1,5 @@
 ---
-name: Skill Builder
+name: skill-builder
 version: 1.0.0
 description: "Interactive skill creation assistant. Helps users design, generate, and install new Claude Code skills with proper structure, security, and testing."
 user-invocable: true

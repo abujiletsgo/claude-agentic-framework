@@ -1,5 +1,5 @@
 ---
-name: Test Generator
+name: test-generator
 version: 0.1.0
 description: "This skill should be used when the user asks for tests, test generation, test coverage, TDD, or writing unit/integration/e2e tests. It generates comprehensive test suites for any codebase."
 ---

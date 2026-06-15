@@ -1,5 +1,5 @@
 ---
-name: Security Scanner
+name: security-scanner
 version: 0.1.0
 description: "This skill should be used when the user asks for a security audit, vulnerability scan, or security hardening. It scans code for security vulnerabilities, misconfigurations, and unsafe patterns."
 ---

@@ -1,5 +1,5 @@
 ---
-name: Architecture Map
+name: arch-map
 version: 1.0.0
 description: "Generate a living architecture map for any project: Mermaid dependency diagram, 'if X changes update Y' blast-radius table, critical workflow paths, data lineage, and duplication warnings. Saves to .claude/ARCHITECTURE.md and integrates with project memory. Use when user asks to map dependencies, create architecture docs, visualize data flow, or understand what to update when something changes."
 ---
