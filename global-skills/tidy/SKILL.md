@@ -207,41 +207,7 @@ git ls-files --others --exclude-standard
 find . -maxdepth 3 -type f -mtime +90 -not -path './.git/*' -not -path './archive/*' -not -path './node_modules/*' | head -20
 ```
 
-Output a **Tidy Report**:
-```
-## Tidy Report
-
-### Project Type
-- Layout source: CLAUDE.md `## Structure` section (or inferred from directories)
-- Detected directories: src/, Data/, docs/, tests/, deploy/, assets/
-- Protected root files: bot.py, monitor.py, dashboard.py, app.py, analysis.py, ...
-
-### Misplaced Files (root)
-- `results_2026-03-15.csv` → should be `Data/` (data file)
-- `backtest_report.html` → should be `analysis/` or `reports/` (report)
-- `new_agent.md` → should be `global-agents/new-agent.md` (framework agent)
-- `my_script.py` → should be `scripts/my-script.py` (utility script)
-
-### Cleanup Targets
-- `__pycache__/` (3 found) → delete
-- `*.pyc` (5 found) → delete
-
-### Naming Violations
-- `global-skills/MySkill/` → should be `global-skills/my-skill/`
-
-### New This Session (untracked)
-- `global-agents/solve.md` (new)
-- `global-skills/solve/SKILL.md` (new)
-
-### Candidates for Archive
-- `docs/old-migration-guide.md` (last modified 120 days ago)
-
-### Reference Impact
-- Moving `new_agent.md` would break 0 references
-- Moving `my_script.py` would break 2 references:
-  - `install.sh:45` — `source my_script.py`
-  - `README.md:120` — `see my_script.py`
-```
+Output a **Tidy Report** with sections: Project Type, Misplaced Files (root), Cleanup Targets, Naming Violations, New This Session (untracked), Candidates for Archive, Reference Impact. See [references/tidy-output-templates.md](references/tidy-output-templates.md) for the full example layout.
 
 If `--detect` flag: stop here. Display report and exit.
 
@@ -521,17 +487,7 @@ for entity in "${!ACTUAL_COUNTS[@]}"; do
 done
 ```
 
-**Output**: Append a `### Doc Staleness` section to the Tidy Report:
-
-```markdown
-### Doc Staleness Audit
-| Entity | Status | Referenced In | Action |
-|--------|--------|---------------|--------|
-| `old-module` | DELETED | docs/API.md:42, README.md:15 | Update or archive |
-| "14 agents" | STALE COUNT | docs/guide.html:100 (actual: 11) | Update number |
-
-⚠️ N stale references found. These require manual updates — prose can't be auto-generated.
-```
+**Output**: Append a `### Doc Staleness Audit` table to the Tidy Report with columns: Entity, Status, Referenced In, Action. See [references/tidy-output-templates.md](references/tidy-output-templates.md) for the example table. End with a warning count line.
 
 **Rules**:
 - **Never auto-edit prose docs** — only report what's stale. These need human judgment.
@@ -546,78 +502,9 @@ If `--docs-only` flag: only run this phase (4a through 4h).
 
 ### Phase 5: Write Change Log
 
-After all moves, archives, and doc updates — **before** validation — write a timestamped log so every action is traceable and reversible.
+After all moves, archives, and doc updates — **before** validation — write a timestamped log to `logs/tidy/YYYY-MM-DD-HHMMSS.md` (create dir with `mkdir -p logs/tidy`). The log records session info, every file moved/renamed/archived, references auto-updated, and a rollback section with the git stash ref. Always write it — even on `--apply` runs. Never delete old logs. Print the path at run end.
 
-**Log location**: `logs/tidy/YYYY-MM-DD-HHMMSS.md`
-
-```bash
-mkdir -p logs/tidy
-```
-
-**Log format** (write with the Write tool):
-
-```markdown
-# Tidy Log — YYYY-MM-DD HH:MM:SS
-
-## Session Info
-- **Git branch**: (current branch)
-- **Git stash ref**: `tidy-backup-YYYYMMDD-HHMMSS` (from Phase 2 safety snapshot)
-- **Commit before tidy**: (short SHA from `git rev-parse --short HEAD`)
-
-## Actions Performed
-
-### Files Moved
-| # | Source | Destination | Method | References Updated |
-|---|--------|-------------|--------|--------------------|
-| 1 | `old/path.md` | `new/path.md` | `git mv` | 3 |
-
-### Files Renamed
-| # | Old Name | New Name | Reason |
-|---|----------|----------|--------|
-| 1 | `MySkill/` | `my-skill/` | kebab-case convention |
-
-### Files Archived
-| # | Source | Archive Path | Reason |
-|---|--------|-------------|--------|
-| 1 | `docs/old-guide.md` | `archive/2026-04-01/old-guide.md` | 120d stale, 0 refs |
-
-### Documentation Updated
-- `CLAUDE.md` — skill count 9→10, agent count 8→9
-- `README.md` — regenerated via generate_docs.py
-- `FACTS.md` — added 2 PATHS entries
-
-### References Auto-Updated
-| # | File | Line | Old Reference | New Reference |
-|---|------|------|---------------|---------------|
-| 1 | `install.sh` | 45 | `my_script.py` | `scripts/my-script.py` |
-
-## Rollback
-
-To undo ALL changes from this tidy run:
-\```bash
-# Option 1: Full rollback via stash (if no commits made yet)
-git checkout -- .
-git stash pop
-
-# Option 2: Revert to pre-tidy commit
-git reset --soft <pre-tidy-sha>
-
-# Option 3: Selective — reverse a single move
-git mv "new/path.md" "old/path.md"
-\```
-
-## Warnings
-- (any references that couldn't be auto-updated)
-- (any CI/CD files that need manual review)
-```
-
-**Rules for the log:**
-1. **Always write the log** — even on `--apply` runs with no dry-run confirmation.
-2. **Log before validation** — so if validation catches a problem, the log already exists for debugging.
-3. **Include the git stash ref** — this is the fastest rollback path.
-4. **Empty sections are fine** — if nothing was archived, keep the "Files Archived" header with "(none)" so the log format is consistent.
-5. **Never delete old logs** — they accumulate in `logs/tidy/` as a full history. The directory should be gitignored (add to `.gitignore` if not present).
-6. **Print the log path** — at the end of the tidy run, always show: `Log saved to: logs/tidy/YYYY-MM-DD-HHMMSS.md`
+See [references/log-format.md](references/log-format.md) for the full log template, section headers, and per-field rules.
 
 ---
 
@@ -669,48 +556,11 @@ After all changes:
 
 ---
 
----
-
 ### Phase 7: Memory Audit
 
-Runs automatically after Phase 6. Audits `~/.claude/projects/<slug>/memory/` for stale state, contradictions, and inflated numbers. Preserves lessons learned, removes operational state that rots.
+Runs automatically after Phase 6. Audits `~/.claude/projects/<slug>/memory/` for stale state, contradictions, inflated numbers, and duplicate lessons. Rewrites stale/wrong files in place (strip state claims, keep lessons), writes new memory files for validated session findings, and rebuilds the MEMORY.md index. Skip silently if the directory doesn't exist or is empty.
 
-#### Step 1: Find memory directory and list files
-
-```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-MEMDIR="$HOME/.claude/projects/${SLUG}/memory"
-ls -lt "$MEMDIR"/*.md 2>/dev/null
-```
-
-If the directory doesn't exist or is empty, skip this phase silently.
-
-#### Step 2: Classify each file (skip MEMORY.md itself)
-
-- **STALE** — type=project, >7 days old, describes live running state (what's running, specific bot configs, dashboard URLs). Rewrite: strip state claims, keep any embedded lessons or architecture facts.
-- **CONTRADICTED** — file A says X is valid, file B says X is dead. Keep the more recent verdict. Add one redirect line to the older file.
-- **INFLATED NUMBERS** — stores simulation PnL numbers without noting they're unvalidated or from an inflated model. Add a caveat noting the source and reliability.
-- **DUPLICATE LESSON** — same lesson in two files. Merge into one, redirect the other.
-- **VALID** — timeless feedback, confirmed dead-ends, stable facts. Leave unchanged.
-
-#### Step 3: Rewrite stale/wrong files in place
-
-- Keep frontmatter (name/description/type), update description to match new content
-- Strip project state claims
-- Preserve all lessons, bug fixes, dead-end records
-- One-line redirect if superseded: `See [correct_file.md] for current state.`
-
-#### Step 4: Write new memories from this session
-
-If the session produced new validated findings, dead-end confirmations, or corrected prior beliefs — write them as new memory files using the standard frontmatter format (type: feedback for lessons, project for state, reference for external resources).
-
-#### Step 5: Rebuild MEMORY.md index
-
-Rewrite MEMORY.md with accurate one-line entries for every active memory file. Group by: Current State / Confirmed Edges / Dead Ends / Strategy Lessons / Reference Facts / Process. Remove entries pointing to superseded files.
-
-#### Output
-
-Print: `N files audited, N rewritten, N added, N redirected.`
+See [references/memory-audit.md](references/memory-audit.md) for the full classification rules, rewrite procedure, and step-by-step instructions.
 
 ---
 

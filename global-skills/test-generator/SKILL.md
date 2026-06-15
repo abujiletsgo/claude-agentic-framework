@@ -17,14 +17,14 @@ Generate thorough test suites following testing best practices. Supports unit, i
 
 ## Workflow
 
-### Step 1: Detect Testing Framework
+### Detect Testing Framework
 ```bash
 # Check for existing test configuration
 find . -maxdepth 3 -name "*.test.*" -o -name "*.spec.*" -o -name "test_*.py" -o -name "*_test.go" | head -5
 # Check package.json or pyproject.toml for test runner
 ```
 
-### Step 2: Analyze Code Under Test
+### Analyze Code Under Test
 
 For each function/class to test:
 1. Identify inputs, outputs, and side effects
@@ -32,7 +32,7 @@ For each function/class to test:
 3. Find dependencies to mock
 4. Determine test boundaries (unit vs integration)
 
-### Step 3: Generate Tests Using Patterns
+### Generate Tests
 
 **Unit Test Pattern (AAA)**:
 ```
@@ -48,7 +48,9 @@ Assert: Verify the expected outcome
 4. **State transitions**: Before/after state changes
 5. **Concurrency**: Race conditions (if applicable)
 
-### Step 4: Test Quality Checklist
+See [references/test-patterns.md](references/test-patterns.md) for ready-to-adapt pytest/Jest/Go test scaffolds.
+
+### Apply Quality Checklist
 
 - Each test has a descriptive name explaining what it tests
 - Tests are independent (no shared mutable state)
@@ -56,74 +58,6 @@ Assert: Verify the expected outcome
 - Assertions are specific (not just "no error")
 - Mocks are minimal (only mock external dependencies)
 - Tests follow project conventions
-
-## Framework-Specific Patterns
-
-### Python (pytest)
-```python
-import pytest
-from unittest.mock import Mock, patch
-
-class TestMyFunction:
-    def test_happy_path(self):
-        result = my_function(valid_input)
-        assert result == expected_output
-
-    def test_edge_case_empty(self):
-        with pytest.raises(ValueError):
-            my_function("")
-
-    @patch("module.external_service")
-    def test_with_mock(self, mock_service):
-        mock_service.return_value = "mocked"
-        result = my_function(input)
-        assert result == "expected"
-```
-
-### JavaScript/TypeScript (Jest/Vitest)
-```typescript
-describe("myFunction", () => {
-  it("should handle normal input", () => {
-    expect(myFunction(validInput)).toBe(expected);
-  });
-
-  it("should throw on invalid input", () => {
-    expect(() => myFunction(null)).toThrow();
-  });
-
-  it("should call external service", async () => {
-    vi.mock("./service");
-    const result = await myFunction(input);
-    expect(result).toMatchSnapshot();
-  });
-});
-```
-
-### Go
-```go
-func TestMyFunction(t *testing.T) {
-    tests := []struct {
-        name     string
-        input    string
-        expected string
-        wantErr  bool
-    }{
-        {"happy path", "valid", "result", false},
-        {"empty input", "", "", true},
-    }
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            got, err := MyFunction(tt.input)
-            if (err != nil) != tt.wantErr {
-                t.Errorf("MyFunction() error = %v, wantErr %v", err, tt.wantErr)
-            }
-            if got != tt.expected {
-                t.Errorf("MyFunction() = %v, want %v", got, tt.expected)
-            }
-        })
-    }
-}
-```
 
 ## TDD Mode
 

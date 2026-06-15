@@ -21,30 +21,14 @@ Persistent knowledge storage with full-text search for cross-session memory, dec
 
 ## Database Schema
 
-The database has three core tables:
+Three core tables: `knowledge_entries` (main storage with category/title/content/tags/project/confidence/source/timestamps), `knowledge_fts` (FTS5 virtual table for BM25 full-text search over title+content+tags), and `knowledge_relations` (typed graph edges between entries).
 
-### 1. knowledge_entries (main storage)
-- `id`: Auto-increment primary key
-- `category`: Entry type (decision, learning, pattern, error, context)
-- `title`: Short title for the entry
-- `content`: Full text content
-- `tags`: Comma-separated tags for filtering
-- `project`: Project name/path this applies to (NULL = global)
-- `confidence`: 0.0-1.0 confidence score
-- `source`: Where this knowledge came from (session, user, agent, hook)
-- `created_at`: ISO timestamp
-- `updated_at`: ISO timestamp
-- `expires_at`: Optional expiration (NULL = never)
+See [references/schema.md](references/schema.md) for full column definitions and the category taxonomy.
 
-### 2. knowledge_fts (FTS5 virtual table)
-- Full-text search index on title + content + tags
-- Supports BM25 ranking
-- Prefix queries and phrase matching
+## When to Use This vs. FACTS.md
 
-### 3. knowledge_relations (graph connections)
-- `from_id`: Source entry
-- `to_id`: Target entry  
-- `relation_type`: Type of relation (related, contradicts, supersedes, depends_on)
+- **knowledge-db**: Structured, searchable, long-lived knowledge. Use for decisions, reusable patterns, error records, project context. Survives context compaction by design.
+- **FACTS.md**: Flat in-file memory for the current session's verified facts. Fast to read, not searchable, not relational.
 
 ## Operations
 
@@ -86,82 +70,31 @@ uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py recent --limit 10
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py recent --category decision --project my-project
 ```
 
-### Update Knowledge
+### Update / Expire / Export
 
 ```bash
+# Update an entry
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py update 42 \
   --content "Updated content here" \
   --confidence 0.8
-```
 
-### Expire/Archive Knowledge
-
-```bash
 # Mark as expired
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py expire 42
 
 # Purge expired entries
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py purge-expired
-```
 
-### Export/Import
-
-```bash
 # Export knowledge as JSON (default limit: 10,000 entries)
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py export > knowledge-backup.json
-
-# Export with custom limit
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py export --limit 50000 > knowledge-backup.json
 
 # Import from JSON (file must be in ~/.claude/ or current directory)
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py import-json knowledge-backup.json
 ```
 
-## Categories
-
-| Category | Description | Example |
-|----------|-------------|---------|
-| `decision` | Architectural or design decisions | "Use FTS5 over Elasticsearch" |
-| `learning` | Lessons learned from experience | "Always quote paths with spaces" |
-| `pattern` | Reusable code/workflow patterns | "Circuit breaker pattern for hooks" |
-| `error` | Known errors and their fixes | "uv run fails when no pyproject.toml" |
-| `context` | Project context and background | "VaultMind has 9 agents" |
-| `preference` | User preferences and conventions | "User prefers opus for planning" |
-
-## Integration Points
-
-### Session Start Hook
-On session start, the hook can auto-load recent relevant knowledge:
-```python
-# In session_start.py
-entries = search_knowledge(project=current_project, limit=5)
-# Inject as context
-```
-
-### Pre-Compact Hook
-Before context compaction, save important learnings:
-```python
-# In pre_compact.py
-store_knowledge(
-    category="context",
-    title="Session context before compaction",
-    content=summarize_session()
-)
-```
-
-### Stop Hook
-On task completion, extract and store learnings:
-```python
-# In stop.py
-if task_completed:
-    store_knowledge(category="learning", ...)
-```
-
 ## Examples
 
-### Example 1: Store a Decision
+### Store a Decision
 
-After making an architectural decision:
 ```bash
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
   --category decision \
@@ -171,16 +104,14 @@ uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
   --project "claude-agentic-framework"
 ```
 
-### Example 2: Search Before Making a Decision
+### Search Before Making a Decision
 
-Before starting work, check existing knowledge:
 ```bash
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py search "hook architecture"
 ```
 
-### Example 3: Track an Error Pattern
+### Track an Error Pattern
 
-When encountering a recurring error:
 ```bash
 uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
   --category error \
@@ -191,57 +122,17 @@ uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py store \
 
 ## Security
 
-### File Permissions
+DB and log files are created mode 600. The `import-json` command enforces path allowlist (`~/.claude/`, cwd) and rejects path traversal and non-regular files. `export` defaults to 10,000-entry limit. FTS5 tag filters use SQL `LIKE` substring matching — use full tag names for precision.
 
-All database and log files are created with **mode 600** (owner read/write only):
+See [references/security.md](references/security.md) for the full allowlist table, blocked-path examples, export limit details, and FTS5 wildcard behavior.
 
-- `knowledge.db` -- SQLite database file
-- `knowledge.jsonl` -- Append-only durability log
+## Hook Integration
 
-Permissions are enforced on every database open and every JSONL append operation.
+The knowledge DB can be called from session_start, pre_compact, and stop hooks to auto-load context, save pre-compaction learnings, and record task completions. See [references/integration.md](references/integration.md) for illustrative pseudocode (these are examples, not the authoritative hook implementations).
 
-### Import Path Restrictions
+## Resources
 
-The `import-json` command validates file paths before reading. Imports are restricted to these directories:
-
-| Allowed Directory | Purpose |
-|-------------------|---------|
-| `~/.claude/data/` | Primary data storage |
-| `~/.claude/` | Claude configuration directory |
-| Current working directory | Convenience for local files |
-
-The following are blocked:
-
-- **Path traversal**: Any path containing `..` is rejected
-- **Absolute paths outside allowed dirs**: e.g., `/etc/passwd` is rejected
-- **Non-regular files**: Directories, symlinks to disallowed locations, device files
-
-Example of a blocked import:
-```bash
-# These will all fail with a validation error:
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py import-json /etc/passwd
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py import-json ../../etc/shadow
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py import-json /tmp/malicious.json
-```
-
-### Export Limits
-
-The `export` command has a default limit of **10,000 entries** to prevent unbounded memory usage on large databases. Use `--limit N` to adjust:
-
-```bash
-# Default: max 10,000 entries
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py export
-
-# Custom limit
-uv run ~/.claude/skills/knowledge-db/scripts/knowledge_cli.py export --limit 50000
-```
-
-A warning is printed to stderr when the limit is reached.
-
-### FTS5 Tag Wildcards
-
-Tag filters in `search` use SQL `LIKE` with `%` wildcards for substring matching. This means a tag filter of `sec` will match `security`, `insecure`, etc. This is by design for flexible filtering but be aware that:
-
-- Tag filters are **substring matches**, not exact matches
-- Use specific, full tag names for precise filtering (e.g., `--tags "security"` not `--tags "sec"`)
-- The `%` character in user-provided tags is passed through to SQL LIKE -- this is harmless (it only widens the match) but may produce unexpected results
+- **CLI**: `scripts/knowledge_cli.py` — all operations above are thin wrappers around this script; run with `--help` for the full option list
+- **Schema + categories**: [references/schema.md](references/schema.md)
+- **Security + import rules**: [references/security.md](references/security.md)
+- **Hook integration examples**: [references/integration.md](references/integration.md)
