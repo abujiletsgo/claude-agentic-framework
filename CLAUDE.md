@@ -7,7 +7,7 @@ v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
 ```
 global-hooks/        47 hooks across 17 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_Notification:1, hooks_PostCompact:1, hooks_PostToolUse:8, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:4, hooks_SessionEnd:1, hooks_SessionStart:2, hooks_Stop:10, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:5, hooks_TaskCompleted:1, hooks_UserPromptSubmit:6)
 global-agents/       22 agents (22 root + 0 team)
-global-commands/     17 commands
+global-commands/     14 commands
 global-skills/       29 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
