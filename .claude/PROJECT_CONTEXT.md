@@ -35,7 +35,7 @@
   - **Sonnet (15)**: po, critical-analyst, researcher, meta-agent, scout-report-suggest, builder, debugger, onboard-builder, onboard-planner, academic-researcher, code-researcher, frontend-consultant, backend-consultant, architecture-consultant, security-consultant
   - **Haiku (4)**: docs-scraper, validator, agent-watchdog, health-checker
 - **Commands** (17): /arch-map, /commit, /costs, /debug, /fusion, /kr, /loadbundle, /ntask (NEW), /orchestrate, /plan, /prime, /refine, /research, /review, /rlm, /test, /worktree
-- **Skills** (30 in global-skills/): arch-map, change-validator, cmux-skill, code-review, **consult** (NEW — sequential consultant dialogue), docs, error-analyzer, facts, gstack/, health, issue-scoper, knowledge-db, makeskill, onboard, orchestrate, project-adapter, quickstart, refactoring-assistant, research-{academic,code,docs,news}, rollback, security-scanner, skill-builder, solve, test-generator, test-scout, tidy, worktree
+- **Skills** (29 in global-skills/): arch-map, change-validator, code-review, **consult** (sequential consultant dialogue), docs, error-analyzer, facts, **gemini** (Gemini-CLI second-opinion overlay), health, issue-scoper, knowledge-db, makeskill, onboard, orchestrate, project-adapter, quickstart, refactoring-assistant, research-{academic,code,docs,news}, rollback, security-scanner, skill-builder, solve, test-generator, test-scout, tidy, worktree. **gstack is NOT vendored** — it self-manages via /gstack-upgrade (live at ~/.claude/skills/gstack), surfacing its own ~54 sub-skills directly.
 
 ## 🏗️ Architecture Highlights
 
@@ -61,7 +61,7 @@
 - `caf-hooks/` — Rust hook binary (single dispatcher for all events)
 - `global-hooks/` — Python hooks (framework + damage-control + notifications)
 - `global-agents/` — agent markdown definitions (22)
-- `global-skills/` — skill markdown definitions (30, includes gstack subtree)
+- `global-skills/` — caf skill markdown definitions (29; gstack is self-managed at ~/.claude/skills/gstack, NOT vendored here)
 - `global-commands/` — slash command definitions (17)
 - `apps/run-explorer/` — Bun server :3001 + Vue3 client :5173 (sole dashboard)
 - `apps/observability/server/` — Bun + SQLite events.db :3002 (client dir DELETED)

@@ -365,17 +365,18 @@ find "$CLAUDE_DIR/skills" -maxdepth 1 -type l -delete 2>/dev/null || true
 for skill_dir in "$REPO_DIR"/global-skills/*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
+  [ -n "$skill_name" ] || continue
+  # caf skills win on name collisions (trust rule: local skills override global).
+  # Remove any colliding target first — a gstack-installed real dir or stale link —
+  # so ln replaces it instead of nesting a link inside it.
+  rm -rf "$CLAUDE_DIR/skills/$skill_name"
   ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
 done
-# Also link gstack sub-skills directly so they're invokable by name
-for skill_dir in "$REPO_DIR"/global-skills/gstack/*/; do
-  [ -f "$skill_dir/SKILL.md" ] || continue
-  skill_name=$(basename "$skill_dir")
-  # Don't overwrite if global-skills already linked this name
-  [ -e "$CLAUDE_DIR/skills/$skill_name" ] && continue
-  ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
-done
-echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills + gstack sub-skills"
+# NOTE: gstack is NOT vendored here. It self-manages via /gstack-upgrade, which
+# installs a fresh clone at ~/.claude/skills/gstack and surfaces its own sub-skills
+# directly. caf-team only ships the /gemini overlay (a Gemini-CLI second-opinion
+# variant of gstack's /codex), linked from global-skills/ like any other caf skill.
+echo "  -> $(ls -d "$REPO_DIR"/global-skills/*/ 2>/dev/null | wc -l | tr -d ' ') skills"
 # Ensure auto-generated skills directory exists (used by auto_skill_generator hook)
 mkdir -p "$CLAUDE_DIR/skills/auto-generated"
 mkdir -p "$CLAUDE_DIR/data"
@@ -513,22 +514,13 @@ else
   DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
 fi
 
-# Check ~/.claude/skills/ symlinks
+# Check ~/.claude/skills/ symlinks (caf global-skills only; gstack self-manages)
 SKILL_COUNT=$(find ~/.claude/skills/ -maxdepth 1 -type l -exec sh -c 'target=$(readlink "$1"); [[ "$target" == */global-skills/* ]] && echo "$1"' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
 REPO_SKILL_COUNT=$(ls -d "$REPO_DIR/global-skills/"*/ 2>/dev/null | wc -l | tr -d ' ')
-# Count gstack sub-skills that will actually be linked (those with SKILL.md not already in global-skills)
-GSTACK_LINKED=0
-for _gd in "$REPO_DIR/global-skills/gstack/"/*/; do
-  [ -f "$_gd/SKILL.md" ] || continue
-  _gname=$(basename "$_gd")
-  [ -d "$REPO_DIR/global-skills/$_gname" ] && continue  # already linked from global-skills
-  GSTACK_LINKED=$((GSTACK_LINKED + 1))
-done
-EXPECTED_SKILL_COUNT=$((REPO_SKILL_COUNT + GSTACK_LINKED))
-if [ "$SKILL_COUNT" = "$EXPECTED_SKILL_COUNT" ]; then
-  echo "  skills: OK ($SKILL_COUNT symlinks: $REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
+if [ "$SKILL_COUNT" = "$REPO_SKILL_COUNT" ]; then
+  echo "  skills: OK ($SKILL_COUNT symlinks)"
 else
-  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT, expected $EXPECTED_SKILL_COUNT ($REPO_SKILL_COUNT global + $GSTACK_LINKED gstack)"
+  echo "  WARNING: skills mismatch — ~/.claude/skills/ has $SKILL_COUNT caf symlinks, repo has $REPO_SKILL_COUNT"
   DOCTOR_ERRORS=$((DOCTOR_ERRORS + 1))
 fi
 

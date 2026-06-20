@@ -2,18 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (17:48 UTC) · @Tom Kwon
-**Commit:** fix: caf-hud idle mode showing 0 for hooks/agents/skills (021da08c) by Tom Kwon
-**Changed:**
-  caf-hud/src/main.rs | 18 +++++++++---------
-  1 file changed, 9 insertions(+), 9 deletions(-)
-
-## 2026-04-10 (17:48 UTC) · @Tom Kwon
-**Commit:** docs: orchestrate — enforce parallel-first; all agents per wave in one message (00e6b74e) by Tom Kwon
-**Changed:**
-  global-skills/orchestrate/SKILL.md | 19 ++++++++++++++++---
-  1 file changed, 16 insertions(+), 3 deletions(-)
-
 ## 2026-04-10 (17:50 UTC) · @Tom Kwon
 **Commit:** docs: quality-first priorities + planning-lead on opus (bf72318b) by Tom Kwon
 **Changed:**
@@ -311,3 +299,19 @@
 **Changed:**
   .gitignore | 3 +++
   1 file changed, 3 insertions(+)
+
+## 2026-06-15 (09:15 UTC) · @Tom Kwon
+**Commit:** chore(skills): tranche E — drop version: noise + remove dead artifacts (2aaeed4a) by Tom Kwon
+**Changed:**
+  .claude/agents/cmux-lead.md                        |  48 ------------------------------------------------
+  global-skills/orchestrate/templates/lead-prompt.md | 192 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  2 files changed, 240 deletions(-)
+
+## 2026-06-20 (15:57 UTC) · @Tom Kwon
+**Commit:** chore(commands): remove 3 commands superseded by skills (24799b6e) by Tom Kwon
+**Changed:**
+  CLAUDE.md                      |  2 +-
+  global-commands/arch-map.md    | 50 --------------------------------------------------
+  global-commands/orchestrate.md |  9 ---------
+  global-commands/worktree.md    | 12 ------------
+  4 files changed, 1 insertion(+), 72 deletions(-)

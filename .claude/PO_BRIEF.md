@@ -31,4 +31,4 @@ Private fork of the Claude Agentic Framework with sprint orchestration, research
 ## Out of Scope
 - No Textual TUI dashboard (removed 2026-04-09)
 - No mempalace (removed in v5.0 CAF upstream merge)
-- Don't touch global-skills/gstack/ — it's a git subtree
+- gstack is no longer vendored here — it self-manages via /gstack-upgrade at ~/.claude/skills/gstack. Don't re-add a global-skills/gstack/ subtree. caf's only gstack-derived skill is the /gemini overlay (global-skills/gemini/).
