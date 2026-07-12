@@ -361,7 +361,7 @@ fi
 If the generator doesn't exist or doesn't cover new content, manually update relevant sections.
 
 **4c. PROJECT_CONTEXT.md** — Update the cached context (if it exists):
-- If `/prime` skill exists, suggest running `/prime --force` to regenerate
+- Delete `.claude/PROJECT_CONTEXT.md` so the SessionStart hook (`auto_prime.py`) regenerates it fresh next session
 - Otherwise, update the directory structure and file counts manually
 - Skip silently if this file doesn't exist in the project
 

@@ -2,8 +2,11 @@
 """
 Auto-Prime Inject - UserPromptSubmit Hook
 
-Fires before every user message. If the project has no prime cache,
-injects a mandatory instruction to run /prime FIRST before responding.
+Fires before every user message. PROJECT_CONTEXT.md is normally generated
+automatically by the auto_prime.py SessionStart hook. If it's still missing
+mid-session (e.g. SessionStart hook failed, or the file was deleted), this
+injects a fallback instruction to regenerate it directly instead of relying
+on a slash command.
 
 Once .claude/PROJECT_CONTEXT.md exists, this is a no-op (fast file check).
 
@@ -28,9 +31,12 @@ def main():
                     "hookEventName": "UserPromptSubmit",
                     "additionalContext": (
                         "[MANDATORY STARTUP ACTION] No project context cache found at "
-                        "`.claude/PROJECT_CONTEXT.md`. You MUST invoke the `/prime` skill "
-                        "as your VERY FIRST action — before greeting or answering the user. "
-                        "Do not skip this. After prime completes, then respond normally."
+                        "`.claude/PROJECT_CONTEXT.md`. The SessionStart hook (auto_prime.py) "
+                        "should have generated it — it did not run or was skipped. Generate it "
+                        "yourself now, as your VERY FIRST action, before greeting or answering "
+                        "the user: read CLAUDE.md, detect the stack, and write a project context "
+                        "summary to `.claude/PROJECT_CONTEXT.md`. Do not skip this. Then respond "
+                        "normally."
                     )
                 }
             }))

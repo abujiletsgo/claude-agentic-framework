@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Consultant-first orchestrator. Wave 0a: user ↔ consultants (interactive spec). Wave 0b: parallel researchers. Wave 1: parallel builders (min 3 agents, scaled to complexity). Wave 2: QA loop (self-healing). Final report."
+description: "Consultant-first orchestrator. Wave 0a: user ↔ consultants (interactive spec). Wave 0b: parallel Explore research. Wave 1: parallel builders (implement + self-test + self-diagnose, scaled to complexity). Wave 2: QA loop reads builder self-reports (self-healing). Final report."
 user-invocable: true
 ---
 
@@ -18,9 +18,9 @@ Analyze complexity and size the team accordingly:
 | Complexity | When | Team size | Waves |
 |---|---|---|---|
 | **Trivial** | rename, config value, copy edit | skip orchestration — do it directly | — |
-| **Simple** | single-file bug fix, clear root cause | 3 agents: researcher + builder + validator | 0b → 1 → 2 |
-| **Standard** | multi-file feature, unclear scope | 5–6 agents + consultants | 0a → 0b → 1 → 2 |
-| **Complex** | cross-domain, 3+ subsystems | 8+ agents + consultants | 0a → 0b → 1 → 2 |
+| **Simple** | single-file bug fix, clear root cause | 1 builder (implements, runs its own tests, self-diagnoses) | 1 → 2 |
+| **Standard** | multi-file feature, unclear scope | 2-3 builders + consultants + Explore for research | 0a → 0b → 1 → 2 |
+| **Complex** | cross-domain, 3+ subsystems | 4+ builders + consultants + Explore for research | 0a → 0b → 1 → 2 |
 
 Generate `orch_id` and initialize IPC:
 ```bash
@@ -71,13 +71,13 @@ Wait for all consultants. Each returns a spec section.
 
 ## Wave 0b: Research (parallel)
 
-Spawn one researcher per distinct research question — all in ONE message.
+Spawn one native `Explore` agent per distinct research question — all in ONE message. Explore is a read-only native agent (no custom subagent_type needed); for academic papers, use `academic-researcher` instead. For tool/model routing per research category (academic, code, docs, news), see `references/research-routing.md`.
 
 ```python
-Agent(name="researcher-patterns", subagent_type="researcher", model="sonnet",
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md. Find prior art, proven patterns, known failure modes. Write to ~/.caf/orch/<orch_id>/research.md.")
-Agent(name="researcher-security", subagent_type="researcher", model="sonnet",
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md. Find security concerns, attack surface, input validation needs. Append to ~/.caf/orch/<orch_id>/research.md.")
+Agent(name="research-patterns", subagent_type="Explore",
+      prompt="Read ~/.caf/orch/<orch_id>/spec.md. Find prior art, proven patterns, known failure modes in this codebase. Write findings to ~/.caf/orch/<orch_id>/research.md.")
+Agent(name="research-security", subagent_type="Explore",
+      prompt="Read ~/.caf/orch/<orch_id>/spec.md. Find security concerns, attack surface, input validation needs in this codebase. Append to ~/.caf/orch/<orch_id>/research.md.")
 ```
 
 Read results. Append relevant findings to spec if they change the approach.
@@ -86,26 +86,25 @@ Read results. Append relevant findings to spec if they change the approach.
 
 ## Wave 1: Build (parallel builders)
 
-Decompose the spec into independent work streams. **Minimum 3 agents total (including validator in Wave 2).** Scale up with complexity.
+Decompose the spec into independent work streams — one builder per stream. Each builder implements its section, runs its own tests, and self-diagnoses failures before reporting; there is no separate validator wave.
 
 ### Model selection for builders
 
+Per `data/model_tiers.yaml`, `builder` defaults to `sonnet`. Bump to `opus` for security/crypto/irreversible work; there is no haiku tier for builders (mechanical-transform-only, and currently empty).
+
 | Spec says... | Use |
 |---|---|
-| Exact string/value to write | `haiku` |
-| File path + line number + exact replacement | `haiku` |
-| "Implement X" with no exact content | `sonnet` |
-| Changes to 2+ interdependent files | `sonnet` |
-| Security / auth / crypto code | `sonnet` |
+| Standard implementation, any file count | `sonnet` |
+| Security / auth / crypto / irreversible-change code | `opus` |
 
 ```python
 # All in ONE message — parallel
 Agent(name="builder-frontend", subagent_type="builder", model="sonnet",
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Frontend. Implement exactly what the spec says. Write build log to ~/.caf/orch/<orch_id>/results/builder-frontend.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
-Agent(name="builder-backend", subagent_type="builder", model="haiku",  # haiku if spec has exact replacements
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Backend. Implement exactly what the spec says. Write build log to ~/.caf/orch/<orch_id>/results/builder-backend.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
-Agent(name="builder-config", subagent_type="builder", model="haiku",
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Config. Make the exact changes specified. Write build log to ~/.caf/orch/<orch_id>/results/builder-config.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
+      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Frontend. Implement exactly what the spec says. Run the relevant tests before reporting. Write build log to ~/.caf/orch/<orch_id>/results/builder-frontend.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
+Agent(name="builder-backend", subagent_type="builder", model="sonnet",
+      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Backend. Implement exactly what the spec says. Run the relevant tests before reporting. Write build log to ~/.caf/orch/<orch_id>/results/builder-backend.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
+Agent(name="builder-config", subagent_type="builder", model="sonnet",
+      prompt="Read ~/.caf/orch/<orch_id>/spec.md section: Config. Make the exact changes specified. Run the relevant tests before reporting. Write build log to ~/.caf/orch/<orch_id>/results/builder-config.md when done. Time budget: complete your assigned work within ~10 minutes. If you reach a blocking decision (missing file, ambiguous spec, external dependency), stop immediately, write what you have to your results file, and append BLOCKED: <one sentence reason>. Do not keep retrying silently.")
 ```
 
 Write event: `orch-shared broadcast <orch_id> orchestrator "build" "builders complete"`
@@ -116,10 +115,12 @@ Write event: `orch-shared broadcast <orch_id> orchestrator "build" "builders com
 
 ### First pass
 
-```python
-Agent(name="validator", subagent_type="validator", model="haiku",
-      prompt="Read ~/.caf/orch/<orch_id>/spec.md. Verify the implementation matches. Run tests if available. Write PASS or FAIL + details to ~/.caf/orch/<orch_id>/qa-report.md.")
-```
+Builders self-test as part of Wave 1 — there is no separate validator spawn. Read every builder's build log under `~/.caf/orch/<orch_id>/results/`:
+
+- **PASS**: every builder reports `STATUS: DONE` with its tests passing.
+- **FAIL**: any builder reports `STATUS: FAILED`, `STATUS: BLOCKED`, or a test failure in its log.
+
+Summarize into `~/.caf/orch/<orch_id>/qa-report.md` (PASS/FAIL + which builder(s) and why) before proceeding.
 
 ### On PASS → optional evaluator (opt-in only)
 
@@ -129,25 +130,24 @@ If `--evaluate` was present:
 
 ```python
 Agent(name="evaluator", subagent_type="critical-analyst", model="sonnet",
-      prompt="Post-build quality review. Read spec, build logs, validator results, and git diff. Does this actually solve the problem? Edge cases? Simpler approach? Blast radius? Write APPROVE / CONCERNS / REJECT to ~/.caf/orch/<orch_id>/evaluation_report.md.")
+      prompt="Post-build quality review. Read spec, build logs (including each builder's own test results), and git diff. Does this actually solve the problem? Edge cases? Simpler approach? Blast radius? Write APPROVE / CONCERNS / REJECT to ~/.caf/orch/<orch_id>/evaluation_report.md.")
 ```
 
 On APPROVE: proceed to Final Report.
 On CONCERNS: follow the CONCERNS protocol below.
-On REJECT: treat as FAIL — spawn debugger, then re-run builders with evaluation as context.
+On REJECT: treat as FAIL — re-run the affected builder(s) with the evaluation as context.
 
 If `--evaluate` was not present: proceed directly to Final Report on PASS.
 
 ### On FAIL → escalation protocol
 
-**1st failure** — spawn debugger to diagnose, then new builders with the diagnosis:
+**1st failure** — re-spawn the same builder that failed, with the QA report and its own prior build log injected as context. Builders diagnose and fix within their own turn budget (see builder.md); this is not a separate agent:
 ```python
-Agent(name="debugger", subagent_type="debugger", model="sonnet",
-      prompt="Read ~/.caf/orch/<orch_id>/qa-report.md and the failing code. Root cause analysis only — no fixes. Write diagnosis to ~/.caf/orch/<orch_id>/debug-report.md.")
+Agent(name="builder-backend", subagent_type="builder", model="sonnet",
+      prompt="Your previous attempt failed. QA report: ~/.caf/orch/<orch_id>/qa-report.md. Your prior build log: ~/.caf/orch/<orch_id>/results/builder-backend.md (see any Dead Ends Hit section — do not repeat those approaches). Diagnose the root cause from the actual error output, fix it, re-run your tests, and update your build log.")
 ```
-Then re-spawn affected builders with the debug report injected into their prompt.
 
-**2nd failure** — kill-and-reassign: spawn fresh builder with the full failure history as context (what was tried, what broke, why). Do not retry the same approach.
+**2nd failure** — kill-and-reassign: spawn a fresh builder with the full failure history as context (what was tried, what broke, why — including the Dead Ends from the prior build log). Do not retry the same approach.
 
 **After 2 failures** — escalate to user with `rework.md` diagnosis. Never loop forever.
 
@@ -164,7 +164,7 @@ Analyze the failure. Determine: spec gap, wrong approach, or build error?
 Output: updated spec section OR diagnosis. Write to ~/.caf/orch/<orch_id>/rework.md.""")
 ```
 
-Read `rework.md`. Apply correction → re-run validator. Max 2 total iterations.
+Read `rework.md`. Apply correction → re-run the affected builder(s), then re-check their self-test results. Max 2 total iterations.
 
 ---
 
@@ -212,9 +212,9 @@ except (subprocess.TimeoutExpired, FileNotFoundError):
 
 3. After both complete, verify Gemini ran:
    - Check `gemini_sentinel` exists — if absent, log "Gemini CLI verification failed" to `report.md` and continue
-   - Read `rework.md`, re-run affected builders with it injected, then re-run validator
+   - Read `rework.md`, re-run affected builders with it injected, then re-check their self-test results
 
-4. On re-validator PASS → Final Report. On FAIL or CONCERNS again → escalate to user.
+4. On re-check PASS → Final Report. On FAIL or CONCERNS again → escalate to user.
 
 **CONCERNS counter is independent of the FAIL counter. Only FAIL consumes from the 2-failure cap.**
 
@@ -246,7 +246,7 @@ QA report: ~/.caf/orch/<orch_id>/qa-report.md
 Determine root cause. Write updated spec section or diagnosis to ~/.caf/orch/<orch_id>/rework.md.""")
 ```
 
-Re-spawn builder with `rework.md` injected → re-run validator. On 2nd failure → escalate to user.
+Re-spawn builder with `rework.md` injected → re-check its self-test results. On 2nd failure → escalate to user.
 
 ---
 
@@ -304,11 +304,11 @@ Deliver the report to the user.
 ## Hard Rules
 
 - **Consultants first** — never start building without an approved spec (skip for Simple)
-- **Minimum 3 agents** — researcher + builder + validator for any non-trivial task
+- **At least one builder** — even Simple tasks get a builder that implements and self-tests; Standard/Complex add Explore research and consultants
 - **Parallel within waves** — all agents in a wave launch in ONE message; never serialize
 - **Orchestrator never builds** — no Read, Edit, Grep on implementation files; spawn agents
 - **Write events at every wave boundary** — run-explorer reads these
 - **Model match** — haiku for mechanical/exact, sonnet for reasoning/multi-file
-- **QA is real** — validator must exercise actual behavior, not just check syntax
+- **QA is real** — builders must exercise actual behavior via their own test runs, not just check syntax
 - **Escalate after 2 failures** — bring the user back in with a clear diagnosis
 - **Skip unused waves** — no consultants for Simple; no research if spec is already complete

@@ -720,13 +720,13 @@ GATE: PASS
 
 or `GATE: FAIL (N critical findings)`.
 
-6. **Cross-model comparison:** If `/review` was already run in this conversation:
+6. **Cross-model comparison:** If `/code-review` was already run in this conversation:
 
 ```
 CROSS-MODEL ANALYSIS:
   Both found: [overlapping findings]
   Only Gemini found: [unique to Gemini]
-  Only Claude found: [unique to Claude's /review]
+  Only Claude found: [unique to Claude's /code-review]
   Agreement rate: X%
 ```
 
@@ -1010,7 +1010,7 @@ Gemini CLI uses whatever model is configured in `~/.gemini/config.yaml` (default
   Show it in full inside the GEMINI SAYS block.
 - **Add synthesis after, not instead of.** Any Claude commentary comes after the full output.
 - **5-minute timeout** on all Bash calls (`timeout: 300000`).
-- **No double-reviewing.** If the user already ran `/review`, Gemini provides a second
+- **No double-reviewing.** If the user already ran `/code-review`, Gemini provides a second
   independent opinion. Do not re-run Claude Code's own review.
 - **Detect skill-file rabbit holes.** After receiving Gemini output, scan for signs
   it got distracted by skill files: `gstack-config`, `gstack-update-check`, `SKILL.md`,

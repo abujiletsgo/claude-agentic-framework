@@ -114,7 +114,7 @@ Agent now "remembers" the previous session's work area.
 **Token Usage**: ~500 tokens (vs 50,000+ if re-reading all files)
 
 ### Next Steps
-Run `/prime` if you need broader project context, or start working immediately - you have the previous agent's "memory".
+`.claude/PROJECT_CONTEXT.md` is auto-loaded at session start if you need broader project context, or start working immediately - you have the previous agent's "memory".
 ```
 
 ---

@@ -221,7 +221,7 @@ Add to top comment block:
 Add a line pointing to the architecture map in the key files section.
 
 **If `.claude/PROJECT_CONTEXT.md` exists** (prime cache):
-Invalidate it so the next `/prime` re-reads the updated architecture:
+Invalidate it so the next SessionStart hook (`auto_prime.py`) re-reads the updated architecture:
 ```bash
 # Get current git hash and update PROJECT_CONTEXT.md header
 # OR simply note in the Architecture Highlights section:
