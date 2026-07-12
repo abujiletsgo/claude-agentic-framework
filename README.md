@@ -73,10 +73,10 @@ Config: `data/model_tiers.yaml`
 
 ```
   - arch-map
+  - caf-health
   - consult
   - facts
   - gemini
-  - health
   - knowledge-db
   - makeskill
   - onboard
