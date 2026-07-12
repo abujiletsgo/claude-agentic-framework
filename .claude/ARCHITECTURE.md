@@ -1,5 +1,6 @@
-# Claude Agentic Framework v4.3 — Architecture & Dependency Map
-<!-- Generated: 2026-04-14 | Git: 7d286ff52652e80d74ac1e0a18eeac58acd9e5f8 -->
+# Claude Agentic Framework v5.3 — Architecture & Dependency Map
+<!-- GIT_HASH: ec477d8be4ff1662e4464226ebbf879ffbb8f5bd -->
+<!-- Generated: 2026-07-13 | Git: ec477d8be4ff1662e4464226ebbf879ffbb8f5bd -->
 <!-- Regenerate: /arch-map -->
 
 ## 🗂️ Sections (read only what you need — discard after use)
@@ -9,8 +10,17 @@
 | 2 | [Mermaid diagram](#full-dependency-diagram) | When you need the full system topology |
 | 3 | [Critical paths](#critical-paths) | When user asks how to run X workflow |
 | 4 | [Data lineage](#data-file-lineage) | When a data file changes and you need to know what to rebuild |
-| 5 | [Duplication warnings](#duplication-warnings) | When editing configs defined in multiple places |
-| 6 | [Module import graph](#module-import-graph) | When tracing imports or refactoring |
+| 5 | [Duplication & dead-surface warnings](#duplication-warnings) | When editing configs or hooks defined in multiple places |
+| 6 | [Module / hook wiring graph](#module-import-graph) | When tracing what actually fires vs. what only exists |
+| 7 | [Hook event matrix](#hook-event-matrix) | When wiring or debugging a hook |
+
+> **Post-restructure note (v5.3).** The framework shrank hard: **8 agents** (was 22),
+> **16 skills** (was 31), **9 commands** (was 14), **31 hook firings across 16 events**.
+> Security moved from *dormant* to *live*: damage-control is now wired into `PreToolUse`
+> via the Rust binary with **fancy-regex** (lookahead patterns that silently no-op'd under
+> the old `regex` crate now compile). The **FACTS/MEMORY hook layer is retired** — native
+> Claude Code memory replaced it (the Rust writers still exist but are **unwired**).
+> `CLAUDE.md` + `README.md` are **generated** by `scripts/generate_docs.py`, not hand-edited.
 
 ---
 
@@ -18,20 +28,21 @@
 
 | Changed | Must Also Update |
 |---------|-----------------|
-| `caf-hooks/src/types.rs` | All 25 hook impls in `caf-hooks/src/hooks/` — recompile with `cargo build -r` |
-| `caf-hooks/src/main.rs` (subcommand list) | Hook entries in `templates/settings.json.template` + `install.sh` |
-| `apps/run-explorer/shared/types.ts` | Both `server/src/` handlers and `client/src/` composables/views that import types |
-| `~/.caf/sessions/*.jsonl` format | `sessionParser.ts` (reader) + `session_recorder.rs` (writer) must stay in sync |
-| `~/.caf/orch/{id}/` directory structure | `runParser.ts`, `orchEventReader.ts`, `dashboard/activity_report.py` |
-| `apps/run-explorer/server/src/config.ts` (paths) | All server-side services that read `ORCH_BASE_DIR`, `EVENTS_DB_PATH` |
-| `apps/observability/server/src/db.ts` (schema) | All queries in `index.ts`, `cost.ts`, observability client types |
-| `global-hooks/framework/session/session_startup.py` | Re-run `install.sh` to re-link, check hook chain ordering |
-| `templates/settings.json.template` | Run `bash install.sh` — never edit `settings.json` directly |
-| `data/model_tiers.yaml` | `global-agents/*.md` model fields, Caddy routing decisions |
-| `global-skills/orchestrate/SKILL.md` | `global-skills/orchestrate/templates/` (lead-prompt.md, delivery-format.md, etc.) — kept in sync manually |
-| `caf-hooks/src/hooks/session_recorder.rs` (event format) | `sessionParser.ts` parse logic |
-| `global-hooks/framework/guardrails/state_schema.py` | `hook_state_manager.py` + all Python hooks reading state |
-| `bin/orch-shared` (event schema) | `orchEventReader.ts` + `dashboard/activity_report.py` |
+| `caf-hooks/src/types.rs` / `state.rs` / `io.rs` | Every hook in `caf-hooks/src/hooks/` — rebuild with `cargo build --release` (installer step 0c does this) |
+| `caf-hooks/src/main.rs` (`HookCommand` enum / subcommand names) | `templates/settings.json.template` command strings **must match the clap subcommand exactly** → then `bash install.sh` |
+| `templates/settings.json.template` | Run `bash install.sh` (regenerates `~/.claude/settings.json` + injects `PATH` and `CAF_HOOKS_DIR`). **Never edit `~/.claude/settings.json` directly** (zero-access to the agent) |
+| `global-hooks/damage-control/patterns.yaml` | Consumed by `damage_control.rs` at runtime via `$CAF_HOOKS_DIR`. **Human-only edit** (path is read-only to the agent). Verify each pattern *compiles under fancy-regex and actually fires* — presence in the YAML has never meant enforcement |
+| `data/model_tiers.yaml` (tiers or `agent_tiers`) | `scripts/generate_docs.py` `TIER_ORDER` **must list every tier key** or those agents vanish from docs; then re-run it (pre-push hook does). Also `global-agents/*.md` `model:` fields |
+| add/remove file in `global-agents/`, `global-commands/`, `global-skills/` | Re-run `uv run scripts/generate_docs.py` (regenerates `CLAUDE.md` + `README.md` counts); `install.sh` re-symlinks into `~/.claude/`. If it's a ghost in `model_tiers.yaml`, generate_docs warns |
+| `install.sh` symlink logic | `~/.claude/{commands,skills,agents}/` link sets; caf skills win name collisions over gstack (`rm -rf` before `ln -s`) |
+| `apps/run-explorer/shared/types.ts` | All `server/src/handlers/*` + `services/*` and all `client/src/` views/composables that import it (no codegen — manual sync) |
+| `~/.caf/sessions/{id}.jsonl` format | Writer `caf-hooks/src/hooks/session_recorder.rs` **and** reader `run-explorer/.../services/sessionParser.ts` |
+| `~/.caf/orch/{id}/` layout | Writer `bin/orch-shared` **and** readers `runParser.ts`, `orchEventReader.ts`, `evalParser.ts` |
+| `~/.caf/orch_state/` schema | Writer `orch_depth_tracker.rs` **and** reader `orchestrator_tool_guard.rs` (the delegation-blocking gate) |
+| `~/.claude/logs/cost_tracking.jsonl` schema | Writer `session_cost_tracker.rs` **and** readers `costTracker.ts`, `runCosts.ts`, `bin/postmortem`, `scripts/rotate_logs.py` |
+| `~/.claude/data/stop_failures.jsonl` schema | Writer `stop_failure_recovery.rs` **and** reader `bin/postmortem` |
+| `global-hooks/framework/session/session_startup.py` (sub-hook list) | Each referenced `.py` must exist — **2 are currently missing** (`session_lock_manager.py`, `security/verify_skills.py`) and silently skipped |
+| `data/caddy_config.yaml` | `install.sh` symlinks it → `~/.claude/caddy_config.yaml`, read by `analyze_request.py` (Caddy classifier) |
 
 ---
 
@@ -41,132 +52,124 @@
 flowchart TD
 
   subgraph CLAUDE["🤖 Claude Harness"]
-    harness["Claude Code\n(settings.json hooks)"]
+    harness["Claude Code\n(~/.claude/settings.json hooks)"]
   end
 
-  subgraph RUST["🦀 caf-hooks (Rust binary)"]
-    main["main.rs\nrouter + dispatcher"]
-    session_rec["session_recorder\nSessionStart/Stop → JSONL"]
-    mem_writer["auto_memory_writer\nStop → MEMORY.md"]
-    fact_ext["auto_fact_extractor\nPostToolUse → FACTS.md"]
-    cost_track["session_cost_tracker\nSubagentStop → cost JSONL"]
-    subagent_tr["subagent_tracker\nSubagentStop → alerts"]
-    orch_depth["orch_depth_tracker\nSubagentStart → depth file"]
-    orch_guard["orchestrator_tool_guard\nPreToolUse → block/allow"]
-    damage["damage_control\nPreToolUse → block/allow"]
-    epistemic["epistemic_guard\nUserPromptSubmit → inject"]
-    err_anal["auto_error_analyzer\nPostToolUse → error log"]
-    types_rs["types.rs\nHookEvent structs"]
-    state_rs["state.rs\nshared state"]
-    circuit["circuit_breaker.rs\nfail-open wrapper"]
-    io_rs["io.rs\nstdin/stdout helpers"]
+  subgraph RUST["🦀 caf-hooks (single Rust binary — target/release/caf-hooks)"]
+    main["main.rs\nclap subcommand router\n+ circuit-breaker gate"]
+    session_rec["session-recorder\nSessionStart/UserPromptSubmit/Stop"]
+    damage["damage-control ⛔\nPreToolUse Bash|Edit|Write"]
+    tool_guard["orchestrator-tool-guard ⛔\nPreToolUse Read|Grep|Glob|Edit|Bash"]
+    enforce["enforce-orchestrate\nUserPromptSubmit"]
+    ctx_log["context-bundle-logger\nPostToolUse (async)"]
+    err_anal["auto-error-analyzer\nPostToolUse Bash / Failure"]
+    escalate["auto-escalate\nPostToolUse * (async)"]
+    subagent_tr["subagent-tracker\nSubagentStart/Stop"]
+    orch_depth["orch-depth-tracker\nSubagentStart/Stop"]
+    cost_track["session-cost-tracker\nSubagentStop (async)"]
+    task_gate["task-quality-gate\nTaskCompleted"]
+    filewatch["file-watcher\nFileChanged (manifests)"]
+    audit_cfg["audit-config-change\nConfigChange"]
+    postcompact["post-compact-verify\nPostCompact (async)"]
+    stopfail["stop-failure-recovery\nStopFailure"]
+    voicedone["voice-done\nStop (async)"]
+    dead_rust["⚰️ UNWIRED but compiled:\nauto-memory-writer, auto-fact-extractor,\nepistemic-guard, auto-refine, doctor\n+ ~12 not_implemented() stubs"]
   end
 
-  subgraph PERSISTENCE["💾 Persistent Storage"]
-    sessions_dir["~/.caf/sessions/\n{session_id}.jsonl"]
-    orch_dir["~/.caf/orch/\n{orch_id}/ → meta.json, events.jsonl\nprompts/, results/, shared/"]
-    orch_state["~/.caf/orch_state/\ndepth + guard.marker"]
-    memory_md["~/.claude/MEMORY.md\n(per-project episodic memory)"]
-    facts_md["~/.claude/FACTS.md\n(per-project facts DB)"]
-    cost_log["~/.claude/logs/\ncost_tracking.jsonl\nerror_patterns.jsonl"]
-    claude_data["~/.claude/data/\nagent_tracking.jsonl\nactivity_log.jsonl"]
+  subgraph PYTHON["🐍 global-hooks (wired Python — uv run --no-project)"]
+    cb_wrap["circuit_breaker_wrapper.py\nwraps py hooks → hook_state.json"]
+    sess_startup["session/session_startup.py\nSessionStart orchestrator"]
+    auto_prime["automation/auto_prime.py\nreads .claude/PROJECT_CONTEXT.md"]
+    inject_lessons["automation/inject_lessons.py\nreads ~/.claude/lessons.md"]
+    kr["korean/kr_mode.py\nUserPromptSubmit"]
+    caddy["caddy/analyze_request.py\nreads ~/.claude/caddy_config.yaml"]
+    voice["notifications/auto_voice_notifications.py\nAskUserQuestion + Notification (macOS say)"]
+    dep_audit["automation/auto_dependency_audit.py\nStop"]
+    activity["automation/activity_logger.py\nStop"]
+    health["health/hook_health_monitor.py\nStop"]
+    fingerprint["automation/project_fingerprint.py\nCwdChanged"]
+    precompact["context/pre_compact_preserve.py\nPreCompact"]
+    dead_py["⚰️ UNWIRED subtree:\nknowledge/ review/ teams/ monitoring/\n+ most of automation/ (~50 of ~60 .py)"]
   end
 
-  subgraph PYTHON["🐍 global-hooks (Python framework)"]
-    sess_startup["session_startup.py\nSessionStart orchestrator"]
-    inject_mem["inject_memory.py\nreads MEMORY.md → context"]
-    inject_facts["inject_facts.py\nreads FACTS.md → context"]
-    auto_prime["auto_prime.py\nPROJECT_CONTEXT.md → context"]
-    damage_py["unified-damage-control.py\nPatterns YAML enforcer"]
-    hook_state["hook_state_manager.py\nstate_schema.py → state.json"]
-    enforce_orch["enforce_orchestrate.py\nUserPromptSubmit guardrail"]
+  subgraph PERSIST["💾 Persistent Storage"]
+    sessions_dir[("~/.caf/sessions/\n{id}.jsonl")]
+    orch_dir[("~/.caf/orch/{id}/\nmeta.json, events.jsonl,\nprompts/ results/ shared/")]
+    orch_state[("~/.caf/orch_state/ + state/agent_starts/\ndepth + guard marker")]
+    cost_log[("~/.claude/logs/cost_tracking.jsonl")]
+    data_sinks[("~/.claude/data/*.jsonl\nstop_failures, agent_tracking,\nactivity_log, task_completions,\nfile_changes, logs/config_audit")]
+    bundles[("~/.claude/bundles/")]
+    health_dir[("~/.caf/health/")]
+    proj_ctx["~/.claude/... .claude/PROJECT_CONTEXT.md"]
+    settings[("~/.claude/settings.json\n(generated — zero-access)")]
+    events_db[("events.db ⚠️ NO PRODUCER\n~/.caf/events.db")]
+    transcripts[("~/.claude/projects/*/*.jsonl\n(native transcripts)")]
   end
 
-  subgraph RUN_EXPLORER["🖥️ run-explorer (Bun + Vue3 :3001/:5173)"]
-    re_server["server/src/index.ts\nHTTP + WebSocket :3001"]
-    re_config["server/src/config.ts\nPORTS, paths, CORS"]
-    re_session_parser["services/sessionParser.ts\n← ~/.caf/sessions/"]
-    re_run_parser["services/runParser.ts\n← ~/.caf/orch/"]
-    re_orch_reader["services/orchEventReader.ts\n← orch events.jsonl"]
-    re_eval_parser["services/evalParser.ts\n← evaluation_report.md"]
-    re_cost_svc["services/costTracker.ts\n← cost_tracking.jsonl"]
-    re_db_reader["services/dbReader.ts\n← events.db"]
-    re_types["shared/types.ts\nRunSummary, Session,\nOrchEvent, LeadOutput"]
-    re_client["client/src/ (Vue3 SPA)\nviews/, composables/, components/"]
+  subgraph GEN["⚙️ Install & Doc Generation"]
+    template["templates/settings.json.template\n(master config)"]
+    installsh["install.sh\ncargo build + symlinks + env inject"]
+    gendocs["scripts/generate_docs.py\nTIER_ORDER=fable,opus,sonnet,haiku"]
+    tiers["data/model_tiers.yaml"]
+    genout["CLAUDE.md + README.md\n(generated)"]
+    prepush[".git/hooks/pre-push\n→ generate_docs.py"]
   end
 
-  subgraph OBSERVABILITY["📊 observability (Bun + SQLite :3002)"]
-    obs_server["server/src/index.ts\nPOST /hook-event + WebSocket"]
-    obs_db[("events.db\nSQLite WAL")]
-    obs_cost["server/src/cost.ts\n← cost_tracking.jsonl"]
-    obs_client["client/src/ (Vue3)\nlive event dashboard"]
-  end
-
-  subgraph DASHBOARD["📜 dashboard (Python CLI)"]
-    activity_rpt["activity_report.py\n← ~/.caf/orch/ → ANSI HUD"]
-  end
-
-  subgraph INSTALL["⚙️ Install & Config"]
-    template["templates/settings.json.template\nmaster config — edit this"]
-    install_sh["install.sh\ncargo build + symlinks"]
-    settings_json["~/.claude/settings.json\n(generated — never edit directly)"]
-  end
-
-  subgraph ORCHESTRATE["🎯 /orchestrate skill"]
-    orch_sk["global-skills/orchestrate/SKILL.md\n+ templates/"]
+  subgraph ORCH["🎯 Orchestration"]
+    orch_sk["global-skills/orchestrate/SKILL.md"]
     orch_shared["bin/orch-shared\nevent bus + retro writer"]
+    postmortem_bin["bin/postmortem\ntimeline reconstructor"]
+    rotate["scripts/rotate_logs.py"]
   end
 
-  %% Claude → caf-hooks
-  harness -->|"stdin JSON"| main
-  main --> session_rec & mem_writer & fact_ext & cost_track
-  main --> subagent_tr & orch_depth & orch_guard & damage & epistemic & err_anal
-  main -.-> types_rs & state_rs & circuit & io_rs
+  subgraph EXPLORER["🖥️ run-explorer (Bun + Vue3 :3001)"]
+    re_server["server/src/index.ts + config.ts"]
+    re_sessions["services/sessionParser.ts"]
+    re_runs["services/runParser.ts + orchEventReader.ts + evalParser.ts"]
+    re_costs["services/costTracker.ts + handlers/runCosts.ts"]
+    re_db["services/dbReader.ts + handlers/live.ts"]
+    re_types["shared/types.ts"]
+    re_client["client/src/ (Vue3 SPA)"]
+  end
 
-  %% Rust → Persistence
-  session_rec -->|"append JSONL"| sessions_dir
-  mem_writer -->|"atomic write"| memory_md
-  fact_ext -->|"append"| facts_md
-  cost_track -->|"append JSONL"| cost_log
-  subagent_tr -->|"append"| claude_data
-  err_anal -->|"append"| cost_log
-  orch_depth -->|"write JSON"| orch_state
-  orch_guard -->|"reads"| orch_state
+  %% harness → hooks
+  harness -->|stdin JSON| main
+  main --> session_rec & damage & tool_guard & enforce & ctx_log & err_anal & escalate
+  main --> subagent_tr & orch_depth & cost_track & task_gate & filewatch & audit_cfg & postcompact & stopfail & voicedone
+  main -.-> dead_rust
+  harness -->|uv run| cb_wrap --> sess_startup & voice & dep_audit & activity
+  sess_startup --> auto_prime & inject_lessons
+  harness -->|uv run| kr & caddy & health & fingerprint & precompact
+  auto_prime -->|reads| proj_ctx
 
-  %% Python → reads
-  inject_mem -->|"reads"| memory_md
-  inject_facts -->|"reads"| facts_md
-  sess_startup --> inject_mem & inject_facts & auto_prime
+  %% hooks → storage
+  session_rec -->|append| sessions_dir
+  damage -.->|reads patterns.yaml via CAF_HOOKS_DIR| template
+  orch_depth -->|write| orch_state
+  tool_guard -->|reads BLOCK| orch_state
+  cost_track -->|append| cost_log
+  subagent_tr & task_gate & filewatch & audit_cfg & stopfail --> data_sinks
+  ctx_log --> bundles
+  health --> health_dir
 
-  %% run-explorer reads
-  re_session_parser -->|"reads JSONL"| sessions_dir
-  re_run_parser -->|"reads dirs"| orch_dir
-  re_orch_reader -->|"reads events.jsonl"| orch_dir
-  re_cost_svc -->|"reads JSONL"| cost_log
-  re_db_reader -->|"reads SQLite"| obs_db
+  %% install / docs
+  template --> installsh -->|generates| settings -->|hooks config| harness
+  installsh --> gendocs
+  tiers --> gendocs -->|writes| genout
+  prepush --> gendocs
 
-  %% run-explorer internal
-  re_config --> re_server
+  %% orchestration
+  orch_sk --> orch_shared -->|writes| orch_dir
+  postmortem_bin -->|reads| transcripts & data_sinks & cost_log
+  rotate -->|rotates| cost_log & data_sinks
+
+  %% explorer reads (terminal consumers)
+  re_sessions -->|reads| sessions_dir
+  re_runs -->|reads| orch_dir
+  re_costs -->|reads| cost_log
+  re_db -->|reads / would-write| events_db
   re_types --> re_server & re_client
-  re_session_parser & re_run_parser & re_orch_reader --> re_server
-  re_eval_parser & re_cost_svc & re_db_reader --> re_server
-  re_server -->|"HTTP/WS :3001"| re_client
-
-  %% Observability
-  obs_db --> obs_server
-  obs_cost -->|"reads"| cost_log
-  obs_cost --> obs_server
-  obs_server -->|"WebSocket"| obs_client
-
-  %% Dashboard
-  activity_rpt -->|"reads"| orch_dir
-  activity_rpt -->|"reads"| claude_data
-
-  %% Install chain
-  template --> install_sh -->|"generates"| settings_json -->|"hooks config"| harness
-
-  %% Orchestrate → orch dir
-  orch_sk --> orch_shared -->|"writes dirs"| orch_dir
+  re_server -->|HTTP/WS :3001| re_client
 ```
 
 ---
@@ -174,176 +177,152 @@ flowchart TD
 ## Critical Paths
 
 ### ⚡ Path A — Session Recording (~instant per event)
-Claude session start → `caf-hooks session-recorder` → appends `{type, ts, cwd, prompt?}` to `~/.caf/sessions/{session_id}.jsonl` → run-explorer `sessionParser.ts` reads on `/api/sessions` → Session list/detail views in UI.
-
+`SessionStart` / `UserPromptSubmit` / `Stop` → `caf-hooks session-recorder` → appends to `~/.caf/sessions/{id}.jsonl` → `run-explorer sessionParser.ts` reads on `GET /api/sessions` → Session views.
 ```bash
-ls ~/.caf/sessions/
-cat ~/.caf/sessions/<session_id>.jsonl
+ls ~/.caf/sessions/ && cat ~/.caf/sessions/<id>.jsonl
 ```
 
-### ⚡ Path B — Orchestration Run Lifecycle (~minutes)
-`/orchestrate` → `bin/orch-shared init` creates `~/.caf/orch/{id}/` → PO + consultants → leads write to `prompts/`, `results/`, `shared/` → `bin/orch-shared write-retro` appends evaluation → run-explorer `runParser.ts` reads on `/api/runs` → Run list + detail in UI. Dashboard `activity_report.py` polls live.
-
+### ⚡ Path B — Orchestration Run (~minutes)
+`/orchestrate` → `Skill(orchestrate)` → orchestrator spawns consultant/builder team → `bin/orch-shared` writes `~/.caf/orch/{id}/` (`meta.json`, `events.jsonl`, `prompts/ results/ shared/`) → `runParser.ts` + `orchEventReader.ts` + `evalParser.ts` read on `GET /api/runs`.
 ```bash
-uv run dashboard/activity_report.py    # live ANSI HUD
-cd apps/run-explorer && bun run dev    # → http://localhost:5173
+cd apps/run-explorer && bun run dev   # → http://localhost:3001/
 ```
 
-### ⚡ Path C — Memory + Facts Cross-Session Continuity (~1s at Stop)
-Session ends → `auto_memory_writer.rs` reads git diff + compressed context → writes dated entry to `{cwd}/.claude/MEMORY.md` (dedup on commit hash, prune >30) → next session: `inject_memory.py` prepends to context. Parallel: `auto_fact_extractor.rs` appends to `FACTS.md` on Bash/Write success throughout session.
+### ⚡ Path C — Damage-Control Block (~instant, BLOCKING)
+`PreToolUse (Bash|Edit|Write)` → `caf-hooks damage-control` → reads `global-hooks/damage-control/patterns.yaml` (695 lines) via `$CAF_HOOKS_DIR`, matches with **fancy-regex** → `exit 2` = block. Sole enforcer now (the old Python `unified-damage-control.py` is gone). A pattern that fails to compile warns loudly instead of silently no-op'ing.
 
-### ⚡ Path D — Cost Tracking Pipeline (~instant per SubagentStop)
-SubagentStop → `session_cost_tracker.rs` parses transcript tokens + model → calculates USD → appends to `~/.claude/logs/cost_tracking.jsonl` → `observability/server/src/cost.ts` aggregates → `/api/costs/*`.
+### ⚡ Path D — Delegation Gate (~instant, BLOCKING)
+`SubagentStart/Stop` → `orch-depth-tracker` writes depth to `~/.caf/orch_state/` → `PreToolUse (Read|Grep|Glob|Edit|Bash)` → `orchestrator-tool-guard` reads the guard marker → blocks the orchestrator from using file/exec tools directly, forcing delegation.
 
-### ⚡ Path E — Damage Control / Security Blocking (~instant)
-PreToolUse (Bash/Edit/Write) → `damage_control.rs` checks 100+ regex patterns → exit 2 to BLOCK or exit 0 to allow. `unified-damage-control.py` runs in parallel for Python-side patterns.
+### ⚡ Path E — Cost Tracking (~instant per SubagentStop)
+`SubagentStop` → `caf-hooks session-cost-tracker` parses the agent transcript → appends USD to `~/.claude/logs/cost_tracking.jsonl` → read by `costTracker.ts` / `runCosts.ts`, `bin/postmortem`, and rotated by `scripts/rotate_logs.py`.
 
-### ⚡ Path F — Install / Config Change
-Edit `templates/settings.json.template` → `bash install.sh` → cargo build caf-hooks → symlinks global-{hooks,skills,agents}/ into `~/.claude/` → generates `~/.claude/settings.json`.
+### ⚡ Path F — Install / Docs Regeneration
+Edit `templates/settings.json.template` **or** `data/model_tiers.yaml` → `bash install.sh` → `cargo build --release` (caf-hooks) → symlink `global-{commands,skills,agents}/` into `~/.claude/` → inject `PATH` + `CAF_HOOKS_DIR` → generate `~/.claude/settings.json` → run `generate_docs.py` → rewrite `CLAUDE.md` + `README.md`. The `pre-push` git hook re-runs `generate_docs.py` before every push.
+
+### ⚡ Path G — Postmortem (on failure)
+Something fails → `stop-failure-recovery` writes `~/.claude/data/stop_failures.jsonl` → `/postmortem` or `bin/postmortem` reconstructs a timeline from the **native transcript** (`~/.claude/projects/*/*.jsonl`) + `stop_failures.jsonl` + `cost_tracking.jsonl`.
+
+### ⚡ Path H — Session Priming
+`SessionStart` → `session_startup.py` → `auto_prime.py` reads `.claude/PROJECT_CONTEXT.md` + `inject_lessons.py` reads `~/.claude/lessons.md` → injected as authoritative context.
 
 ---
 
 ## Data File Lineage
 
-| File/Dir | Producer | Consumers | Rebuild When |
-|----------|----------|-----------|--------------|
-| `~/.caf/sessions/{id}.jsonl` | `session_recorder.rs` | `sessionParser.ts` → `/api/sessions` | Format changes in recorder or parser |
-| `~/.caf/orch/{id}/` | `bin/orch-shared` + lead agents | `runParser.ts`, `orchEventReader.ts`, `evalParser.ts`, `activity_report.py` | `orch-shared` schema change |
-| `~/.caf/orch_state/depth` | `orch_depth_tracker.rs` | `orchestrator_tool_guard.rs` | Reset automatically on session end |
-| `~/.claude/MEMORY.md` | `auto_memory_writer.rs` (Stop hook) | `inject_memory.py` (SessionStart) | Auto; prunes >30 entries |
-| `~/.claude/FACTS.md` | `auto_fact_extractor.rs` (PostToolUse) | `inject_facts.py` (SessionStart) | Auto; `validate_facts.py` prunes >90 days |
-| `~/.claude/logs/cost_tracking.jsonl` | `session_cost_tracker.rs` | `cost.ts` (obs), `costTracker.ts` (run-explorer) | Token/model format change |
-| `~/.claude/settings.json` | `install.sh` from template | Claude harness | **Never edit directly** |
-| `apps/observability/server/events.db` | `obs/server/src/db.ts` via POST /hook-event | `dbReader.ts`, obs client | Schema change → rebuild DB |
-| `apps/run-explorer/shared/types.ts` | Manual (source of truth) | All server handlers + all client composables/views | Both sides must update together |
-| `.claude/PROJECT_CONTEXT.md` | `/arch-map` + `auto_prime.py` | Session context at start | Run `/arch-map` after major restructure |
-| `data/model_tiers.yaml` | Manual | `global-agents/*.md`, Caddy routing, orchestrate skill | When adding/removing agents |
+| File / Dir | Producer | Consumers | Rebuild / Note |
+|------------|----------|-----------|----------------|
+| `~/.caf/sessions/{id}.jsonl` | `session_recorder.rs` | `sessionParser.ts` → `/api/sessions` | Format change → update both sides |
+| `~/.caf/orch/{id}/` | `bin/orch-shared` (+ orchestrate agents) | `runParser.ts`, `orchEventReader.ts`, `evalParser.ts` | `orch-shared` schema change |
+| `~/.caf/orch_state/` + `state/agent_starts/` | `orch_depth_tracker.rs` | `orchestrator_tool_guard.rs` (BLOCKING) | Reset per session |
+| `~/.claude/logs/cost_tracking.jsonl` | `session_cost_tracker.rs` | `costTracker.ts`, `runCosts.ts`, `bin/postmortem`, `rotate_logs.py` | Token/model schema change |
+| `~/.claude/data/stop_failures.jsonl` | `stop_failure_recovery.rs` | `bin/postmortem` | Failure-family schema change |
+| `~/.claude/data/{agent_tracking,activity_log,task_completions,file_changes,subagent_alerts}.jsonl` | `subagent_tracker.rs`, `activity_logger.py`, `task_quality_gate.rs`, `file_watcher.rs` | `rotate_logs.py` (mostly **write-only sinks** — no live reader) | Rotated by size |
+| `~/.claude/data/logs/config_audit.jsonl` | `audit_config_change.rs` | (audit trail — no active reader) | — |
+| `~/.claude/bundles/` | `context_bundle_logger.rs` | (snapshot store) | — |
+| `~/.caf/health/` | `hook_health_monitor.py` (Stop) | `caf-hooks doctor` | — |
+| `~/.claude/hook_state.json` | `circuit_breaker_wrapper.py` + Rust CB gate | main.rs CB check | Delete or wait 60s to reset |
+| `.claude/PROJECT_CONTEXT.md` | `/arch-map` + manual | `auto_prime.py` (SessionStart) | Re-prime after restructure |
+| `~/.claude/settings.json` | `install.sh` from template | Claude harness | **Never edit directly** (zero-access) |
+| `CLAUDE.md`, `README.md` | `scripts/generate_docs.py` | humans / agents | Re-run after agent/skill/command/tier changes |
+| `~/.caf/events.db` (run-explorer default) | ⚠️ **NONE in-repo** | `dbReader.ts`, `live.ts`, `events.ts` | See warning #2 — Live view is inert |
+| `~/.claude/MEMORY.md`, `FACTS.md` | Rust writers exist but **UNWIRED** | (native memory replaced them) | Do not re-wire — retired |
 
 ---
 
-## Duplication Warnings
+## Duplication & Dead-Surface Warnings
 
-**⚠️ 1. Damage control patterns in two systems**
-- `caf-hooks/src/hooks/damage_control.rs` — Rust regex, rules in `settings.json damagePrevention.rules[]`
-- `global-hooks/damage-control/unified-damage-control.py` + `patterns.yaml` — Python patterns
-Both run on PreToolUse. Add new block patterns to **both**. Rust runs first (faster); Python catches edge cases.
+**⚠️ 1. `events.db` has no producer.** `run-explorer` reads `~/.caf/events.db` (config default `CAF_EVENTS_DB`), and a stale committed `apps/observability/server/events.db` sits at a *different* path. The only writer is `POST /api/live/events` (`live.ts dbInsertEvent`) in run-explorer itself, and **nothing in the repo calls it** — no hook, bin, or script POSTs hook events. The Live dashboard is inert until an external producer is wired. The old `apps/observability` server that used to `POST /hook-event` is now an empty shell (only the `.db` file remains).
 
-**⚠️ 2. Session event format without shared schema**
-- `caf-hooks/src/hooks/session_recorder.rs` — write side (fields: ts, ms, type, cwd, prompt?)
-- `apps/run-explorer/server/src/services/sessionParser.ts` — read side (must match field names)
-No shared schema file. If you add a field to the recorder, update the parser + `shared/types.ts`.
+**⚠️ 2. Two run-explorer copies.** `apps/run-explorer/` and `apps/run-explorer-solo/` both exist with their own `shared/types.ts`. Changes to one do not propagate — confirm which is canonical before editing (the wiring above traces `apps/run-explorer/`).
 
-**⚠️ 3. Orchestrate skill split across files**
-- `global-skills/orchestrate/SKILL.md` — core logic
-- `global-skills/orchestrate/templates/` — lead-prompt.md, delivery-format.md, acceptance-criteria.md, etc.
-Templates referenced by SKILL.md but not auto-validated. Renamed template section = silent failure.
+**⚠️ 3. Large unwired Python subtree.** Only ~10 of ~60 non-test `.py` files under `global-hooks/framework/` are referenced by `settings.json.template`. Entire directories — `knowledge/`, `review/`, `teams/`, `monitoring/`, and most of `automation/` — are dead: they neither fire nor are imported by a wired hook. Do not assume a `global-hooks/framework/**/*.py` file runs; grep `templates/settings.json.template` first.
 
-**⚠️ 4. Port numbers hardcoded in multiple places**
-- `apps/run-explorer/server/src/config.ts` — PORT=3001
-- `apps/run-explorer/client/src/config.ts` — API_URL=localhost:3001
-- `apps/observability/server/src/index.ts` — :3002
-No shared env config. Changing a port requires updating both server config and client config.
+**⚠️ 4. Unwired Rust hooks compiled into the binary.** `main.rs` dispatches `auto-memory-writer`, `auto-fact-extractor`, `epistemic-guard`, `auto-refine`, and `doctor` that no `settings.json` entry invokes, plus ~12 `not_implemented()` stubs (`session-startup`, `session-lock-manager`, `auto-review-team`, `validate-facts`, `auto-dependency-audit`, `project-fingerprint`, …). The enum is the historical superset; the template is ground truth for what fires. `auto-memory-writer`/`auto-fact-extractor` are the retired FACTS/MEMORY layer — leave them dead.
 
-**⚠️ 5. Orch dir path in two places**
-- `apps/run-explorer/server/src/config.ts` — `ORCH_BASE_DIR = ~/.caf/orch`
-- `bin/orch-shared` — hardcoded `~/.caf/orch/` write path
-Must stay in sync manually.
+**⚠️ 5. `session_startup.py` references missing sub-hooks.** It subprocess-invokes `session/session_lock_manager.py` and `security/verify_skills.py`, **neither of which exists**. They fail silently (guarded), but the list is a fragile hardcoded dependency — adding a name there requires the file to exist.
+
+**⚠️ 6. Subcommand-name coupling with no compile-time check.** `templates/settings.json.template` calls Rust subcommands by string (e.g. `caf-hooks damage-control`). A rename in the `HookCommand` clap enum silently breaks the hook (clap errors at runtime, not build). Keep the template and enum in lockstep.
+
+**⚠️ 7. `TIER_ORDER` must cover every tier.** `generate_docs.py` renders only tiers listed in `TIER_ORDER = [fable, opus, sonnet, haiku]`. A new tier key in `model_tiers.yaml` not added here makes its agents silently vanish from the docs (this is the exact bug that once produced "(none configured)").
 
 ---
 
-## Module Import Graph
+## Module / Hook Wiring Graph
 
 ```
-Claude Harness (settings.json hooks)
-  └── caf-hooks/src/main.rs           ← Rust entry point, subcommand router
-        ├── hooks/mod.rs              ← re-exports all hooks
-        │     ├── session_recorder   ← writes ~/.caf/sessions/
-        │     ├── auto_memory_writer ← writes ~/.claude/MEMORY.md
-        │     ├── auto_fact_extractor← writes ~/.claude/FACTS.md
-        │     ├── session_cost_tracker← writes ~/.claude/logs/cost_tracking.jsonl
-        │     ├── subagent_tracker   ← writes ~/.claude/data/agent_tracking.jsonl
-        │     ├── orch_depth_tracker ← writes ~/.caf/orch_state/
-        │     ├── orchestrator_tool_guard ← reads ~/.caf/orch_state/ (BLOCKING)
-        │     ├── damage_control     ← reads settings.json rules (BLOCKING)
-        │     ├── epistemic_guard    ← inject only
-        │     ├── auto_error_analyzer← writes ~/.claude/logs/error_patterns.jsonl
-        │     ├── auto_escalate, auto_refine ← inject only
-        │     ├── context_bundle_logger, file_watcher
-        │     ├── post_compact_verify, stop_failure_recovery
-        │     ├── task_quality_gate, voice_done
-        │     ├── enforce_orchestrate, doctor
-        │     └── audit_config_change← writes ~/.claude/logs/config_audit.jsonl
-        ├── types.rs                  ← HookEvent, ToolInput (ALL hooks depend on this)
-        ├── state.rs                  ← AppState (shared mutable)
-        ├── circuit_breaker.rs        ← fail-open wrapper
-        └── io.rs                    ← stdin/stdout JSON helpers
+Claude Harness (~/.claude/settings.json)
+  ├── caf-hooks (target/release/caf-hooks)          ← ONE binary, clap subcommand per hook
+  │     main.rs → circuit-breaker gate → dispatch
+  │       WIRED: session-recorder, damage-control⛔, orchestrator-tool-guard⛔,
+  │              enforce-orchestrate, context-bundle-logger, auto-error-analyzer,
+  │              auto-escalate, subagent-tracker, orch-depth-tracker,
+  │              session-cost-tracker, task-quality-gate, file-watcher,
+  │              audit-config-change, post-compact-verify, stop-failure-recovery, voice-done
+  │       shared: types.rs, state.rs, io.rs, circuit_breaker.rs   ← every hook depends on these
+  │       UNWIRED: auto-memory-writer, auto-fact-extractor, epistemic-guard,
+  │                auto-refine, doctor + ~12 not_implemented() stubs
+  │
+  └── Python hooks (uv run --no-project, most via circuit_breaker_wrapper.py)
+        session/session_startup.py        ← SessionStart orchestrator
+          ├── automation/auto_prime.py            (reads .claude/PROJECT_CONTEXT.md)
+          ├── automation/inject_lessons.py        (reads ~/.claude/lessons.md)
+          ├── automation/inject_always_loaded_skills.py
+          ├── security/validate_docs.py
+          ├── session/session_lock_manager.py     ⚠️ MISSING
+          └── security/verify_skills.py           ⚠️ MISSING
+        korean/kr_mode.py                   ← UserPromptSubmit
+        caddy/analyze_request.py            ← UserPromptSubmit (reads ~/.claude/caddy_config.yaml)
+        notifications/auto_voice_notifications.py ← AskUserQuestion + Notification
+        automation/auto_dependency_audit.py ← Stop
+        automation/activity_logger.py       ← Stop
+        health/hook_health_monitor.py       ← Stop
+        automation/project_fingerprint.py   ← CwdChanged
+        context/pre_compact_preserve.py     ← PreCompact
 
-global-hooks/framework/session/session_startup.py  ← SessionStart orchestrator
-  ├── session_lock_manager.py
-  ├── verify_skills.py
-  ├── validate_docs.py
-  ├── auto_prime.py              ← reads .claude/PROJECT_CONTEXT.md
-  ├── inject_always_loaded_skills.py
-  └── spawn_hud.py
+Install / docs (not hooks):
+  install.sh → cargo build --release + symlinks + env inject + generate_docs.py
+  scripts/generate_docs.py ← templates/settings.json.template (hook counts),
+                              global-{agents,commands,skills}/, data/model_tiers.yaml
+                            → CLAUDE.md + README.md
+  .git/hooks/pre-push → generate_docs.py
 
-global-hooks/framework/guardrails/
-  ├── hook_state_manager.py     ← reads/writes ~/.claude/hook_state.json
-  ├── state_schema.py           ← JSON schema (hook_state_manager depends on this)
-  ├── circuit_breaker_wrapper.py
-  ├── enforce_orchestrate.py
-  └── epistemic_guard.py
-
-apps/run-explorer/server/src/
-  index.ts                      ← Bun HTTP+WS server, route registration
-  config.ts                     ← ports, paths (ALL services import this)
-  handlers/
-    ├── runs.ts        ← runParser + orchEventReader + evalParser
-    ├── sessions.ts    ← sessionParser
-    ├── costs.ts       ← costTracker
-    ├── live.ts        ← WebSocket + dbReader
-    ├── leads.ts       ← runParser
-    ├── compare.ts     ← runParser + tokenEstimator
-    ├── events.ts      ← dbReader
-    └── orchEvents.ts  ← orchEventReader
-  services/
-    ├── runParser.ts          ← reads ~/.caf/orch/
-    ├── sessionParser.ts      ← reads ~/.caf/sessions/
-    ├── orchEventReader.ts    ← reads orch events.jsonl
-    ├── evalParser.ts         ← reads evaluation_report.md
-    ├── costTracker.ts        ← reads cost_tracking.jsonl
-    ├── dbReader.ts           ← reads events.db (SQLite)
-    └── tokenEstimator.ts     ← pure util, no I/O
-
-apps/run-explorer/shared/types.ts   ← shared types (server + client both import)
-
-apps/run-explorer/client/src/
-  router/index.ts               ← /runs, /runs/:id, /sessions, /sessions/:id, /live, /health, /compare
-  App.vue                       ← root
-  views/                        ← RunList, RunDetail, SessionList, SessionDetail, Live, Health, Comparison
-  composables/                  ← useRuns, useSessions, useLiveEvents, useOrchEvents, useCosts, useHealth
-  components/                   ← StatusBadge, EventsTable, LeadAccordion, WaveStepBar, etc.
+run-explorer (apps/run-explorer/server/src):
+  index.ts + config.ts (PORT 3001, CAF_ORCH_DIR, CAF_SESSIONS_DIR, CAF_EVENTS_DB)
+  services/  runParser · sessionParser · orchEventReader · evalParser · costTracker · dbReader · tokenEstimator
+  handlers/  runs · sessions · costs · runCosts · compare · leads · live · events · orchEvents
+  shared/types.ts  ← imported by server + client (manual sync, no codegen)
 ```
 
 ---
 
 ## Hook Event Matrix
 
-| Hook Event | Rust Handlers | Python Handlers |
-|-----------|---------------|-----------------|
-| SessionStart | session_recorder | session_startup.py → [lock, verify, prime, inject] |
-| UserPromptSubmit | epistemic_guard, enforce_orchestrate | enforce_orchestrate.py, epistemic_guard.py, circuit_breaker_wrapper.py |
-| PreToolUse | damage_control *(blocking)*, orchestrator_tool_guard *(blocking)* | unified-damage-control.py |
-| PostToolUse | auto_fact_extractor, auto_error_analyzer, auto_refine, auto_escalate, context_bundle_logger, file_watcher | auto_code_review.py, auto_cost_warnings.py, auto_prime_inject.py |
-| PostToolUseFailure | stop_failure_recovery | — |
-| SubagentStart | orch_depth_tracker | subagent_tracker.py |
-| SubagentStop | subagent_tracker, session_cost_tracker | auto_review_team.py |
-| Stop | auto_memory_writer, voice_done | auto_memory_writer.py (Python fallback) |
-| StopFailure | stop_failure_recovery | stop_failure_recovery.py |
-| PostCompact | post_compact_verify | — |
-| ConfigChange | audit_config_change | — |
-| TaskCompleted | task_quality_gate | — |
-| CwdChanged, FileChanged | file_watcher | — |
+31 hook firings across 16 events. **R** = Rust `caf-hooks` subcommand, **Py** = Python via `uv run`.
+
+| Event | Matcher | Handlers (R/Py) |
+|-------|---------|-----------------|
+| SessionStart | — | `session_startup.py`(Py, CB-wrapped) · `session-recorder`(R) |
+| UserPromptSubmit | — | `kr_mode.py`(Py) · `analyze_request.py`(Py, Caddy) · `enforce-orchestrate`(R) · `session-recorder`(R) |
+| PreToolUse | `Bash\|Edit\|Write` | `damage-control`(R) ⛔ |
+| PreToolUse | `Read\|Grep\|Glob\|Edit\|Bash` | `orchestrator-tool-guard`(R) ⛔ |
+| PreToolUse | `AskUserQuestion` | `auto_voice_notifications.py`(Py, async) |
+| Notification | — | `auto_voice_notifications.py`(Py, async) |
+| PostToolUse | `Bash\|Write\|Edit` | `context-bundle-logger`(R, async) |
+| PostToolUse | `Bash` | `auto-error-analyzer`(R) |
+| PostToolUse | `*` | `auto-escalate`(R, --cb async) |
+| PostToolUseFailure | — | `auto-error-analyzer`(R, --cb) |
+| Stop | — | `auto_dependency_audit.py`(Py) · `activity_logger.py`(Py) · `voice-done`(R) · `hook_health_monitor.py`(Py) · `session-recorder`(R) |
+| StopFailure | `rate_limit\|auth\|billing\|server\|max_tokens\|unknown` | `stop-failure-recovery`(R) |
+| SubagentStart | — | `subagent-tracker`(R, async) · `orch-depth-tracker`(R) |
+| SubagentStop | — | `subagent-tracker`(R) · `orch-depth-tracker`(R) · `session-cost-tracker`(R, async) |
+| TaskCompleted | — | `task-quality-gate`(R) |
+| CwdChanged | — | `project_fingerprint.py`(Py) |
+| FileChanged | `package.json\|pyproject.toml\|Cargo.toml\|go.mod` | `file-watcher`(R, async) |
+| ConfigChange | — | `audit-config-change`(R) |
+| PreCompact | `manual\|auto` | `pre_compact_preserve.py`(Py) |
+| PostCompact | `manual\|auto` | `post-compact-verify`(R, async) |
 
 ---
 
-*Generated by `/arch-map` skill. Run `/arch-map` again after major structural changes.*
+*Generated by the `/arch-map` skill. Run `/arch-map` again after major structural changes.*
