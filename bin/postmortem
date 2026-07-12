@@ -1,0 +1,308 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
+"""postmortem — reconstruct what happened when something went wrong.
+
+The evidence already exists; it is just unfindable. Claude Code writes a full
+transcript (every tool call, every error) and CAF writes a dozen JSONL sinks, but
+they are keyed differently, never correlated, and nobody reads them. This tool is
+the "look back" layer: it stitches them into one timeline and points at the first
+thing that actually broke.
+
+    postmortem                 # last failure in the most recent session here
+    postmortem --last 5        # the 5 most recent failures
+    postmortem --session <id>  # a specific session
+    postmortem --since 3h      # everything that failed in the last 3 hours
+    postmortem --all           # every session for this project, newest first
+
+Sources, in order of richness:
+  1. ~/.claude/projects/<slug>/<session>.jsonl  — native transcript: tool calls,
+     tool_result.is_error, user prompts. The ground truth.
+  2. ~/.caf/logs/incidents.jsonl                — CAF failure index (hook/command
+     failures, damage-control blocks), written by caf-hooks.
+  3. ~/.claude/data/stop_failures.jsonl         — API-level failures (rate limit,
+     auth, overload).
+  4. ~/.claude/logs/cost_tracking.jsonl         — token spend, to spot runaways.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+import time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+HOME = Path.home()
+INCIDENTS = HOME / ".caf" / "logs" / "incidents.jsonl"
+STOP_FAILURES = HOME / ".claude" / "data" / "stop_failures.jsonl"
+COSTS = HOME / ".claude" / "logs" / "cost_tracking.jsonl"
+
+RED = "\033[31m"; YEL = "\033[33m"; DIM = "\033[2m"; BOLD = "\033[1m"; OFF = "\033[0m"
+if not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+    RED = YEL = DIM = BOLD = OFF = ""
+
+
+def project_slug(cwd: Path) -> str:
+    """~/.claude/projects/ dirs are the cwd with / and . replaced by -."""
+    return "-" + str(cwd).strip("/").replace("/", "-").replace(".", "-")
+
+
+def transcripts(cwd: Path) -> list[Path]:
+    d = HOME / ".claude" / "projects" / project_slug(cwd)
+    if not d.is_dir():
+        return []
+    return sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+
+def _ts(rec: dict) -> float:
+    for k in ("timestamp", "ts", "time"):
+        v = rec.get(k)
+        if isinstance(v, (int, float)):
+            return float(v if v < 1e11 else v / 1000)
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                pass
+    return 0.0
+
+
+def _clock(t: float) -> str:
+    return datetime.fromtimestamp(t).strftime("%H:%M:%S") if t else "--:--:--"
+
+
+def _text(blocks) -> str:
+    if isinstance(blocks, str):
+        return blocks
+    out = []
+    for b in blocks or []:
+        if isinstance(b, dict) and b.get("type") == "text":
+            out.append(b.get("text", ""))
+        elif isinstance(b, str):
+            out.append(b)
+    return " ".join(out)
+
+
+def classify(err: str) -> str:
+    """Name the failure family so the fix is obvious at a glance."""
+    e = err.lower()
+    checks = [
+        ("blocked by damage-control (security pattern)", ("security:", "blocked:")),
+        ("permission denied by the classifier / permission rules", ("permission", "denied by")),
+        ("file or path not found", ("no such file", "not found", "enoent")),
+        ("test failure", ("assertionerror", "test failed", "failed:", "pytest")),
+        ("import / dependency missing", ("modulenotfound", "importerror", "cannot find module")),
+        ("type or compile error", ("typeerror", "syntaxerror", "cannot compile", "error[e")),
+        ("timeout", ("timed out", "timeout")),
+        ("rate limit / overload", ("rate limit", "overloaded", "429")),
+        ("auth", ("401", "unauthorized", "authentication")),
+        ("git conflict / dirty tree", ("conflict", "would be overwritten", "non-fast-forward")),
+    ]
+    for label, needles in checks:
+        if any(n in e for n in needles):
+            return label
+    # Order matters: the specific families above win. A bare non-zero exit is a
+    # real category, not "unclassified" — lumping them together hid 1500 of them.
+    if re.search(r"exit code [1-9]", e):
+        return "command exited non-zero"
+    if not e.strip():
+        return "empty error (tool returned failure with no message)"
+    return "unclassified"
+
+
+def scan_transcript(path: Path, since: float) -> tuple[list[dict], list[dict]]:
+    """Return (failures, all_events) from a native transcript."""
+    failures, events = [], []
+    pending: dict[str, dict] = {}   # tool_use_id -> call info
+    for line in path.open(errors="ignore"):
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        t = _ts(rec)
+        if since and t and t < since:
+            continue
+        msg = rec.get("message") or {}
+        content = msg.get("content")
+        if rec.get("type") == "user" and isinstance(content, (str, list)):
+            txt = _text(content).strip()
+            if txt and not txt.startswith("<"):
+                events.append({"t": t, "kind": "prompt", "detail": txt[:160]})
+        if not isinstance(content, list):
+            continue
+        for b in content:
+            if not isinstance(b, dict):
+                continue
+            if b.get("type") == "tool_use":
+                inp = b.get("input") or {}
+                desc = (inp.get("command") or inp.get("file_path")
+                        or inp.get("pattern") or inp.get("prompt") or "")
+                pending[b.get("id")] = {"tool": b.get("name"), "arg": str(desc)[:200], "t": t}
+                events.append({"t": t, "kind": "tool", "detail": f"{b.get('name')}: {str(desc)[:90]}"})
+            elif b.get("type") == "tool_result":
+                call = pending.pop(b.get("tool_use_id"), {})
+                if not b.get("is_error"):
+                    continue
+                err = _text(b.get("content"))[:600]
+                failures.append({
+                    "t": t or call.get("t", 0),
+                    "session": path.stem,
+                    "tool": call.get("tool", "?"),
+                    "arg": call.get("arg", ""),
+                    "error": err.strip(),
+                    "class": classify(err),
+                    "source": "transcript",
+                })
+    return failures, events
+
+
+def read_jsonl(path: Path, since: float) -> list[dict]:
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.open(errors="ignore"):
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        t = _ts(r)
+        if since and t and t < since:
+            continue
+        r["_t"] = t
+        out.append(r)
+    return out
+
+
+def parse_since(s: str | None) -> float:
+    if not s:
+        return 0.0
+    m = re.fullmatch(r"(\d+)\s*([hmd])", s.strip().lower())
+    if not m:
+        return 0.0
+    n, unit = int(m.group(1)), m.group(2)
+    delta = {"m": timedelta(minutes=n), "h": timedelta(hours=n), "d": timedelta(days=n)}[unit]
+    return (datetime.now() - delta).timestamp()
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="postmortem", description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--session", help="session id (transcript filename stem)")
+    ap.add_argument("--last", type=int, default=1, help="how many failures to detail (default 1)")
+    ap.add_argument("--since", help="window, e.g. 30m / 3h / 2d")
+    ap.add_argument("--all", action="store_true", help="scan every session, not just the newest")
+    ap.add_argument("--context", type=int, default=6, help="events of lead-up to show (default 6)")
+    ap.add_argument("--json", action="store_true", help="machine-readable")
+    a = ap.parse_args()
+
+    cwd = Path.cwd()
+    since = parse_since(a.since)
+    files = transcripts(cwd)
+    if not files:
+        print(f"No transcripts for {cwd}.\n"
+              f"(Looked in ~/.claude/projects/{project_slug(cwd)}/)")
+        return 1
+    if a.session:
+        files = [f for f in files if f.stem.startswith(a.session)] or files[:1]
+    elif not a.all and not a.since:
+        files = files[:1]
+
+    all_fail: list[dict] = []
+    events_by_session: dict[str, list[dict]] = {}
+    for f in files:
+        fails, evs = scan_transcript(f, since)
+        all_fail += fails
+        events_by_session[f.stem] = evs
+
+    # Aux sinks are global (every session ever), so scope them to the sessions we
+    # actually scanned — otherwise a year of old API failures floods a question
+    # about the last five minutes. --since/--all opt into the wider window.
+    scope = set(events_by_session)
+    aux_since = since
+    if not since and not a.all:
+        # Bound aux records to this session's own time window.
+        starts = [e["t"] for evs in events_by_session.values() for e in evs if e["t"]]
+        aux_since = min(starts) if starts else 0.0
+
+    def in_scope(rec_session: str, t: float) -> bool:
+        if rec_session and rec_session in scope:
+            return True
+        return bool(aux_since and t >= aux_since)
+
+    # API-level failures the transcript never sees (rate limit, auth, overload).
+    for r in read_jsonl(STOP_FAILURES, aux_since):
+        sid = r.get("session_id", "")
+        if not in_scope(sid, r["_t"]):
+            continue
+        all_fail.append({
+            "t": r["_t"], "session": sid or "?", "tool": "API",
+            "arg": r.get("error_type", ""), "error": json.dumps(r)[:400],
+            "class": classify(str(r.get("error_type", ""))), "source": "stop_failures",
+        })
+    # CAF's own failure index, when caf-hooks has written any.
+    for r in read_jsonl(INCIDENTS, aux_since):
+        sid = r.get("session_id", "")
+        if not in_scope(sid, r["_t"]):
+            continue
+        all_fail.append({
+            "t": r["_t"], "session": sid or "?",
+            "tool": r.get("tool", "hook"), "arg": str(r.get("command", ""))[:200],
+            "error": str(r.get("error", ""))[:600],
+            "class": classify(str(r.get("error", ""))), "source": "incidents",
+        })
+
+    all_fail.sort(key=lambda x: x["t"], reverse=True)
+
+    if a.json:
+        print(json.dumps({"cwd": str(cwd), "failures": all_fail[:a.last]}, indent=2))
+        return 0
+
+    if not all_fail:
+        span = f" in the last {a.since}" if a.since else ""
+        print(f"{BOLD}No failures found{span}.{OFF}  ({len(files)} session(s) scanned)")
+        return 0
+
+    # Family summary first: repetition is the signal.
+    fams: dict[str, int] = {}
+    for f in all_fail:
+        fams[f["class"]] = fams.get(f["class"], 0) + 1
+    print(f"\n{BOLD}postmortem{OFF}  {DIM}{cwd}{OFF}")
+    print(f"{BOLD}{len(all_fail)} failure(s)"
+          f"{f' since {a.since}' if a.since else ''} across {len(files)} session(s){OFF}\n")
+    for fam, n in sorted(fams.items(), key=lambda kv: -kv[1]):
+        bar = "█" * min(n, 30)
+        print(f"  {n:>3}x  {fam:<46} {DIM}{bar}{OFF}")
+
+    for i, f in enumerate(all_fail[:a.last], 1):
+        print(f"\n{RED}{'─'*72}{OFF}")
+        print(f"{RED}{BOLD}#{i}  {_clock(f['t'])}  {f['class']}{OFF}")
+        print(f"  {BOLD}tool{OFF}    {f['tool']}  {DIM}({f['source']}){OFF}")
+        if f["arg"]:
+            print(f"  {BOLD}input{OFF}   {f['arg']}")
+        err = f["error"].replace("\n", "\n          ")
+        print(f"  {BOLD}error{OFF}   {RED}{err}{OFF}")
+        print(f"  {BOLD}session{OFF} {DIM}{f['session']}{OFF}")
+
+        lead = [e for e in events_by_session.get(f["session"], [])
+                if e["t"] and e["t"] <= f["t"]][-a.context:]
+        if lead:
+            print(f"\n  {BOLD}lead-up{OFF}")
+            for e in lead:
+                mark = "›" if e["kind"] == "tool" else YEL + "»" + OFF
+                print(f"    {DIM}{_clock(e['t'])}{OFF} {mark} {e['detail']}")
+
+        print(f"\n  {BOLD}replay{OFF}  {DIM}postmortem --session {f['session'][:8]} --last 5{OFF}")
+        tp = HOME / ".claude" / "projects" / project_slug(cwd) / f"{f['session']}.jsonl"
+        if tp.is_file():
+            print(f"  {BOLD}raw{OFF}     {DIM}{tp}{OFF}")
+    print()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

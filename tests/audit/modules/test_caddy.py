@@ -11,8 +11,10 @@ Run standalone:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -28,9 +30,25 @@ TIMINGS: list[dict] = []
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
+def _suggest_always_config() -> str:
+    """A config that forces injection on.
+
+    These tests assert on the CLASSIFIER but read it out of the injected context
+    string. The live config gates injection behind a confidence threshold
+    (always_suggest: false) because a low-confidence keyword guess on every prompt
+    is noise. That is a UX policy, not a property of the classifier — so pin the
+    policy here rather than letting the user's preference break the suite.
+    """
+    path = Path(tempfile.gettempdir()) / "caf_test_caddy_config.yaml"
+    path.write_text("caddy:\n  enabled: true\n  always_suggest: true\n"
+                    "  auto_invoke_threshold: 0.8\n")
+    return str(path)
+
+
 def run_caddy(prompt: str, session_id: str = "audit-caddy-001") -> tuple[dict, float]:
     """Run analyze_request.py via subprocess. Returns (output_dict, elapsed_ms)."""
     payload = json.dumps({"prompt": prompt, "session_id": session_id})
+    env = {**os.environ, "CADDY_CONFIG": _suggest_always_config()}
     t0 = time.perf_counter()
     result = subprocess.run(
         ["uv", "run", "--no-project", str(CADDY_PATH)],
@@ -39,6 +57,7 @@ def run_caddy(prompt: str, session_id: str = "audit-caddy-001") -> tuple[dict, f
         text=True,
         cwd=str(REPO_ROOT),
         timeout=30,
+        env=env,
     )
     elapsed_ms = (time.perf_counter() - t0) * 1000
     if result.stdout.strip():

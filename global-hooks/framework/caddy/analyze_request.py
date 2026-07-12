@@ -25,6 +25,7 @@ Exit: Always 0 (never blocks)
 
 import functools
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -651,7 +652,13 @@ def haiku_classify(prompt: str) -> dict | None:
 # ---------------------------------------------------------------------------
 
 def load_caddy_config() -> dict:
-    """Load Caddy configuration from yaml file."""
+    """Load Caddy configuration from yaml file.
+
+    $CADDY_CONFIG overrides the location. Tests need to exercise the classifier
+    without depending on the user's live injection policy (`always_suggest` is a
+    UX choice, not a property of the classifier), and it makes the hook
+    debuggable against a scratch config without touching ~/.claude.
+    """
     defaults = {
         "caddy": {
             "enabled": True,
@@ -661,7 +668,8 @@ def load_caddy_config() -> dict:
             "haiku_fallback_threshold": 0.80,
         }
     }
-    config_path = Path.home() / ".claude" / "caddy_config.yaml"
+    override = os.environ.get("CADDY_CONFIG")
+    config_path = Path(override) if override else Path.home() / ".claude" / "caddy_config.yaml"
     if not config_path.exists():
         return defaults
     try:

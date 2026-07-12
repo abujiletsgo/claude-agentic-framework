@@ -14,7 +14,7 @@ now — do not rebuild them here.
 global-hooks/        31 hooks across 16 events (hooks_ConfigChange:1, hooks_CwdChanged:1, hooks_FileChanged:1, hooks_Notification:1, hooks_PostCompact:1, hooks_PostToolUse:3, hooks_PostToolUseFailure:1, hooks_PreCompact:1, hooks_PreToolUse:3, hooks_SessionStart:2, hooks_Stop:5, hooks_StopFailure:1, hooks_SubagentStart:2, hooks_SubagentStop:3, hooks_TaskCompleted:1, hooks_UserPromptSubmit:4)
 global-agents/       8 agents (8 root + 0 team)
 global-commands/     9 commands
-global-skills/       15 skills
+global-skills/       16 skills
 data/                model_tiers.yaml + caddy_config.yaml + knowledge-db/
 templates/           settings.json.template (edit this, run install.sh)
 ```
