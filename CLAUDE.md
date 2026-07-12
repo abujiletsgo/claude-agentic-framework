@@ -1,6 +1,12 @@
 # Claude Agentic Framework
 
-v4.0 | One repo, one install, one source of truth. Opus-first on Max plan.
+v5.3 | One repo, one install, one source of truth.
+
+**If native Claude Code does it, we don't.** The framework carries only what the
+platform doesn't: the interactive consultant dialogue, adversarial review,
+damage-control, and CAF infra. Review, security-review, simplify, debug,
+research, memory, tasks, scheduling and multi-agent orchestration are all native
+now — do not rebuild them here.
 
 ## Structure
 
@@ -15,7 +21,20 @@ templates/           settings.json.template (edit this, run install.sh)
 
 ## Mode: Yolo
 
-`"allow": ["*"]` — full autonomy. Security: damage-control hooks (100+ patterns) > permissions > SHA-256 skill integrity > path protection (zero-access/read-only/no-delete).
+`"allow": ["*"]` — full autonomy. Security rests entirely on damage-control: 118
+patterns wired into PreToolUse (Bash|Edit|Write) via the Rust binary, plus path
+protection (zero-access / read-only / no-delete).
+
+It is deliberately **tamper-proof against the agent**: `patterns.yaml` is
+read-only, `global-hooks/damage-control/` is no-delete, `.claude/settings.json` is
+zero-access. Claude cannot edit the security config, delete its files, or unwire
+the hook. Changing patterns is a human action.
+
+Patterns are matched with **fancy-regex**, not the `regex` crate — the latter has
+no lookahead, so `(?!...)` patterns failed to compile and were silently skipped
+(that is how force-push went unenforced while sitting in patterns.yaml looking
+like protection). A pattern that fails to compile now warns loudly. A pattern
+existing in the YAML is not proof it is enforced: verify it fires.
 
 ## Model Tiers
 
@@ -72,5 +91,8 @@ Label claims: **OBSERVED** (cite source) / **INFERRED** (state reasoning chain) 
 - **Move framework directory?** → Stop. Update settings.json paths first.
 - **Hook errors everywhere?** → Check `~/.claude/circuit_breakers/`. Delete state file or wait 60s.
 - **`pip install` in a hook?** → Stop. Use `uv run` instead.
+- **Building a review / test / research / memory feature?** → Stop. Native Claude Code already has it. Only build what the platform lacks.
+- **Adding a damage-control pattern?** → It is a human action; the agent cannot write patterns.yaml. And verify the pattern actually fires — one existing in the YAML has never meant it is enforced.
+- **Testing the Rust binary?** → Use `<repo>/target/release/caf-hooks`. A stale `caf-hooks/target/` has twice served months-old code and produced false results.
 
 Full guide: `docs/framework-guide-ko.html` | Architecture: `.claude/ARCHITECTURE.md`
