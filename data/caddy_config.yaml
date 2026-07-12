@@ -18,9 +18,12 @@ caddy:
   # Set to 1.0 to effectively disable auto-suggestions.
   auto_invoke_threshold: 0.8
 
-  # Always show skill suggestions, even for low-confidence analyses
-  # Set to false to only show suggestions when confidence >= threshold
-  always_suggest: true
+  # Only inject when confidence >= auto_invoke_threshold. Fable-5-class models
+  # pick the right strategy unprompted; a low-confidence keyword guess on every
+  # prompt is noise (and its skill recommendations were phantoms for months —
+  # see commit fa510427). Telemetry still logs every classification to
+  # ~/.claude/logs/caddy/ regardless of this switch.
+  always_suggest: false
 
   # Enable background progress monitoring via PostToolUse hook
   # Tracks sub-agent progress, errors, and resource usage

@@ -7,7 +7,7 @@
     "ANTHROPIC_CUSTOM_HEADERS": "anthropic-beta: extended-cache-ttl-2025-04-11,advisor-tool-2026-03-01",
     "PATH": "/Users/tomkwon/.local/bin:/opt/homebrew/bin:/usr/bin:/Users/tomkwon/.cargo/bin:/usr/local/bin:/bin"
   },
-  "model": "sonnet",
+  "model": "fable",
   "permissions": {
     "allow": [
       "Agent(*)",
