@@ -365,6 +365,21 @@ fn match_path(file_path: &str, pattern: &str) -> bool {
         {
             return true;
         }
+
+        // A RELATIVE pattern (".claude/settings.json") gets normalized against the
+        // current working directory, so the prefix test above only ever protected
+        // the *project's* copy. The global ~/.claude/settings.json — the file that
+        // wires every hook and every permission — was therefore open to any tool
+        // passing an absolute path, and the Edit tool accepts ONLY absolute paths.
+        // Match a relative pattern as a trailing path-segment sequence so it guards
+        // the file wherever it lives.
+        let raw = pattern.trim_start_matches("./").trim_end_matches('/');
+        if !raw.is_empty() && !raw.starts_with('/') && !raw.starts_with('~') {
+            let needle = format!("/{}", raw);
+            if expanded_normalized.ends_with(&needle) {
+                return true;
+            }
+        }
         false
     }
 }

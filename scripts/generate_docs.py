@@ -326,10 +326,13 @@ Interactive documentation (Korean):
 
 | Page | Description |
 |------|-------------|
-| [`docs/framework-guide-ko.html`](docs/framework-guide-ko.html) | 종합 운영 가이드 — 전체 architecture, hooks, agents, memory, context, workflows (Korean + English) |
-| [`docs/MEMORY_ARCHITECTURE.md`](docs/MEMORY_ARCHITECTURE.md) | Memory system — 4-layer architecture, compaction pipeline |
+| [`docs/framework-guide-ko.html`](docs/framework-guide-ko.html) | 종합 운영 가이드 — architecture, hooks, agents, memory, context, workflows (Korean + English). **Predates the 2026-07 audit: its agent roster and memory sections are stale.** |
 | [`docs/SECURITY_BEST_PRACTICES.md`](docs/SECURITY_BEST_PRACTICES.md) | Security — damage control, path protection, patterns |
-| [`docs/ROLES_AND_RESPONSIBILITIES.md`](docs/ROLES_AND_RESPONSIBILITIES.md) | Agent roles — orchestrator, researcher, scout, architect |
+| [`.claude/ARCHITECTURE.md`](.claude/ARCHITECTURE.md) | Dependency map, blast-radius table, critical paths (regenerate with `/arch-map`) |
+
+Memory is now native Claude Code auto-memory; the old 4-layer MEMORY_ARCHITECTURE
+doc and the ROLES_AND_RESPONSIBILITIES roster described systems that no longer
+exist and were removed.
 
 ## Guides
 

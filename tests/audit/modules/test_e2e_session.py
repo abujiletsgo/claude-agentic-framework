@@ -112,8 +112,10 @@ HOOKS = {
     "auto_error_analyzer_py": REPO_ROOT / "global-hooks/framework/automation/auto_error_analyzer.py",
 }
 
-CAF_HOOKS_RELEASE = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-CAF_HOOKS_DEBUG = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+# Workspace root — this is the binary settings.json actually invokes. Pointing at
+# caf-hooks/target (a pre-workspace leftover) meant testing a months-old build.
+CAF_HOOKS_RELEASE = REPO_ROOT / "target/release/caf-hooks"
+CAF_HOOKS_DEBUG = REPO_ROOT / "target/debug/caf-hooks"
 
 
 def get_caf_hooks_bin() -> Path | None:

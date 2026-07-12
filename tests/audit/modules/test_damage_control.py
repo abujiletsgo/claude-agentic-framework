@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import time
@@ -20,25 +21,49 @@ from typing import Any
 import pytest
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
-DC_PATH = REPO_ROOT / "global-hooks/damage-control/unified-damage-control.py"
+
+# Test the binary that PreToolUse ACTUALLY runs.
+#
+# This module used to drive a Python `unified-damage-control.py` that was never
+# wired into any settings file. So the security suite — 31 tests asserting that
+# dangerous commands are blocked — validated an implementation with no effect on a
+# live session, while the Rust binary guarding every real command went untested.
+# When the dead Python copy was deleted, all 31 tests silently became skips: a
+# green suite proving nothing.
+#
+# The binary lives at the WORKSPACE root, not caf-hooks/target — a stale
+# pre-workspace build sat there for months and made tests read months-old code.
+DC_BIN = REPO_ROOT / "target/release/caf-hooks"
+DC_PATTERNS = REPO_ROOT / "global-hooks/damage-control"
 
 TIMINGS: list[dict] = []
 
 # Accuracy counters
 _ACCURACY = {"tp": 0, "tn": 0, "fp": 0, "fn": 0}
 
+# Skip only if the binary is genuinely unbuilt — never silently, and never because
+# an implementation went missing.
+pytestmark = pytest.mark.skipif(
+    not DC_BIN.is_file(),
+    reason="caf-hooks release binary not built (run: cargo build --release)",
+)
+
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def run_damage_control_subprocess(payload: dict) -> tuple[int, str, str]:
-    """Run unified-damage-control.py via subprocess. Returns (exit_code, stdout, stderr)."""
+    """Run the WIRED Rust damage-control. Returns (exit_code, stdout, stderr).
+
+    Exit 2 = blocked (the PreToolUse contract), 0 = allowed.
+    """
     t0 = time.perf_counter()
     result = subprocess.run(
-        ["uv", "run", "--no-project", str(DC_PATH)],
+        [str(DC_BIN), "damage-control"],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
         cwd=str(REPO_ROOT),
+        env={**os.environ, "CAF_HOOKS_DIR": str(DC_PATTERNS)},
         timeout=15,
     )
     elapsed_ms = (time.perf_counter() - t0) * 1000
@@ -96,11 +121,10 @@ def assert_allowed(payload: dict, description: str) -> None:
 
 
 # ── skip guard ─────────────────────────────────────────────────────────────────
-
-@pytest.fixture(scope="module", autouse=True)
-def require_damage_control():
-    if not DC_PATH.exists():
-        pytest.skip(f"Damage control not found: {DC_PATH}")
+# (Replaced by the module-level pytestmark above. The old guard skipped whenever
+#  its implementation file was absent — so deleting that file silently disabled
+#  the entire security suite instead of failing loudly. Skip only on an unbuilt
+#  binary, which is a build state, not a missing guard.)
 
 
 # ── tests: BLOCKED commands ────────────────────────────────────────────────────
@@ -267,7 +291,7 @@ def test_grep_tool_passes_through():
 
 def test_invalid_json_input():
     result = subprocess.run(
-        ["uv", "run", "--no-project", str(DC_PATH)],
+        [str(DC_BIN), "damage-control"],
         input="not valid json at all {{{",
         capture_output=True,
         text=True,
@@ -281,7 +305,7 @@ def test_invalid_json_input():
 
 def test_empty_json_input():
     result = subprocess.run(
-        ["uv", "run", "--no-project", str(DC_PATH)],
+        [str(DC_BIN), "damage-control"],
         input="{}",
         capture_output=True,
         text=True,

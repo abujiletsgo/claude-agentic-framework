@@ -32,14 +32,32 @@ sys.path.insert(0, str(GUARDRAILS))
 sys.path.insert(0, str(KNOWLEDGE))
 sys.path.insert(0, str(SESSION))
 
-# Load damage-control module via importlib (filename has hyphen)
-import importlib.util as _ilu
-_dc_spec = _ilu.spec_from_file_location(
-    "unified_damage_control",
-    DAMAGE_CONTROL / "unified-damage-control.py",
+# Damage control is enforced by the RUST binary — that is what PreToolUse runs.
+# These tests used to import a Python `unified-damage-control.py` that was never
+# wired into any settings file, so they asserted against an implementation with no
+# effect on a live session while the one that actually guards every command went
+# untested. Drive the binary the way the hook does: JSON on stdin, exit 2 = block.
+import pytest
+
+CAF_HOOKS_BIN = REPO_ROOT / "target" / "release" / "caf-hooks"
+
+requires_caf_hooks = pytest.mark.skipif(
+    not CAF_HOOKS_BIN.is_file(),
+    reason="caf-hooks release binary not built (run: cargo build --release)",
 )
-_dc = _ilu.module_from_spec(_dc_spec)
-_dc_spec.loader.exec_module(_dc)
+
+
+def _damage_control(tool_name: str, tool_input: dict) -> tuple[bool, str]:
+    """Run the wired Rust damage-control. Returns (blocked, message)."""
+    proc = subprocess.run(
+        [str(CAF_HOOKS_BIN), "damage-control"],
+        input=json.dumps({"tool_name": tool_name, "tool_input": tool_input}),
+        capture_output=True,
+        text=True,
+        env={**os.environ, "CAF_HOOKS_DIR": str(DAMAGE_CONTROL)},
+        timeout=15,
+    )
+    return proc.returncode == 2, (proc.stdout + proc.stderr).strip()
 
 
 def _make_tracker_mock(daily=0.0, weekly=0.0, monthly=0.0):
@@ -57,32 +75,38 @@ def _make_tracker_mock(daily=0.0, weekly=0.0, monthly=0.0):
 # WORKFLOW 1: Destructive command blocked before damage
 # ══════════════════════════════════════════════════════════════════
 
+@requires_caf_hooks
 class TestDamageControlWorkflow:
-    """Damage control intercepts dangerous commands before they run."""
+    """The wired Rust damage-control intercepts dangerous commands before they run."""
 
-    def test_rm_rf_blocked_before_execution(self):
-        config = _dc.load_config()
-        blocked, ask, reason = _dc.check_bash_command("rm -rf /important/data", config)
-        assert blocked, "rm -rf must be blocked before reaching shell"
+    def test_recursive_delete_blocked_before_execution(self):
+        blocked, msg = _damage_control("Bash", {"command": "rm" + " -rf /important/data"})
+        assert blocked, f"recursive delete must be blocked before reaching the shell; got: {msg}"
+
+    def test_force_push_blocked(self):
+        # Regression: this pattern uses a lookahead the `regex` crate cannot compile,
+        # so it was silently skipped and force-push went unenforced (see F11).
+        blocked, msg = _damage_control("Bash", {"command": "git push --force origin main"})
+        assert blocked, f"force-push must be blocked; got: {msg}"
+
+    def test_force_with_lease_allowed(self):
+        blocked, _ = _damage_control("Bash", {"command": "git push --force-with-lease origin main"})
+        assert not blocked, "--force-with-lease is the safe form and must pass"
 
     def test_safe_command_passes_through(self):
-        config = _dc.load_config()
-        blocked, ask, reason = _dc.check_bash_command("pytest tests/ -v", config)
+        blocked, _ = _damage_control("Bash", {"command": "pytest tests/ -v"})
         assert not blocked
 
-    def test_risky_command_asks_not_blocks(self):
-        config = _dc.load_config()
-        blocked, ask, reason = _dc.check_bash_command("git stash drop", config)
-        # Risky but recoverable: should ask, not hard-block
-        assert ask or not blocked, "Risky commands should ask rather than silently allow"
+    def test_zero_access_path_blocked(self):
+        blocked, msg = _damage_control(
+            "Edit", {"file_path": str(Path.home() / ".claude" / "settings.json")})
+        assert blocked, f"settings.json is a zero-access path; got: {msg}"
 
-    def test_protected_file_write_blocked(self):
-        config = _dc.load_config()
-        # settings.json is read-only
-        settings_path = str(Path.home() / ".claude" / "settings.json")
-        blocked, reason = _dc.check_file_path(settings_path, config)
-        # May or may not be in config — just ensure no crash
-        assert isinstance(blocked, bool)
+    def test_every_pattern_compiles(self):
+        """A pattern that fails to compile is silently unenforced — the exact bug
+        that left force-push open. The binary must warn on any that do not."""
+        _, msg = _damage_control("Bash", {"command": "echo hello"})
+        assert "WARN" not in msg, f"some patterns failed to compile: {msg}"
 
 
 # ══════════════════════════════════════════════════════════════════

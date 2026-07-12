@@ -138,13 +138,19 @@ def test_all_hook_files_exist():
 
 
 def test_rust_binary_exists():
-    """At least one of the release or debug caf-hooks binaries must exist."""
-    release = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-    debug = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+    """At least one of the release or debug caf-hooks binaries must exist.
+
+    Cargo is a WORKSPACE: it builds to <repo>/target, not <repo>/caf-hooks/target.
+    These tests used to look in caf-hooks/target, where a pre-workspace leftover
+    binary sat for months — so the suite validated a stale build while the binary
+    the hooks actually run went untested. Point at what settings.json invokes.
+    """
+    release = REPO_ROOT / "target/release/caf-hooks"
+    debug = REPO_ROOT / "target/debug/caf-hooks"
     if not (release.exists() or debug.exists()):
         pytest.fail(
             f"caf-hooks binary not found at:\n  {release}\n  {debug}\n"
-            "Run: cd caf-hooks && cargo build --release"
+            "Run: cargo build --release (from the repo root)"
         )
 
 
@@ -162,12 +168,12 @@ def test_hook_settings_template_consistency():
         if "global-hooks" in rel or rel.endswith(".py"):
             if not p.exists():
                 missing.append(str(p.relative_to(REPO_ROOT)))
-        elif "caf-hooks/target" in rel:
-            # Rust binary — release or debug both acceptable
-            release_path = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-            debug_path = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+        elif "caf-hooks" in rel:
+            # Rust binary at the workspace root — release or debug both acceptable
+            release_path = REPO_ROOT / "target/release/caf-hooks"
+            debug_path = REPO_ROOT / "target/debug/caf-hooks"
             if not (release_path.exists() or debug_path.exists()):
-                missing.append("caf-hooks/target/release/caf-hooks (or debug)")
+                missing.append("target/release/caf-hooks (or debug)")
 
     if missing:
         deduped = sorted(set(missing))
@@ -220,8 +226,8 @@ def test_hook_json_input_output_userpromptsubmit():
 def test_hook_json_input_output_pretooluse_safe():
     """PreToolUse with a safe Bash command must exit 0 from damage-control hook."""
     # damage-control is the Rust binary; look for it
-    release = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-    debug = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+    release = REPO_ROOT / "target/release/caf-hooks"
+    debug = REPO_ROOT / "target/debug/caf-hooks"
     caf_bin = release if release.exists() else (debug if debug.exists() else None)
     if caf_bin is None:
         pytest.skip("caf-hooks binary not found")
@@ -251,8 +257,8 @@ def test_hook_json_input_output_pretooluse_safe():
 
 def test_hook_json_input_output_pretooluse_dangerous():
     """PreToolUse with rm -rf must cause damage-control to exit 2 (block)."""
-    release = REPO_ROOT / "caf-hooks/target/release/caf-hooks"
-    debug = REPO_ROOT / "caf-hooks/target/debug/caf-hooks"
+    release = REPO_ROOT / "target/release/caf-hooks"
+    debug = REPO_ROOT / "target/debug/caf-hooks"
     caf_bin = release if release.exists() else (debug if debug.exists() else None)
     if caf_bin is None:
         pytest.skip("caf-hooks binary not found")
