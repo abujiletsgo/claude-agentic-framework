@@ -23,6 +23,7 @@ It outputs JSON with skill suggestions that get injected into the agent context.
 Exit: Always 0 (never blocks)
 """
 
+import functools
 import json
 import re
 import sys
@@ -290,11 +291,40 @@ def match_keywords(text: str, keyword_lists: dict[str, list[str]]) -> str:
     return best if scores[best] > 0 else list(keyword_lists.keys())[0]
 
 
+@functools.lru_cache(maxsize=1)
+def installed_skills() -> frozenset[str]:
+    """Names of skills that actually exist on disk (CAF + user + gstack sub-skills)."""
+    found: set[str] = set()
+    roots = [Path.home() / ".claude" / "skills",
+             Path(__file__).resolve().parents[3] / "global-skills"]
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for d in root.iterdir():
+            if (d / "SKILL.md").is_file():
+                found.add(d.name)
+            elif d.is_dir():  # skill packs (e.g. gstack) nest their sub-skills
+                for sub in d.iterdir():
+                    if (sub / "SKILL.md").is_file():
+                        found.add(sub.name)
+    return frozenset(found)
+
+
 def detect_skills(text: str) -> list[dict]:
-    """Return list of skills that match the user prompt, ranked by relevance."""
+    """Return skills matching the prompt, ranked by relevance.
+
+    Only ever names a skill that EXISTS. SKILL_PATTERNS is a hand-maintained
+    keyword table that drifted completely away from reality: every one of its
+    entries was a skill that had been retired or never existed at all, so this
+    hook spent every prompt telling the model to use skills it could not invoke.
+    A recommendation the model cannot act on is worse than no recommendation.
+    """
     text_lower = text.lower()
+    real = installed_skills()
     matches = []
     for skill_name, info in SKILL_PATTERNS.items():
+        if skill_name not in real:
+            continue
         score = sum(1 for kw in info["keywords"] if kw in text_lower)
         if score > 0:
             matches.append({
@@ -303,7 +333,7 @@ def detect_skills(text: str) -> list[dict]:
                 "description": info["description"],
             })
     matches.sort(key=lambda x: x["relevance"], reverse=True)
-    return matches[:5]  # Top 5 matches
+    return matches[:5]
 
 
 def _detect_numeric_scale(text: str) -> bool:
