@@ -206,12 +206,24 @@ tier — first in the file — hit the section-exit branch and returned ALL tier
 empty, rendering "(none configured)" in both README and CLAUDE.md. Now parses
 tier names from the file and warns on any tier missing from TIER_ORDER.
 
-**F13 — per-prompt tax.**
-Measured ~0.66s blocking hook latency per prompt + 60-210 injected tokens; ~4s of
-hook overhead on a typical turn. Dominated by analyze_request.py (0.53s — uv
-resolving an `anthropic` dep the pure-keyword classifier never uses) and two
-circuit_breaker_wrapper double-uv hops (0.18s each) on the Bash/Write/Edit hot
-path. Retired the wrapped hot-path hooks; stripped the unused dep.
+**F13 — per-tool-call tax (measured before/after on this machine).**
+
+| path | pre-cleanup | cleaned | change |
+|---|---|---|---|
+| per Bash call (blocking chain) | 0.584s | **0.148s** | **-75%** |
+| per prompt (UserPromptSubmit chain, warm uv cache) | 0.790s | **0.640s** | -19% |
+| analyze_request.py alone (cold uv cache) | 0.53s | **0.04s** | **-92%** |
+
+The Bash number is the one that matters: tool calls happen ~10x per turn, so this
+is seconds per turn, and the cleaned chain *includes* the damage-control blocker
+that previously was not running at all.
+
+Causes: analyze_request.py declared an `anthropic>=0.40.0` dep that the classifier
+(pure keyword scoring, no LLM call) never uses — uv resolved it on every prompt.
+Two circuit_breaker_wrapper hops on the Bash/Write/Edit hot path each spawned a
+*second* `uv run` (double cold-start, 0.18s each). Retired the wrapped hot-path
+hooks; stripped the unused dep. Note the 0.53s figure is cold-cache; warm, the
+prompt-chain win is smaller and honest.
 
 ## Resolved from the previous audit
 
