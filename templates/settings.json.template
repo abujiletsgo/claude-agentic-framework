@@ -1,5 +1,5 @@
 {
-  "_comment": "v4.1: Full lifecycle hooks, async non-blocking, role-based team, session cost tracking",
+  "_comment": "v5.3: Post-audit lean hooks — damage-control wired (was dormant), FACTS/MEMORY layer retired for native memory, hot-path Python hooks unwired",
   "_cache_note": "Extended cache TTL active (1-hour via ANTHROPIC_CUSTOM_HEADERS). Default is 5 min — 1-hour TTL ensures project context cache hits across all agents in long pipelines. Cache minimums: Sonnet 4.6=2048 tokens, Opus/Haiku=4096 tokens.",
   "version": "1.0",
   "env": {
@@ -85,20 +85,6 @@
       }
     ],
 
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
-            "timeout": 5,
-            "async": true,
-            "_comment": "Release all session locks on exit"
-          }
-        ]
-      }
-    ],
-
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -116,25 +102,6 @@
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/caddy/analyze_request.py",
             "timeout": 10,
             "statusMessage": "Analyzing request..."
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/caddy/auto_delegate.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks epistemic-guard",
-            "timeout": 5,
-            "_comment": "Rust: Inject epistemic discipline reminder for analysis/interpretation prompts"
           }
         ]
       },
@@ -161,6 +128,17 @@
 
     "PreToolUse": [
       {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__REPO_DIR__/target/release/caf-hooks damage-control",
+            "timeout": 5,
+            "_comment": "Rust: 118-pattern security blocker (exit 2 = block). Patterns: global-hooks/damage-control/patterns.yaml via CAF_HOOKS_DIR. Runs FIRST."
+          }
+        ]
+      },
+      {
         "matcher": "Read|Grep|Glob|Edit|Bash",
         "hooks": [
           {
@@ -168,26 +146,6 @@
             "command": "__REPO_DIR__/target/release/caf-hooks orchestrator-tool-guard",
             "timeout": 5,
             "_comment": "Rust: Block orchestrator from using file/search/exec tools directly — forces delegation to subagents"
-          }
-        ]
-      },
-      {
-        "matcher": "Read|Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_review_team.py",
-            "timeout": 5
           }
         ]
       },
@@ -221,15 +179,6 @@
 
     "PostToolUse": [
       {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "Bash|Write|Edit",
         "hooks": [
           {
@@ -253,27 +202,6 @@
         ]
       },
       {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks auto-refine",
-            "timeout": 6,
-            "_comment": "Rust: auto-refine suggestions (CB built-in)"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/context/auto_context_manager.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
@@ -282,30 +210,6 @@
             "timeout": 5,
             "async": true,
             "_comment": "Rust: ASYNC: escalation advice delivered on next turn"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_team_review.py",
-            "timeout": 5,
-            "async": true,
-            "_comment": "ASYNC: team review triggers don't need to block"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks --cb auto-fact-extractor",
-            "timeout": 5,
-            "async": true,
-            "_comment": "Rust: ASYNC: fact extraction writes to disk, result delivered next turn"
           }
         ]
       }
@@ -328,58 +232,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/session/session_lock_manager.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/validators/check_lthread_progress.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "__REPO_DIR__/target/release/caf-hooks auto-memory-writer",
-            "timeout": 10,
-            "_comment": "Rust: write session summary to .claude/MEMORY.md"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/facts/validate_facts.py",
-            "timeout": 5,
-            "_comment": "Layer 2: prune stale facts from FACTS.md"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_dependency_audit.py",
             "timeout": 15,
             "async": true,
             "_comment": "Moved from PostToolUse:Write|Edit — run once per session instead of per-write"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/guardrails/circuit_breaker_wrapper.py -- uv run --no-project __REPO_DIR__/global-hooks/framework/automation/auto_skill_generator.py",
-            "timeout": 10,
-            "_comment": "Analyze session patterns and auto-generate skills"
           }
         ]
       },
@@ -492,24 +348,6 @@
             "timeout": 8,
             "async": true,
             "_comment": "Rust: ASYNC: reads agent transcript + records cost — fire-and-forget"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/hooks_SubagentStop/lead_result_store.py",
-            "timeout": 8
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --no-project __REPO_DIR__/global-hooks/framework/memory/lead_memory_writer.py",
-            "timeout": 8
           }
         ]
       }

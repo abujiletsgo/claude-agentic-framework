@@ -13,6 +13,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use fancy_regex::Regex as FancyRegex;
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value;
@@ -600,15 +601,29 @@ enum BashCheckResult {
 }
 
 fn check_bash_command(command: &str, config: &DamageControlConfig) -> BashCheckResult {
-    // 1. Check explicit bash tool patterns
+    // 1. Check explicit bash tool patterns.
+    //
+    // Compiled with fancy-regex, not the `regex` crate: several patterns in
+    // patterns.yaml use lookaheads (e.g. `--force(?!-with-lease)`), which the
+    // `regex` crate cannot compile. It used to drop them silently, so
+    // `git push --force` was never actually blocked. A pattern that fails to
+    // compile now warns loudly rather than vanishing.
     for item in &config.bash_tool_patterns {
-        if let Ok(re) = Regex::new(&format!("(?i){}", item.pattern)) {
-            if re.is_match(command) {
-                if item.ask {
-                    return BashCheckResult::Ask(item.reason.clone());
-                } else {
-                    return BashCheckResult::Block(format!("Blocked: {}", item.reason));
+        match FancyRegex::new(&format!("(?i){}", item.pattern)) {
+            Ok(re) => {
+                if re.is_match(command).unwrap_or(false) {
+                    if item.ask {
+                        return BashCheckResult::Ask(item.reason.clone());
+                    } else {
+                        return BashCheckResult::Block(format!("Blocked: {}", item.reason));
+                    }
                 }
+            }
+            Err(e) => {
+                eprintln!(
+                    "[WARN] damage-control: pattern failed to compile, NOT enforced: {} ({e})",
+                    item.pattern
+                );
             }
         }
     }
