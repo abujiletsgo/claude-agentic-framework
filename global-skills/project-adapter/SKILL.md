@@ -1,6 +1,6 @@
 ---
 name: project-adapter
-description: Generates a project-specific context file at /tmp/caf_project_context.md. Run once per session. All agents (builder, validator, debugger, dynamic subagents) read this file to pre-calibrate — right test commands, right conventions, right paths. Eliminates the "figure out the project" overhead from every agent.
+description: Generates a project-specific context file at /tmp/caf_project_context.md. Run once per session. All agents (builder, consultants, dynamic subagents) read this file to pre-calibrate — right test commands, right conventions, right paths. Eliminates the "figure out the project" overhead from every agent.
 user-invocable: true
 ---
 

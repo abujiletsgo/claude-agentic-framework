@@ -2,7 +2,7 @@
 name: architecture-consultant
 description: "Architecture consultant — reads the system topology and asks clarifying questions to surface design tradeoffs, blast radius, and interface contracts before building starts."
 tools: Read, Grep, Glob, AskUserQuestion
-model: sonnet
+model: opus
 role: consultant
 effort: high
 maxTurns: 30

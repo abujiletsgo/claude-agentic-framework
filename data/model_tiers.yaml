@@ -1,94 +1,88 @@
 # Multi-Model Tier Configuration
-# Balanced: Opus for coordination/architecture, Sonnet for capable workhorse tasks,
-# Haiku for mechanical/validation. Optimized for token efficiency.
+#
+# Post-audit (2026-07-12): retired the weak-model assembly line. The old roster
+# (builder → validator → debugger relaying through /tmp files, watchdog polling,
+# scout/docs-scraper relays) existed because earlier models needed narrow roles
+# and external supervision. Fable-5-class models plan, build, test and diagnose
+# in one context, so those agents were removed rather than re-tiered.
+#
+# Surviving agents are the ones native Claude Code cannot replace: the
+# interactive Wave 0a consultants (Workflow cannot pause to interrogate the
+# user), adversarial review, and MCP-tool-gated specialists.
 
 default_model: sonnet
 
 # ─── Tier Definitions ───────────────────────────────────────────────
 
 tiers:
-  opus:
-    model_id: claude-opus-4-6
+  fable:
+    model_id: claude-fable-5
     use_for:
-      - Orchestration, planning, architecture
-      - Complex multi-step coordination
-      - Recursive exploration controllers
-      - Multi-agent coordination requiring strategic decisions
+      - Adversarial evaluation (where a stronger model changes the verdict)
+      - Orchestration synthesis — reconciling conflicting consultant specs
+
+  opus:
+    model_id: claude-opus-4-8
+    use_for:
+      - Architecture consulting (blast-radius reasoning)
+      - Security consulting (threat modeling)
+      - Builders on security/crypto/irreversible work
 
   sonnet:
-    model_id: claude-sonnet-4-6
-    max_turns_default: 25  # Cap for research/analysis agents; builder=20
+    model_id: claude-sonnet-5
+    max_turns_default: 25
     use_for:
-      - Research and analysis (context-first, 25 turns max)
-      - Code generation and implementation (20 turns max)
-      - Code review and refactoring
-      - Security analysis
-      - Agent/skill generation
-      - Codebase scouting and reporting
-      - Critical analysis
-      - Code research and codebase analysis (Wave 0 researchers — reasoning required)
+      - Standard builders (implement + run own tests + self-diagnose)
+      - Frontend/backend consulting
+      - Project onboarding
+      - Academic research (papers MCP)
 
   haiku:
-    model_id: claude-haiku-4-5
+    model_id: claude-haiku-4-5-20251001
     use_for:
-      - Read-only validation (syntax checks, linting)
-      - Fast file exploration (Explore agent)
-      - Documentation scraping
-      - Data formatting and mechanical transforms
-      - Status reporting and TTS summaries
-      - Researcher for mechanical listings only (file inventories, not code analysis)
+      - Mechanical transforms, if any survive
+      # NOTE: this tier is intentionally empty. Its four former occupants
+      # (validator, agent-watchdog, health-checker, docs-scraper) were retired:
+      # a separate agent that only relays PASS/FAIL, polls for stuck agents,
+      # or fetches a URL costs a full round-trip to do what the main agent,
+      # native background-task notifications, and WebFetch already do.
 
 # ─── Agent Assignments ──────────────────────────────────────────────
-# 2 Opus, 15 Sonnet, 4 Haiku
-# Consultant model: Wave 0a = user ↔ consultants, Wave 0b = researchers, Wave 1 = builders, Wave 2 = QA loop
+# 1 Fable, 2 Opus, 5 Sonnet — down from 22 agents.
+# Consultant model: Wave 0a = user ↔ consultants (interactive spec) → Workflow fan-out.
 
 agent_tiers:
+  fable:
+    - critical-analyst        # Adversarial review / opt-in evaluator
+
   opus:
-    - orchestrator            # Multi-agent coordination and planning
-    - project-architect       # Architecture design, agent ecosystem creation
+    - architecture-consultant # System design, blast radius — interactive spec
+    - security-consultant     # Auth, input handling, threat model — interactive spec
 
   sonnet:
-    - po                      # Product Owner — consultation facilitator, spec synthesizer
-    - critical-analyst        # Critical thinking, risk analysis
-    - researcher              # Research and analysis
-    - meta-agent              # Agent file generation
-    - scout-report-suggest    # Codebase scouting
-    - builder                 # Pure implementation
-    - debugger                # Root cause analysis + fix plan writing
-    - onboard-builder         # Wave 1 onboarding — generates project files from plan
-    - onboard-planner         # Wave 0 onboarding — detects stack, writes plan
-    - academic-researcher     # Academic paper search and citation graph traversal
-    - code-researcher         # Cross-repo code pattern search via GitHub MCP
-    # ── Domain consultants (Wave 0a — read-only, interactive, spec producers) ──
-    - frontend-consultant     # UI, UX, components — asks questions, produces frontend spec
-    - backend-consultant      # API, data, services — asks questions, produces backend spec
-    - architecture-consultant # System design, blast radius — asks questions, produces contracts
-    - security-consultant     # Auth, input handling, threat model — asks questions, produces security spec
+    - frontend-consultant     # UI, UX, components — interactive spec
+    - backend-consultant      # API, data, services — interactive spec
+    - builder                 # Implementation; runs its own tests, self-diagnoses
+    - onboard                 # Project init (planner+builder merged)
+    - academic-researcher     # Papers-MCP-gated specialization
 
-  haiku:
-    - docs-scraper            # Documentation scraping (speed > depth)
-    - validator               # Test running + pass/fail reporting
-    - agent-watchdog          # Background anomaly detection
-    - health-checker          # CAF health checks — mechanical, no reasoning needed
+  haiku: []
 
 # ─── Skill Overrides ────────────────────────────────────────────────
+# Skills whose CAF implementations were retired in favour of native built-ins
+# (/code-review, /security-review, /simplify) no longer need model pins.
 
 skill_default_models:
-  test-generator: sonnet
-  code-review: sonnet
-  refactoring-assistant: sonnet
-  security-scanner: sonnet
-  error-analyzer: sonnet
   knowledge-db: haiku     # Mechanical DB ops, speed matters
 
 # ─── Decision Matrix ────────────────────────────────────────────────
 
 decision_matrix:
-  - condition: "Coordination, orchestration, or architecture decisions"
+  - condition: "Adversarial evaluation, conflicting-spec synthesis"
+    model: fable
+  - condition: "Architecture, security, or irreversible-change reasoning"
     model: opus
-  - condition: "Code generation, analysis, review, or research"
+  - condition: "Implementation, consulting, research, onboarding"
     model: sonnet
-  - condition: "Mechanical validation, exploration, or data formatting"
-    model: haiku
   - condition: "Unknown complexity"
     model: sonnet  # Default to capable workhorse

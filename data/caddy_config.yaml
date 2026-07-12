@@ -61,54 +61,52 @@ caddy:
     delegation: auto
 
     # Default models by role when delegation is "auto"
+    # Roles match data/model_tiers.yaml's surviving 8-agent roster.
+    # "explore" = native Explore agent for research (no dedicated CAF agent).
     role_defaults:
       builder: sonnet
-      researcher: sonnet
-      validator: haiku
-      critical-analyst: sonnet
-      scout-report-suggest: sonnet
-      debugger: sonnet
-      docs-scraper: haiku
-      agent-watchdog: haiku
+      architecture-consultant: opus
+      security-consultant: opus
+      frontend-consultant: sonnet
+      backend-consultant: sonnet
+      critical-analyst: opus  # model_tiers.yaml specifies "fable"; opus is the closest alias
+      onboard: sonnet
+      academic-researcher: sonnet
+      explore: sonnet
       quick_task: haiku
 
     # maxTurns caps per role — prevents runaway token burn
+    # (kept in sync with each agent's own frontmatter maxTurns)
     role_max_turns:
-      builder: 20
-      researcher: 25
-      validator: 15
-      debugger: 25
-      scout-report-suggest: 25
-      critical-analyst: 25
-      docs-scraper: 15
-      agent-watchdog: 50
+      builder: 25
+      architecture-consultant: 30
+      security-consultant: 30
+      frontend-consultant: 30
+      backend-consultant: 30
+      critical-analyst: 50
+      onboard: 20
+      academic-researcher: 30
+      explore: 20
       quick_task: 8
 
   # Skills that Caddy can recommend or invoke
   # Set any to false to prevent Caddy from suggesting it
   skills:
     arch-map: true
-    change-validator: true
-    code-review: true
-    docs: true
-    error-analyzer: true
+    consult: true
     facts: true
-    issue-scoper: true
+    gemini: true
+    health: true
     knowledge-db: true
+    makeskill: true
+    onboard: true
+    orchestrate: true
     project-adapter: true
-    refactoring-assistant: true
+    qa-cycle: true
     rollback: true
-    security-scanner: true
-    skill-builder: true
-    solve: true
-    test-generator: true
-    test-scout: true
     tidy: true
+    ui-flow-audit: true
     worktree: true
-    research-academic: true
-    research-code: true
-    research-news: true
-    research-docs: true
 
   # Skill security audit configuration
   # Caddy audits skills for dangerous patterns before recommending them

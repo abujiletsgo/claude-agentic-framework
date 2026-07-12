@@ -2,13 +2,6 @@
 <!-- Mid-term project memory: one entry per session. Auto-maintained. -->
 <!-- Layer 2 (episodic): what changed, was fixed, was decided across sessions. -->
 
-## 2026-04-10 (17:50 UTC) · @Tom Kwon
-**Commit:** docs: quality-first priorities + planning-lead on opus (bf72318b) by Tom Kwon
-**Changed:**
-  data/model_tiers.yaml              |  1 +
-  global-skills/orchestrate/SKILL.md | 10 ++++++----
-  2 files changed, 7 insertions(+), 4 deletions(-)
-
 ## 2026-04-10 (17:52 UTC) · @Tom Kwon
 **Commit:** docs: orchestrate — explicit dependency mapping in wave planning (51153535) by Tom Kwon
 **Changed:**
@@ -307,11 +300,26 @@
   global-skills/orchestrate/templates/lead-prompt.md | 192 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   2 files changed, 240 deletions(-)
 
-## 2026-06-20 (15:57 UTC) · @Tom Kwon
+## 2026-06-20 (16:11 UTC) · @Tom Kwon
 **Commit:** chore(commands): remove 3 commands superseded by skills (24799b6e) by Tom Kwon
 **Changed:**
   CLAUDE.md                      |  2 +-
-  global-commands/arch-map.md    | 50 --------------------------------------------------
-  global-commands/orchestrate.md |  9 ---------
-  global-commands/worktree.md    | 12 ------------
+  global-commands/arch-map.md    | 50 ------------------------------------------
+  global-commands/orchestrate.md |  9 --------
+  global-commands/worktree.md    | 12 ----------
   4 files changed, 1 insertion(+), 72 deletions(-)
+
+## 2026-07-12 (12:45 UTC) · @Tom Kwon
+**Commit:** refactor(gstack): de-vendor subtree — gstack self-manages, keep /gemini overlay (abdbeb39) by Tom Kwon
+**Changed:**
+  .claude/MEMORY.md                                  |   28 +-
+  .claude/PO_BRIEF.md                                |    2 +-
+  .claude/PROJECT_CONTEXT.md                         |    4 +-
+  README.md                                          |   20 +-
+  global-skills/code-review/code-review              |    1 -
+  global-skills/error-analyzer/error-analyzer        |    1 -
+  global-skills/{gstack => }/gemini/SKILL.md         |    0
+  global-skills/gstack/.env.example                  |    5 -
+  global-skills/gstack/.github/actionlint.yaml       |    4 -
+  global-skills/gstack/.github/docker/Dockerfile.ci  |   63 -
+  ... and 416 more files

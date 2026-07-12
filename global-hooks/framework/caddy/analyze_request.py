@@ -2,7 +2,6 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "anthropic>=0.40.0",
 #   "pyyaml>=6.0",
 # ]
 # ///

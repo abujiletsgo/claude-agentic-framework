@@ -19,6 +19,11 @@ from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 
+# Render order for model tiers, strongest first. Must cover every tier key used in
+# data/model_tiers.yaml — a tier missing here renders nowhere and its agents vanish
+# from the docs (this is how the `fable` tier silently produced "(none configured)").
+TIER_ORDER = ["fable", "opus", "sonnet", "haiku"]
+
 
 def count_root_agents():
     d = REPO_DIR / "global-agents"
@@ -72,39 +77,59 @@ def count_hooks():
 
 
 def get_model_tiers():
+    """Read agent_tiers from model_tiers.yaml.
+
+    Tier names come from the file, not a hardcoded list. The previous version
+    matched only ("opus:", "sonnet:", "haiku:"); when a new tier was added it
+    fell through to the section-exit branch and silently returned every tier
+    empty, rendering "(none configured)".
+    """
     p = REPO_DIR / "data" / "model_tiers.yaml"
+    empty = {t: [] for t in TIER_ORDER}
     if not p.exists():
-        return {"opus": [], "sonnet": [], "haiku": []}
-    content = p.read_text()
-    result = {"opus": [], "sonnet": [], "haiku": []}
+        return empty
+    try:
+        import yaml
+        tiers = yaml.safe_load(p.read_text()).get("agent_tiers") or {}
+        return {t: list(agents or []) for t, agents in tiers.items()}
+    except ImportError:
+        pass
+
+    result = {}
     current = None
     in_tiers = False
-    for line in content.split("\n"):
+    for line in p.read_text().split("\n"):
         s = line.strip()
         if s == "agent_tiers:":
             in_tiers = True
             continue
-        if in_tiers:
-            if s in ("opus:", "sonnet:", "haiku:"):
-                current = s.rstrip(":")
-                continue
-            if s.startswith("- ") and current:
-                name = s[2:].split("#")[0].strip()
-                result[current].append(name)
-            elif s and not s.startswith("#") and not s.startswith("-"):
-                in_tiers = False
-                current = None
+        if not in_tiers or not s or s.startswith("#"):
+            continue
+        if s.startswith("- ") and current:
+            result[current].append(s[2:].split("#")[0].strip())
+        elif s.endswith(":") or s.endswith(": []"):
+            # a tier header, e.g. "sonnet:" or an inline-empty "haiku: []"
+            current = s.split(":")[0].strip()
+            result.setdefault(current, [])
+        elif not line.startswith((" ", "\t")):
+            in_tiers = False  # back to a top-level key — section over
+            current = None
     return result
 
 
 def generate_readme(d):
     tier_lines = []
-    for tier in ["opus", "sonnet", "haiku"]:
+    for tier in TIER_ORDER:
         agents = d.get(f"{tier}_agents", [])
         if agents:
             names = ", ".join(agents)
             tier_lines.append(f"  {tier.title():>6} ({len(agents)}): {names}")
     tier_block = "\n".join(tier_lines) if tier_lines else "  (none configured)"
+    tier_summary = " + ".join(
+        f"{len(d[f'{t}_agents'])} {t.title()}"
+        for t in TIER_ORDER
+        if d.get(f"{t}_agents")
+    ) or "no tiers configured"
 
     cmd_block = "\n".join(f"  - /{c}" for c in d.get("command_list", []))
     skill_block = "\n".join(f"  - {s}" for s in d.get("skill_list", []))
@@ -115,7 +140,7 @@ def generate_readme(d):
 
 ## What You Get
 
-- **{d['AGENT_COUNT']} Agents** — Opus-first ({len(d['opus_agents'])} Opus + {len(d['haiku_agents'])} Haiku)
+- **{d['AGENT_COUNT']} Agents** — {tier_summary}
 - **{d['COMMAND_COUNT']} Commands** for delegation, orchestration, and planning
 - **{d['SKILL_COUNT']} Skills** for the full engineering lifecycle
 - **{d['GUIDE_COUNT']} Guides** covering context engineering to multi-agent patterns
@@ -329,7 +354,7 @@ See `guides/` for {d['GUIDE_COUNT']} comprehensive engineering guides and `docs/
 
 def generate_claude_md(d):
     tier_lines = []
-    for tier in ["opus", "sonnet", "haiku"]:
+    for tier in TIER_ORDER:
         agents = d.get(f"{tier}_agents", [])
         if agents:
             names = ", ".join(agents)
@@ -445,10 +470,11 @@ def main():
         "HOOK_EVENT_COUNT": len([k for k in hooks if k != "total"]),
         "command_list": commands,
         "skill_list": skills,
-        "opus_agents": valid_tiers["opus"],
-        "sonnet_agents": valid_tiers["sonnet"],
-        "haiku_agents": valid_tiers["haiku"],
+        **{f"{t}_agents": a for t, a in valid_tiers.items()},
     }
+    for t in valid_tiers:
+        if t not in TIER_ORDER:
+            print(f"  WARN: tier '{t}' in model_tiers.yaml is not in TIER_ORDER — its agents will not render", file=sys.stderr)
     for event, count in hooks.items():
         if event != "total":
             data[f"hooks_{event}"] = count

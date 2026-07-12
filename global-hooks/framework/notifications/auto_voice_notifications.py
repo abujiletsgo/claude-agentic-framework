@@ -78,6 +78,12 @@ def classify(question_text: str) -> str:
 
 
 def main():
+    # RemoteClaude sessions run headless on the Mac for a remote tablet — nobody
+    # is at the Mac to hear TTS, so stay silent inside them. (RemoteClaude sets
+    # REMOTECLAUDE_SESSION in every session it launches.)
+    if os.environ.get("REMOTECLAUDE_SESSION"):
+        sys.exit(0)
+
     try:
         hook_input = json.load(sys.stdin)
     except Exception:

@@ -2,7 +2,7 @@
 name: security-consultant
 description: "Security consultant — reads the codebase for threat surface and asks clarifying questions to produce a security spec before building starts. Use when a task touches auth, input handling, data storage, or external integrations."
 tools: Read, Grep, Glob, AskUserQuestion
-model: sonnet
+model: opus
 role: consultant
 effort: high
 maxTurns: 30

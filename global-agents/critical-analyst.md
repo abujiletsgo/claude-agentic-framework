@@ -2,7 +2,7 @@
 name: critical-analyst
 description: Questions every detail, assumption, plan, and decision throughout the project lifecycle. Use proactively during planning, building, and decision-making to ensure thorough analysis of why and how.
 tools: Read, Glob, Grep, AskUserQuestion
-model: sonnet
+model: opus  # data/model_tiers.yaml specifies "fable" (Fable-5-class); "opus" is the closest alias this frontmatter schema accepts
 color: red
 effort: high
 maxTurns: 50
@@ -324,11 +324,10 @@ This agent should be invoked:
 
 ## Collaboration with Other Agents
 
-- Work with **project-architect** to validate agent ecosystem designs
-- Challenge **orchestrator** plans before execution
-- Review **builder** implementations for alignment with requirements
-- Question **validator** test coverage and acceptance criteria
-- Probe **researcher** findings for completeness and bias
+- Work with **architecture-consultant** to validate system design decisions
+- Challenge orchestration plans (`/orchestrate` specs) before execution
+- Review **builder** implementations and their own test results for alignment with requirements
+- Probe **academic-researcher** / Explore-agent findings for completeness and bias
 
 ## Two-step output protocol
 

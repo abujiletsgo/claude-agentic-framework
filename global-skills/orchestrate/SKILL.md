@@ -308,7 +308,7 @@ Deliver the report to the user.
 - **Parallel within waves** — all agents in a wave launch in ONE message; never serialize
 - **Orchestrator never builds** — no Read, Edit, Grep on implementation files; spawn agents
 - **Write events at every wave boundary** — run-explorer reads these
-- **Model match** — haiku for mechanical/exact, sonnet for reasoning/multi-file
+- **Model match** — sonnet for builders/consultants by default, opus for security/crypto/irreversible-change work
 - **QA is real** — builders must exercise actual behavior via their own test runs, not just check syntax
 - **Escalate after 2 failures** — bring the user back in with a clear diagnosis
 - **Skip unused waves** — no consultants for Simple; no research if spec is already complete

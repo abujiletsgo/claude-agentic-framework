@@ -17,9 +17,9 @@ orchestration:
   # wave definitions for the consultant model
   waves:
     consultation: { name: "Consult", parallel: false, gate: true }   # user ↔ consultants
-    research:     { name: "Research", parallel: true,  gate: true }   # parallel researchers
-    build:        { name: "Build",    parallel: true,  gate: true }   # parallel builders
-    qa:           { name: "QA",       parallel: false, gate: true }   # validator → qa loop
+    research:     { name: "Research", parallel: true,  gate: true }   # parallel Explore agents
+    build:        { name: "Build",    parallel: true,  gate: true }   # parallel builders (self-test + self-diagnose)
+    qa:           { name: "QA",       parallel: false, gate: true }   # read builder self-reports → qa loop
     deliver:      { name: "Deliver",  parallel: false, gate: false }  # final report
 
   # graceful degradation

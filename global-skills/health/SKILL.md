@@ -25,21 +25,43 @@ Run a point-in-time diagnostic of the CAF framework and report results as a mark
 
 ## Workflow
 
-### Step 1 — Spawn health-checker
+Run these checks directly (Bash + Read) — no dedicated agent needed for a check this mechanical.
 
-Spawn the `health-checker` agent to run all checks and format the results:
+### Step 1 — Git status
 
-```python
-Agent(
-    name="health-checker",
-    subagent_type="health-checker",
-    prompt="Run all CAF health checks from the project root at $(pwd). Output a markdown table."
-)
+```bash
+git status --porcelain
+```
+- Empty output → Status: `✓ clean`, Notes: `0 dirty files`
+- Non-empty → Status: `✗ dirty`, Notes: `N dirty files` (count the lines)
+
+### Step 2 — Hooks
+
+Read `~/.claude/settings.json`. Extract every value in the `hooks` section that looks like a file path (starts with `/` or contains `/`). For each path:
+
+```bash
+test -f "/path/to/file" && echo EXISTS || echo MISSING
+```
+- All exist → Status: `✓ N/N present`, Notes: (empty)
+- Any missing → Status: `✗ N/M present`, Notes: list missing file names (basename only)
+
+### Step 3 — MCP servers
+
+Read `~/.claude/settings.json`. Extract all keys from the `mcpServers` object; report them as a comma-separated list in Notes. Note: `context7` is registered as a plugin under `enabledPlugins`, not `mcpServers` — if present there, include it in Notes labeled `(plugin)`.
+
+### Step 4 — Format and present results
+
+Produce the table below and print it — no interpretation or diagnosis, raw results only:
+
+```markdown
+| Component | Status | Latency | Notes |
+|-----------|--------|---------|-------|
+| git | ✓ clean | N/A | 0 dirty files |
+| hooks | ✓ 45/45 present | N/A | |
+| MCP servers | ✓ configured | N/A | officecli, papers, github, papersflow, sourcegraph |
 ```
 
-### Step 2 — Present results
-
-Print the markdown table returned by health-checker verbatim. No interpretation or diagnosis — raw results only.
+If reading `~/.claude/settings.json` fails, mark the hooks and MCP servers rows `✗ cannot read settings.json`. Never abort early — all three rows must always appear.
 
 ## Expected Output
 

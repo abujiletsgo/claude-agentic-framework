@@ -1,6 +1,6 @@
 # Research Routing Reference
 
-Internal routing guide for dispatching research questions to the right tools and model tier. Consolidates what were previously four separate internal routing-guide skills (research-academic, research-code, research-docs, research-news) into one reference. Used by the researcher agent and by orchestrate's Wave 0b research step.
+Internal routing guide for dispatching research questions to the right tools and model tier. Consolidates what were previously four separate internal routing-guide skills (research-academic, research-code, research-docs, research-news) into one reference. Used by orchestrate's Wave 0b research step (native `Explore` agent, or `academic-researcher` for papers).
 
 ## Routing table
 
