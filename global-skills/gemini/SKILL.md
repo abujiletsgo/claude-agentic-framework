@@ -20,6 +20,30 @@ allowed-tools:
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
+## Preflight — check Gemini is usable BEFORE promising a second opinion
+
+Google retired the OAuth tier this CLI used, so an installed `gemini` now fails
+every call with `IneligibleTierError: this client is no longer supported for
+Gemini Code Assist for individuals`. Being on PATH proves nothing. Check first:
+
+```bash
+if ! command -v gemini >/dev/null 2>&1; then
+  echo "GEMINI_UNAVAILABLE: CLI not installed"
+elif [ -z "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ]; then
+  echo "GEMINI_UNAUTHENTICATED: the OAuth tier this CLI used was retired by Google."
+  echo "  Fix: create a key at https://aistudio.google.com/apikey then:"
+  echo "       export GEMINI_API_KEY=..."
+else
+  echo "GEMINI_OK"
+fi
+```
+
+If the result is not `GEMINI_OK`, **stop and tell the user** — do not fall back to
+reviewing the code yourself and calling it a second opinion. The entire value of
+this skill is that a *different model* looked at the work; a self-review wearing a
+second-opinion label is worse than no second opinion, because it manufactures
+false confidence. Say the second opinion is unavailable and why.
+
 ## Preamble (run first)
 
 ```bash
