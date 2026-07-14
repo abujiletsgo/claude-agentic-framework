@@ -122,7 +122,7 @@ Produce, in this order:
 - **orchestrate / builder** — implement the remedy spec.
 - **qa-cycle** — regression-test the new flows once built (feed it the acceptance criteria from Phase 5).
 - **arch-map** — resolve the code-level nav wiring (route table, history, state) behind a flow.
-- **change-validator** — confirm the flow fixes match the spec and didn't widen blast radius.
+- **verify** — confirm the flow fixes match the spec by driving the affected flow end-to-end.
 
 ## Adapting the checklist by app type
 

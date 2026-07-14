@@ -57,12 +57,30 @@ planner is forced to cover them.
 - **cli/tui** → Bash: run `--help`, introspect subcommands, read the arg parser source.
 - **desktop** → launch + accessibility tree / screenshots, or the relevant gstack ios-* skill for iOS.
 
+**Enumerate the OUTPUT ARTIFACTS, not just the controls that produce them.**
+If the app's deliverable is an artifact — a drawing, PDF, report, export, image,
+generated document, compiled binary — that artifact is itself a first-class QA
+surface. "The file exists, is non-empty, and downloads" is an EXISTENCE check,
+not a QUALITY check; an app can pass every functional row while producing garbage
+output. For each artifact type, add an `artifact-quality` area whose controls are
+the representative input×option combinations, and whose expected behavior is the
+DOMAIN QUALITY BAR (the standards, conventions, or acceptance criteria the
+artifact's real consumers judge it by — e.g. drafting standards for an engineering
+drawing, layout/typography rules for a report, WCAG for generated HTML). If you
+don't know the domain bar, say so in the surface file and have the planner research
+it — never silently substitute "file exists" for "file is right". These rows are
+graded by OPENING AND INSPECTING the artifact (Read the image/PDF — you can view
+them), not by checking its metadata. This is the second most common QA miss after
+untested data values: a fully green functional matrix wrapped around a broken
+deliverable.
+
 Write the raw inventory to `.qa/surface.json`:
 ```json
 { "app_type": "web|cli|tui|desktop", "entry": "<url|command|app path>",
-  "areas": [ { "name": "...", "controls": [ { "id": "...", "kind": "button|input|flag|list|filepicker|...", "label": "...",
+  "areas": [ { "name": "...", "controls": [ { "id": "...", "kind": "button|input|flag|list|filepicker|artifact|...", "label": "...",
     "states": ["default","empty","error"],
-    "inputs": [ { "value": "<id/label>", "trait": "typical|smallest|largest|odd-kind|malformed", "note": "why notable" } ] } ] } ] }
+    "inputs": [ { "value": "<id/label>", "trait": "typical|smallest|largest|odd-kind|malformed", "note": "why notable" } ],
+    "quality_bar": "<for artifact controls: the domain standard the output is judged against>" } ] } ] }
 ```
 
 ---
@@ -98,6 +116,14 @@ NAIVE-USER LENS — assume a user who clicks the most prominent option, not the 
 you know works. If a value is selectable in the UI, it is in scope, INCLUDING the
 one you suspect is unsupported — its expected is "fast, clear rejection," and a
 hang/silent-fail there is a `critical` row, not "by design."
+ARTIFACT QUALITY — for every `artifact-quality` area (surface.json controls with a
+`quality_bar`), emit INSPECTION rows: expected = the itemized domain quality bar
+(specific, assertable criteria — e.g. for an engineering drawing: projection views
+axis-aligned, sheet fill in a sane band, one dimensioning style, no annotation
+collisions, legal rev letter), severity `critical` (a broken deliverable IS the
+product failing), complexity `hard` (the tester must open and visually inspect the
+artifact, not stat it). "File exists / non-zero / downloads" rows are existence
+checks and NEVER satisfy an artifact-quality row.
 Set `complexity` per row — it selects the tester model in Phase 2:
 - trivial/moderate: single click, filter, value check, one flag.
 - hard: multi-step flow, race condition, visual diff, stateful sequence.
@@ -137,6 +163,11 @@ Each tester, per row:
   budget says 10s, fail it at 10s and record the wall-clock in `actual`.
 - For a data-bound control, actually run it against the **heaviest** and the
   **odd-kind** input the row names — not a stand-in. The bug usually lives there.
+- For an artifact-quality row, OPEN the artifact and look at it (Read the
+  PNG/PDF — you can view images) and grade each criterion in the row's quality
+  bar explicitly, one verdict per criterion, in `actual`. Save the artifact
+  (or a screenshot of it) as the row's evidence. Never grade an artifact by
+  its file size, mtime, or HTTP status.
 - `blocked` (precondition couldn't be met) is distinct from `fail` — record why.
 
 Write each completed row back to `.qa/matrix.json` (the artifact is the source of truth, not agent chat).
